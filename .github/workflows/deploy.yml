@@ -41,7 +41,7 @@ jobs:
         echo "Pulling latest code...."
         git config --global user.email "cicd@waveflow.com"
         git config --global user.name "WaveFlow CI/CD"
-        git remote set-url origin https://${{ secrets.GH_TOKEN }}@github.com/Team-Honey-Badgers/WaveFlow.git
+        git remote set-url origin https://${{ secrets.GIT_TOKEN }}@github.com/Team-Honey-Badgers/WaveFlow.git
         git pull origin ec2test || echo "Git pull failed, continuing..."
 
         # .env 파일 생성 (개발 환경 설정)
@@ -61,8 +61,8 @@ jobs:
         GOOGLE_CLIENT_SECRET=${{ secrets.GOOGLE_CLIENT_SECRET }}
         GOOGLE_CALLBACK_URL=${{ secrets.GOOGLE_CALLBACK_URL }}
         AWS_REGION=${{ secrets.AWS_REGION }}
-        AWS_ACCESS_KEY_ID=${{ secrets.AWS_ACCESS_KEY_ID }}
-        AWS_SECRET_ACCESS_KEY=${{ secrets.AWS_SECRET_ACCESS_KEY }}
+        AWS_ACCESS_KEY_ID_FOR_GITACTIONS=${{ secrets.AWS_ACCESS_KEY_ID_FOR_GITACTIONS }}
+        AWS_SECRET_ACCESS_KEY_FOR_GITACTIONS=${{ secrets.AWS_SECRET_ACCESS_KEY_FOR_GITACTIONS }}
         AWS_S3_BUCKET_NAME=${{ secrets.AWS_S3_BUCKET_NAME }}
         MY_QUEUE_URL=${{ secrets.MY_QUEUE_URL }}
         NODE_ENV=development

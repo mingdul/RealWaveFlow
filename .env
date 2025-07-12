@@ -20,8 +20,8 @@ GOOGLE_CALLBACK_URL=http://localhost:3000/auth/google/callback
 
 # AWS Configuration (Local/Test)
 AWS_REGION=ap-northeast-2
-AWS_ACCESS_KEY_ID=your-local-aws-access-key
-AWS_SECRET_ACCESS_KEY=your-local-aws-secret-key
+AWS_ACCESS_KEY_ID_FOR_GITACTIONS=your-local-aws-access-key
+AWS_SECRET_ACCESS_KEY_FOR_GITACTIONS=your-local-aws-secret-key
 AWS_S3_BUCKET_NAME=waveflow-audio-local
 
 # Frontend Configuration

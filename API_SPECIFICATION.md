@@ -722,8 +722,8 @@ interface PullRequest {
 
 ### 백엔드
 - `AWS_REGION`: AWS S3 리전
-- `AWS_ACCESS_KEY_ID`: AWS 액세스 키
-- `AWS_SECRET_ACCESS_KEY`: AWS 시크릿 키
+- `AWS_ACCESS_KEY_ID_FOR_GITACTIONS`: AWS 액세스 키
+- `AWS_SECRET_ACCESS_KEY_FOR_GITACTIONS`: AWS 시크릿 키
 - `AWS_S3_BUCKET_NAME`: S3 버킷 이름
 - `JWT_SECRET`: JWT 서명 키
 - `GOOGLE_CLIENT_ID`: 구글 OAuth 클라이언트 ID
