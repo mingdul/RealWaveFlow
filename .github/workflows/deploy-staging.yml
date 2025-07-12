@@ -1,0 +1,69 @@
+name: Deploy to Staging
+
+on:
+  push:
+    branches:
+      - develop
+  workflow_dispatch:
+
+jobs:
+  deploy:
+    runs-on: ubuntu-latest
+    environment: staging  # GitHub Environment 사용
+
+    steps:
+    - name: Checkout Code
+      uses: actions/checkout@v4
+
+    - name: Deploy to Staging EC2
+      run: |
+        # SSH 키 설정
+        mkdir -p ~/.ssh
+        echo "${{ secrets.STAGING_SSH_PRIVATE_KEY }}" > ~/.ssh/id_rsa
+        chmod 600 ~/.ssh/id_rsa
+
+        # SSH known_hosts 설정
+        ssh-keyscan -H ${{ secrets.STAGING_EC2_HOST }} >> ~/.ssh/known_hosts
+
+        # 배포 스크립트 생성
+        cat > deploy.sh << 'EOF'
+        #!/bin/bash
+        set -e
+
+        echo "🚀 Starting STAGING deployment..."
+        cd /home/ubuntu/waveflow
+
+        # Git pull
+        git remote set-url origin https://${{ secrets.GH_TOKEN }}@github.com/Team-Honey-Badgers/WaveFlow.git
+        git pull origin develop
+
+        # .env 파일 생성 (Staging 환경변수)
+        cat > ./backend/.env << 'ENVEOF'
+        DB_HOST=${{ secrets.STAGING_DB_HOST }}
+        DB_PORT=${{ secrets.STAGING_DB_PORT }}
+        DB_USERNAME=${{ secrets.STAGING_DB_USERNAME }}
+        DB_PASSWORD=${{ secrets.STAGING_DB_PASSWORD }}
+        DB_NAME=postgres
+        JWT_SECRET=${{ secrets.STAGING_JWT_SECRET }}
+        RESEND_API_KEY=${{ secrets.STAGING_RESEND_API_KEY }}
+        FRONTEND_URL=${{ secrets.STAGING_FRONTEND_URL }}
+        # ... 기타 staging 환경변수들
+        ENVEOF
+
+        # Docker 배포
+        sudo docker-compose down
+        sudo docker-compose build --no-cache
+        sudo docker-compose up -d
+
+        echo "✅ STAGING deployment completed"
+        EOF
+
+        # 배포 실행
+        scp -o StrictHostKeyChecking=no deploy.sh ubuntu@${{ secrets.STAGING_EC2_HOST }}:/home/ubuntu/deploy.sh
+        ssh -o StrictHostKeyChecking=no ubuntu@${{ secrets.STAGING_EC2_HOST }} "chmod +x /home/ubuntu/deploy.sh && /home/ubuntu/deploy.sh"
+
+    - name: Notify Team
+      run: |
+        curl -X POST -H 'Content-type: application/json' --data '{
+          "text": "🧪 Staging 배포 완료!\nBranch: develop\nCommit: ${{ github.sha }}\nURL: http://staging.waveflow.com"
+        }' ${{ secrets.SLACK_WEBHOOK_URL }}
