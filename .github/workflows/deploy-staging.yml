@@ -31,7 +31,7 @@ jobs:
         set -e
 
         echo "🚀 Starting STAGING deployment..."
-        cd /home/ubuntu/waveflow
+        cd /home/ubuntu/RealWaveFlow
 
         # Git pull
         git remote set-url origin https://${{ secrets.GIT_TOKEN }}@github.com/Team-Honey-Badgers/WaveFlow.git

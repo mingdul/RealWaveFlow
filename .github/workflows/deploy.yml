@@ -35,7 +35,7 @@ jobs:
         echo "Author: ${{ github.actor }}"
         echo "================================"
         
-        cd /home/ubuntu/waveflow
+        cd /home/ubuntu/RealWaveFlow
 
         # Git pull
         echo "Pulling latest code...."
