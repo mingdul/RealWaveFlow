@@ -1,0 +1,128 @@
+name: Deploy to Development Server
+
+on:
+  push:
+    branches:
+      - ec2test   # 개발 테스트용 브랜치
+  workflow_dispatch:
+
+jobs:
+  deploy:
+    runs-on: ubuntu-latest
+
+    steps:
+    - name: Checkout Code
+      uses: actions/checkout@v4
+
+    - name: Deploy to Development EC2
+      run: |
+        # SSH 키 설정
+        mkdir -p ~/.ssh
+        echo "${{ secrets.EC2_SSH_KEY }}" > ~/.ssh/id_rsa
+        chmod 600 ~/.ssh/id_rsa
+
+        # SSH known_hosts 설정
+        ssh-keyscan -H ${{ secrets.EC2_HOST }} >> ~/.ssh/known_hosts
+
+        # 배포 스크립트 생성 (개발 환경용)
+        cat > deploy.sh << 'EOF'
+        #!/bin/bash
+        set -e
+
+        echo "🚀 Starting DEVELOPMENT deployment..."
+        echo "Branch: ec2test"
+        echo "Commit: ${{ github.sha }}"
+        echo "Author: ${{ github.actor }}"
+        echo "================================"
+        
+        cd /home/ubuntu/waveflow
+
+        # Git pull
+        echo "Pulling latest code...."
+        git config --global user.email "cicd@waveflow.com"
+        git config --global user.name "WaveFlow CI/CD"
+        git remote set-url origin https://${{ secrets.GH_TOKEN }}@github.com/Team-Honey-Badgers/WaveFlow.git
+        git pull origin ec2test || echo "Git pull failed, continuing..."
+
+        # .env 파일 생성 (개발 환경 설정)
+        echo "Creating development environment file..."
+        cat > ./backend/.env << 'ENVEOF'
+        DB_HOST=${{ secrets.DB_HOST }}
+        DB_PORT=${{ secrets.DB_PORT }}
+        DB_USERNAME=${{ secrets.DB_USERNAME }}
+        DB_PASSWORD=${{ secrets.DB_PASSWORD }}
+        DB_NAME=postgres
+        JWT_SECRET=${{ secrets.JWT_SECRET }}
+        RESEND_API_KEY=${{ secrets.RESEND_API_KEY }}
+        FRONTEND_URL=${{ secrets.FRONTEND_URL }}
+        EMAIL_USER=${{ secrets.EMAIL_USER }}
+        EMAIL_PASS=${{ secrets.EMAIL_PASS }}
+        GOOGLE_CLIENT_ID=${{ secrets.GOOGLE_CLIENT_ID }}
+        GOOGLE_CLIENT_SECRET=${{ secrets.GOOGLE_CLIENT_SECRET }}
+        GOOGLE_CALLBACK_URL=${{ secrets.GOOGLE_CALLBACK_URL }}
+        AWS_REGION=${{ secrets.AWS_REGION }}
+        AWS_ACCESS_KEY_ID=${{ secrets.AWS_ACCESS_KEY_ID }}
+        AWS_SECRET_ACCESS_KEY=${{ secrets.AWS_SECRET_ACCESS_KEY }}
+        AWS_S3_BUCKET_NAME=${{ secrets.AWS_S3_BUCKET_NAME }}
+        MY_QUEUE_URL=${{ secrets.MY_QUEUE_URL }}
+        NODE_ENV=development
+        ENVEOF
+
+        echo "✅ Environment file created successfully"
+
+        # Docker 정리 및 재빌드
+        echo "Starting Docker deployment..."
+        sudo docker-compose down --remove-orphans || true
+        sudo docker system prune -af --volumes
+        sudo docker builder prune -af
+
+        # 환경변수 설정 및 빌드
+        echo "Building containers..."
+        export VITE_API_URL=http://${{ secrets.EC2_HOST }}:8080
+        sudo -E docker-compose build --no-cache
+        sudo docker-compose up -d
+
+        # 서비스 시작 대기
+        echo "Waiting for services to start..."
+        sleep 30
+
+        # 상태 확인
+        echo "=== Container Status ==="
+        sudo docker-compose ps
+
+        echo "=== Backend Container Logs (Development) ==="
+        sudo docker-compose logs --tail=50 backend
+
+        # Health check
+        echo "=== Health Check ==="
+        echo "Testing backend (port 8080)..."
+        curl -f http://localhost:8080/health || echo "Backend health check failed"
+
+        echo "Testing frontend (port 3000)..."
+        curl -f http://localhost:3000 || echo "Frontend health check failed"
+
+        echo "================================"
+        echo "✅ DEVELOPMENT deployment completed!"
+        echo "🔗 Backend: http://${{ secrets.EC2_HOST }}:8080"
+        echo "🔗 Frontend: http://${{ secrets.EC2_HOST }}:3000"
+        echo "🔗 API Docs: http://${{ secrets.EC2_HOST }}:8080/api"
+        echo "================================"
+        EOF
+
+        # 배포 스크립트 실행
+        scp -o StrictHostKeyChecking=no deploy.sh ubuntu@${{ secrets.EC2_HOST }}:/home/ubuntu/deploy.sh
+        ssh -o StrictHostKeyChecking=no ubuntu@${{ secrets.EC2_HOST }} "chmod +x /home/ubuntu/deploy.sh && /home/ubuntu/deploy.sh"
+
+    - name: Notify Team on Success
+      if: success()
+      run: |
+        curl -X POST -H 'Content-type: application/json' --data '{
+          "text": "🧪 개발 서버 배포 성공!\n📋 Branch: `ec2test`\n👤 Author: `${{ github.actor }}`\n🔗 Backend: http://${{ secrets.EC2_HOST }}:8080\n🔗 Frontend: http://${{ secrets.EC2_HOST }}:3000\n💡 팀원들은 이제 서버에서 테스트 가능합니다!"
+        }' ${{ secrets.SLACK_WEBHOOK_URL }}
+
+    - name: Notify Team on Failure
+      if: failure()
+      run: |
+        curl -X POST -H 'Content-type: application/json' --data '{
+          "text": "❌ 개발 서버 배포 실패\n📋 Branch: `ec2test`\n👤 Author: `${{ github.actor }}`\n🔍 GitHub Actions에서 로그를 확인해주세요."
+        }' ${{ secrets.SLACK_WEBHOOK_URL }}

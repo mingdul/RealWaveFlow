@@ -1,0 +1,35 @@
+services:
+  backend:
+    build: 
+      context: ./backend
+      dockerfile: Dockerfile
+    container_name: waveflow-backend-dev
+    restart: unless-stopped
+    ports:
+      - "8080:3000"
+    env_file:
+      - .env.development
+    environment:
+      - NODE_ENV=development
+    networks:
+      - waveflow-network
+
+  frontend:
+    build:
+      context: ./frontend
+      dockerfile: Dockerfile
+      args:
+        VITE_API_URL: http://13.125.231.115:8080
+    container_name: waveflow-frontend-dev
+    restart: unless-stopped
+    ports:
+      - "3000:80"
+    environment:
+      - NODE_ENV=development
+      - VITE_API_URL=http://13.125.231.115:8080
+    networks:
+      - waveflow-network
+
+networks:
+  waveflow-network:
+    driver: bridge

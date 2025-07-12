@@ -1,0 +1,48 @@
+services:
+  backend:
+    build: 
+      context: ./backend
+      dockerfile: Dockerfile
+    container_name: waveflow-backend
+    restart: unless-stopped
+    ports:
+      - "8080:3000"
+    env_file:
+      - ./backend/.env
+    environment:
+      - NODE_ENV=development
+    # 현재 개발 단계임. NODE_ENV 수정 금지.
+    networks:
+      - waveflow-network
+    # 헬스체크 임시 비활성화
+    # healthcheck:
+    #   test: ["CMD-SHELL", "curl -f http://localhost:3000/health || exit 1"]
+    #   interval: 45s
+    #   timeout: 20s
+    #   retries: 15
+    #   start_period: 180s
+
+  frontend:
+    build:
+      context: ./frontend
+      dockerfile: Dockerfile
+      args:
+        VITE_API_URL: ${VITE_API_URL:-http://13.125.231.115:8080}
+    container_name: waveflow-frontend
+    restart: unless-stopped
+    ports:
+      - "3000:80"
+    environment:
+      - NODE_ENV=development
+    # 현재 개발 단계임. NODE_ENV 수정 금지.
+      - VITE_API_URL=${VITE_API_URL:-http://13.125.231.115:8080}
+    networks:
+      - waveflow-network
+    # 헬스체크 의존성 제거
+    # depends_on:
+    #   backend:
+    #     condition: service_healthy
+
+networks:
+  waveflow-network:
+    driver: bridge
