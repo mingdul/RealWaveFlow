@@ -34,7 +34,7 @@ jobs:
         cd /home/ubuntu/waveflow
 
         # Git pull
-        git remote set-url origin https://${{ secrets.GH_TOKEN }}@github.com/Team-Honey-Badgers/WaveFlow.git
+        git remote set-url origin https://${{ secrets.GIT_TOKEN }}@github.com/Team-Honey-Badgers/WaveFlow.git
         git pull origin develop
 
         # .env 파일 생성 (Staging 환경변수)

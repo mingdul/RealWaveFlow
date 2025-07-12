@@ -37,7 +37,7 @@ jobs:
         sudo docker-compose exec backend pg_dump -h $DB_HOST -U $DB_USERNAME $DB_NAME > backup_$(date +%Y%m%d_%H%M%S).sql
 
         # Git pull
-        git remote set-url origin https://${{ secrets.GH_TOKEN }}@github.com/Team-Honey-Badgers/WaveFlow.git
+        git remote set-url origin https://${{ secrets.GIT_TOKEN }}@github.com/Team-Honey-Badgers/WaveFlow.git
         git pull origin main
 
         # .env 파일 생성 (Production 환경변수)

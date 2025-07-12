@@ -55,8 +55,8 @@ GOOGLE_CALLBACK_URL=http://localhost:3000/auth/google/callback
 #### AWS S3 (선택사항)
 ```env
 AWS_REGION=ap-northeast-2
-AWS_ACCESS_KEY_ID=your-aws-access-key
-AWS_SECRET_ACCESS_KEY=your-aws-secret-key
+AWS_ACCESS_KEY_ID_FOR_GITACTIONS=your-aws-access-key
+AWS_SECRET_ACCESS_KEY_FOR_GITACTIONS=your-aws-secret-key
 AWS_S3_BUCKET_NAME=your-s3-bucket-name
 ```
 

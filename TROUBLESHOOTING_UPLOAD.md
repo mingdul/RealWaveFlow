@@ -120,7 +120,7 @@ npm run start:dev
 ```
 
 **주요 확인 포인트:**
-- S3 설정 (AWS_ACCESS_KEY_ID, AWS_SECRET_ACCESS_KEY, AWS_S3_BUCKET_NAME)
+- S3 설정 (AWS_ACCESS_KEY_ID_FOR_GITACTIONS, AWS_SECRET_ACCESS_KEY_FOR_GITACTIONS, AWS_S3_BUCKET_NAME)
 - 프로젝트 접근 권한 검증
 - Presigned URL 생성 성공/실패
 
@@ -220,8 +220,8 @@ const testUpload = async () => {
 
 ### 백엔드
 - [ ] `AWS_REGION` 설정됨
-- [ ] `AWS_ACCESS_KEY_ID` 설정됨
-- [ ] `AWS_SECRET_ACCESS_KEY` 설정됨
+- [ ] `AWS_ACCESS_KEY_ID_FOR_GITACTIONS` 설정됨
+- [ ] `AWS_SECRET_ACCESS_KEY_FOR_GITACTIONS` 설정됨
 - [ ] `AWS_S3_BUCKET_NAME` 설정됨
 
 ### 프론트엔드
