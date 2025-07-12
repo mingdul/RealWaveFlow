@@ -45,7 +45,7 @@ jobs:
         git pull origin ec2test || echo "Git pull failed, continuing..."
 
         # .env 파일 생성 (개발 환경 설정)
-        echo "Creating development environment file...."
+        echo "Creating development environment file....."
         cat > ./backend/.env << 'ENVEOF'
         DB_HOST=${{ secrets.DB_HOST }}
         DB_PORT=${{ secrets.DB_PORT }}
