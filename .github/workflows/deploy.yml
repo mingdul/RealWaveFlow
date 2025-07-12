@@ -24,6 +24,9 @@ jobs:
         # SSH known_hosts 설정
         ssh-keyscan -H ${{ secrets.EC2_HOST }} >> ~/.ssh/known_hosts
 
+        # Git rsync
+        rsync -avz --delete --exclude=".git" --exclude="node_modules" -e "ssh -o StrictHostKeyChecking=no" ./ ubuntu@${{ secrets.EC2_HOST }}:/home/ubuntu/RealWaveFlow/
+
         # 배포 스크립트 생성 (개발 환경용)
         cat > deploy.sh << 'EOF'
         #!/bin/bash
@@ -36,13 +39,6 @@ jobs:
         echo "================================"
         
         cd /home/ubuntu/RealWaveFlow
-
-        # Git pull
-        echo "Pulling latest code...."
-        git config --global user.email "cicd@waveflow.com"
-        git config --global user.name "WaveFlow CI/CD"
-        git remote set-url origin https://${{ secrets.GIT_TOKEN }}@github.com/Team-Honey-Badgers/WaveFlow.git
-        git pull origin ec2test || echo "Git pull failed, continuing..."
 
         # .env 파일 생성 (개발 환경 설정)
         echo "Creating development environment file....."
