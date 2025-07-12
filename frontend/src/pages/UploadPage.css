@@ -1,0 +1,638 @@
+/* Main Layout */
+.commit-page {
+    @apply min-h-screen bg-[#0D0D0D] flex;
+}
+
+.commit-content {
+    @apply flex-1 flex flex-col;
+}
+
+.commit-main {
+    @apply flex-1;
+}
+
+/* Upload Page Layout */
+.upload-page {
+    @apply min-h-screen bg-[#0D0D0D] flex;
+}
+
+.upload-content {
+    @apply flex-1 flex flex-col;
+}
+
+.upload-main {
+    @apply flex-1;
+}
+
+/* Sidebar */
+.step-sidebar {
+    @apply w-80 bg-[#262626] p-6 min-h-screen;
+}
+
+.brand-section {
+    @apply mb-8;
+}
+
+.brand-logo {
+    @apply flex items-center space-x-3 mb-2;
+}
+
+.brand-icon {
+    @apply w-8 h-8 bg-[#595959] rounded;
+}
+
+.brand-info h1 {
+    @apply text-[#D9D9D9] text-xl font-bold;
+}
+
+.brand-info p {
+    @apply text-[#BFBFBF] text-xs;
+}
+
+.commit-title {
+    @apply text-[#D9D9D9] text-4xl font-bold mb-8;
+}
+
+.steps-container {
+    @apply space-y-6;
+}
+
+.step-item {
+    @apply flex items-start space-x-4;
+}
+
+.step-number {
+    @apply w-8 h-8 rounded-full flex items-center justify-center flex-shrink-0;
+}
+
+.step-number-completed {
+    @apply bg-[#D9D9D9] text-[#0D0D0D];
+}
+
+.step-number-current {
+    @apply bg-[#BFBFBF] text-[#0D0D0D];
+}
+
+.step-number-inactive {
+    @apply bg-[#595959] text-[#D9D9D9];
+}
+
+.step-content {
+    @apply flex-1;
+}
+
+.step-title {
+    @apply font-semibold;
+}
+
+.step-title-active {
+    @apply text-[#D9D9D9];
+}
+
+.step-title-inactive {
+    @apply text-[#BFBFBF];
+}
+
+.step-description {
+    @apply text-sm mt-1;
+}
+
+.step-description-active {
+    @apply text-[#BFBFBF];
+}
+
+.step-description-inactive {
+    @apply text-[#595959];
+}
+
+/* File Selection Step */
+.file-selection-area {
+    @apply mb-8;
+}
+
+.file-selection-button {
+    @apply block w-full p-12 border-2 border-dashed border-[#595959] rounded-lg cursor-pointer hover:border-[#BFBFBF] hover:bg-[#262626] transition-all duration-200;
+}
+
+.file-selection-content {
+    @apply text-center;
+}
+
+/* Selected Files Section */
+.selected-files-section {
+    @apply mt-8;
+}
+
+.files-grid {
+    @apply grid grid-cols-1 gap-4;
+}
+
+.file-header {
+    @apply flex items-center justify-between mb-4;
+}
+
+.file-icon {
+    @apply flex-shrink-0;
+}
+
+.file-name {
+    @apply text-[#D9D9D9] text-sm font-medium;
+}
+
+.file-size {
+    @apply text-[#BFBFBF] text-xs;
+}
+
+.remove-file-button {
+    @apply p-2 text-[#BFBFBF] hover:text-red-400 hover:bg-red-400/10 rounded-lg transition-colors;
+}
+
+/* File Metadata */
+.metadata-row {
+    @apply flex gap-4 mb-4;
+}
+
+.metadata-field {
+    @apply flex-1;
+}
+
+.metadata-label {
+    @apply block text-[#BFBFBF] text-sm font-medium mb-2;
+}
+
+.metadata-select {
+    @apply w-full bg-[#262626] border border-[#595959] text-[#D9D9D9] rounded-lg px-3 py-2 focus:outline-none focus:ring-2 focus:ring-purple-500 focus:border-transparent;
+}
+
+.metadata-textarea {
+    @apply w-full bg-[#262626] border border-[#595959] text-[#D9D9D9] rounded-lg px-3 py-2 focus:outline-none focus:ring-2 focus:ring-purple-500 focus:border-transparent resize-none;
+}
+
+/* Upload Step */
+.upload-container {
+    @apply p-8;
+}
+
+.upload-title {
+    @apply text-[#D9D9D9] text-2xl font-bold mb-6;
+}
+
+.upload-start-section {
+    @apply mb-8 text-center;
+}
+
+.upload-start-button {
+    @apply inline-flex items-center px-6 py-3 bg-[#D9D9D9] text-[#0D0D0D] font-medium rounded-lg hover:bg-[#BFBFBF] transition-all;
+}
+
+.upload-complete-section {
+    @apply text-center py-12;
+}
+
+.upload-complete-icon {
+    @apply flex justify-center;
+}
+
+/* Upload Progress */
+.files-progress-section {
+    @apply space-y-4;
+}
+
+.file-progress-item {
+    @apply bg-[#262626] border border-[#595959] rounded-lg p-4;
+}
+
+.file-progress-header {
+    @apply flex items-center justify-between mb-3;
+}
+
+.file-status {
+    @apply flex items-center gap-2;
+}
+
+.status-text {
+    @apply text-[#BFBFBF] text-sm;
+}
+
+.progress-bar-container {
+    @apply flex items-center gap-3;
+}
+
+.progress-bar {
+    @apply flex-1 h-2 bg-[#595959] rounded-full overflow-hidden;
+}
+
+.progress-bar-fill {
+    @apply h-full bg-gradient-to-r from-purple-500 to-blue-500 transition-all duration-300;
+}
+
+.progress-text {
+    @apply text-[#BFBFBF] text-sm font-medium;
+}
+
+/* Status Info */
+.status-info {
+    @apply mt-3 p-3 rounded-lg;
+}
+
+.duplicate-info {
+    @apply bg-orange-400/10 border border-orange-400/30;
+}
+
+.error-info {
+    @apply bg-red-400/10 border border-red-400/30;
+}
+
+/* Upload Completion */
+.upload-completion-section {
+    @apply text-center py-12;
+}
+
+.completion-message {
+    @apply flex flex-col items-center gap-4;
+}
+
+/* Result Section */
+.result-section {
+    @apply mb-8;
+}
+
+.result-file-item {
+    @apply bg-[#262626] border rounded-lg p-4;
+}
+
+.result-file-item.success {
+    @apply border-green-400/30 bg-green-400/5;
+}
+
+.result-file-item.warning {
+    @apply border-orange-400/30 bg-orange-400/5;
+}
+
+.result-file-item.error {
+    @apply border-red-400/30 bg-red-400/5;
+}
+
+/* Upload Actions */
+.upload-actions {
+    @apply border-t border-[#595959] p-6 bg-[#262626];
+}
+
+.action-buttons {
+    @apply flex justify-between items-center;
+}
+
+.action-button {
+    @apply px-6 py-3 font-medium rounded-lg transition-all duration-200;
+}
+
+.action-button.primary {
+    @apply bg-[#D9D9D9] text-[#0D0D0D] hover:bg-[#BFBFBF];
+}
+
+.action-button.secondary {
+    @apply bg-transparent text-[#D9D9D9] border border-[#595959] hover:bg-[#595959];
+}
+
+.action-button.disabled {
+    @apply opacity-50 cursor-not-allowed;
+}
+
+.upload-progress-section {
+    @apply bg-[#262626] rounded-lg p-6 border border-[#595959];
+}
+
+.file-list {
+    @apply space-y-4 mb-6;
+}
+
+.file-item {
+    @apply bg-[#595959] rounded-lg p-4 border border-[#262626];
+}
+
+.file-content {
+    @apply flex items-center justify-between;
+}
+
+.file-info {
+    @apply flex items-center space-x-3 flex-1;
+}
+
+.file-status {
+    @apply flex-shrink-0;
+}
+
+.file-status-complete {
+    @apply w-8 h-8 bg-[#D9D9D9] rounded-full flex items-center justify-center;
+}
+
+.file-status-uploading {
+    @apply w-8 h-8 bg-[#BFBFBF] rounded-full flex items-center justify-center;
+}
+
+.file-status-selected {
+    @apply w-8 h-8 bg-[#D9D9D9] rounded-full flex items-center justify-center;
+}
+
+.file-status-waiting {
+    @apply w-8 h-8 bg-[#595959] rounded-full flex items-center justify-center;
+}
+
+.file-details-section {
+    @apply flex flex-col space-y-1 ml-3;
+}
+
+.file-details {
+    @apply flex items-center space-x-4 ml-auto mr-4;
+}
+
+.file-metadata {
+    @apply flex items-center space-x-4 ml-auto mr-4;
+}
+
+.file-metadata-display {
+    @apply flex items-center space-x-2 mt-1;
+}
+
+.file-tag, .file-key, .file-desc {
+    @apply px-2 py-1 bg-[#262626] text-[#BFBFBF] text-xs rounded;
+}
+
+.file-field {
+    @apply flex items-center space-x-2;
+}
+
+.file-field-label {
+    @apply text-[#BFBFBF] text-sm;
+}
+
+.file-select {
+    @apply bg-[#262626] text-[#D9D9D9] px-3 py-1 rounded border border-[#595959] focus:border-[#BFBFBF] outline-none;
+}
+
+.file-input {
+    @apply bg-[#262626] text-[#D9D9D9] px-3 py-1 rounded border border-[#595959] focus:border-[#BFBFBF] outline-none w-48;
+}
+
+.file-remove-btn {
+    @apply w-8 h-8 bg-[#595959] hover:bg-[#BFBFBF] rounded-full flex items-center justify-center ml-auto transition-colors;
+}
+
+.progress-container {
+    @apply mt-3 flex items-center space-x-3;
+}
+
+.progress-bar {
+    @apply flex-1 bg-[#262626] rounded-full h-2;
+}
+
+.progress-fill {
+    @apply bg-[#D9D9D9] h-2 rounded-full transition-all duration-300;
+}
+
+.progress-text {
+    @apply text-[#D9D9D9] text-sm font-medium min-w-[3rem] text-right;
+}
+
+/* Drag & Drop Area */
+.drag-drop-area {
+    @apply border-2 border-dashed rounded-lg p-12 text-center transition-colors;
+}
+
+.drag-drop-active {
+    @apply border-[#D9D9D9] bg-[#262626];
+}
+
+.drag-drop-inactive {
+    @apply border-[#595959] hover:border-[#BFBFBF];
+}
+
+.drag-drop-content {
+    @apply flex flex-col items-center space-y-4;
+}
+
+.drag-drop-icon {
+    @apply w-16 h-16 bg-[#595959] rounded-lg flex items-center justify-center;
+}
+
+.drag-drop-title {
+    @apply text-[#BFBFBF] text-xl font-medium mb-2;
+}
+
+.drag-drop-subtitle {
+    @apply text-[#595959] text-sm;
+}
+
+.choose-files-btn {
+    @apply mt-2 bg-[#D9D9D9] text-[#0D0D0D] px-6 py-2 rounded-lg hover:bg-[#BFBFBF] transition-all;
+}
+
+.file-input-hidden {
+    @apply hidden;
+}
+
+/* Match Step */
+.match-container {
+    @apply p-8;
+}
+
+.match-title {
+    @apply text-[#D9D9D9] text-2xl font-bold mb-6;
+}
+
+.match-description {
+    @apply text-[#BFBFBF] mb-8;
+}
+
+.match-files {
+    @apply space-y-4;
+}
+
+.match-file-item {
+    @apply bg-[#595959] rounded-lg p-6 border border-[#262626];
+}
+
+.match-file-content {
+    @apply flex items-center justify-between;
+}
+
+.match-file-info {
+    @apply flex items-center space-x-4;
+}
+
+.match-file-details {
+    @apply flex items-center space-x-4 mt-2;
+}
+
+.match-file-tag {
+    @apply text-xs bg-[#262626] text-[#BFBFBF] px-2 py-1 rounded;
+}
+
+.match-file-key {
+    @apply text-xs bg-[#262626] text-[#BFBFBF] px-2 py-1 rounded;
+}
+
+.match-file-description {
+    @apply text-xs text-[#BFBFBF];
+}
+
+.match-selector {
+    @apply flex items-center space-x-3;
+}
+
+.match-label {
+    @apply text-[#BFBFBF];
+}
+
+.match-select-container {
+    @apply relative;
+}
+
+.match-select {
+    @apply bg-[#262626] text-[#D9D9D9] px-4 py-2 pr-8 rounded border border-[#595959] focus:border-[#BFBFBF] outline-none appearance-none min-w-48;
+}
+
+.match-select-arrow {
+    @apply absolute right-2 top-1/2 transform -translate-y-1/2 text-[#BFBFBF] pointer-events-none;
+}
+
+/* Check Step */
+.check-container {
+    @apply p-8;
+}
+
+.check-title {
+    @apply text-[#D9D9D9] text-2xl font-bold mb-6;
+}
+
+.check-description {
+    @apply text-[#BFBFBF] mb-8;
+}
+
+.commit-message-section {
+    @apply mb-8;
+}
+
+.commit-message-label {
+    @apply block text-[#D9D9D9] font-medium mb-2;
+}
+
+.commit-message-textarea {
+    @apply w-full bg-[#595959] text-[#D9D9D9] p-4 rounded-lg border border-[#262626] focus:border-[#BFBFBF] outline-none resize-none;
+}
+
+.summary-table {
+    @apply bg-[#595959] rounded-lg overflow-hidden border border-[#262626];
+}
+
+.summary-header {
+    @apply bg-[#262626] px-6 py-3 border-b border-[#595959];
+}
+
+.summary-title {
+    @apply text-[#D9D9D9] font-medium;
+}
+
+.summary-content {
+    @apply divide-y divide-[#262626];
+}
+
+.summary-item {
+    @apply px-6 py-4;
+}
+
+.summary-item-content {
+    @apply flex items-center justify-between;
+}
+
+.summary-file-info {
+    @apply flex items-center space-x-4;
+}
+
+.summary-file-details {
+    @apply flex items-center space-x-3 mt-1;
+}
+
+.summary-file-tag {
+    @apply text-xs bg-[#BFBFBF] text-[#0D0D0D] px-2 py-1 rounded;
+}
+
+.summary-file-key {
+    @apply text-xs bg-[#D9D9D9] text-[#0D0D0D] px-2 py-1 rounded;
+}
+
+.summary-file-description {
+    @apply text-xs text-[#BFBFBF];
+}
+
+.summary-replace-info {
+    @apply text-right;
+}
+
+.summary-replace-label {
+    @apply text-[#BFBFBF] text-sm;
+}
+
+.summary-replace-file {
+    @apply text-[#D9D9D9] text-sm;
+}
+
+/* Navigation */
+.navigation-bar {
+    @apply bg-[#262626] px-8 py-4 border-t border-[#595959];
+}
+
+.navigation-content {
+    @apply flex justify-between;
+}
+
+.nav-btn {
+    @apply px-6 py-2 rounded-lg font-medium transition-all;
+}
+
+.nav-btn-prev {
+    @apply bg-[#595959] text-[#D9D9D9] hover:bg-[#BFBFBF] hover:text-[#0D0D0D];
+}
+
+.nav-btn-prev-disabled {
+    @apply bg-[#262626] text-[#595959] cursor-not-allowed;
+}
+
+.nav-btn-next {
+    @apply bg-[#D9D9D9] text-[#0D0D0D] hover:bg-[#BFBFBF];
+}
+
+.nav-btn-next-disabled {
+    @apply bg-[#262626] text-[#595959] cursor-not-allowed;
+}
+
+/* Responsive Design */
+@media (max-width: 1024px) {
+    .step-sidebar {
+        @apply w-64;
+    }
+}
+
+@media (max-width: 768px) {
+    .step-sidebar {
+        @apply w-full h-auto;
+    }
+    
+    .upload-container,
+    .match-container,
+    .check-container {
+        @apply p-4;
+    }
+    
+    .file-details {
+        @apply flex-col space-y-2;
+    }
+    
+    .match-file-content {
+        @apply flex-col space-y-4;
+    }
+    
+    .summary-item-content {
+        @apply flex-col space-y-4;
+    }
+}
