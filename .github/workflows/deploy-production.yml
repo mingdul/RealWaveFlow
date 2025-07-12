@@ -31,7 +31,7 @@ jobs:
         set -e
 
         echo "🚀 Starting PRODUCTION deployment..."
-        cd /home/ubuntu/waveflow
+        cd /home/ubuntu/RealWaveFlow
 
         # 백업 생성
         sudo docker-compose exec backend pg_dump -h $DB_HOST -U $DB_USERNAME $DB_NAME > backup_$(date +%Y%m%d_%H%M%S).sql
