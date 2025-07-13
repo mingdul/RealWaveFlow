@@ -10,7 +10,7 @@ export class VersionStem {
     id : string;
 
     @Column({type : 'int'})
-    take : number;
+    version : number;
 
     @Column({ type: 'varchar' })
     file_name : string;

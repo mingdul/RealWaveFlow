@@ -11,8 +11,8 @@ export class VersionStemController {
     return this.versionStemService.createVersionStem(createVersionStemDto);
   }
 
-  @Get('/track/:track_id/version-stem/:take')
-  async getLatestStemsPerCategoryByTrack(@Param('track_id') track_id: string, @Param('take') take: number) {
-    return this.versionStemService.getLatestStemsPerCategoryByTrack(track_id, take);
+  @Get('/track/:track_id/version-stem/:version')
+  async getLatestStemsPerCategoryByTrack(@Param('track_id') track_id: string, @Param('version') version: number) {
+    return this.versionStemService.getLatestStemsPerCategoryByTrack(track_id, version);
   }
 }
