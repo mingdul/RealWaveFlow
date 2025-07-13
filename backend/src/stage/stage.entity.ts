@@ -16,6 +16,9 @@ export class Stage {
     @Column({ type: 'text' })
     description : string;
 
+    @Column({ type: 'number' })
+    take : number;
+
     @Column({ type: 'varchar', default: 'active' })
     status : string;
 

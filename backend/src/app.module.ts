@@ -10,13 +10,13 @@ import { VersionStemModule } from './version-stem/version-stem.module';
 import { UpstreamModule } from './upstream/upstream.module';
 import { UpstreamCommentModule } from './upstream-comment/upstream-comment.module';
 import { StemJobModule } from './stem-job/stem-job.module';
+import { UpstreamReviewModule } from './upstream-review/upstream-review.module';
 import { StreamingModule } from './streaming/streaming.module';
 import { DownloadModule } from './download/download.module';
 import { InviteModule } from './invite/invite.module';
 
 @Module({
-  imports: [
-    StemModule, 
+  imports: [StemModule, 
     StageModule, 
     StageReviewerModule, 
     CategoryModule,
@@ -27,11 +27,13 @@ import { InviteModule } from './invite/invite.module';
     UpstreamModule,
     UpstreamCommentModule,
     StemJobModule,
+    UpstreamReviewModule,
     StreamingModule,
     DownloadModule,
     InviteModule,
-  ],
-  controllers: [],
-  providers: [],
+
+  ], // 추후 다른 모듈들 (예: AuthModule 등)을 여기에 추가
+    controllers: [], // 라우팅 처리
+  providers: [], // 비즈니스 로직/서비스 제공
 })
 export class AppModule {}
