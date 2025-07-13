@@ -1,27 +1,16 @@
 services:
   backend:
     build: 
-      context: ./backend
+      context: ./back-end
       dockerfile: Dockerfile
     container_name: waveflow-backend
     restart: unless-stopped
     ports:
       - "8080:3000"
+    env_file:
+      - ./back-end/.env
     environment:
       - NODE_ENV=development
-      - DB_HOST=localhost
-      - DB_PORT=5432
-      - DB_USERNAME=postgres
-      - DB_PASSWORD=password
-      - DB_DATABASE=waveflow
-      - JWT_SECRET=your-super-secret-jwt-key-change-this-in-production
-      - RESEND_API_KEY=your-resend-api-key
-      - FRONTEND_URL=http://localhost:3000
-      - AWS_ACCESS_KEY_ID=your-aws-access-key
-      - AWS_SECRET_ACCESS_KEY=your-aws-secret-key
-      - AWS_REGION=ap-northeast-2
-      - S3_BUCKET_NAME=your-s3-bucket-name
-      - PORT=3000
     # 현재 개발 단계임. NODE_ENV 수정 금지.
     networks:
       - waveflow-network
@@ -35,7 +24,7 @@ services:
 
   frontend:
     build:
-      context: ./frontend
+      context: ./front-end
       dockerfile: Dockerfile
       args:
         VITE_API_URL: ${VITE_API_URL:-http://13.125.231.115:8080}
