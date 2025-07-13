@@ -1,5 +1,6 @@
 import { Category } from "src/category/category.entity";
 import { Upstream } from "src/upstream/upstream.entity";
+import { User } from "src/users/user.entity";
 import { Column, Entity, JoinColumn, ManyToOne, PrimaryGeneratedColumn } from "typeorm";
 
 @Entity('stems')
@@ -35,6 +36,14 @@ export class Stem {
     })
     @JoinColumn({ name: 'upstream_id' })
     upstream : Upstream;    
+
+
+    @ManyToOne(()=> User, (user)=> user.stems, {
+        cascade: true,
+        onDelete: 'CASCADE',
+    })
+    @JoinColumn({ name: 'user_id' })
+    user : User;
 
     @Column({ type: 'timestamp' })
     uploaded_at : Date;

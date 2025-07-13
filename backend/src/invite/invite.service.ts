@@ -6,7 +6,6 @@ import { InviteBatch } from './invite-batch.entity';
 import { InviteTarget } from './invite-target.entity';
 import { TrackCollaborator } from '../track_collaborator/track_collaborator.entity';
 import { User } from '../users/user.entity';
-import { Session } from '../session/session.entity';
 import { EmailService } from '../email/email.service';
 import { SendInviteDto } from './dto/send-invite.dto';
 import { AcceptInviteDto } from './dto/accept-invite.dto';
@@ -28,8 +27,6 @@ export class InviteService {
         private trackCollaboratorRepository: Repository<TrackCollaborator>,
         @InjectRepository(User)
         private userRepository: Repository<User>,
-        @InjectRepository(Session)
-        private sessionRepository: Repository<Session>,
         private dataSource: DataSource,
         private emailService: EmailService,
 
@@ -170,7 +167,7 @@ export class InviteService {
                 const emailResult = await this.emailService.sendInviteEmail(
                     target.email,
                     {
-                        trackName: savedBatch.track.name,
+                        trackName: savedBatch.track.title,
                         inviterName: savedBatch.inviter.username,
                         inviteToken: target.token,
                         expiresAt: savedBatch.expires_at
@@ -300,14 +297,6 @@ export class InviteService {
                 });
                 await manager.save(collaborator);
 
-                // 개인 세션 생성
-                const session = manager.create(Session, {
-                    track: { id: inviteTarget.invite_batch.track.id },
-                    user: { id: targetUserId },
-                    name: `${existingUser.username}'s Session`,
-                    description: '개인 작업 세션'
-                });
-                await manager.save(session);
             }
 
             // 4. 초대 상태 업데이트
@@ -429,14 +418,7 @@ export class InviteService {
             });
             await manager.save(collaborator);
 
-            // 5. 개인 세션 생성
-            const session = manager.create(Session, {
-                track: { id: inviteTarget.invite_batch.track.id },
-                user: { id: userId },
-                name: `${user.username}'s Session`,
-                description: '개인 작업 세션'
-            });
-            await manager.save(session);
+
 
             return {
                 success: true,

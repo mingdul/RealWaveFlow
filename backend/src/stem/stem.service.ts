@@ -19,7 +19,7 @@ export class StemService {
     ) {}
 
     async createStem(createStemDto: CreateStemDto) {
-        const { category_id, upstream_id, file_name, stem_hash, file_path, key, bpm } = createStemDto;
+        const { category_id, upstream_id, file_name, stem_hash, file_path, key, bpm, user_id } = createStemDto;
         const stem = this.stemRepository.create({
             category: { id: category_id },
             upstream: { id: upstream_id },
@@ -28,6 +28,7 @@ export class StemService {
             file_path,
             key,
             bpm,
+            user: { id: user_id },
             uploaded_at: new Date(),
         });
 
