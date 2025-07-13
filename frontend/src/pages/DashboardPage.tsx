@@ -9,6 +9,7 @@ import Button from '../components/Button';
 import trackService from '../services/trackService';
 import { Track } from '../types/api';
 import Logo from '../components/Logo';
+import InitProjectModal from '../components/InitProjectModal';
 
 const DashboardPage = () => {
   const navigate = useNavigate();
@@ -22,6 +23,17 @@ const DashboardPage = () => {
   const [filter, setFilter] = useState<'owned' | 'collaborated'>('owned');
   const [isCreating, setIsCreating] = useState(false);
   const [editingTrack, setEditingTrack] = useState<Track | null>(null);
+  const [initProjectModal, setInitProjectModal] = useState<{
+    isOpen: boolean;
+    projectId: string;
+    projectName: string;
+    projectDescription: string;
+  }>({
+    isOpen: false,
+    projectId: '',
+    projectName: '',
+    projectDescription: ''
+  });
   // const [testMessage, setTestMessage] = useState('');
 
 
@@ -76,7 +88,7 @@ const DashboardPage = () => {
   };
 
   const handleTrackClick = (trackId: string) => {
-    navigate(`/track/${trackId}`);
+    navigate(`/master?trackId=${trackId}`);
   };
 
   const handleEditTrack = (track: Track, e: React.MouseEvent) => {
@@ -106,12 +118,17 @@ const DashboardPage = () => {
       showSuccess('New track created successfully.');
       setIsCreating(false);
       
-      // 첫 번째 음악 파일을 업로드하기 위해 InitProjectPage로 이동
+      // 첫 번째 음악 파일을 업로드하기 위해 InitProjectModal 띄우기
       if (result.success && result.data) {
         console.log('[DEBUG] Track creation result:', result);
-        navigate(`/init-project?projectId=${result.data.id}&projectName=${trackData.name}&projectDescription=${trackData.description || ''}`);
+        setInitProjectModal({
+          isOpen: true,
+          projectId: result.data.id,
+          projectName: trackData.name,
+          projectDescription: trackData.description || ''
+        });
       } else {
-        // / 트랙 목록 새로고침 
+        // 트랙 목록 새로고침 
         await loadTracks();
       }
     } catch (error: any) {
@@ -129,6 +146,20 @@ const DashboardPage = () => {
     } catch (error: any) {
       showError(error.message || 'Failed to update track.');
     }
+  };
+
+  const handleCloseInitProjectModal = () => {
+    setInitProjectModal({
+      isOpen: false,
+      projectId: '',
+      projectName: '',
+      projectDescription: ''
+    });
+  };
+
+  const handleCompleteInitProject = () => {
+    handleCloseInitProjectModal();
+    navigate(`/master?trackId=${initProjectModal.projectId}`);
   };
 
   const ProjectCard = ({ track, isNewProject = false }: { track?: Track, isNewProject?: boolean }) => {
@@ -390,6 +421,16 @@ const DashboardPage = () => {
           onSubmit={handleUpdateTrack}
         />
       )}
+
+      {/* Init Project Modal */}
+      <InitProjectModal 
+        isOpen={initProjectModal.isOpen}
+        onClose={handleCloseInitProjectModal}
+        projectId={initProjectModal.projectId}
+        projectName={initProjectModal.projectName}
+        projectDescription={initProjectModal.projectDescription}
+        onComplete={handleCompleteInitProject}
+      />
     </div>
   );
 };
