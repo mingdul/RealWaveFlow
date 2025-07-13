@@ -1,12 +1,14 @@
 import { Module } from '@nestjs/common';
 import { WebhookController } from './webhook.controller';
-import { StemFileModule } from 'src/stem-file/stem-file.module';
+import { StemJobModule } from 'src/stem-job/stem-job.module';
+import { StageModule } from 'src/stage/stage.module';
 import { SqsModule } from 'src/sqs/sqs.module';
 import { WebSocketModule } from 'src/websocket/websocket.module';
 
 @Module({
   imports: [
-    StemFileModule,
+    StemJobModule,
+    StageModule,
     SqsModule,
     WebSocketModule,
   ],

@@ -128,4 +128,34 @@ export class SqsService {
           throw error;
         }
     }
+
+    // 믹싱 작업 요청
+    async sendMixingStemsRequest(data: {
+        stageId: string;
+        stem_paths: string[];
+      }) {
+        const message = {
+          task: 'app.tasks.mix_stems_and_upload',
+          id: `mixing-${data.stageId}-${Date.now()}`,
+          args: [],
+          kwargs: {
+            stageId: data.stageId,
+            stem_paths: data.stem_paths,
+          },
+        };
+    
+        try {
+          const command = new SendMessageCommand({
+            QueueUrl: this.queueUrl,
+            MessageBody: JSON.stringify(message),
+          });
+    
+          const result = await this.sqsClient.send(command);
+          this.logger.log(`믹싱 작업 요청 전송: ${data.stageId}`);
+          return result;
+        } catch (error) {
+          this.logger.error('SQS 메시지 전송 실패:', error);
+          throw error;
+        }
+      }
 }

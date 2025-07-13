@@ -1,14 +1,18 @@
-import { BadRequestException, Injectable, NotFoundException } from '@nestjs/common';
+import { BadRequestException, Injectable, Logger, NotFoundException } from '@nestjs/common';
 import { InjectRepository } from '@nestjs/typeorm';
 import { Repository } from 'typeorm';
 import { Stage } from './stage.entity';
 import { CreateStageDto } from './dto/createStage.dto';
+import { SqsService } from '../sqs/service/sqs.service';
 
 @Injectable()
 export class StageService {
+    private readonly logger = new Logger(StageService.name);
+    
     constructor(    
         @InjectRepository(Stage)
         private stageRepository: Repository<Stage>,
+        private sqsService: SqsService,
     ) {}
 
     async createStage(createStageDto: CreateStageDto) {
@@ -67,5 +71,38 @@ export class StageService {
             stage,
         };
     }
-    
+
+    async updateGuidePath(stageId: string, guidePath: string): Promise<Stage> {
+        const stage = await this.stageRepository.findOne({
+            where: { id: stageId }
+        });
+
+        if (!stage) {
+            throw new NotFoundException('Stage not found');
+        }
+
+        stage.guide_path = guidePath;
+        const updatedStage = await this.stageRepository.save(stage);
+        
+        this.logger.log(`Stage guide path 업데이트 완료: ${stageId} -> ${guidePath}`);
+        return updatedStage;
+    }
+
+    async requestStemMixing(stageId: string, stemPaths: string[]): Promise<void> {
+        const stage = await this.stageRepository.findOne({
+            where: { id: stageId }
+        });
+
+        if (!stage) {
+            throw new NotFoundException('Stage not found');
+        }
+
+        // SQS로 믹싱 요청 보내기
+        await this.sqsService.sendMixingStemsRequest({
+            stageId: stageId,
+            stem_paths: stemPaths,
+        });
+
+        this.logger.log(`스템 믹싱 요청 전송: ${stageId}, 스템 개수: ${stemPaths.length}`);
+    }
 }
