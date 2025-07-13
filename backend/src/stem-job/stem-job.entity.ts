@@ -32,6 +32,9 @@ export class StemJob {
     @Column({ name: 'track_id' , nullable: true , default: null})
     track_id : string;
 
+    @Column({ name: 'audio_wave_path', nullable: true, default: null})
+    audio_wave_path : string;
+
     @Column({ type: 'timestamp' })
     uploaded_at : Date;
 

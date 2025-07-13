@@ -158,12 +158,19 @@ export class WebhookController {
         timestamp: string;
         original_filename?: string;
         processing_time?: number;
+        audio_wave_path?: string;
     }) {
         this.logger.log(`작업 완료 알림 수신: ${data.stemId} (상태: ${data.status})`);
 
         try {
             if (data.status === 'SUCCESS') {
-                // 성공 시 StemJob을 Stem으로 변환 (version-Stem도 동시 생성)
+                // 성공 시 audio_wave_path 업데이트 (파형 분석 완료)
+                if (data.audio_wave_path) {
+                    await this.stemJobService.updateJobWithWavePath(data.stemId, data.audio_wave_path);
+                    this.logger.log(`파형 path 업데이트 완료: ${data.stemId} -> ${data.audio_wave_path}`);
+                }
+                
+                // StemJob을 Stem으로 변환 (version-Stem도 동시 생성)
                 const stem = await this.stemJobService.convertJobToStem(data.stemId, data.userId);
                 
                 if (stem) {

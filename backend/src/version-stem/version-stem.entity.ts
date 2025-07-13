@@ -27,6 +27,10 @@ export class VersionStem {
     @Column({ type: 'varchar' , default: null})
     bpm : string;
 
+    
+    @Column({ type: 'varchar', default: null})
+    audio_wave_path : string;
+
     @ManyToOne(() => Category, (category) => category.version_stems, {
         cascade: true,
         onDelete: 'CASCADE',

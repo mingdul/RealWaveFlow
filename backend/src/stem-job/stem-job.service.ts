@@ -100,6 +100,16 @@ export class StemJobService {
         return await this.stemJobRepository.save(job);
     }
 
+    async updateJobWithWavePath(jobId: string, audioWavePath: string): Promise<StemJob | null> {
+        const job = await this.stemJobRepository.findOne({ where: { id: jobId } });
+        if (!job) {
+            return null;
+        }
+
+        job.audio_wave_path = audioWavePath;
+        return await this.stemJobRepository.save(job);
+    }
+
     async deleteJob(jobId: string): Promise<void> {
         await this.stemJobRepository.delete(jobId);
         this.logger.log(`Stem job 삭제 완료: ${jobId}`);
@@ -123,6 +133,7 @@ export class StemJobService {
             file_path: job.file_path,
             key: job.key,
             bpm: job.bpm,
+            audio_wave_path: job.audio_wave_path,
             category: { id: job.category_id },
             upstream: job.upstream_id ? { id: job.upstream_id } : null,
             uploaded_at: new Date(),
@@ -138,6 +149,7 @@ export class StemJobService {
                 file_path: job.file_path,
                 key: job.key,
                 bpm: job.bpm,
+                audio_wave_path: job.audio_wave_path,
                 category_id: job.category_id,
                 stage_id: job.stage_id,
                 user_id: userId,

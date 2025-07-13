@@ -23,6 +23,9 @@ export class Stem {
     @Column({ type: 'varchar' , default: null})
     bpm : string;
 
+    @Column({ type: 'varchar', default: null})
+    audio_wave_path : string;
+
     @ManyToOne(() => Category, (category) => category.stems, {
         cascade: true,
         onDelete: 'CASCADE',
