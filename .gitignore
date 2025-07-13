@@ -98,7 +98,6 @@ Thumbs.db
 
 # Audio files (for development)
 *.mp3
-*.wav
 *.flac
 *.aac
 uploads/
