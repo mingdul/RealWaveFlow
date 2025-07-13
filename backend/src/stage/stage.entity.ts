@@ -16,7 +16,7 @@ export class Stage {
     @Column({ type: 'text' })
     description : string;
 
-    @Column({ type: 'number' })
+    @Column({ type: 'int' })
     take : number;
 
     @Column({ type: 'varchar', default: 'active' })
