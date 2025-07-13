@@ -1,6 +1,7 @@
 import React from 'react';
 import { ChevronLeft, Bell, Settings } from 'lucide-react';
 import { Button } from './';
+import Logo from './Logo';
 
 interface TrackHeaderProps {
   onBack?: () => void;
@@ -19,7 +20,7 @@ const TrackHeader: React.FC<TrackHeaderProps> = ({
         <Button variant="ghost" size="sm" className="p-2" onClick={onBack}>
           <ChevronLeft size={20} />
         </Button>
-        <h1 className="text-2xl font-bold text-white">WAVEFLOW</h1>
+        <Logo/>
       </div>
       <div className="flex items-center gap-4">
         <Button variant="ghost" size="sm" className="p-2" onClick={onNotificationClick}>
