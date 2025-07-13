@@ -11,15 +11,15 @@ export class VersionStem {
     file_name : string;
 
     @Column({ type: 'varchar' })
-    stem_type : string;
+    stem_hash : string;
 
     @Column({ type: 'varchar' })
     file_path : string;
 
-    @Column({ type: 'varchar' })
+    @Column({ type: 'varchar' , default: null})
     key : string;
 
-    @Column({ type: 'varchar' })
+    @Column({ type: 'varchar' , default: null})
     bpm : string;
 
     @ManyToOne(() => Category, (category) => category.stems, {
