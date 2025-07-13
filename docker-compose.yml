@@ -1,14 +1,14 @@
 services:
   backend:
     build: 
-      context: ./back-end
+      context: ./backend
       dockerfile: Dockerfile
     container_name: waveflow-backend
     restart: unless-stopped
     ports:
       - "8080:3000"
     env_file:
-      - ./back-end/.env
+      - ./backend/.env
     environment:
       - NODE_ENV=development
     # 현재 개발 단계임. NODE_ENV 수정 금지.
@@ -24,7 +24,7 @@ services:
 
   frontend:
     build:
-      context: ./front-end
+      context: ./frontend
       dockerfile: Dockerfile
       args:
         VITE_API_URL: ${VITE_API_URL:-http://13.125.231.115:8080}
