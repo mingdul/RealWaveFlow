@@ -12,6 +12,7 @@ import { UpstreamCommentModule } from './upstream-comment/upstream-comment.modul
 import { StemJobModule } from './stem-job/stem-job.module';
 import { StreamingModule } from './streaming/streaming.module';
 import { DownloadModule } from './download/download.module';
+import { InviteModule } from './invite/invite.module';
 
 @Module({
   imports: [
@@ -28,6 +29,7 @@ import { DownloadModule } from './download/download.module';
     StemJobModule,
     StreamingModule,
     DownloadModule,
+    InviteModule,
   ],
   controllers: [],
   providers: [],
