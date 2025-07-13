@@ -140,6 +140,7 @@ export class UpstreamReviewService {
               file_name: stem.file_name,
               key: stem.key,
               bpm: stem.bpm,
+              audio_wave_path: stem.audio_wave_path,
               user_id: upstream.user.id,
               category_id: stem.category.id,
               stage_id: stage.id,
