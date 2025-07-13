@@ -3,6 +3,7 @@ import { StemJob } from './stem-job.entity';
 import { Repository } from 'typeorm';
 import { InjectRepository } from '@nestjs/typeorm';
 import { Stem } from '../stem/stem.entity';
+import { VersionStemService } from '../version-stem/version-stem.service';
 import { SqsService } from '../sqs/service/sqs.service';
 
 @Injectable()
@@ -15,6 +16,7 @@ export class StemJobService {
         @InjectRepository(Stem)
         private stemRepository: Repository<Stem>,
         private sqsService: SqsService,
+        private versionStemService: VersionStemService,
     ) {}
 
     async createJob(jobData: {
@@ -45,6 +47,7 @@ export class StemJobService {
             userId: userId,
             trackId: jobData.track_id,
             stemId: savedJob.id,
+            stageId: jobData.stage_id,
             filepath: jobData.file_path,
             timestamp: new Date().toISOString(),
             original_filename: jobData.file_name,
@@ -64,12 +67,12 @@ export class StemJobService {
         });
     }
 
-    async checkDuplicateHash(trackId: string, audioHash: string): Promise<boolean> {
-        // stem 테이블에서 해당 트랙의 해시가 이미 존재하는지 확인
+    async checkDuplicateHash(trackId: string, audioHash: string, stageId: string): Promise<boolean> {
+        // stem 테이블에서 해당 트랙과 스테이지의 해시가 이미 존재하는지 확인
         const existingStem = await this.stemRepository.findOne({
             where: { 
                 stem_hash: audioHash,
-                upstream: { stage: { track: { id: trackId } } }
+                upstream: { stage: { track: { id: trackId }, id: stageId } }
             },
             relations: ['upstream', 'upstream.stage', 'upstream.stage.track']
         });
@@ -102,7 +105,7 @@ export class StemJobService {
         this.logger.log(`Stem job 삭제 완료: ${jobId}`);
     }
 
-    async convertJobToStem(jobId: string): Promise<Stem | null> {
+    async convertJobToStem(jobId: string, userId: string): Promise<Stem | null> {
         const job = await this.stemJobRepository.findOne({ where: { id: jobId } });
         if (!job) {
             return null;
@@ -126,6 +129,26 @@ export class StemJobService {
         });
 
         const savedStem = await this.stemRepository.save(stem);
+        
+        // Version-Stem 생성 (Stem → version-Stem 변환)
+        try {
+            await this.versionStemService.createVersionStem({
+                file_name: job.file_name,
+                stem_hash: job.stem_hash,
+                file_path: job.file_path,
+                key: job.key,
+                bpm: job.bpm,
+                category_id: job.category_id,
+                stage_id: job.stage_id,
+                user_id: userId,
+                take: 1, // 기본값으로 1 설정
+            });
+            
+            this.logger.log(`Version-Stem 생성 완료: ${savedStem.id}`);
+        } catch (versionStemError) {
+            this.logger.error(`Version-Stem 생성 실패: ${savedStem.id}`, versionStemError);
+            // version-stem 생성 실패해도 stem은 이미 생성되었으므로 계속 진행
+        }
         
         // job 삭제
         await this.deleteJob(jobId);

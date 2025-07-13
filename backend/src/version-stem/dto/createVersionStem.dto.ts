@@ -1,4 +1,4 @@
-import { IsNotEmpty, IsOptional, IsString, IsUUID } from 'class-validator';
+import { IsNotEmpty, IsOptional, IsString, IsUUID, IsNumber } from 'class-validator';
 
 export class CreateVersionStemDto {
     @IsString()
@@ -33,4 +33,7 @@ export class CreateVersionStemDto {
     @IsNotEmpty()
     user_id: string;
 
+    @IsNumber()
+    @IsNotEmpty()
+    take: number;
 }

@@ -4,11 +4,13 @@ import { StageService } from './stage.service';
 import { StageController } from './stage.controller';
 import { Stage } from './stage.entity';
 import { SqsModule } from '../sqs/sqs.module';
+import { VersionStemModule } from '../version-stem/version-stem.module';
 
 @Module({
   imports: [
     TypeOrmModule.forFeature([Stage]),
     SqsModule,
+    VersionStemModule,
   ],
   controllers: [StageController],
   providers: [StageService],

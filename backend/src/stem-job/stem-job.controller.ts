@@ -51,6 +51,7 @@ export class StemJobController {
         version: initData.version,
         track_id: track.data.id,
         user_id: req.user.id,
+        status : 'approve',
       });
       
       this.logger.log(`Stage 생성 완료: ${stage.stage.id}`);
@@ -115,7 +116,28 @@ export class StemJobController {
     }
   }
 
-  @Post('request-mixing')
+  @Post('request-mixing-init')
+  async requestMixingInit(@Body() requestData: {
+    stageId: string;
+  }) {
+    try {
+      await this.stageService.requestStemMixingByStageId(requestData.stageId);
+      return {
+        success: true,
+        message: 'Mixing initialization request sent successfully',
+        stageId: requestData.stageId,
+      };
+    } catch (error) {
+      this.logger.error('믹싱 초기화 요청 실패:', error);
+      return {
+        success: false,
+        message: 'Failed to send mixing initialization request',
+        error: error.message,
+      };
+    }
+  }
+
+  @Post('request-mixing') // 나중에 init 말고 add 할때 쓸예정
   async requestMixing(@Body() requestData: {
     stageId: string;
     stem_paths: string[];

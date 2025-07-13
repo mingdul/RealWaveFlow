@@ -20,4 +20,7 @@ export class CreateStageDto {
     @IsUUID()
     @IsNotEmpty()
     user_id: string;
+
+    @IsString()
+    status : string;
 }
