@@ -4,15 +4,13 @@ import { Repository, DataSource } from 'typeorm';
 import { InviteLink } from './invite.entity';
 import { InviteBatch } from './invite-batch.entity';
 import { InviteTarget } from './invite-target.entity';
+import { Track } from 'src/track/track.entity';
 import { TrackCollaborator } from '../track_collaborator/track_collaborator.entity';
 import { User } from '../users/user.entity';
-import { Session } from '../session/session.entity';
 import { EmailService } from '../email/email.service';
 import { SendInviteDto } from './dto/send-invite.dto';
 import { AcceptInviteDto } from './dto/accept-invite.dto';
 import { DeclineInviteDto } from './dto/decline-invite.dto';
-
-
 import { v4 as uuidv4 } from 'uuid';
 
 @Injectable()
@@ -28,107 +26,127 @@ export class InviteService {
         private trackCollaboratorRepository: Repository<TrackCollaborator>,
         @InjectRepository(User)
         private userRepository: Repository<User>,
-        @InjectRepository(Session)
-        private sessionRepository: Repository<Session>,
         private dataSource: DataSource,
         private emailService: EmailService,
 
 
     ) {}
 
-    // 기존 메서드(초대 링크 생성 방식 메서드, 일단 걍 냅둠)
+    // 기존 초대 링크 생성
     async createInviteLink(trackId: string){
-        const result = await this.inviteRepository.findOne({ where: { track: {id: trackId} } });
-        if (result) {
-          return {success: true, message: 'Invite link already exists', invite: result};
-        }
-    
-        const invite = this.inviteRepository.create({
-          track: {id: trackId},
-          token: uuidv4(),
-          uses: 0,
+        const inviteLink = this.inviteRepository.create({
+            track_id: trackId,
+            token: uuidv4(),
+            expires_at: new Date(Date.now() + 7 * 24 * 60 * 60 * 1000), // 7일
+            uses: 0
         });
-    
-        const savedInvite = await this.inviteRepository.save(invite);
-        return {success: true, message: 'Invite link created successfully', invite: savedInvite};
+
+        return await this.inviteRepository.save(inviteLink);
     }
 
+    // 토큰으로 초대 정보 조회
     async getInviteByToken(token: string){
-        const invite = await this.inviteRepository.findOne({
-          where: { token },
+        const inviteLink = await this.inviteRepository.findOne({
+            where: { token },
+            relations: ['track_id']
         });
-    
-        if (!invite) {
-          throw new NotFoundException('Invite link not found');
+
+        if (!inviteLink) {
+            throw new NotFoundException('초대 링크를 찾을 수 없습니다.');
         }
-    
-        return invite;
-    }
-    
-    async incrementUses(token: string): Promise<void> {
-        const invite = await this.getInviteByToken(token);
-        invite.uses += 1;
-        await this.inviteRepository.save(invite);
+
+        return inviteLink;
     }
 
-    // 새로운 이메일 기반 초대 시스템 //
-    
-    //이메일 중복 체크 - 실시간 검증용 
+    // 사용 횟수 증가
+    async incrementUses(token: string): Promise<void> {
+        await this.inviteRepository.increment({ token }, 'uses', 1);
+    }
+
+    // 이메일 중복 체크
     async checkEmailDuplicate(trackId: string, email: string): Promise<{ isDuplicate: boolean; message?: string }> {
-        // 1. 이미 협업자인지 체크
-        const existingCollaborator = await this.trackCollaboratorRepository
-            .createQueryBuilder('tc')
-            .leftJoin('tc.user_id', 'user')
-            .where('tc.track_id = :trackId', { trackId })
-            .andWhere('user.email = :email', { email })
-            .getOne();
+        // 1. 해당 트랙의 소유자 이메일 체크
+        const track = await this.inviteRepository.manager.findOne(Track, {
+            where: { id: trackId },
+            relations: ['owner_id']
+        });
+
+        if (track?.owner_id?.email === email) {
+            return {
+                isDuplicate: true,
+                message: '트랙 소유자는 초대할 수 없습니다.'
+            };
+        }
+
+        // 2. 이미 협업자인지 체크
+        const existingCollaborator = await this.trackCollaboratorRepository.findOne({
+            where: {
+                track_id: { id: trackId },
+                user_id: { email: email }
+            },
+            relations: ['user_id']
+        });
 
         if (existingCollaborator) {
             return {
                 isDuplicate: true,
-                message: '이미 트랙에 참여 중인 사용자입니다.' 
+                message: '이미 트랙에 참여 중인 사용자입니다.'
             };
         }
 
-        // 2. 대기 중인 초대가 있는지 체크
-        const pendingInvite = await this.inviteTargetRepository
-            .createQueryBuilder('it')
-            .leftJoin('it.invite_batch', 'ib')
-            .where('ib.track_id = :trackId', { trackId })
-            .andWhere('it.email = :email', { email })
-            .andWhere('it.status = :status', { status: 'pending' })
-            .andWhere('ib.status = :batchStatus', { batchStatus: 'active' })
-            .andWhere('ib.expires_at > :now', { now: new Date() })
-            .getOne();
+        // 3. 이미 초대된 이메일인지 체크 (pending 상태)
+        const existingInvite = await this.inviteTargetRepository.findOne({
+            where: {
+                email: email,
+                status: 'pending',
+                invite_batch: {
+                    track: { id: trackId }
+                }
+            },
+            relations: ['invite_batch']
+        });
 
-        if (pendingInvite) {
+        if (existingInvite) {
             return {
                 isDuplicate: true,
-                message: '이미 초대가 발송된 이메일입니다.'
+                message: '이미 초대된 이메일입니다.'
             };
         }
 
         return { isDuplicate: false };
     }
 
-    
-     //다중 이메일 초대 발송
-     async sendInvites(sendInviteDto: SendInviteDto, inviterId: string): Promise<{
+    // 다중 이메일 초대 발송
+    async sendInvites(sendInviteDto: SendInviteDto, inviterId: string): Promise<{
         success: boolean;
         message: string;
         batch_id: string;
         sent_count: number;
         failed_emails: string[];
     }> {
-        const { track_id, emails } = sendInviteDto;
+        const { trackId, emails, expiresInDays = 7 } = sendInviteDto;
 
-        // 1. 중복 이메일 필터링
+        // 1. 트랙 소유자 확인
+        const track = await this.inviteRepository.manager.findOne(Track, {
+            where: { id: trackId },
+            relations: ['owner_id']
+        });
+
+        if (!track) {
+            throw new NotFoundException('트랙을 찾을 수 없습니다.');
+        }
+
+        if (track.owner_id.id !== inviterId) {
+            throw new BadRequestException('트랙 소유자만 초대를 발송할 수 있습니다.');
+        }
+
+        // 2. 이메일 유효성 검사 및 중복 체크
         const validEmails: string[] = [];
         const failedEmails: string[] = [];
 
         for (const email of emails) {
-            const checkResult = await this.checkEmailDuplicate(track_id, email);
-            if (checkResult.isDuplicate) {
+            const duplicateCheck = await this.checkEmailDuplicate(trackId, email);
+            if (duplicateCheck.isDuplicate) {
                 failedEmails.push(email);
             } else {
                 validEmails.push(email);
@@ -136,41 +154,39 @@ export class InviteService {
         }
 
         if (validEmails.length === 0) {
-            throw new BadRequestException('초대 가능한 이메일이 없습니다.');
+            return {
+                success: false,
+                message: '유효한 이메일이 없습니다.',
+                batch_id: '',
+                sent_count: 0,
+                failed_emails: failedEmails
+            };
         }
 
-        // 2. InviteBatch 생성
-        const expiresAt = new Date();
-        expiresAt.setHours(expiresAt.getHours() + 24); // 24시간 후 만료
-
-        const inviteBatch = this.inviteBatchRepository.create({
-            track: { id: track_id },
+        // 3. 초대 배치 생성
+        const expiresAt = new Date(Date.now() + expiresInDays * 24 * 60 * 60 * 1000);
+        const savedBatch = await this.inviteBatchRepository.save({
+            track: { id: trackId },
             inviter: { id: inviterId },
-            expires_at: expiresAt,
-            status: 'active'
+            expires_at: expiresAt
         });
 
-        const savedBatch = await this.inviteBatchRepository.save(inviteBatch);
+        // 4. 초대 대상 생성 및 이메일 발송
+        const inviteTargets = validEmails.map(email => ({
+            email,
+            token: uuidv4(),
+            status: 'pending',
+            invite_batch: { id: savedBatch.id }
+        }));
 
-        // 3. InviteTarget들 생성
-        const inviteTargets = validEmails.map(email => 
-            this.inviteTargetRepository.create({
-                invite_batch: savedBatch,
-                email,
-                token: uuidv4(),
-                status: 'pending'
-            })
-        );
+        const savedTargets = await this.inviteTargetRepository.save(inviteTargets);
 
-        await this.inviteTargetRepository.save(inviteTargets);
-
-        // 4. 이메일 발송
         const emailResults = await Promise.allSettled(
-            inviteTargets.map(async (target) => {
+            savedTargets.map(async (target) => {
                 const emailResult = await this.emailService.sendInviteEmail(
                     target.email,
                     {
-                        trackName: savedBatch.track.name,
+                        trackName: savedBatch.track.title,
                         inviterName: savedBatch.inviter.username,
                         inviteToken: target.token,
                         expiresAt: savedBatch.expires_at
@@ -300,14 +316,15 @@ export class InviteService {
                 });
                 await manager.save(collaborator);
 
+                // TODO: Session 엔티티가 없어서 임시로 주석 처리
                 // 개인 세션 생성
-                const session = manager.create(Session, {
-                    track: { id: inviteTarget.invite_batch.track.id },
-                    user: { id: targetUserId },
-                    name: `${existingUser.username}'s Session`,
-                    description: '개인 작업 세션'
-                });
-                await manager.save(session);
+                // const session = manager.create(Session, {
+                //     track: { id: inviteTarget.invite_batch.track.id },
+                //     user: { id: targetUserId },
+                //     name: `${existingUser.username}'s Session`,
+                //     description: '개인 작업 세션'
+                // });
+                // await manager.save(session);
             }
 
             // 4. 초대 상태 업데이트
@@ -388,11 +405,9 @@ export class InviteService {
         });
     }
 
-
     /**
-     * 회원가입 완료 후 협업자 등록 처리
+     * 회원가입 완료 후 협업자 등록
      */
-
     async completeInviteAfterSignup(token: string, userId: string): Promise<{
         success: boolean;
         message: string;
@@ -401,23 +416,41 @@ export class InviteService {
         return await this.dataSource.transaction(async manager => {
             // 1. 초대 정보 조회
             const inviteTarget = await manager.findOne(InviteTarget, {
-                where: { token, status: 'accepted' },
-                relations: ['invite_batch', 'invite_batch.track']
+                where: { token },
+                relations: ['invite_batch']
             });
 
             if (!inviteTarget) {
-                throw new NotFoundException('유효하지 않은 초대 정보입니다.');
+                throw new NotFoundException('초대 링크를 찾을 수 없습니다.');
             }
 
-            // 2. 사용자 정보 확인
-            const user = await manager.findOne(User, { where: { id: userId } });
+            if (inviteTarget.status !== 'accepted') {
+                throw new BadRequestException('수락되지 않은 초대입니다.');
+            }
+
+            // 2. 사용자 정보 조회
+            const user = await manager.findOne(User, {
+                where: { id: userId }
+            });
+
             if (!user) {
                 throw new NotFoundException('사용자를 찾을 수 없습니다.');
             }
 
-            // 3. 이메일 일치 확인
-            if (user.email !== inviteTarget.email) {
-                throw new BadRequestException('초대받은 이메일과 가입한 이메일이 일치하지 않습니다.');
+            // 3. 이미 협업자인지 확인
+            const existingCollaborator = await manager.findOne(TrackCollaborator, {
+                where: {
+                    track_id: { id: inviteTarget.invite_batch.track.id },
+                    user_id: { id: userId }
+                }
+            });
+
+            if (existingCollaborator) {
+                return {
+                    success: true,
+                    message: '이미 트랙에 참여 중입니다.',
+                    track_id: inviteTarget.invite_batch.track.id
+                };
             }
 
             // 4. 협업자 등록
@@ -429,14 +462,15 @@ export class InviteService {
             });
             await manager.save(collaborator);
 
+            // TODO: Session 엔티티가 없어서 임시로 주석 처리
             // 5. 개인 세션 생성
-            const session = manager.create(Session, {
-                track: { id: inviteTarget.invite_batch.track.id },
-                user: { id: userId },
-                name: `${user.username}'s Session`,
-                description: '개인 작업 세션'
-            });
-            await manager.save(session);
+            // const session = manager.create(Session, {
+            //     track: { id: inviteTarget.invite_batch.track.id },
+            //     user: { id: userId },
+            //     name: `${user.username}'s Session`,
+            //     description: '개인 작업 세션'
+            // });
+            // await manager.save(session);
 
             return {
                 success: true,
@@ -446,29 +480,22 @@ export class InviteService {
         });
     }
 
-
     /**
-     * 배치 완료 상태 체크 및 업데이트
+     * 배치 완료 상태 체크
      */
-
-    // 초대 완료 여부 체크
-
     private async checkBatchCompletion(batchId: string, manager: any): Promise<void> {
-        const batch = await manager.findOne(InviteBatch, {
-            where: { id: batchId },
-            relations: ['targets']
+        const pendingInvites = await manager.count(InviteTarget, {
+            where: {
+                invite_batch: { id: batchId },
+                status: 'pending'
+            }
         });
 
-        if (!batch) return;
-
-        // 모든 타겟이 응답했는지 확인
-        const allResponded = batch.targets.every(target => 
-            target.status === 'accepted' || target.status === 'declined'
-        );
-
-        if (allResponded) {
-            batch.status = 'completed';
-            await manager.save(batch);
+        if (pendingInvites === 0) {
+            // 모든 초대가 처리되었으므로 배치 상태 업데이트
+            await manager.update(InviteBatch, { id: batchId }, { 
+                completed_at: new Date() 
+            });
         }
     }
 }
