@@ -1,7 +1,13 @@
-import React from 'react';
-import ReactDOM from 'react-dom/client';
+// index.tsx 또는 main.tsx
+import { StrictMode } from 'react';
+import { createRoot } from 'react-dom/client';
 
-const App = () => <div>Hello World</div>;
+import './index.css';
 
-const root = ReactDOM.createRoot(document.getElementById('root')!);
-root.render(<App />);
+import App from './App.tsx';
+
+createRoot(document.getElementById('root')!).render(
+  <StrictMode>
+    <App />
+  </StrictMode>,
+);
