@@ -9,6 +9,7 @@ import { AuthModule } from './auth/auth.module';
 import { VersionStemModule } from './version-stem/version-stem.module';
 import { UpstreamModule } from './upstream/upstream.module';
 import { UpstreamCommentModule } from './upstream-comment/upstream-comment.module';
+import { StemJobModule } from './stem-job/stem-job.module';
 
 @Module({
   imports: [StemModule, 
@@ -21,6 +22,7 @@ import { UpstreamCommentModule } from './upstream-comment/upstream-comment.modul
     VersionStemModule,
     UpstreamModule,
     UpstreamCommentModule,
+    StemJobModule,
 
   ], // 추후 다른 모듈들 (예: AuthModule 등)을 여기에 추가
     controllers: [], // 라우팅 처리
