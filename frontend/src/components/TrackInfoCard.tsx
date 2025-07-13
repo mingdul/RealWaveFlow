@@ -24,7 +24,10 @@ const TrackInfoCard: React.FC<TrackInfoCardProps> = ({
       </div>
 
       {/* Track Details */}
+      
       <div className="flex-1">
+
+        {/* Track Info */}
         <h2 className="text-4xl font-bold text-white mb-2">{track.name}</h2>
         <p className="text-gray-400 text-lg mb-4">{track.created_date}</p>
         <div className="flex gap-6 mb-4">
@@ -37,6 +40,10 @@ const TrackInfoCard: React.FC<TrackInfoCardProps> = ({
           <h3 className="text-lg font-semibold text-white mb-2">{track.owner_id.username}</h3>
           <p className="text-gray-300 leading-relaxed">{track.description}</p>
         </div>
+
+        {/* version Info */}
+        
+
 
         <div className="flex gap-4 mb-6">
           <Button 

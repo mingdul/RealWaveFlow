@@ -332,17 +332,16 @@ export interface CreateMasterTakeDto {
 // masterStem
 export interface MasterStem {
   id: string;
-  stem_hash: string;
-  file_path: string;
   file_name: string;
-  key?: string;
+  file_path: string;
   tag?: string;
+  key?: string;
   description?: string;
-  take: number;
-  track: Track;
-  masterTake: MasterTake;
-  category: Category;
-  uploaded_by: User;
+  track_id: string;
+  category_id: string;
+  session_id: string;
+  created_at: string;
+  updated_at: string;
 }
 
 export interface CreateMasterStemDto {

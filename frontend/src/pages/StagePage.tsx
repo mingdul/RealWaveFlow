@@ -1,6 +1,10 @@
-import React, { useState } from 'react';
+import React, { useState, useEffect } from 'react';
+// import { useParams } from 'react-router-dom';
 import { Play, Info, Upload, Bell, Settings} from 'lucide-react';
 import Logo from '../components/Logo';
+import { UploadModal } from '../components';
+import trackService from '../services/trackService';
+import { Track } from '../types/api';
 
 interface VocalUpdate {
   id: string;
@@ -8,11 +12,10 @@ interface VocalUpdate {
   artist: string;
   status: 'ACTIVE' | 'REJECTED';
   description?: string;
-  selected?: boolean;
 }
 
 const StagePage: React.FC = () => {
-  const [, setSelectedCard] = useState<string>('1');
+  const [selectedCardId, setSelectedCardId] = useState<string>('1');
 
   const vocalUpdates: VocalUpdate[] = [
     {
@@ -20,7 +23,6 @@ const StagePage: React.FC = () => {
       title: 'vocal update',
       artist: 'SALLY',
       status: 'ACTIVE',
-      selected: true,
     },
     {
       id: '2',
@@ -68,13 +70,37 @@ const StagePage: React.FC = () => {
     },
   ];
 
-  const CardComponent: React.FC<{ update: VocalUpdate }> = ({ update }) => {
+  const [isUploadModalOpen, setUploadModalOpen] = useState(false);
+  // Mock trackId for testing UploadModal
+  const trackId = "mock-track-123";
+  // const { trackId } = useParams<{ trackId: string }>();
+  const [track, setTrack] = useState<Track | null>(null);
+
+  useEffect(() => {
+    if (trackId) {
+      trackService.getTrackById(trackId)
+        .then(response => {
+          if (response.success) {
+            setTrack(response.data || null);
+          } else {
+            console.error("Failed to fetch track details");
+          }
+        })
+        .catch(error => console.error("Error fetching track details:", error));
+    }
+  }, [trackId]);
+  
+  const handleUploadComplete = () => {
+    //
+  }
+
+  const CardComponent: React.FC<{ update: VocalUpdate; selected: boolean; onClick: () => void; }> = ({ update, selected, onClick }) => {
     const [isHovered, setIsHovered] = useState(false);
 
     return (
       <div
         className={`group relative cursor-pointer rounded-lg p-6 transition-all duration-300 ${
-          update.selected
+          selected
             ? 'border-2 border-purple-400 bg-gradient-to-br from-purple-600 to-purple-700'
             : update.status === 'ACTIVE'
               ? 'bg-gradient-to-br from-purple-800 to-purple-900 hover:from-purple-700 hover:to-purple-800'
@@ -82,7 +108,7 @@ const StagePage: React.FC = () => {
         }`}
         onMouseEnter={() => setIsHovered(true)}
         onMouseLeave={() => setIsHovered(false)}
-        onClick={() => setSelectedCard(update.id)}
+        onClick={onClick}
       >
         {/* Status Badge */}
         <div className='absolute right-4 top-4'>
@@ -128,6 +154,10 @@ const StagePage: React.FC = () => {
       </div>
     );
   };
+
+
+
+
 
   return (
     <div className='min-h-screen bg-gradient-to-br from-purple-900 via-purple-800 to-indigo-900'>
@@ -182,7 +212,9 @@ const StagePage: React.FC = () => {
         <div className='mb-8'>
           <div className='mb-6 flex items-center gap-4'>
             <h3 className='text-xl font-medium text-white'>DROP LIST</h3>
-            <button className='flex items-center gap-2 rounded-md bg-purple-600 px-4 py-2 text-white transition-colors hover:bg-purple-500'>
+            <button className='flex items-center gap-2 rounded-md bg-purple-600 px-4 py-2 text-white transition-colors hover:bg-purple-500'
+              onClick={() => setUploadModalOpen(true)}
+            >
               <Upload size={16} />
               <span className='text-sm font-medium'>UPLOAD</span>
             </button>
@@ -192,10 +224,24 @@ const StagePage: React.FC = () => {
         {/* Cards Grid */}
         <div className='grid grid-cols-1 gap-6 md:grid-cols-2 lg:grid-cols-4'>
           {vocalUpdates.map((update) => (
-            <CardComponent key={update.id} update={update} />
+            <CardComponent 
+              key={update.id} 
+              update={update} 
+              selected={update.id === selectedCardId}
+              onClick={() => setSelectedCardId(update.id)}
+            />
           ))}
         </div>
       </main>
+      {trackId && (
+        <UploadModal
+          isOpen={isUploadModalOpen}
+          onClose={() => setUploadModalOpen(false)}
+          projectId={trackId}
+          projectName={track ? track.name : "Loading..."}
+          onComplete={handleUploadComplete}
+        />
+      )}
     </div>
   );
 };

@@ -291,11 +291,11 @@ const InitProjectModal: React.FC<InitProjectModalProps> = ({
     
     const selectedFiles = state.uploadedFiles.filter(f => f.isSelected && !f.isComplete);
 
-    // 1) MasterTake & Session 생성 (순차)
+    // 1) MasterTake & Session 생성 (순차) => POST /stem-job/init-start 호출 (Track + Stage 생성) 로 바꾸기
     let masterTakeResult, sessionResult;
     try {
-      masterTakeResult = await masterTakeService.createMasterTake({ track_id: projectId });
       sessionResult    = await sessionService.createSession({ name: 'init session', track_id: projectId });
+      masterTakeResult = await masterTakeService.createMasterTake({ track_id: projectId });
     } catch (e) {
       console.error('Init failed', e);
       dispatch({ type: 'SET_UPLOADING', payload: false });
