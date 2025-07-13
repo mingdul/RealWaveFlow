@@ -1,0 +1,21 @@
+import apiClient from "../lib/api";
+
+class InviteService {
+  async createInviteLink(trackId: string) {
+    const response = await apiClient.post(
+      `/invite/${trackId}`,
+      {}, // POST 요청의 body (없으므로 빈 객체)
+      {
+        withCredentials: true, // 올바른 위치
+      }
+    );
+
+    if (!response.data.success) {
+      throw new Error(response.data.message);
+    }
+
+    return response.data.invite ;
+  }
+}
+
+export default new InviteService();
