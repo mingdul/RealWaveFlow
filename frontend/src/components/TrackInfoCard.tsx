@@ -20,20 +20,7 @@ const TrackInfoCard: React.FC<TrackInfoCardProps> = ({
     <div className="flex gap-8 mb-12">
       {/* Album Cover */}
       <div className="flex-shrink-0">
-        <div className="w-80 h-80 bg-gradient-to-br from-orange-500 to-orange-600 rounded-lg shadow-lg flex flex-col items-center justify-center relative overflow-hidden">
-          <div className="absolute inset-0 bg-orange-500"></div>
-          <div className="relative z-10 text-center">
-            <div className="text-blue-800 font-bold text-2xl mb-2">THE</div>
-            <div className="text-blue-800 font-bold text-5xl mb-2">BEATLES</div>
-            <div className="text-blue-800 font-bold text-lg mb-8">Come Together</div>
-            <div className="flex justify-center gap-4 mb-6">
-              {[...Array(4)].map((_, i) => (
-                <div key={i} className="w-12 h-24 bg-blue-800 rounded-sm"></div>
-              ))}
-            </div>
-            <div className="text-blue-800 font-bold text-sm">HEE D MUSIC</div>
-          </div>
-        </div>
+        <img src="/cover.jpg" alt={track.name} className="w-80 h-80 rounded-lg shadow-lg object-cover" />
       </div>
 
       {/* Track Details */}

@@ -43,7 +43,7 @@ const StemListModal: React.FC<StemListModalProps> = ({
       <div className="bg-gray-800 rounded-lg p-6 max-w-4xl w-full mx-4 max-h-[80vh] overflow-y-auto">
         <div className="flex justify-between items-center mb-6">
           <h2 className="text-xl font-bold text-white">
-            모든 스템 보기 - Version {versionNumber}
+            Version Name - Version {versionNumber}
           </h2>
           <button 
             onClick={onClose}
@@ -51,6 +51,13 @@ const StemListModal: React.FC<StemListModalProps> = ({
           >
             <X size={24} />
           </button>
+        
+          <div className="text-xl font-bold text-white flex flex-col gap-2">
+            <h3>Description</h3>
+            <p>this is description</p>
+          </div>
+
+
         </div>
 
         {stems.length === 0 ? (
@@ -59,7 +66,7 @@ const StemListModal: React.FC<StemListModalProps> = ({
             <p className="text-gray-400">이 버전에는 아직 스템이 없습니다.</p>
           </div>
         ) : (
-          <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+          <div className="grid grid-cols-1 md:grid-cols-1 gap-4">
             {stems.map((stem) => (
               <div key={stem.id} className="bg-gray-700 rounded-lg p-4">
                 <div className="flex items-center justify-between mb-3">
@@ -93,7 +100,7 @@ const StemListModal: React.FC<StemListModalProps> = ({
                 </div>
 
                 {/* Waveform Placeholder */}
-                <div className="bg-gray-600 h-16 rounded mb-3 flex items-center justify-center">
+                {/* <div className="bg-gray-600 h-16 rounded mb-3 flex items-center justify-center">
                   <div className="flex items-center gap-1">
                     {Array.from({ length: 30 }, (_, i) => (
                       <div
@@ -112,17 +119,12 @@ const StemListModal: React.FC<StemListModalProps> = ({
                 <div className="flex justify-between text-sm text-gray-400 mt-1">
                   <span>By: {stem.uploader}</span>
                   <span>{stem.uploadDate}</span>
-                </div>
+                </div> */}
               </div>
             ))}
           </div>
         )}
 
-        <div className="flex justify-end mt-6">
-          <Button variant="outline" onClick={onClose}>
-            닫기
-          </Button>
-        </div>
       </div>
     </div>
   );
