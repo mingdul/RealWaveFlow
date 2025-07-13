@@ -21,6 +21,10 @@ export class CreateVersionStemDto {
     @IsOptional()
     bpm: string;
 
+    @IsString()
+    @IsOptional()
+    audio_wave_path: string;
+
     @IsUUID()
     @IsNotEmpty()
     category_id: string;
