@@ -18,6 +18,12 @@ import { ConfigModule } from '@nestjs/config';
 import { TypeOrmModule } from '@nestjs/typeorm';
 import { databaseConfig } from './config/database.config';
 import { SqsModule } from './sqs/sqs.module';
+import { EmailModule } from './email/email.module';
+import { WebhookModule } from './webhook/webhook.module';
+import { TrackCollaboratorModule } from './track_collaborator/track_collaborator.module';
+import { WebSocketModule } from './websocket/websocket.module';
+
+
 @Module({
   imports: [
     ConfigModule.forRoot({ isGlobal: true,  envFilePath: '.env' }),
@@ -38,6 +44,12 @@ import { SqsModule } from './sqs/sqs.module';
     DownloadModule,
     InviteModule,
     SqsModule,
+    EmailModule,
+    WebhookModule,
+    StemJobModule,
+    TrackCollaboratorModule,
+    WebSocketModule,
+
   ], // 추후 다른 모듈들 (예: AuthModule 등)을 여기에 추가
     controllers: [], // 라우팅 처리
   providers: [], // 비즈니스 로직/서비스 제공

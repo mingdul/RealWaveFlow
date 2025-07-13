@@ -10,7 +10,8 @@ import { Stage } from 'src/stage/stage.entity';
 import { Upstream } from 'src/upstream/upstream.entity';
 import { UpstreamComment } from 'src/upstream-comment/upstream-comment.entity';
 import { UpstreamReview } from 'src/upstream-review/upstream-review.entity';
-
+import { InviteLink } from 'src/invite/invite.entity';
+import { StemJob } from 'src/stem-job/stem-job.entity';
 
 export const databaseConfig: TypeOrmModuleOptions = {
   type: 'postgres',
@@ -21,12 +22,14 @@ export const databaseConfig: TypeOrmModuleOptions = {
   database: process.env.DB_NAME,
   entities: [
     User, 
-    Track, 
+    Track,
+    InviteLink, 
     TrackCollaborator,
     Stage,
     StageReviewer,
     Category,
     Stem,
+    StemJob,
     VersionStem,
     Upstream,
     UpstreamComment,
