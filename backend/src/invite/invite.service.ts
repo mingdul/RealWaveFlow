@@ -35,9 +35,8 @@ export class InviteService {
     // 기존 초대 링크 생성
     async createInviteLink(trackId: string){
         const inviteLink = this.inviteRepository.create({
-            track_id: trackId,
+            track: { id: trackId },
             token: uuidv4(),
-            expires_at: new Date(Date.now() + 7 * 24 * 60 * 60 * 1000), // 7일
             uses: 0
         });
 
@@ -48,7 +47,7 @@ export class InviteService {
     async getInviteByToken(token: string){
         const inviteLink = await this.inviteRepository.findOne({
             where: { token },
-            relations: ['track_id']
+            relations: ['track']
         });
 
         if (!inviteLink) {
@@ -175,7 +174,7 @@ export class InviteService {
         const inviteTargets = validEmails.map(email => ({
             email,
             token: uuidv4(),
-            status: 'pending',
+            status: 'pending' as const,
             invite_batch: { id: savedBatch.id }
         }));
 
@@ -492,9 +491,9 @@ export class InviteService {
         });
 
         if (pendingInvites === 0) {
-            // 모든 초대가 처리되었으므로 배치 상태 업데이트
+            // 모든 초대가 처리되었으므로 배치 상태를 completed로 업데이트
             await manager.update(InviteBatch, { id: batchId }, { 
-                completed_at: new Date() 
+                status: 'completed'
             });
         }
     }
