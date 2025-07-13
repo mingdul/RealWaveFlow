@@ -1,5 +1,6 @@
 import { StageReviewer } from "src/stage-reviewer/stage-reviewer.entity";
 import { Track } from "src/track/track.entity";
+import { Upstream } from "src/upstream/upstream.entity";
 import { User } from "src/users/user.entity";
 import { VersionStem } from "src/version-stem/version-stem.entity";
 import { Column, Entity, JoinColumn, ManyToOne, OneToMany, PrimaryGeneratedColumn } from "typeorm";
@@ -40,4 +41,7 @@ export class Stage {
 
     @OneToMany(() => VersionStem, (versionStem) => versionStem.stage)
     version_stems : VersionStem[];
+
+    @OneToMany(() => Upstream, (upstream) => upstream.stage)
+    upstreams : Upstream[];
 }

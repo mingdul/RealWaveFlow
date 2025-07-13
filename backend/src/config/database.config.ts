@@ -2,6 +2,13 @@ import { TypeOrmModuleOptions } from '@nestjs/typeorm';
 import { User } from '../users/user.entity';
 import { Track } from 'src/track/track.entity';
 import { TrackCollaborator } from 'src/track_collaborator/track_collaborator.entity';
+import { StageReviewer } from 'src/stage-reviewer/stage-reviewer.entity';
+import { Category } from 'src/category/category.entity';
+import { Stem } from 'src/stem/stem.entity';
+import { VersionStem } from 'src/version-stem/version-stem.entity';
+import { Stage } from 'src/stage/stage.entity';
+import { Upstream } from 'src/upstream/upstream.entity';
+import { UpstreamComment } from 'src/upstream-comment/upstream-comment.entity';
 
 
 export const databaseConfig: TypeOrmModuleOptions = {
@@ -15,7 +22,13 @@ export const databaseConfig: TypeOrmModuleOptions = {
     User, 
     Track, 
     TrackCollaborator,
-   
+    Stage,
+    StageReviewer,
+    Category,
+    Stem,
+    VersionStem,
+    Upstream,
+    UpstreamComment,
   ],
   // 개발 단계에서는 동기화 활성화
   synchronize: true,
