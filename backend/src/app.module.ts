@@ -10,9 +10,12 @@ import { VersionStemModule } from './version-stem/version-stem.module';
 import { UpstreamModule } from './upstream/upstream.module';
 import { UpstreamCommentModule } from './upstream-comment/upstream-comment.module';
 import { StemJobModule } from './stem-job/stem-job.module';
+import { StreamingModule } from './streaming/streaming.module';
+import { DownloadModule } from './download/download.module';
 
 @Module({
-  imports: [StemModule, 
+  imports: [
+    StemModule, 
     StageModule, 
     StageReviewerModule, 
     CategoryModule,
@@ -23,9 +26,10 @@ import { StemJobModule } from './stem-job/stem-job.module';
     UpstreamModule,
     UpstreamCommentModule,
     StemJobModule,
-
-  ], // 추후 다른 모듈들 (예: AuthModule 등)을 여기에 추가
-    controllers: [], // 라우팅 처리
-  providers: [], // 비즈니스 로직/서비스 제공
+    StreamingModule,
+    DownloadModule,
+  ],
+  controllers: [],
+  providers: [],
 })
 export class AppModule {}
