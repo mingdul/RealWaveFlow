@@ -1,7 +1,7 @@
 import { useEffect, useRef, useState, useCallback } from 'react';
 import WaveSurfer from 'wavesurfer.js';
 import WaveformCloner from '../components/wave';
-import Logo from '../components/Logo';
+import Logo from '../components/Logo';  
 import {
   Bell,
   Settings,
@@ -11,6 +11,14 @@ import {
   ZoomIn,
   ZoomOut,
 } from 'lucide-react';
+
+// Comment interface
+interface Comment {
+  id: string;
+  time: number;
+  text: string;
+  timeString: string;
+}
 
 const StemSetReviewPage = () => {
   // const wavesurferRef = useRef<any>(null);
@@ -22,12 +30,13 @@ const StemSetReviewPage = () => {
   const [showHistory, setShowHistory] = useState(false);
   const [showCommentList, setShowCommentList] = useState(false);
   const [commentInput, setCommentInput] = useState('');
-  const [comments, setComments] = useState<string[]>([]);
+  const [comments, setComments] = useState<Comment[]>([]);
   const [extraAudio, setExtraAudio] = useState<string>('');
   const [showExtraWaveform, setShowExtraWaveform] = useState(false);
 
   const wavesurferRefs = useRef<{ [id: string]: WaveSurfer }>({});
   const [readyStates, setReadyStates] = useState<{ [id: string]: boolean }>({});
+  const isSeeking = useRef(false); // 무한 루프 방지용 플래그
 
   // Available audio files in public/audio directory
   const audioFiles = [
@@ -178,13 +187,97 @@ const StemSetReviewPage = () => {
     }
   }, [soloTrack]);
 
+  // 댓글 추가 함수
   const handleAddComment = useCallback(() => {
     if (!commentInput.trim()) return;
-    const time = `${String(Math.floor(currentTime / 60)).padStart(2, '0')}:${String(Math.floor(currentTime % 60)).padStart(2, '0')}`;
-    setComments((prev) => [...prev, `🗨️ ${time} - "${commentInput.trim()}"`]);
+    
+    const timeString = `${String(Math.floor(currentTime / 60)).padStart(2, '0')}:${String(Math.floor(currentTime % 60)).padStart(2, '0')}`;
+    const newComment: Comment = {
+      id: Date.now().toString(),
+      time: currentTime,
+      text: commentInput.trim(),
+      timeString: timeString
+    };
+    
+    setComments((prev) => [...prev, newComment]);
     setCommentInput('');
     setShowCommentList(true);
-  }, [commentInput, currentTime]);
+    
+    // 마커 생성 (얇은 선)
+    const ws = wavesurferRefs.current['main'];
+    if (ws) {
+      // WaveSurfer에 마커 추가 (regions 플러그인 사용)
+      try {
+        // 마커를 위한 얇은 region 생성
+        const container = ws.getWrapper();
+        const marker = document.createElement('div');
+        marker.style.position = 'absolute';
+        marker.style.left = `${(currentTime / duration) * 100}%`;
+        marker.style.top = '0';
+        marker.style.width = '2px';
+        marker.style.height = '100%';
+        marker.style.backgroundColor = 'rgba(255, 255, 255, 0.8)';
+        marker.style.pointerEvents = 'none';
+        marker.style.zIndex = '10';
+        marker.dataset.commentId = newComment.id;
+        
+        container.appendChild(marker);
+      } catch (error) {
+        console.warn('마커 생성 실패:', error);
+      }
+    }
+  }, [commentInput, currentTime, duration]);
+
+  // 댓글 클릭 시 해당 시간으로 이동
+  const seekToTime = useCallback((time: number) => {
+    const mainPlayer = wavesurferRefs.current['main'];
+    const extraPlayer = wavesurferRefs.current['extra'];
+    
+    if (mainPlayer && mainPlayer.getDuration()) {
+      const progress = time / mainPlayer.getDuration();
+      mainPlayer.seekTo(progress);
+      
+      // extra 파형도 동기화
+      if (extraPlayer && extraPlayer.getDuration()) {
+        extraPlayer.seekTo(progress);
+      }
+    }
+  }, []);
+
+  const handleSeek = useCallback((time: number, trackId: string) => {
+    // 무한 루프 방지
+    if (isSeeking.current) return;
+    
+    isSeeking.current = true;
+    setCurrentTime(time);
+    
+    // 양방향 동기화: 움직인 트랙이 아닌 다른 트랙을 동기화
+    const mainPlayer = wavesurferRefs.current['main'];
+    const extraPlayer = wavesurferRefs.current['extra'];
+    
+    if (mainPlayer && extraPlayer && readyStates['main'] && readyStates['extra']) {
+      try {
+        const progress = time / mainPlayer.getDuration();
+        if (progress >= 0 && progress <= 1) {
+          // main 트랙에서 seek가 발생하면 extra 트랙을 동기화
+          if (trackId === 'main' && extraPlayer) {
+            extraPlayer.seekTo(progress);
+          }
+          // extra 트랙에서 seek가 발생하면 main 트랙을 동기화
+          else if (trackId === 'extra' && mainPlayer) {
+            mainPlayer.seekTo(progress);
+          }
+        }
+      } catch (error) {
+        // 동기화 실패 시 무시
+      }
+    }
+    
+    // 플래그 초기화
+    setTimeout(() => {
+      isSeeking.current = false;
+    }, 100);
+  }, [readyStates]);
 
   const handleAudioFileClick = useCallback((audioPath: string) => {
     setExtraAudio(audioPath);
@@ -195,12 +288,13 @@ const StemSetReviewPage = () => {
   const handleMainSolo = useCallback(() => handleSolo('main'), [handleSolo]);
   const handleExtraSolo = useCallback(() => handleSolo('extra'), [handleSolo]);
 
-  // currentTime이 변경될 때 extra 파형 동기화
+  // audioprocess 이벤트를 통한 재생 중 동기화 (main -> extra만)
   useEffect(() => {
     const extraPlayer = wavesurferRefs.current['extra'];
     const mainPlayer = wavesurferRefs.current['main'];
     
-    if (extraPlayer && mainPlayer && readyStates['extra'] && readyStates['main']) {
+    // 재생 중일 때만 audioprocess 이벤트를 통한 동기화 수행
+    if (isPlaying && extraPlayer && mainPlayer && readyStates['extra'] && readyStates['main']) {
       try {
         const progress = currentTime / mainPlayer.getDuration();
         if (progress >= 0 && progress <= 1) {
@@ -210,7 +304,7 @@ const StemSetReviewPage = () => {
         // 동기화 실패 시 무시
       }
     }
-  }, [currentTime, readyStates]);
+  }, [currentTime, readyStates, isPlaying]);
 
   return (
     <div className='relative min-h-screen space-y-6 overflow-hidden bg-[#1e1e1e] px-6 py-8 text-white'>
@@ -353,8 +447,18 @@ const StemSetReviewPage = () => {
             </button>
           </div>
           <ul className='space-y-2 text-sm text-white'>
-            {comments.map((comment, idx) => (
-              <li key={idx}>{comment}</li>
+            {comments.map((comment) => (
+              <li 
+                key={comment.id}
+                className='cursor-pointer hover:bg-[#3a3a3a] p-2 rounded'
+                onClick={() => seekToTime(comment.time)}
+              >
+                <div className='flex items-center space-x-2'>
+                  <span className='text-blue-400 font-mono'>{comment.timeString}</span>
+                  <span>🗨️</span>
+                </div>
+                <div className='text-gray-300 ml-6'>{comment.text}</div>
+              </li>
             ))}
           </ul>
         </div>
@@ -371,6 +475,7 @@ const StemSetReviewPage = () => {
           currentTime={currentTime}
           onSolo={handleMainSolo}
           isSolo={soloTrack === 'main'}
+          onSeek={handleSeek}
         />
 
         {showExtraWaveform && extraAudio && (
@@ -383,6 +488,7 @@ const StemSetReviewPage = () => {
             currentTime={currentTime}
             onSolo={handleExtraSolo}
             isSolo={soloTrack === 'extra'}
+            onSeek={handleSeek}
           />
         )}
       </div>
