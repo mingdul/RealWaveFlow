@@ -1,0 +1,59 @@
+import { Controller, Post, Body, ValidationPipe, Res, UseGuards, Req, Get } from '@nestjs/common';
+import { ApiTags, ApiOperation, ApiResponse, ApiBody } from '@nestjs/swagger';
+import { UsersService } from './users.service';
+import { RegisterDto } from './dto/register.dto';
+import { Response, Request } from 'express';
+import { ForgotPasswordDto } from './dto/forgot-password.dto';
+import { JwtAuthGuard } from '../auth/jwt-auth.guard'; 
+
+@ApiTags('users')
+@Controller('users')
+export class UsersController {
+  constructor(private readonly usersService: UsersService) {}
+
+  @Post('register')
+  @ApiOperation({ summary: '회원가입', description: '새로운 사용자 계정을 생성합니다.' })
+  @ApiBody({ type: RegisterDto })
+  @ApiResponse({ status: 200, description: '회원가입 성공' })
+  @ApiResponse({ status: 409, description: '이미 존재하는 이메일' })
+  @ApiResponse({ status: 400, description: '입력값 유효성 검사 실패' })
+  async register(@Body(ValidationPipe) registerDto: RegisterDto) {
+    return this.usersService.register(registerDto);
+  }
+
+  @Post('forgot-password')
+  @ApiOperation({ summary: '비밀번호 찾기', description: '등록된 이메일로 임시 비밀번호를 전송합니다.' })
+  @ApiBody({ type: ForgotPasswordDto })
+  @ApiResponse({ status: 200, description: '임시 비밀번호 전송 성공' })
+  @ApiResponse({ status: 404, description: '등록되지 않은 이메일' })
+  async forgotPassword(@Body(ValidationPipe) forgotPasswordDto: ForgotPasswordDto) {
+    return this.usersService.forgotPassword(forgotPasswordDto);
+  }
+
+  @Get('me')
+  @UseGuards(JwtAuthGuard)
+  @ApiOperation({ summary: '현재 사용자 정보', description: 'JWT 토큰을 검증하여 현재 사용자 정보를 반환합니다.' })
+  @ApiResponse({ status: 200, description: '사용자 정보 반환 성공' })
+  @ApiResponse({ status: 401, description: '인증되지 않은 사용자' })
+  async getMe(@Req() req: Request) {
+    const user = req.user as any;
+    return {
+      success: true,
+      data: {
+        user: {
+          id: user.id,
+          email: user.email,
+          username: user.username,
+        },
+      },
+    };
+  }
+
+  @Post('logout')
+  @ApiOperation({ summary: '로그아웃', description: 'JWT 쿠키를 삭제하여 로그아웃합니다.' })
+  @ApiResponse({ status: 200, description: '로그아웃 성공' })
+  async logout(@Res({ passthrough: true }) res: Response) {
+    res.clearCookie('jwt');
+    return { success: true, message: '로그아웃 완료' };
+  }
+}
