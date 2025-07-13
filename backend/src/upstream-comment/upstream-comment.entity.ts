@@ -10,7 +10,7 @@ export class UpstreamComment {
     @Column({ type: 'text' })
     comment : string;
 
-    @Column({ type: 'time' })
+    @Column({ type: 'varchar' })
     time : string;
 
     @ManyToOne(() => Upstream, (upstream) => upstream.upstream_comments, {

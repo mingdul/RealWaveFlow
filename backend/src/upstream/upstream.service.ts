@@ -1,4 +1,4 @@
-import { BadRequestException, Injectable } from '@nestjs/common';
+import { BadRequestException, Injectable, NotFoundException  } from '@nestjs/common';
 import { Upstream } from './upstream.entity';
 import { InjectRepository } from '@nestjs/typeorm';
 import { Repository } from 'typeorm';
@@ -31,5 +31,38 @@ export class UpstreamService {
             upstream: savedUpstream,
         };
     }
+
+
+    async getStageUpstreams(stage_id: string) {
+        const upstreams = await this.upstreamRepository.find({
+            where: { stage: { id: stage_id } },
+            relations: ['stage', 'user'],
+        });
+
+        if (upstreams.length === 0) {
+            throw new NotFoundException('No upstreams found');
+        }
+        return {
+            success: true,
+            message: 'Upstreams fetched successfully',
+            upstreams,
+        };
+    }   
+
+    async getUpstream(upstream_id: string) {
+        const upstream = await this.upstreamRepository.findOne({
+            where: { id: upstream_id },
+            relations: ['stage', 'user'],
+        });
+
+        if (!upstream) {
+            throw new NotFoundException('Upstream not found');
+        }
+        return {
+            success: true,
+            message: 'Upstream fetched successfully',
+            upstream,
+        };
+    }   
     
 }

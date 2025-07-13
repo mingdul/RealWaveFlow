@@ -7,5 +7,5 @@ export class CreateUpstreamReviewDto {
 
     @IsNotEmpty()
     @IsUUID()
-    stage_reviewer_id: string;
+    stage_id: string;
 }
