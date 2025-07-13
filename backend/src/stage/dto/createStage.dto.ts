@@ -1,4 +1,4 @@
-import { IsNotEmpty, IsString, IsNumber, IsUUID } from 'class-validator';
+import { IsNotEmpty, IsString, IsUUID } from 'class-validator';
 
 export class CreateStageDto {
     @IsString()
@@ -8,10 +8,6 @@ export class CreateStageDto {
     @IsString()
     @IsNotEmpty()
     description: string;
-
-    @IsNumber()
-    @IsNotEmpty()
-    version: number;
 
     @IsUUID()
     @IsNotEmpty()

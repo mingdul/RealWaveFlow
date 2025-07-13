@@ -22,9 +22,6 @@ export class Stage {
     @Column({ type: 'varchar', default: 'active' })
     status : string;
 
-    @Column({ type: 'int' })
-    version : number;
-
     @Column({ type: 'varchar', nullable: true , default: null})
     guide_path : string;
 
