@@ -76,7 +76,7 @@ const DashboardPage = () => {
   };
 
   const handleTrackClick = (trackId: string) => {
-    navigate(`/master?trackId=${trackId}`);
+    navigate(`/track/${trackId}`);
   };
 
   const handleEditTrack = (track: Track, e: React.MouseEvent) => {
