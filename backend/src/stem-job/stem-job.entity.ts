@@ -26,6 +26,15 @@ export class StemJob {
     @Column({ name: 'upstream_id' , nullable: true , default: null})
     upstream_id : string;    
 
+    @Column({ name: 'stage_id' , nullable: true , default: null})
+    stage_id : string;
+
+    @Column({ name: 'track_id' , nullable: true , default: null})
+    track_id : string;
+
     @Column({ type: 'timestamp' })
     uploaded_at : Date;
+
+    @Column({ name: 'user_id' , nullable: true , default: null})
+    user_id : string;
 }

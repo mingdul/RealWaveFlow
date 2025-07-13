@@ -1,6 +1,7 @@
 import { Stage } from "src/stage/stage.entity";
 import { Stem } from "src/stem/stem.entity";
 import { UpstreamComment } from "src/upstream-comment/upstream-comment.entity";
+import { UpstreamReview } from "src/upstream-review/upstream-review.entity";
 import { User } from "src/users/user.entity";
 import { Entity, JoinColumn, ManyToOne, OneToMany } from "typeorm";
 import { Column } from "typeorm";
@@ -44,4 +45,7 @@ export class Upstream {
     @OneToMany(() => Stem, (stem) => stem.upstream)
     stems: Stem[];
 
+    @OneToMany(() => UpstreamReview, (upstreamReview) => upstreamReview.upstream)
+    upstream_reviews: UpstreamReview[];
+    
 }

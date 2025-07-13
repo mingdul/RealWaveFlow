@@ -1,6 +1,7 @@
 import { Stage } from "src/stage/stage.entity";
+import { UpstreamReview } from "src/upstream-review/upstream-review.entity";
 import { User } from "src/users/user.entity";
-import { Column, Entity, JoinColumn, ManyToOne, PrimaryGeneratedColumn } from "typeorm";
+import { Column, Entity, JoinColumn, ManyToOne, OneToMany,  PrimaryGeneratedColumn } from "typeorm";
 
 @Entity('stage_reviewers')
 export class StageReviewer {
@@ -18,6 +19,6 @@ export class StageReviewer {
     @JoinColumn({ name: 'user_id' })
     user : User;
 
-    @Column({ type: 'varchar', default: 'pending' })
-    status : string;
+    @OneToMany(() => UpstreamReview, (upstreamReview) => upstreamReview.stage_reviewer)
+    upstream_reviews : UpstreamReview[];
 }

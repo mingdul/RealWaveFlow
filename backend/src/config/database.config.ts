@@ -9,6 +9,7 @@ import { VersionStem } from 'src/version-stem/version-stem.entity';
 import { Stage } from 'src/stage/stage.entity';
 import { Upstream } from 'src/upstream/upstream.entity';
 import { UpstreamComment } from 'src/upstream-comment/upstream-comment.entity';
+import { UpstreamReview } from 'src/upstream-review/upstream-review.entity';
 
 
 export const databaseConfig: TypeOrmModuleOptions = {
@@ -29,6 +30,7 @@ export const databaseConfig: TypeOrmModuleOptions = {
     VersionStem,
     Upstream,
     UpstreamComment,
+    UpstreamReview,
   ],
   // 개발 단계에서는 동기화 활성화
   synchronize: true,
