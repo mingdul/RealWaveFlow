@@ -16,7 +16,7 @@ export class VersionStemService {
     ) {}
 
     async createVersionStem(createVersionStemDto: CreateVersionStemDto) {
-        const { file_name, file_path, key, bpm, stem_hash, stage_id, user_id, category_id, take } = createVersionStemDto;
+        const { file_name, file_path, key, bpm, stem_hash, stage_id, user_id, category_id, version } = createVersionStemDto;
 
         const versionStem = this.versionStemRepository.create({
             file_name,
@@ -27,7 +27,7 @@ export class VersionStemService {
             stage: { id: stage_id },
             user: { id: user_id },
             category: { id: category_id },
-            take,
+            version,
             uploaded_at: new Date(),
         });
 
@@ -55,7 +55,7 @@ export class VersionStemService {
         return versionStems.map(stem => stem.file_path);
     }
 
-    async getLatestStemsPerCategoryByTrack(trackId: string, take: number) {
+    async getLatestStemsPerCategoryByTrack(trackId: string, version: number) {
         const categories = await this.categoryRepository.find({
           where: { track: { id: trackId } },
         });
@@ -67,10 +67,10 @@ export class VersionStemService {
             where: {
               track: { id: trackId },
               category: { id: category.id },
-              take: Raw((alias) => `${alias} <= :take`, { take: 1 }),
+              version: Raw((alias) => `${alias} <= :version`, { version: version }),
             },
             order: {
-              take: 'DESC',
+              version: 'DESC',
               uploaded_at: 'DESC',
             },
             relations: ['category', 'track', 'stage', 'user'],
@@ -85,12 +85,12 @@ export class VersionStemService {
         }
       
         if (results.length === 0) {
-          throw new NotFoundException('No stems found for the given take version');
+          throw new NotFoundException('No stems found for the given version');
         }
       
         return {
           success: true,
-          message: 'Stems for the given take retrieved successfully',
+          message: 'Stems for the given version retrieved successfully',
           data: results,
         };
       }

@@ -68,7 +68,7 @@ export class StemService {
               stage: { track: { id: trackId } },
             },
             order: {
-              take: 'DESC',
+              version: 'DESC',
               uploaded_at: 'DESC',
             },
             relations: ['category', 'stage', 'stage.track', 'user'],

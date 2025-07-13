@@ -35,5 +35,5 @@ export class CreateVersionStemDto {
 
     @IsNumber()
     @IsNotEmpty()
-    take: number;
+    version: number;
 }

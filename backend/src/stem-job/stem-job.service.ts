@@ -141,7 +141,7 @@ export class StemJobService {
                 category_id: job.category_id,
                 stage_id: job.stage_id,
                 user_id: userId,
-                take: 1, // 기본값으로 1 설정
+                version: 1, // 기본값으로 1 설정
             });
             
             this.logger.log(`Version-Stem 생성 완료: ${savedStem.id}`);
