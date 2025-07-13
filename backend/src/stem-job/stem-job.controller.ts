@@ -29,7 +29,6 @@ export class StemJobController {
     // Stage 생성 데이터
     stage_title: string;
     stage_description: string;
-    version: number;
   }, @Request() req) {
     try {
       // 1. Track 생성
@@ -48,7 +47,6 @@ export class StemJobController {
       const stage = await this.stageService.createStage({
         title: initData.stage_title,
         description: initData.stage_description,
-        version: initData.version,
         track_id: track.data.id,
         user_id: req.user.id,
         status : 'approve',

@@ -134,7 +134,7 @@ export class UpstreamReviewService {
           // 3. upstream.stems를 version_stems로 복사
           for (const stem of stems) {
             const createDto: CreateVersionStemDto = {
-              take : stage.take,
+              version : stage.version,
               stem_hash: stem.stem_hash,
               file_path: stem.file_path,
               file_name: stem.file_name,
