@@ -9,6 +9,7 @@ import LoginPage from './pages/LoginPage.tsx';
 import SignUpPage from './pages/SignUpPage';
 import DashboardPage from './pages/DashboardPage';
 import Notfound from './pages/Notfound';
+import StagePage from './pages/StagePage';
 import PublicRoute from './components/PublicRoute.tsx';
 // import PR_Page from './pages/PR_Page.tsx';     
 // import MasterPage from './pages/MasterPage';
@@ -33,6 +34,7 @@ const App = () => {
               <Route path="/signup" element={<PublicRoute><SignUpPage /></PublicRoute>} />
               <Route path="/dashboard" element={<DashboardPage />} />
               <Route path="*" element={<Notfound />} />
+              <Route path="/stage" element={<StagePage />} />
               {/* <Route path="/master" element={<MasterPage />} />
               <Route path="/commit" element={<CommitPage />} />
               <Route path="/pr" element={<PR_Page />} /> 
