@@ -3,7 +3,9 @@ import { Stage } from 'src/stage/stage.entity';
 import { StageReviewer } from 'src/stage-reviewer/stage-reviewer.entity';
 import { Track } from 'src/track/track.entity';
 import { TrackCollaborator } from 'src/track_collaborator/track_collaborator.entity';
+import { Upstream } from 'src/upstream/upstream.entity';
 import { Entity, PrimaryGeneratedColumn, Column, CreateDateColumn, OneToMany } from 'typeorm';
+import { UpstreamComment } from 'src/upstream-comment/upstream-comment.entity';
 
 @Entity('users')
 export class User {
@@ -39,4 +41,10 @@ export class User {
 
   @OneToMany(() => StageReviewer, (stageReviewer) => stageReviewer.user)
   stage_reviewers: StageReviewer[]; 
+
+  @OneToMany(() => Upstream, (upstream) => upstream.user)
+  upstreams: Upstream[];
+
+  @OneToMany(() => UpstreamComment, (upstreamComment) => upstreamComment.user)
+  upstream_comments: UpstreamComment[];
 }
