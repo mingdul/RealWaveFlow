@@ -1,4 +1,4 @@
-import { IsNotEmpty, IsOptional, IsString } from "class-validator";
+import { IsNotEmpty, IsOptional, IsString, IsUUID } from "class-validator";
 
 export class CreateStemJobDto {
 
@@ -8,17 +8,33 @@ export class CreateStemJobDto {
 
     @IsString()
     @IsNotEmpty()
-    stem_hash: string;
-
-    @IsString()
-    @IsNotEmpty()
     file_path: string;
 
     @IsString()
     @IsOptional()
-    key: string;
+    stem_hash?: string;
 
     @IsString()
     @IsOptional()
-    bpm: string;
+    key?: string;
+
+    @IsString()
+    @IsOptional()
+    bpm?: string;
+
+    @IsUUID()
+    @IsNotEmpty()
+    category_id: string;
+
+    @IsUUID()
+    @IsNotEmpty()
+    upstream_id: string;
+
+    @IsUUID()
+    @IsNotEmpty()
+    stage_id: string;
+
+    @IsUUID()
+    @IsNotEmpty()
+    track_id: string;
 }

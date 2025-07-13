@@ -38,7 +38,4 @@ export class Stem {
 
     @Column({ type: 'timestamp' })
     uploaded_at : Date;
-
-    
-
 }
