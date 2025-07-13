@@ -20,9 +20,13 @@ export class Upstream {
     @Column({ type: 'varchar' })
     status : string;
 
+    @Column({ type: 'varchar', nullable: true , default: null})
+    guide_path : string;
+
     @Column({ type: 'timestamp' })
     created_at : Date;
 
+    
     @ManyToOne(() => Stage, (stage) => stage.upstreams, {
         cascade: true,
         onDelete: 'CASCADE',

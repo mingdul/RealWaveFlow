@@ -16,11 +16,14 @@ export class Stage {
     @Column({ type: 'text' })
     description : string;
 
-    @Column({ type: 'varchar' })
+    @Column({ type: 'varchar', default: 'active' })
     status : string;
 
     @Column({ type: 'number' })
     version : number;
+
+    @Column({ type: 'varchar', nullable: true , default: null})
+    guide_path : string;
 
     @ManyToOne(() => Track, (track) => track.stages,{
         cascade: true,
