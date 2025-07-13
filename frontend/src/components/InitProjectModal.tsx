@@ -1,4 +1,5 @@
-import React, { useReducer, useEffect } from 'react';
+import React, { useReducer} from 'react';
+// import { useEffect } from 'react';
 import { Check, X, FileAudio, Upload, Plus } from 'lucide-react';
 import { UploadProgress, User } from '../types/api';
 import { useAuth } from '../contexts/AuthContext';
