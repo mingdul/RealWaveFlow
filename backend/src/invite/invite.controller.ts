@@ -1,4 +1,5 @@
 import { Controller, Get, Param, Post, Body, Query, Req, UseGuards } from '@nestjs/common';
+import { ApiTags, ApiOperation, ApiResponse, ApiParam, ApiBody, ApiBearerAuth, ApiQuery } from '@nestjs/swagger';
 import { InviteService } from './invite.service';
 import { AuthGuard } from '@nestjs/passport';
 import { SendInviteDto } from './dto/send-invite.dto';
@@ -35,6 +36,7 @@ import { DeclineInviteDto } from './dto/decline-invite.dto';
  * - POST /invite/test-email - 이메일 서비스 테스트
  * - POST /invite/:trackId - 공개 초대 링크 생성 (기존 시스템)
  */
+@ApiTags('invite')
 @Controller('invite')
 export class InviteController {
   constructor(private readonly inviteService: InviteService) {}
@@ -66,6 +68,10 @@ export class InviteController {
    * { "isDuplicate": false } 또는 { "isDuplicate": true, "message": "이미 초대된 이메일입니다." }
    */
   @Get('check-email/:trackId')
+  @ApiOperation({ summary: '이메일 중복 체크', description: '실시간으로 이메일 중복 여부를 확인합니다.' })
+  @ApiParam({ name: 'trackId', description: '트랙 ID' })
+  @ApiQuery({ name: 'email', description: '체크할 이메일 주소', required: false })
+  @ApiResponse({ status: 200, description: '이메일 중복 체크 성공' })
   async checkEmail(
     @Param('trackId') trackId: string,
     @Query('email') email: string
@@ -116,6 +122,12 @@ export class InviteController {
    */
   @Post('send')
   @UseGuards(AuthGuard('jwt'))
+  @ApiOperation({ summary: '다중 이메일 초대 발송', description: '여러 이메일 주소로 동시에 초대를 발송합니다.' })
+  @ApiBody({ type: SendInviteDto })
+  @ApiResponse({ status: 200, description: '초대 발송 성공' })
+  @ApiResponse({ status: 401, description: '인증되지 않은 사용자' })
+  @ApiResponse({ status: 403, description: '권한 없음' })
+  @ApiResponse({ status: 400, description: '입력값 유효성 검사 실패' })
   async sendInvites(
     @Body() sendInviteDto: SendInviteDto,
     @Req() req: any
@@ -159,6 +171,10 @@ export class InviteController {
    * }
    */
   @Get('accept-page/:token')
+  @ApiOperation({ summary: '초대 수락 페이지 데이터 조회', description: '초대 토큰으로 초대 정보를 조회합니다.' })
+  @ApiParam({ name: 'token', description: '초대 토큰' })
+  @ApiResponse({ status: 200, description: '초대 페이지 데이터 조회 성공' })
+  @ApiResponse({ status: 404, description: '초대를 찾을 수 없음' })
   async getInviteAcceptPage(@Param('token') token: string) {
     const inviteTarget = await this.inviteService.getInviteByTargetToken(token);
     
@@ -214,6 +230,11 @@ export class InviteController {
    * }
    */
   @Post('accept')
+  @ApiOperation({ summary: '초대 수락 처리', description: '초대를 수락하고 협업자로 등록합니다.' })
+  @ApiBody({ type: AcceptInviteDto })
+  @ApiResponse({ status: 200, description: '초대 수락 성공' })
+  @ApiResponse({ status: 400, description: '입력값 유효성 검사 실패' })
+  @ApiResponse({ status: 404, description: '초대를 찾을 수 없음' })
   async acceptInvite(@Body() acceptInviteDto: AcceptInviteDto, @Req() req: any) {
     // JWT 토큰이 있으면 사용자 ID 추출
     let userId = null;
@@ -252,6 +273,11 @@ export class InviteController {
    * }
    */
   @Post('decline')
+  @ApiOperation({ summary: '초대 거절 처리', description: '초대를 거절합니다.' })
+  @ApiBody({ type: DeclineInviteDto })
+  @ApiResponse({ status: 200, description: '초대 거절 성공' })
+  @ApiResponse({ status: 400, description: '입력값 유효성 검사 실패' })
+  @ApiResponse({ status: 404, description: '초대를 찾을 수 없음' })
   async declineInvite(@Body() declineInviteDto: DeclineInviteDto) {
     return this.inviteService.declineInvite(declineInviteDto);
   }
@@ -259,16 +285,14 @@ export class InviteController {
   /**
    * 회원가입 완료 후 협업자 등록
    * 
-   * 신규 회원이 회원가입을 완료한 후 협업자로 등록하는 API입니다.
-   * 초대를 수락한 신규 회원이 회원가입을 마친 후 호출됩니다.
+   * 신규 회원이 회원가입을 완료한 후 초대를 수락하여 협업자로 등록하는 API입니다.
    * 
-   * @param token - 초대 토큰 (요청 본문에서 추출)
-   * @param req - HTTP 요청 객체 (JWT 토큰에서 사용자 ID 추출)
+   * @param token - 초대 토큰
+   * @param req - HTTP 요청 객체 (JWT 토큰 포함)
    * 
    * @returns 협업자 등록 결과
    * - success: 성공 여부
    * - message: 결과 메시지
-   * - track_id: 트랙 ID
    * 
    * 인증: JWT 토큰 필요
    * 
@@ -280,26 +304,29 @@ export class InviteController {
    */
   @Post('complete-signup')
   @UseGuards(AuthGuard('jwt'))
+  @ApiOperation({ summary: '회원가입 완료 후 협업자 등록', description: '신규 회원이 회원가입 완료 후 협업자로 등록합니다.' })
+  @ApiBody({ schema: { type: 'object', properties: { token: { type: 'string' } } } })
+  @ApiResponse({ status: 200, description: '협업자 등록 성공' })
+  @ApiResponse({ status: 401, description: '인증되지 않은 사용자' })
+  @ApiResponse({ status: 404, description: '초대를 찾을 수 없음' })
   async completeInviteAfterSignup(
     @Body('token') token: string,
     @Req() req: any
   ) {
-    const userId = req.user.id;
-    return this.inviteService.completeInviteAfterSignup(token, userId);
+    return this.inviteService.completeInviteAfterSignup(token, req.user.id);
   }
 
   /**
-   * 이메일 전송 테스트
+   * 이메일 서비스 테스트
    * 
-   * 이메일 서비스가 정상적으로 작동하는지 확인하기 위한 테스트 API입니다.
+   * 이메일 서비스가 정상적으로 작동하는지 테스트하는 API입니다.
    * 개발 및 디버깅 목적으로 사용됩니다.
    * 
-   * @param email - 테스트 이메일을 받을 주소 (요청 본문에서 추출)
+   * @param email - 테스트 이메일 주소
    * 
-   * @returns 테스트 결과
-   * - success: 발송 성공 여부
-   * - messageId: 메시지 ID (성공 시)
-   * - error: 에러 메시지 (실패 시)
+   * @returns 이메일 테스트 결과
+   * - success: 성공 여부
+   * - message: 결과 메시지
    * 
    * 인증: 불필요
    * 
@@ -310,27 +337,28 @@ export class InviteController {
    * }
    */
   @Post('test-email')
+  @ApiOperation({ summary: '이메일 서비스 테스트', description: '이메일 서비스가 정상적으로 작동하는지 테스트합니다.' })
+  @ApiBody({ schema: { type: 'object', properties: { email: { type: 'string' } } } })
+  @ApiResponse({ status: 200, description: '이메일 테스트 성공' })
+  @ApiResponse({ status: 400, description: '이메일 형식 오류' })
   async testEmail(@Body('email') email: string) {
     const emailService = new (await import('../email/email.service')).EmailService();
     return emailService.testEmail(email);
   }
 
-  // 기존 API들 (파라미터 라우트는 나중에 정의)
-  
   /**
-   * 공개 초대 링크 생성
+   * 공개 초대 링크 생성 (기존 시스템)
    * 
-   * 기존 시스템과의 호환성을 위한 공개 초대 링크 생성 API입니다.
-   * 트랙 소유자가 공개적으로 공유할 수 있는 초대 링크를 생성합니다.
+   * 기존 시스템과의 호환성을 위해 유지되는 API입니다.
+   * 새로운 이메일 기반 초대 시스템과 병행하여 사용됩니다.
    * 
-   * @param trackId - 초대 대상 트랙 ID (URL 파라미터)
+   * @param trackId - 트랙 ID (URL 파라미터)
    * 
-   * @returns 생성된 초대 링크 정보
-   * - id: 초대 링크 ID
-   * - token: 초대 토큰
-   * - track: 트랙 정보
-   * - uses: 사용 횟수
-   * - createdAt: 생성 시간
+   * @returns 공개 초대 링크 생성 결과
+   * - success: 성공 여부
+   * - data: 초대 정보
+   *   - invite_url: 공개 초대 링크
+   *   - track_id: 트랙 ID
    * 
    * 인증: JWT 토큰 필요 (트랙 소유자만)
    * 
@@ -339,15 +367,21 @@ export class InviteController {
    * 
    * 응답 예시:
    * {
-   *   "id": "invite123",
-   *   "token": "abc123-def456-ghi789",
-   *   "track": { "id": "track123", "title": "My Track" },
-   *   "uses": 0,
-   *   "createdAt": "2024-01-01T00:00:00Z"
+   *   "success": true,
+   *   "data": {
+   *     "invite_url": "https://waveflow.com/invite/abc123-def456-ghi789",
+   *     "track_id": "123e4567-e89b-12d3-a456-426614174000"
+   *   }
    * }
    */
   @Post(':trackId')
   @UseGuards(AuthGuard('jwt'))
+  @ApiOperation({ summary: '공개 초대 링크 생성', description: '기존 시스템과의 호환성을 위한 공개 초대 링크를 생성합니다.' })
+  @ApiParam({ name: 'trackId', description: '트랙 ID' })
+  @ApiResponse({ status: 200, description: '공개 초대 링크 생성 성공' })
+  @ApiResponse({ status: 401, description: '인증되지 않은 사용자' })
+  @ApiResponse({ status: 403, description: '권한 없음' })
+  @ApiResponse({ status: 404, description: '트랙을 찾을 수 없음' })
   async createInvite(@Param('trackId') trackId: string) {
     return this.inviteService.createInviteLink(trackId);
   }
