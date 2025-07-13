@@ -6,18 +6,23 @@ import { Track } from '../track/track.entity';
 import { Stage } from '../stage/stage.entity';
 import { VersionStem } from '../version-stem/version-stem.entity';
 import { S3Service } from './s3.service';
-import { StemStreamingInfo, AudioMetadata, StemInfoDto, SimpleStemStreamingInfo } from './dto/streaming.dto';
+import { 
+  StemDownloadInfo, 
+  StemDownloadInfoDto, 
+  SimpleStemDownloadInfo 
+} from './dto/download.dto';
 
 /**
- * Streaming Service
+ * Download Service
  * 
- * 음악 스템 파일들의 스트리밍 URL을 제공하는 서비스
+ * 음악 스템 파일들의 다운로드 URL을 제공하는 서비스
  * - 작업 중인 stems (Stem 엔티티)와 완성된 버전 stems (VersionStem 엔티티) 모두 지원
  * - 트랙 소유자 또는 협업자만 접근 가능하도록 권한 검증
- * - S3 presigned URL을 통해 안전한 파일 접근 제공
+ * - S3 presigned download URL을 통해 안전한 파일 다운로드 제공
+ * - 원본 파일명 그대로 사용
  */
 @Injectable()
-export class StreamingService {
+export class DownloadService {
   constructor(
     @InjectRepository(Stem)
     private stemRepository: Repository<Stem>,
@@ -31,40 +36,41 @@ export class StreamingService {
   ) {}
 
   /**
-   * 프론트엔드에서 제공받은 stem 정보로 presigned URL 생성
+   * 프론트엔드에서 제공받은 stem 정보로 presigned download URL 생성
    * 
    * @param stemInfo - 프론트엔드에서 제공한 stem 정보
    * @param userId - 요청한 사용자 ID
-   * @returns presigned URL과 만료 시간
+   * @returns presigned download URL과 만료 시간
    * 
    * 권한 검증: trackId를 통해 트랙 접근 권한만 확인
    */
-  async getStemPresignedUrl(stemInfo: StemInfoDto, userId: string): Promise<SimpleStemStreamingInfo> {
+  async getStemDownloadUrl(stemInfo: StemDownloadInfoDto, userId: string): Promise<SimpleStemDownloadInfo> {
     // 권한 검증 - trackId를 통해 트랙 접근 권한 확인
     await this.validateTrackAccess(stemInfo.trackId, userId);
 
-    // S3 presigned URL 생성 (1시간 유효)
-    const presignedUrl = await this.s3Service.getPresignedUrl(stemInfo.filePath);
+    // S3 presigned download URL 생성 (1시간 유효)
+    const presignedUrl = await this.s3Service.getPresignedDownloadUrl(stemInfo.filePath);
     const expiresAt = new Date(Date.now() + 3600 * 1000).toISOString();
 
     return {
       stemId: stemInfo.stemId,
       presignedUrl,
       urlExpiresAt: expiresAt,
+      fileName: stemInfo.fileName,
     };
   }
 
   /**
-   * 프론트엔드에서 제공받은 stems 정보로 배치 presigned URL 생성
+   * 프론트엔드에서 제공받은 stems 정보로 배치 presigned download URL 생성
    * 
    * @param stems - 프론트엔드에서 제공한 stems 정보 배열
    * @param userId - 요청한 사용자 ID
-   * @returns 모든 stems의 presigned URL과 만료 시간
+   * @returns 모든 stems의 presigned download URL과 만료 시간
    * 
    * 권한 검증: 각 stem의 trackId를 통해 트랙 접근 권한 확인
    */
-  async getBatchStemPresignedUrls(stems: StemInfoDto[], userId: string): Promise<{
-    stems: SimpleStemStreamingInfo[];
+  async getBatchStemDownloadUrls(stems: StemDownloadInfoDto[], userId: string): Promise<{
+    stems: SimpleStemDownloadInfo[];
     urlExpiresAt: string;
   }> {
     if (stems.length === 0) {
@@ -77,40 +83,40 @@ export class StreamingService {
       await this.validateTrackAccess(trackId, userId);
     }
 
-    // presigned URL 생성
-    const presignedUrls = await this.s3Service.getBatchPresignedUrls(
+    // presigned download URL 생성
+    const presignedUrls = await this.s3Service.getBatchPresignedDownloadUrls(
       stems.map(stem => stem.filePath)
     );
 
     const expiresAt = new Date(Date.now() + 3600 * 1000).toISOString();
 
     // 결과 구성
-    const streamingStems: SimpleStemStreamingInfo[] = stems.map(stem => ({
+    const downloadStems: SimpleStemDownloadInfo[] = stems.map(stem => ({
       stemId: stem.stemId,
       presignedUrl: presignedUrls[stem.filePath],
       urlExpiresAt: expiresAt,
+      fileName: stem.fileName,
     }));
 
     return {
-      stems: streamingStems,
+      stems: downloadStems,
       urlExpiresAt: expiresAt,
     };
   }
 
   /**
-   * 개별 Stem 스트리밍 URL 조회 (작업 중인 stems)
+   * 개별 Stem 다운로드 URL 조회 (작업 중인 stems)
    * 
    * @param stemId - 스템 ID
    * @param userId - 요청한 사용자 ID
-   * @returns 스트리밍 URL과 메타데이터
+   * @returns 다운로드 URL과 메타데이터
    * 
    * 권한 검증: Stem → Upstream → Stage → Track 경로로 트랙 접근 권한 확인
    */
-  async getStemStreamingUrl(stemId: string, userId: string): Promise<{
+  async getStemDownloadUrlById(stemId: string, userId: string): Promise<{
     stemId: string;
     fileName: string;
     presignedUrl: string;
-    metadata: AudioMetadata;
     urlExpiresAt: string;
   }> {
     // Stem과 관련 엔티티들을 함께 조회
@@ -129,33 +135,31 @@ export class StreamingService {
     }
     await this.validateTrackAccess(stem.upstream.stage.track.id, userId);
 
-    // S3 presigned URL 생성 (1시간 유효)
-    const presignedUrl = await this.s3Service.getPresignedUrl(stem.file_path);
+    // S3 presigned download URL 생성 (1시간 유효)
+    const presignedUrl = await this.s3Service.getPresignedDownloadUrl(stem.file_path);
     const expiresAt = new Date(Date.now() + 3600 * 1000).toISOString();
 
     return {
       stemId: stem.id,
       fileName: stem.file_name,
       presignedUrl,
-      metadata: this.extractStemMetadata(stem),
       urlExpiresAt: expiresAt,
     };
   }
 
   /**
-   * 개별 VersionStem 스트리밍 URL 조회 (완성된 버전 stems)
+   * 개별 VersionStem 다운로드 URL 조회 (완성된 버전 stems)
    * 
    * @param stemId - 버전 스템 ID
    * @param userId - 요청한 사용자 ID
-   * @returns 스트리밍 URL과 메타데이터
+   * @returns 다운로드 URL과 메타데이터
    * 
    * 권한 검증: VersionStem → Stage → Track 경로로 트랙 접근 권한 확인
    */
-  async getVersionStemStreamingUrl(stemId: string, userId: string): Promise<{
+  async getVersionStemDownloadUrl(stemId: string, userId: string): Promise<{
     stemId: string;
     fileName: string;
     presignedUrl: string;
-    metadata: AudioMetadata;
     urlExpiresAt: string;
   }> {
     // VersionStem과 관련 엔티티들을 함께 조회
@@ -174,37 +178,36 @@ export class StreamingService {
     }
     await this.validateTrackAccess(versionStem.stage.track.id, userId);
 
-    // S3 presigned URL 생성 (1시간 유효)
-    const presignedUrl = await this.s3Service.getPresignedUrl(versionStem.file_path);
+    // S3 presigned download URL 생성 (1시간 유효)
+    const presignedUrl = await this.s3Service.getPresignedDownloadUrl(versionStem.file_path);
     const expiresAt = new Date(Date.now() + 3600 * 1000).toISOString();
 
     return {
       stemId: versionStem.id,
       fileName: versionStem.file_name,
       presignedUrl,
-      metadata: this.extractVersionStemMetadata(versionStem),
       urlExpiresAt: expiresAt,
     };
   }
 
   /**
-   * 트랙의 모든 작업 중인 stems 조회 (Upstream을 통해)
+   * 트랙의 모든 작업 중인 stems 다운로드 URL 조회 (Upstream을 통해)
    * 
    * @param trackId - 트랙 ID
    * @param userId - 요청한 사용자 ID
    * @param version - 버전 필터 (선택사항, 현재 미사용)
-   * @returns 트랙 정보와 모든 stems의 스트리밍 URL
+   * @returns 트랙 정보와 모든 stems의 다운로드 URL
    * 
    * 조회 경로: Track → Stages → Upstreams → Stems
    */
-  async getTrackStemsStreamingUrls(
+  async getTrackStemsDownloadUrls(
     trackId: string, 
     userId: string, 
     version?: string
   ): Promise<{
     trackId: string;
     trackInfo: any;
-    stems: StemStreamingInfo[];
+    stems: StemDownloadInfo[];
     totalStems: number;
     urlExpiresAt: string;
   }> {
@@ -243,12 +246,13 @@ export class StreamingService {
       };
     }
 
-    // 모든 스템 파일의 presigned URL 생성
-    const stemKeys = allStems.map(stem => stem.file_path);
-    const presignedUrls = await this.s3Service.getBatchPresignedUrls(stemKeys);
+    // 모든 스템 파일의 presigned download URL 생성
+    const presignedUrls = await this.s3Service.getBatchPresignedDownloadUrls(
+      allStems.map(stem => stem.file_path)
+    );
 
-    // 스트리밍 정보 구성
-    const streamingStems: StemStreamingInfo[] = allStems.map(stem => ({
+    // 다운로드 정보 구성
+    const downloadStems: StemDownloadInfo[] = allStems.map(stem => ({
       id: stem.id,
       fileName: stem.file_name,
       category: stem.category?.name || null,
@@ -256,7 +260,6 @@ export class StreamingService {
       key: stem.key,
       description: null, // Stem 엔티티에는 description 필드가 없음
       presignedUrl: presignedUrls[stem.file_path],
-      metadata: this.extractStemMetadata(stem),
       uploadedBy: {
         id: stem.upstream?.user?.id || 'unknown',
         username: stem.upstream?.user?.username || 'unknown',
@@ -273,27 +276,26 @@ export class StreamingService {
         bpm: track.bpm,
         key_signature: track.key_signature,
       },
-      stems: streamingStems,
+      stems: downloadStems,
       totalStems: allStems.length,
       urlExpiresAt: new Date(Date.now() + 3600 * 1000).toISOString(),
     };
   }
 
   /**
-   * 배치 스트리밍 - Stem과 VersionStem 모두 지원
+   * 배치 다운로드 - Stem과 VersionStem 모두 지원
    * 
    * @param stemIds - 스템 ID 배열 (Stem과 VersionStem ID 혼재 가능)
    * @param userId - 요청한 사용자 ID
-   * @returns 모든 stems의 스트리밍 URL
+   * @returns 모든 stems의 다운로드 URL
    * 
    * 권한 검증: 각 stem의 트랙에 대한 접근 권한을 개별적으로 확인
    */
-  async getBatchStreamingUrls(stemIds: string[], userId: string): Promise<{
-    streams: Array<{
+  async getBatchDownloadUrls(stemIds: string[], userId: string): Promise<{
+    downloads: Array<{
       stemId: string;
       fileName: string;
       presignedUrl: string;
-      metadata: AudioMetadata;
     }>;
     urlExpiresAt: string;
   }> {
@@ -331,46 +333,44 @@ export class StreamingService {
       await this.validateTrackAccess(trackId, userId);
     }
 
-    // presigned URL 생성
-    const allStemKeys = [
+    // presigned download URL 생성
+    const allFilePaths = [
       ...stems.map(stem => stem.file_path),
       ...versionStems.map(versionStem => versionStem.file_path)
     ];
-    const presignedUrls = await this.s3Service.getBatchPresignedUrls(allStemKeys);
+    const presignedUrls = await this.s3Service.getBatchPresignedDownloadUrls(allFilePaths);
 
     // 결과 구성
-    const streams = [
+    const downloads = [
       ...stems.map(stem => ({
         stemId: stem.id,
         fileName: stem.file_name,
         presignedUrl: presignedUrls[stem.file_path],
-        metadata: this.extractStemMetadata(stem),
       })),
       ...versionStems.map(versionStem => ({
         stemId: versionStem.id,
         fileName: versionStem.file_name,
         presignedUrl: presignedUrls[versionStem.file_path],
-        metadata: this.extractVersionStemMetadata(versionStem),
       }))
     ];
 
     return {
-      streams,
+      downloads,
       urlExpiresAt: new Date(Date.now() + 3600 * 1000).toISOString(),
     };
   }
 
   /**
-   * 특정 버전의 마스터 stems 조회 (VersionStem)
+   * 특정 버전의 마스터 stems 다운로드 URL 조회 (VersionStem)
    * 
    * @param trackId - 트랙 ID
    * @param version - 버전 번호
    * @param userId - 요청한 사용자 ID
-   * @returns 특정 버전의 모든 stems 스트리밍 URL
+   * @returns 특정 버전의 모든 stems 다운로드 URL
    * 
    * 조회 경로: Track → Stage (특정 버전) → VersionStems
    */
-  async getMasterStemStreamingUrls(
+  async getMasterStemDownloadUrls(
     trackId: string,
     version: number,
     userId: string,
@@ -378,7 +378,7 @@ export class StreamingService {
     trackId: string;
     version: number;
     trackInfo: any;
-    stems: StemStreamingInfo[];
+    stems: StemDownloadInfo[];
     totalStems: number;
     urlExpiresAt: string;
   }> {
@@ -411,12 +411,13 @@ export class StreamingService {
       };
     }
 
-    // 모든 VersionStem 파일의 presigned URL 생성
-    const stemKeys = stage.version_stems.map(stem => stem.file_path);
-    const presignedUrls = await this.s3Service.getBatchPresignedUrls(stemKeys);
+    // 모든 VersionStem 파일의 presigned download URL 생성
+    const presignedUrls = await this.s3Service.getBatchPresignedDownloadUrls(
+      stage.version_stems.map(stem => stem.file_path)
+    );
 
-    // 스트리밍 정보 구성
-    const streamingStems: StemStreamingInfo[] = stage.version_stems.map(stem => ({
+    // 다운로드 정보 구성
+    const downloadStems: StemDownloadInfo[] = stage.version_stems.map(stem => ({
       id: stem.id,
       fileName: stem.file_name,
       category: stem.category?.name || null,
@@ -424,7 +425,6 @@ export class StreamingService {
       key: stem.key,
       description: null, // VersionStem에는 description 필드가 없음
       presignedUrl: presignedUrls[stem.file_path],
-      metadata: this.extractVersionStemMetadata(stem),
       uploadedBy: {
         id: stage.user?.id || 'unknown',
         username: stage.user?.username || 'unknown',
@@ -442,27 +442,27 @@ export class StreamingService {
         bpm: track.bpm,
         key_signature: track.key_signature,
       },
-      stems: streamingStems,
+      stems: downloadStems,
       totalStems: stage.version_stems.length,
       urlExpiresAt: new Date(Date.now() + 3600 * 1000).toISOString(),
     };
   }
 
   /**
-   * Upstream의 stems 조회
+   * Upstream의 stems 다운로드 URL 조회
    * 
    * @param upstreamId - Upstream ID
    * @param userId - 요청한 사용자 ID
-   * @returns 해당 upstream의 모든 stems 스트리밍 URL
+   * @returns 해당 upstream의 모든 stems 다운로드 URL
    * 
    * 권한 검증: Upstream → Stage → Track 경로로 트랙 접근 권한 확인
    */
-  async getUpstreamStemsStreamingUrls(
+  async getUpstreamStemsDownloadUrls(
     upstreamId: string,
     userId: string,
   ): Promise<{
     upstreamId: string;
-    stems: StemStreamingInfo[];
+    stems: StemDownloadInfo[];
     totalStems: number;
     urlExpiresAt: string;
   }> {
@@ -488,12 +488,13 @@ export class StreamingService {
     }
     await this.validateTrackAccess(firstStem.upstream.stage.track.id, userId);
 
-    // presigned URL 생성
-    const stemKeys = stems.map(stem => stem.file_path);
-    const presignedUrls = await this.s3Service.getBatchPresignedUrls(stemKeys);
+    // presigned download URL 생성
+    const presignedUrls = await this.s3Service.getBatchPresignedDownloadUrls(
+      stems.map(stem => stem.file_path)
+    );
 
-    // 스트리밍 정보 구성
-    const streamingStems: StemStreamingInfo[] = stems.map(stem => ({
+    // 다운로드 정보 구성
+    const downloadStems: StemDownloadInfo[] = stems.map(stem => ({
       id: stem.id,
       fileName: stem.file_name,
       category: stem.category?.name || null,
@@ -501,7 +502,6 @@ export class StreamingService {
       key: stem.key,
       description: null,
       presignedUrl: presignedUrls[stem.file_path],
-      metadata: this.extractStemMetadata(stem),
       uploadedBy: {
         id: stem.upstream?.user?.id || 'unknown',
         username: stem.upstream?.user?.username || 'unknown',
@@ -511,7 +511,7 @@ export class StreamingService {
 
     return {
       upstreamId,
-      stems: streamingStems,
+      stems: downloadStems,
       totalStems: stems.length,
       urlExpiresAt: new Date(Date.now() + 3600 * 1000).toISOString(),
     };
@@ -552,38 +552,4 @@ export class StreamingService {
 
     return track;
   }
-
-  /**
-   * Stem 엔티티에서 오디오 메타데이터 추출
-   */
-  private extractStemMetadata(stem: Stem): AudioMetadata {
-    return {
-      duration: null,
-      fileSize: null,
-      sampleRate: null,
-      channels: null,
-      format: this.getFileFormat(stem.file_name),
-    };
-  }
-
-  /**
-   * VersionStem 엔티티에서 오디오 메타데이터 추출
-   */
-  private extractVersionStemMetadata(stem: VersionStem): AudioMetadata {
-    return {
-      duration: null,
-      fileSize: null,
-      sampleRate: null,
-      channels: null,
-      format: this.getFileFormat(stem.file_name),
-    };
-  }
-
-  /**
-   * 파일명에서 확장자를 추출하여 포맷 정보 반환
-   */
-  private getFileFormat(fileName: string): string {
-    const extension = fileName.split('.').pop()?.toLowerCase();
-    return extension || 'unknown';
-  }
-}
+} 
