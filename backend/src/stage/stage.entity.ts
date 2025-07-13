@@ -22,7 +22,7 @@ export class Stage {
     @Column({ type: 'varchar', default: 'active' })
     status : string;
 
-    @Column({ type: 'number' })
+    @Column({ type: 'int' })
     version : number;
 
     @Column({ type: 'varchar', nullable: true , default: null})
