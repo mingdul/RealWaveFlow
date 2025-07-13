@@ -11,8 +11,13 @@ export class StageController {
     return this.stageService.createStage(createStageDto);
   }
 
-  @Get('/:track_id')
-  async getStages(@Param('track_id') track_id: string) {
-    return this.stageService.getStages(track_id);
+  @Get('/track/:track_id')
+  async getTrackStages(@Param('track_id') track_id: string) {
+    return this.stageService.getTrackStages(track_id);
+  }
+
+  @Get('/stage/:stage_id')
+  async getStage(@Param('stage_id') stage_id: string) {
+    return this.stageService.getStage(stage_id);
   }
 }

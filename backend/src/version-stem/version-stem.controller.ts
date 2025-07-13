@@ -1,4 +1,4 @@
-import { Body, Controller, Post } from '@nestjs/common';
+import { Body, Controller, Get, Param, Post } from '@nestjs/common';
 import { VersionStemService } from './version-stem.service';
 import { CreateVersionStemDto } from './dto/createVersionStem.dto';
 
@@ -9,5 +9,10 @@ export class VersionStemController {
   @Post('create')
   async createVersionStem(@Body() createVersionStemDto: CreateVersionStemDto) {
     return this.versionStemService.createVersionStem(createVersionStemDto);
+  }
+
+  @Get('/track/:track_id/version-stem/:take')
+  async getLatestStemsPerCategoryByTrack(@Param('track_id') track_id: string, @Param('take') take: number) {
+    return this.versionStemService.getLatestStemsPerCategoryByTrack(track_id, take);
   }
 }

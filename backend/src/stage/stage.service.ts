@@ -36,7 +36,7 @@ export class StageService {
     }
 
 
-    async getStages(track_id: string) {
+    async getTrackStages(track_id: string) {
         const stages = await this.stageRepository.find({
             where: { track: { id: track_id } },
             relations: ['track', 'user'],
@@ -49,6 +49,22 @@ export class StageService {
             success: true,
             message: 'Stages fetched successfully',
             stages,
+        };
+    }
+
+    async getStage(stage_id: string) {
+        const stage = await this.stageRepository.findOne({
+            where: { id: stage_id },
+            relations: ['track', 'user'],
+        });
+
+        if (!stage) {
+            throw new NotFoundException('Stage not found');
+        }
+        return {
+            success: true,
+            message: 'Stage fetched successfully',
+            stage,
         };
     }
     
