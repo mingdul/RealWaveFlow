@@ -6,6 +6,8 @@ import { TrackCollaborator } from 'src/track_collaborator/track_collaborator.ent
 import { Upstream } from 'src/upstream/upstream.entity';
 import { Entity, PrimaryGeneratedColumn, Column, CreateDateColumn, OneToMany } from 'typeorm';
 import { UpstreamComment } from 'src/upstream-comment/upstream-comment.entity';
+import { VersionStem } from 'src/version-stem/version-stem.entity';
+
 
 @Entity('users')
 export class User {
@@ -47,4 +49,7 @@ export class User {
 
   @OneToMany(() => UpstreamComment, (upstreamComment) => upstreamComment.user)
   upstream_comments: UpstreamComment[];
+
+  @OneToMany(() => VersionStem, (versionStem) => versionStem.user)
+  version_stems: VersionStem[];
 }
