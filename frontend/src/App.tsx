@@ -12,6 +12,7 @@ import Notfound from './pages/Notfound';
 import StagePage from './pages/StagePage';
 import PublicRoute from './components/PublicRoute.tsx';
 import TrackPage from './pages/TrackPage.tsx';
+import StemSetReviewPage from './pages/StemSetReviewPage.tsx';
 // import PR_Page from './pages/PR_Page.tsx';     
 // import MasterPage from './pages/MasterPage';
 // import CommitPage from './pages/UploadPage';
@@ -37,6 +38,7 @@ const App = () => {
               <Route path="/track/:trackId" element={<TrackPage />} />
               <Route path="*" element={<Notfound />} />
               <Route path="/stage" element={<StagePage />} />
+              <Route path="/review" element={<StemSetReviewPage />} />
               {/* <Route path="/master" element={<MasterPage />} />
               <Route path="/commit" element={<CommitPage />} />
               <Route path="/pr" element={<PR_Page />} /> 
