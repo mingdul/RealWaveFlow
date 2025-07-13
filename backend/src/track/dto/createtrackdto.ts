@@ -12,7 +12,6 @@ export class CreateTrackDto {
     @IsString()
     title: string;
 
-
     @ApiPropertyOptional({
         description: '트랙 이미지 URL (선택사항)',
         example: 'https://example.com/image.jpg',
