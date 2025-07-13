@@ -1,6 +1,7 @@
 import { Body, Controller, Post, Param, Get, Logger, UseGuards, Req, Request } from '@nestjs/common';
 import { StemJobService } from './stem-job.service';
 import { StageService } from '../stage/stage.service';
+import { TrackService } from '../track/track.service';
 import { CreateStemJobDto } from './dto/createStemJob.dto';
 import { AuthGuard } from '@nestjs/passport';
 
@@ -12,17 +13,74 @@ export class StemJobController {
   constructor(
     private readonly stemJobService: StemJobService,
     private readonly stageService: StageService,
+    private readonly trackService: TrackService,
   ) {}
+
+  @Post('init-start')
+  async initStart(@Body() initData: {
+    // Track 생성 데이터
+    title: string;
+    description?: string;
+    genre?: string;
+    bpm?: string;
+    key_signature?: string;
+    image_url?: string;
+    
+    // Stage 생성 데이터
+    stage_title: string;
+    stage_description: string;
+    version: number;
+  }, @Request() req) {
+    try {
+      // 1. Track 생성
+      const track = await this.trackService.createTrack({
+        title: initData.title,
+        description: initData.description || '',
+        genre: initData.genre || '',
+        bpm: initData.bpm || '',
+        key_signature: initData.key_signature || '',
+        image_url: initData.image_url || '',
+      }, req.user.id);
+      
+      this.logger.log(`Track 생성 완료: ${track.data.id}`);
+      
+      // 2. Stage 생성
+      const stage = await this.stageService.createStage({
+        title: initData.stage_title,
+        description: initData.stage_description,
+        version: initData.version,
+        track_id: track.data.id,
+        user_id: req.user.id,
+      });
+      
+      this.logger.log(`Stage 생성 완료: ${stage.stage.id}`);
+      
+      return {
+        success: true,
+        message: 'Track and Stage initialized successfully',
+        data: {
+          track: track.data,
+          stage: stage.stage,
+        },
+      };
+    } catch (error) {
+      this.logger.error('Track 및 Stage 초기화 실패:', error);
+      return {
+        success: false,
+        message: 'Failed to initialize track and stage',
+        error: error.message,
+      };
+    }
+  }
 
   @Post('create')
   async createStemJob(@Body() createStemJobDto: CreateStemJobDto & {
-    category_id: string;
-    upstream_id: string;
+    upstream_id?: string;
     stage_id: string;
     track_id: string;
   }, @Request() req) {
     try {
-      const job = await this.stemJobService.createJob(createStemJobDto, req.userid);
+      const job = await this.stemJobService.createJob(createStemJobDto, req.user.id);
       return {
         success: true,
         message: 'Stem job created successfully',

@@ -23,12 +23,8 @@ export class CreateStemJobDto {
     bpm?: string;
 
     @IsUUID()
-    @IsNotEmpty()
-    category_id: string;
-
-    @IsUUID()
-    @IsNotEmpty()
-    upstream_id: string;
+    @IsOptional()
+    upstream_id?: string;
 
     @IsUUID()
     @IsNotEmpty()
