@@ -22,7 +22,7 @@ export class WebhookController {
         userId: string;
         trackId: string;
         filepath: string;
-        sessionId: string;
+        stageId: string;
         audio_hash: string;
         timestamp: string;
         original_filename: string;
@@ -44,10 +44,11 @@ export class WebhookController {
             // 해시 값을 StemJob에 업데이트
             await this.stemJobService.updateJobWithHash(data.stemId, data.audio_hash);
 
-            // 중복 검사: trackId와 audio_hash로 검사
+            // 중복 검사: trackId + audio_hash + stageId로 검사
             const isDuplicate = await this.stemJobService.checkDuplicateHash(
                 data.trackId,
                 data.audio_hash,
+                data.stageId,
             );
 
             if (isDuplicate) {
@@ -68,11 +69,11 @@ export class WebhookController {
                     this.logger.error(`중복 파일 삭제 과정 오류: ${data.stemId}`, deleteError);
                 }
                 
-                // 클라이언트에 중복 파일 알림
+                // 클라이언트에 중복 파일 알림 (stageId 사용)
                 await this.chatGateway.sendFileDuplicateEvent(data.userId, {
                     trackId: data.trackId,
                     fileName: data.original_filename,
-                    sessionId: data.sessionId,
+                    stageId: data.stageId,
                     originalFilePath: data.filepath,
                     duplicateHash: data.audio_hash,
                 });
@@ -104,11 +105,11 @@ export class WebhookController {
                     // Category 생성 실패해도 계속 진행
                 }
                 
-                // 클라이언트에 처리 승인 알림
+                // 클라이언트에 처리 승인 알림 (stageId 사용)
                 await this.chatGateway.sendProcessingApprovedEvent(data.userId, {
                     trackId: data.trackId,
                     fileName: data.original_filename,
-                    sessionId: data.sessionId,
+                    stageId: data.stageId,
                     stemHash: data.audio_hash,
                     originalFilePath: data.filepath,
                 });
@@ -162,8 +163,8 @@ export class WebhookController {
 
         try {
             if (data.status === 'SUCCESS') {
-                // 성공 시 StemJob을 Stem으로 변환
-                const stem = await this.stemJobService.convertJobToStem(data.stemId);
+                // 성공 시 StemJob을 Stem으로 변환 (version-Stem도 동시 생성)
+                const stem = await this.stemJobService.convertJobToStem(data.stemId, data.userId);
                 
                 if (stem) {
                     this.logger.log(`작업 완료 처리 성공: ${data.stemId} -> ${stem.id}`);

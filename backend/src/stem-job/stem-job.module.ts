@@ -7,6 +7,7 @@ import { Stem } from '../stem/stem.entity';
 import { SqsModule } from '../sqs/sqs.module';
 import { StageModule } from '../stage/stage.module';
 import { TrackModule } from '../track/track.module';
+import { VersionStemModule } from '../version-stem/version-stem.module';
 
 @Module({
   imports: [
@@ -14,6 +15,7 @@ import { TrackModule } from '../track/track.module';
     SqsModule,
     StageModule,
     TrackModule,
+    VersionStemModule,
   ],
   controllers: [StemJobController],
   providers: [StemJobService],

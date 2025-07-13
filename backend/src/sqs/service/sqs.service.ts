@@ -19,6 +19,7 @@ export class SqsService {
         userId: string;
         trackId: string;
         stemId: string;
+        stageId: string;
         filepath: string;
         timestamp: string;
         original_filename: string;
@@ -31,6 +32,7 @@ export class SqsService {
             userId: data.userId,
             trackId: data.trackId,
             stemId: data.stemId,
+            stageId: data.stageId,
             filepath: data.filepath,
             timestamp: data.timestamp,
             original_filename: data.original_filename,
