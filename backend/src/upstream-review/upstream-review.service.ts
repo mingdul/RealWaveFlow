@@ -56,4 +56,139 @@ export class UpstreamReviewService {
             data: upstreamReviews,
         };
     }
+
+
+
+    // async updateReviewStatus(reviewId: string, newStatus: 'approved' | 'rejected') {
+    //     // 리뷰 상태 업데이트
+    //     await this.upstreamReviewRepository.update({ id: reviewId }, { status: newStatus });
+
+    //     // 해당 review의 drop_id를 조회
+    //     const review = await this.upstreamReviewRepository.findOne({
+    //         where: { id: reviewId },
+    //         relations: ['upstream'],
+    //     });
+        
+    //     if (!review) {
+    //         throw new NotFoundException('Review not found');
+    //     }
+        
+    //     const upstreamId = review.upstream.id;
+
+    //     // 모든 리뷰어의 상태 확인
+    //     const allReviews = await this.upstreamReviewRepository.find({
+    //         where: { upstream: { id: upstreamId } },
+    //     });
+
+    //     const allApproved = allReviews.every(r => r.status === 'approved');
+    //     const hasRejected = allReviews.some(r => r.status === 'rejected');
+    //     const hasPending = allReviews.some(r => r.status === 'pending');
+
+    //     if (allApproved) {
+    //         await this.upstreamRepository.update({ id: upstreamId }, { status: 'approved' });
+    //         await this.finalizeUpstream(upstreamId);
+    //     } else if (!hasPending && hasRejected) {
+    //         // pending 없이 rejected가 있다면
+    //         await this.upstreamRepository.update({ id: upstreamId }, { status: 'rejected' });
+    //     }
+
+       
+
+    //     return {
+    //         success: true,
+    //         message: `Drop Reviewer ${newStatus} successfully`,
+    //         data: { reviewId, newStatus, upstreamId }
+    //     };
+    // }
+
+    // async finalizeDrop(dropId: string) {
+    //     try {
+    //         // drop → dropSelections → stem_file 가져오기
+    //         const upstreamSelections = await this.upstreamSelectionRepository.find({
+    //             where: { upstream: { id: upstreamId } },
+    //             relations: ['stem_file', 'stem_file.category'],
+    //         });
+
+    //         const upstream = await this.upstreamRepository.findOne({
+    //             where: { id: upstreamId },
+    //             relations: ['track', 'drop_by'],
+    //         });
+
+    //         if (!upstream) {
+    //             throw new NotFoundException('Upstream not found');
+    //         }
+
+            
+    //         const createMasterTakeDto: CreateMasterTakeDto = {
+    //             track_id: drop.track.id
+    //         };
+            
+    //         const masterTakeResult = await this.masterTakeService.createMasterTake(
+    //             createMasterTakeDto, 
+    //             drop.drop_by.id
+    //         );
+            
+    //         const masterTake = masterTakeResult.data;
+
+            
+    //         for (const sel of dropSelections) {
+    //             const stemFile = sel.stem_file;
+    //             if (stemFile && stemFile.category) {
+    //                 const createMasterStemDto: CreateMasterStemDto = {
+    //                     file_path: stemFile.file_path,
+    //                     file_name: stemFile.file_name,
+    //                     key: stemFile.key,
+    //                     tag: stemFile.tag,
+    //                     description: stemFile.description,
+    //                     take: masterTake.take,
+    //                     track_id: drop.track.id,
+    //                     category_id: stemFile.category.id,
+    //                     masterTake_id: masterTake.id,
+    //                     uploaded_by: drop.drop_by.id,
+    //                 };
+                    
+    //                 await this.masterStemService.createMasterStem(createMasterStemDto);
+    //             }
+    //         }
+
+    //         return {
+    //             success: true,
+    //             message: 'Drop finalized successfully with MasterTake and MasterStems created',
+    //             data: {
+    //                 dropId,
+    //                 masterTakeId: masterTake.id,
+    //                 takeNumber: masterTake.take,
+    //                 stemsCreated: dropSelections.length
+    //             }
+    //         };
+
+    //     } catch (error) {
+    //         throw error;
+    //     }
+    // }
+
+    // async approveDropReviewer(dropId: string, userId: string) {
+    //     const upstreamReviewer = await this.upstreamReviewRepository.findOne({
+    //         where: {upstream: {id: upstreamId}, user: {id: userId}},
+    //     });
+
+    //     if(!upstreamReviewer){
+    //         return {success: false, message: 'Have no control over the upstream'};
+    //     }
+
+    //     return this.updateReviewStatus(upstreamReviewer.id, 'approved');
+    // }
+
+    // async rejectDropReviewer(dropId: string, userId: string) {
+    //     const upstreamReviewer = await this.upstreamReviewRepository.findOne({
+    //         where: {upstream: {id: upstreamId}, user: {id: userId}},
+    //     });
+        
+    //     if(!upstreamReviewer){
+    //         return {success: false, message: 'Have no control over the upstream'};
+    //     }
+
+    //     return this.updateReviewStatus(upstreamReviewer.id, 'rejected');
+    // }       
+    
 }

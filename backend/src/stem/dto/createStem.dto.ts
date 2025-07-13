@@ -30,5 +30,8 @@ export class CreateStemDto {
     @IsNotEmpty()
     upstream_id: string;
 
+    @IsUUID()
+    @IsNotEmpty()
+    user_id: string;
 
 }
