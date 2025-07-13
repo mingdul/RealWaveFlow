@@ -28,6 +28,7 @@ export class VersionStemService {
             user: { id: user_id },
             category: { id: category_id },
             take,
+            uploaded_at: new Date(),
         });
 
         const savedVersionStem = await this.versionStemRepository.save(versionStem);
@@ -41,6 +42,18 @@ export class VersionStemService {
         };  
     }
 
+    async getVersionStemPathsByStageId(stageId: string): Promise<string[]> {
+        const versionStems = await this.versionStemRepository.find({
+            where: { stage: { id: stageId } },
+            select: ['file_path'],
+        });
+
+        if (versionStems.length === 0) {
+            throw new NotFoundException(`No version stems found for stage: ${stageId}`);
+        }
+
+        return versionStems.map(stem => stem.file_path);
+    }
 
     async getLatestStemsPerCategoryByTrack(trackId: string, take: number) {
         const categories = await this.categoryRepository.find({
@@ -81,6 +94,4 @@ export class VersionStemService {
           data: results,
         };
       }
-
-
 }

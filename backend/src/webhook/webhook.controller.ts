@@ -2,6 +2,7 @@ import { Body, Controller, Logger, Post } from '@nestjs/common';
 import { SqsService } from 'src/sqs/service/sqs.service';
 import { StemJobService } from 'src/stem-job/stem-job.service';
 import { StageService } from 'src/stage/stage.service';
+import { CategoryService } from 'src/category/category.service';
 import { ChatGateway } from 'src/websocket/websocket.gateway';
 
 @Controller('webhook')
@@ -11,6 +12,7 @@ export class WebhookController {
     constructor(
         private readonly stemJobService: StemJobService,
         private readonly stageService: StageService,
+        private readonly categoryService: CategoryService,
         private readonly chatGateway: ChatGateway,
     ) {}
     
@@ -20,7 +22,7 @@ export class WebhookController {
         userId: string;
         trackId: string;
         filepath: string;
-        sessionId: string;
+        stageId: string;
         audio_hash: string;
         timestamp: string;
         original_filename: string;
@@ -42,10 +44,11 @@ export class WebhookController {
             // 해시 값을 StemJob에 업데이트
             await this.stemJobService.updateJobWithHash(data.stemId, data.audio_hash);
 
-            // 중복 검사: trackId와 audio_hash로 검사
+            // 중복 검사: trackId + audio_hash + stageId로 검사
             const isDuplicate = await this.stemJobService.checkDuplicateHash(
                 data.trackId,
                 data.audio_hash,
+                data.stageId,
             );
 
             if (isDuplicate) {
@@ -54,7 +57,7 @@ export class WebhookController {
                 
                 try {
                     // 중복 파일 삭제 요청
-                    await this.stemJobService.requestDeleteDuplicateFile(stemJob);
+                    await this.stemJobService.requestDeleteDuplicateFile(stemJob, data.userId);
                     
                     this.logger.log(`중복 파일 삭제 요청 전송 완료: ${data.stemId}`);
                     
@@ -66,11 +69,11 @@ export class WebhookController {
                     this.logger.error(`중복 파일 삭제 과정 오류: ${data.stemId}`, deleteError);
                 }
                 
-                // 클라이언트에 중복 파일 알림
+                // 클라이언트에 중복 파일 알림 (stageId 사용)
                 await this.chatGateway.sendFileDuplicateEvent(data.userId, {
                     trackId: data.trackId,
                     fileName: data.original_filename,
-                    sessionId: data.sessionId,
+                    stageId: data.stageId,
                     originalFilePath: data.filepath,
                     duplicateHash: data.audio_hash,
                 });
@@ -78,14 +81,35 @@ export class WebhookController {
                 this.logger.log(`중복 파일 웹소켓 이벤트 전송 완료: ${data.stemId}`);
                 
             } else {
-                // 신규 파일 시나리오: 처리 승인 및 오디오 분석 시작
+                // 신규 파일 시나리오: 처리 승인 및 category 생성, 오디오 분석 시작
                 this.logger.log(`신규 파일 확인: ${data.stemId}, 처리 승인 프로세스 시작`);
                 
-                // 클라이언트에 처리 승인 알림
+                try {
+                    // 파일명에서 category 이름 추출 (확장자 제거)
+                    const categoryName = data.original_filename.replace(/\.[^/.]+$/, '');
+                    
+                    // Category 생성 (instrument는 파일명을 기본값으로 사용)
+                    const category = await this.categoryService.createCategory({
+                        name: categoryName,
+                        track_id: data.trackId,
+                        instrument: categoryName, // 파일명을 instrument로 사용
+                    });
+                    
+                    // StemJob에 category_id 업데이트
+                    await this.stemJobService.updateJobWithCategoryId(data.stemId, category.data.id);
+                    
+                    this.logger.log(`Category 생성 완료: ${category.data.id} (${categoryName})`);
+                    
+                } catch (categoryError) {
+                    this.logger.error(`Category 생성 실패: ${data.stemId}`, categoryError);
+                    // Category 생성 실패해도 계속 진행
+                }
+                
+                // 클라이언트에 처리 승인 알림 (stageId 사용)
                 await this.chatGateway.sendProcessingApprovedEvent(data.userId, {
                     trackId: data.trackId,
                     fileName: data.original_filename,
-                    sessionId: data.sessionId,
+                    stageId: data.stageId,
                     stemHash: data.audio_hash,
                     originalFilePath: data.filepath,
                 });
@@ -94,7 +118,7 @@ export class WebhookController {
                 
                 // 오디오 분석 요청
                 try {
-                    await this.stemJobService.sendAudioAnalysisRequest(stemJob);
+                    await this.stemJobService.sendAudioAnalysisRequest(stemJob, data.userId);
                     this.logger.log(`오디오 분석 요청 전송: ${data.stemId}`);
                 } catch (analysisError) {
                     this.logger.error(`오디오 분석 요청 실패: ${data.stemId}`, analysisError);
@@ -139,8 +163,8 @@ export class WebhookController {
 
         try {
             if (data.status === 'SUCCESS') {
-                // 성공 시 StemJob을 Stem으로 변환
-                const stem = await this.stemJobService.convertJobToStem(data.stemId);
+                // 성공 시 StemJob을 Stem으로 변환 (version-Stem도 동시 생성)
+                const stem = await this.stemJobService.convertJobToStem(data.stemId, data.userId);
                 
                 if (stem) {
                     this.logger.log(`작업 완료 처리 성공: ${data.stemId} -> ${stem.id}`);

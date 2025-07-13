@@ -240,7 +240,7 @@ export class ChatGateway
   sendFileDuplicateEvent(userId: string, data: {
     trackId: string;
     fileName: string;
-    sessionId: string;
+    stageId: string;
     originalFilePath: string;
     duplicateHash: string;
   }) {
@@ -248,7 +248,7 @@ export class ChatGateway
     this.sendToUser(userId, 'file-duplicate', {
       trackId: data.trackId,
       fileName: data.fileName,
-      sessionId: data.sessionId,
+      stageId: data.stageId,
       originalFilePath: data.originalFilePath,
       duplicateHash: data.duplicateHash,
       timestamp: new Date().toISOString(),
@@ -264,7 +264,7 @@ export class ChatGateway
   sendProcessingApprovedEvent(userId: string, data: {
     trackId: string;
     stemHash: string;
-    sessionId: string;
+    stageId: string;
     fileName: string;
     originalFilePath: string;
   }) {
@@ -272,7 +272,7 @@ export class ChatGateway
     this.sendToUser(userId, 'processing-approved', {
       trackId: data.trackId,
       stemHash: data.stemHash,
-      sessionId: data.sessionId,
+      stageId: data.stageId,
       fileName: data.fileName,
       originalFilePath: data.originalFilePath,
       timestamp: new Date().toISOString(),
