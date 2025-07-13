@@ -1,0 +1,86 @@
+import { BadRequestException, Injectable } from '@nestjs/common';
+import { VersionStem } from './version-stem.entity';
+import { InjectRepository } from '@nestjs/typeorm';
+import { Raw, Repository } from 'typeorm';
+import { CreateVersionStemDto } from './dto/createVersionStem.dto';
+import { Category } from 'src/category/category.entity';
+import { NotFoundException } from '@nestjs/common';
+
+@Injectable()
+export class VersionStemService {
+    constructor(
+        @InjectRepository(VersionStem)
+        private versionStemRepository: Repository<VersionStem>,
+        @InjectRepository(Category)
+        private categoryRepository: Repository<Category>,
+    ) {}
+
+    async createVersionStem(createVersionStemDto: CreateVersionStemDto) {
+        const { file_name, file_path, key, bpm, stem_hash, stage_id, user_id, category_id, take } = createVersionStemDto;
+
+        const versionStem = this.versionStemRepository.create({
+            file_name,
+            file_path,
+            key,
+            bpm,
+            stem_hash,
+            stage: { id: stage_id },
+            user: { id: user_id },
+            category: { id: category_id },
+            take,
+        });
+
+        const savedVersionStem = await this.versionStemRepository.save(versionStem);
+        if (!savedVersionStem) {
+            throw new BadRequestException('Failed to create version stem');
+        }
+        return {
+            success: true,
+            message: 'Version stem created successfully',
+            version_stem: savedVersionStem,
+        };  
+    }
+
+
+    async getLatestStemsPerCategoryByTrack(trackId: string, take: number) {
+        const categories = await this.categoryRepository.find({
+          where: { track: { id: trackId } },
+        });
+      
+        const results = [];
+      
+        for (const category of categories) {
+          const latestStem = await this.versionStemRepository.findOne({
+            where: {
+              track: { id: trackId },
+              category: { id: category.id },
+              take: Raw((alias) => `${alias} <= :take`, { take: 1 }),
+            },
+            order: {
+              take: 'DESC',
+              uploaded_at: 'DESC',
+            },
+            relations: ['category', 'track', 'stage', 'user'],
+          });
+      
+          if (latestStem) {
+            results.push({
+              category: category.name,
+              stem: latestStem,
+            });
+          }
+        }
+      
+        if (results.length === 0) {
+          throw new NotFoundException('No stems found for the given take version');
+        }
+      
+        return {
+          success: true,
+          message: 'Stems for the given take retrieved successfully',
+          data: results,
+        };
+      }
+
+
+}
