@@ -20,18 +20,17 @@ export class StemJobService {
     async createJob(jobData: {
         file_name: string;
         file_path: string;
-        category_id: string;
         upstream_id?: string;
         stage_id: string;
         track_id: string;
         key?: string;
         bpm?: string;
-    }, userid): Promise<StemJob> {
+    }, userId: string): Promise<StemJob> {
         const job = this.stemJobRepository.create({
             file_name: jobData.file_name,
             file_path: jobData.file_path,
-            category_id: jobData.category_id,
-            upstream_id: jobData.upstream_id,
+            category_id: null, // category는 나중에 생성됨
+            upstream_id: jobData.upstream_id || null,
             stage_id: jobData.stage_id,
             track_id: jobData.track_id,
             key: jobData.key,
@@ -43,7 +42,7 @@ export class StemJobService {
         
         // SQS로 해시 생성 요청 보내기
         await this.sqsService.sendHashGenerationRequest({
-            userId: userid, // 추후 인증 시스템에서 받아올 예정
+            userId: userId,
             trackId: jobData.track_id,
             stemId: savedJob.id,
             filepath: jobData.file_path,
@@ -88,6 +87,16 @@ export class StemJobService {
         return await this.stemJobRepository.save(job);
     }
 
+    async updateJobWithCategoryId(jobId: string, categoryId: string): Promise<StemJob | null> {
+        const job = await this.stemJobRepository.findOne({ where: { id: jobId } });
+        if (!job) {
+            return null;
+        }
+
+        job.category_id = categoryId;
+        return await this.stemJobRepository.save(job);
+    }
+
     async deleteJob(jobId: string): Promise<void> {
         await this.stemJobRepository.delete(jobId);
         this.logger.log(`Stem job 삭제 완료: ${jobId}`);
@@ -99,6 +108,11 @@ export class StemJobService {
             return null;
         }
 
+        if (!job.category_id) {
+            this.logger.error(`Category ID가 없어서 Stem 생성 불가: ${jobId}`);
+            return null;
+        }
+
         // Stem 엔티티 생성
         const stem = this.stemRepository.create({
             file_name: job.file_name,
@@ -107,7 +121,7 @@ export class StemJobService {
             key: job.key,
             bpm: job.bpm,
             category: { id: job.category_id },
-            upstream: { id: job.upstream_id },
+            upstream: job.upstream_id ? { id: job.upstream_id } : null,
             uploaded_at: new Date(),
         });
 
@@ -120,7 +134,7 @@ export class StemJobService {
         return savedStem;
     }
 
-    async requestDeleteDuplicateFile(job: StemJob, userId): Promise<void> {
+    async requestDeleteDuplicateFile(job: StemJob, userId: string): Promise<void> {
         // 중복 파일 삭제 요청을 SQS로 보내기
         await this.sqsService.sendDuplicateFileRequest({
             userId: userId,
@@ -133,10 +147,10 @@ export class StemJobService {
         this.logger.log(`중복 파일 삭제 요청 전송: ${job.id}`);
     }
 
-    async sendAudioAnalysisRequest(job: StemJob, userId): Promise<void> {
+    async sendAudioAnalysisRequest(job: StemJob, userId: string): Promise<void> {
         // 오디오 분석 요청을 SQS로 보내기
         await this.sqsService.sendAudioAnalysisRequest({
-            userId: userId, // 추후 인증 시스템에서 받아올 예정
+            userId: userId,
             trackId: job.track_id,
             stemId: job.id,
             filepath: job.file_path,

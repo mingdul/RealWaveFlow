@@ -6,12 +6,14 @@ import { StemJob } from './stem-job.entity';
 import { Stem } from '../stem/stem.entity';
 import { SqsModule } from '../sqs/sqs.module';
 import { StageModule } from '../stage/stage.module';
+import { TrackModule } from '../track/track.module';
 
 @Module({
   imports: [
     TypeOrmModule.forFeature([StemJob, Stem]),
     SqsModule,
     StageModule,
+    TrackModule,
   ],
   controllers: [StemJobController],
   providers: [StemJobService],
