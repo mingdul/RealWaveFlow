@@ -34,4 +34,7 @@ export class StemJob {
 
     @Column({ type: 'timestamp' })
     uploaded_at : Date;
+
+    @Column({ name: 'user_id' , nullable: true , default: null})
+    user_id : string;
 }
