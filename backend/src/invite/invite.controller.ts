@@ -54,7 +54,7 @@ export class InviteController {
     return {
       success: true,
       data: {
-        track_name: inviteTarget.invite_batch.track.name,
+        track_name: inviteTarget.invite_batch.track.title,
         inviter_name: inviteTarget.invite_batch.inviter.username,
         email: inviteTarget.email,
         expires_at: inviteTarget.invite_batch.expires_at,

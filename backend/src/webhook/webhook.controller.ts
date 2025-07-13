@@ -1,6 +1,5 @@
 import { Body, Controller, Logger, Post } from '@nestjs/common';
 import { SqsService } from 'src/sqs/service/sqs.service';
-import { StemFileService } from 'src/stem-file/stem-file.service';
 import { ChatGateway } from 'src/websocket/websocket.gateway';
 
 @Controller('webhook')
@@ -9,7 +8,6 @@ export class WebhookController {
 
     constructor(
         private readonly sqsService: SqsService,
-        private readonly stemFileService: StemFileService,
         private readonly chatGateway: ChatGateway,
     ) {}
     
@@ -27,31 +25,35 @@ export class WebhookController {
         this.logger.log('웹훅 해시 체크 요청 수신:', data);
         
         try {
+            // TODO: stem-file 모듈이 삭제되어 임시로 중복 검사 로직을 비활성화
             // 중복 검사: trackId, sessionId, audio_hash 세 조건으로 검사
-            const isDuplicate = await this.stemFileService.checkDuplicateHash(
-                data.trackId,
-                data.audio_hash,
-                data.sessionId,
-            );
+            // const isDuplicate = await this.stemFileService.checkDuplicateHash(
+            //     data.trackId,
+            //     data.audio_hash,
+            //     data.sessionId,
+            // );
+            const isDuplicate = false; // 임시로 false로 설정
 
             if (isDuplicate) {
                 // 중복 있음 시나리오: 파일 삭제 요청 및 클라이언트 알림
                 this.logger.log(`중복 해시 발견: ${data.stemId}, 삭제 프로세스 시작`);
                 
                 try {
+                    // TODO: stem-file 모듈이 삭제되어 임시로 비활성화
                     // Python 마이크로서비스에 파일 삭제 요청
-                    await this.stemFileService.requestPythonFileDelete(
-                        data.userId,
-                        data.trackId,
-                        data.stemId,
-                        data.filepath,
-                        data.audio_hash
-                    );
+                    // await this.stemFileService.requestPythonFileDelete(
+                    //     data.userId,
+                    //     data.trackId,
+                    //     data.stemId,
+                    //     data.filepath,
+                    //     data.audio_hash
+                    // );
                     
                     this.logger.log(`중복 파일 삭제 요청 전송 완료: ${data.stemId}`);
                     
+                    // TODO: stem-file 모듈이 삭제되어 임시로 비활성화
                     // DB에서 레코드 삭제
-                    await this.stemFileService.deleteStemFile(data.stemId);
+                    // await this.stemFileService.deleteStemFile(data.stemId);
                     this.logger.log(`DB에서 스템 파일 삭제 완료: ${data.stemId}`);
                     
                 } catch (deleteError) {
@@ -157,11 +159,12 @@ export class WebhookController {
 
         try {
             if (data.status === 'SUCCESS') {
+                // TODO: stem-file 모듈이 삭제되어 임시로 비활성화
                 // 성공 시 데이터베이스 업데이트
-                await this.stemFileService.updateProcessingResult(
-                    data.stemId,
-                    data.result,
-                );
+                // await this.stemFileService.updateProcessingResult(
+                //     data.stemId,
+                //     data.result,
+                // );
                 this.logger.log(`작업 완료 처리 성공: ${data.stemId}`);
                 
                 // 웹소켓으로 처리 완료 알림 전송
@@ -198,16 +201,11 @@ export class WebhookController {
             this.chatGateway.sendFileProcessingError(data.userId, {
                 trackId: data.trackId,
                 fileName: data.original_filename || 'Unknown',
-                error: error.message,
-                stage: 'completion_handling',
+                error: error.message || '알 수 없는 오류',
+                stage: 'completion_processing',
             });
             
-            return { 
-                status: 'error', 
-                message: '완료 알림 처리 실패',
-                error: error.message,
-                stemId: data.stemId
-            };
+            throw error;
         }
     }
 }

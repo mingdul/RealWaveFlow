@@ -8,7 +8,6 @@ import { InviteTarget } from './invite-target.entity';
 import { Track } from 'src/track/track.entity';
 import { TrackCollaborator } from '../track_collaborator/track_collaborator.entity';
 import { User } from '../users/user.entity';
-import { Session } from '../session/session.entity';
 import { EmailModule } from '../email/email.module';
 
 @Module({
@@ -19,8 +18,7 @@ import { EmailModule } from '../email/email.module';
       InviteTarget,
       Track,
       TrackCollaborator,
-      User,
-      Session
+      User
     ]),
     EmailModule
   ],
