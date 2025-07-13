@@ -464,15 +464,6 @@ export class InviteService {
                 });
                 await manager.save(collaborator);
 
-                // TODO: Session 엔티티가 없어서 임시로 주석 처리
-                // 개인 세션 생성
-                // const session = manager.create(Session, {
-                //     track: { id: inviteTarget.invite_batch.track.id },
-                //     user: { id: targetUserId },
-                //     name: `${existingUser.username}'s Session`,
-                //     description: '개인 작업 세션'
-                // });
-                // await manager.save(session);
             }
 
             // 4. 초대 상태 업데이트
@@ -650,15 +641,6 @@ export class InviteService {
             });
             await manager.save(collaborator);
 
-            // TODO: Session 엔티티가 없어서 임시로 주석 처리
-            // 5. 개인 세션 생성
-            // const session = manager.create(Session, {
-            //     track: { id: inviteTarget.invite_batch.track.id },
-            //     user: { id: userId },
-            //     name: `${user.username}'s Session`,
-            //     description: '개인 작업 세션'
-            // });
-            // await manager.save(session);
 
             return {
                 success: true,

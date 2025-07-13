@@ -1,5 +1,4 @@
 import { Track } from "src/track/track.entity";
-import { User } from "src/users/user.entity";
 import { Column, CreateDateColumn, Entity, ManyToOne, PrimaryGeneratedColumn } from "typeorm";
 
 @Entity('invite_link')

@@ -14,9 +14,15 @@ import { UpstreamReviewModule } from './upstream-review/upstream-review.module';
 import { StreamingModule } from './streaming/streaming.module';
 import { DownloadModule } from './download/download.module';
 import { InviteModule } from './invite/invite.module';
-
+import { ConfigModule } from '@nestjs/config';
+import { TypeOrmModule } from '@nestjs/typeorm';
+import { databaseConfig } from './config/database.config';
+import { SqsModule } from './sqs/sqs.module';
 @Module({
-  imports: [StemModule, 
+  imports: [
+    ConfigModule.forRoot({ isGlobal: true,  envFilePath: '.env' }),
+    TypeOrmModule.forRoot(databaseConfig),
+    StemModule, 
     StageModule, 
     StageReviewerModule, 
     CategoryModule,
@@ -31,7 +37,7 @@ import { InviteModule } from './invite/invite.module';
     StreamingModule,
     DownloadModule,
     InviteModule,
-
+    SqsModule,
   ], // 추후 다른 모듈들 (예: AuthModule 등)을 여기에 추가
     controllers: [], // 라우팅 처리
   providers: [], // 비즈니스 로직/서비스 제공
