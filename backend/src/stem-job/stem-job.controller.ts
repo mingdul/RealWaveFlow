@@ -1,10 +1,13 @@
 import { Body, Controller, Post, Param, Get, Logger, UseGuards, Req, Request } from '@nestjs/common';
+import { ApiTags, ApiOperation, ApiResponse, ApiParam, ApiBody, ApiBearerAuth } from '@nestjs/swagger';
 import { StemJobService } from './stem-job.service';
 import { StageService } from '../stage/stage.service';
 import { TrackService } from '../track/track.service';
 import { CreateStemJobDto } from './dto/createStemJob.dto';
 import { AuthGuard } from '@nestjs/passport';
 
+@ApiTags('stem-job')
+@ApiBearerAuth()
 @UseGuards(AuthGuard('jwt'))
 @Controller('stem-job')
 export class StemJobController {
@@ -17,6 +20,25 @@ export class StemJobController {
   ) {}
 
   @Post('init-start')
+  @ApiOperation({ summary: '트랙 및 스테이지 초기화', description: '새로운 트랙과 스테이지를 동시에 생성합니다.' })
+  @ApiBody({ 
+    schema: {
+      type: 'object',
+      properties: {
+        title: { type: 'string' },
+        description: { type: 'string' },
+        genre: { type: 'string' },
+        bpm: { type: 'string' },
+        key_signature: { type: 'string' },
+        image_url: { type: 'string' },
+        stage_title: { type: 'string' },
+        stage_description: { type: 'string' }
+      }
+    }
+  })
+  @ApiResponse({ status: 201, description: '트랙 및 스테이지 초기화 성공' })
+  @ApiResponse({ status: 400, description: '입력값 유효성 검사 실패' })
+  @ApiResponse({ status: 401, description: '인증되지 않은 사용자' })
   async initStart(@Body() initData: {
     // Track 생성 데이터
     title: string;
@@ -73,11 +95,12 @@ export class StemJobController {
   }
 
   @Post('create')
-  async createStemJob(@Body() createStemJobDto: CreateStemJobDto & {
-    upstream_id?: string;
-    stage_id: string;
-    track_id: string;
-  }, @Request() req) {
+  @ApiOperation({ summary: '스템 작업 생성', description: '새로운 스템 작업을 생성합니다.' })
+  @ApiBody({ type: CreateStemJobDto })
+  @ApiResponse({ status: 201, description: '스템 작업 생성 성공' })
+  @ApiResponse({ status: 400, description: '입력값 유효성 검사 실패' })
+  @ApiResponse({ status: 401, description: '인증되지 않은 사용자' })
+  async createStemJob(@Body() createStemJobDto: CreateStemJobDto , @Request() req) {
     try {
       const job = await this.stemJobService.createJob(createStemJobDto, req.user.id);
       return {
@@ -96,6 +119,11 @@ export class StemJobController {
   }
 
   @Get('/track/:track_id')
+  @ApiOperation({ summary: '트랙별 스템 작업 조회', description: '특정 트랙의 모든 스템 작업을 조회합니다.' })
+  @ApiParam({ name: 'track_id', description: '트랙 ID' })
+  @ApiResponse({ status: 200, description: '스템 작업 조회 성공' })
+  @ApiResponse({ status: 401, description: '인증되지 않은 사용자' })
+  @ApiResponse({ status: 404, description: '트랙을 찾을 수 없음' })
   async getTrackJobs(@Param('track_id') trackId: string) {
     try {
       const jobs = await this.stemJobService.findJobsByTrackId(trackId);
@@ -115,6 +143,19 @@ export class StemJobController {
   }
 
   @Post('request-mixing-init')
+  @ApiOperation({ summary: '믹싱 초기화 요청', description: '스테이지의 믹싱 초기화를 요청합니다.' })
+  @ApiBody({ 
+    schema: {
+      type: 'object',
+      properties: {
+        stageId: { type: 'string' }
+      }
+    }
+  })
+  @ApiResponse({ status: 200, description: '믹싱 초기화 요청 성공' })
+  @ApiResponse({ status: 400, description: '입력값 유효성 검사 실패' })
+  @ApiResponse({ status: 401, description: '인증되지 않은 사용자' })
+  @ApiResponse({ status: 404, description: '스테이지를 찾을 수 없음' })
   async requestMixingInit(@Body() requestData: {
     stageId: string;
   }) {
@@ -136,6 +177,20 @@ export class StemJobController {
   }
 
   @Post('request-mixing') // 나중에 init 말고 add 할때 쓸예정
+  @ApiOperation({ summary: '믹싱 요청', description: '스테이지의 스템들을 믹싱합니다.' })
+  @ApiBody({ 
+    schema: {
+      type: 'object',
+      properties: {
+        stageId: { type: 'string' },
+        stem_paths: { type: 'array', items: { type: 'string' } }
+      }
+    }
+  })
+  @ApiResponse({ status: 200, description: '믹싱 요청 성공' })
+  @ApiResponse({ status: 400, description: '입력값 유효성 검사 실패' })
+  @ApiResponse({ status: 401, description: '인증되지 않은 사용자' })
+  @ApiResponse({ status: 404, description: '스테이지를 찾을 수 없음' })
   async requestMixing(@Body() requestData: {
     stageId: string;
     stem_paths: string[];

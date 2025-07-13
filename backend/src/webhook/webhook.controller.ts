@@ -1,10 +1,12 @@
 import { Body, Controller, Logger, Post } from '@nestjs/common';
+import { ApiTags, ApiOperation, ApiResponse, ApiBody } from '@nestjs/swagger';
 import { SqsService } from 'src/sqs/service/sqs.service';
 import { StemJobService } from 'src/stem-job/stem-job.service';
 import { StageService } from 'src/stage/stage.service';
 import { CategoryService } from 'src/category/category.service';
 import { ChatGateway } from 'src/websocket/websocket.gateway';
 
+@ApiTags('webhook')
 @Controller('webhook')
 export class WebhookController {
     private readonly logger = new Logger(WebhookController.name);
@@ -17,6 +19,25 @@ export class WebhookController {
     ) {}
     
     @Post('hash-check')
+    @ApiOperation({ summary: '해시 체크 웹훅', description: '파일 업로드 후 해시 체크를 처리하는 웹훅입니다.' })
+    @ApiBody({ 
+        schema: {
+            type: 'object',
+            properties: {
+                stemId: { type: 'string' },
+                userId: { type: 'string' },
+                trackId: { type: 'string' },
+                filepath: { type: 'string' },
+                stageId: { type: 'string' },
+                audio_hash: { type: 'string' },
+                timestamp: { type: 'string' },
+                original_filename: { type: 'string' }
+            }
+        }
+    })
+    @ApiResponse({ status: 200, description: '해시 체크 처리 성공' })
+    @ApiResponse({ status: 400, description: '잘못된 요청' })
+    @ApiResponse({ status: 500, description: '서버 내부 오류' })
     async handleHashCheck(@Body() data: {
         stemId: string;
         userId: string;
@@ -149,6 +170,26 @@ export class WebhookController {
     }
 
     @Post('completion')
+    @ApiOperation({ summary: '작업 완료 웹훅', description: '오디오 분석 작업 완료를 처리하는 웹훅입니다.' })
+    @ApiBody({ 
+        schema: {
+            type: 'object',
+            properties: {
+                stemId: { type: 'string' },
+                userId: { type: 'string' },
+                trackId: { type: 'string' },
+                status: { type: 'string' },
+                result: { type: 'object' },
+                timestamp: { type: 'string' },
+                original_filename: { type: 'string' },
+                processing_time: { type: 'number' },
+                audio_wave_path: { type: 'string' }
+            }
+        }
+    })
+    @ApiResponse({ status: 200, description: '작업 완료 처리 성공' })
+    @ApiResponse({ status: 400, description: '잘못된 요청' })
+    @ApiResponse({ status: 500, description: '서버 내부 오류' })
     async handleCompletion(@Body() data: {
         stemId: string;
         userId: string;
@@ -227,6 +268,24 @@ export class WebhookController {
     }
 
     @Post('mixing-complete')
+    @ApiOperation({ summary: '믹싱 완료 웹훅', description: '믹싱 작업 완료를 처리하는 웹훅입니다.' })
+    @ApiBody({ 
+        schema: {
+            type: 'object',
+            properties: {
+                stageId: { type: 'string' },
+                status: { type: 'string' },
+                mixed_file_path: { type: 'string' },
+                stem_count: { type: 'number' },
+                stem_paths: { type: 'array', items: { type: 'string' } },
+                task_id: { type: 'string' },
+                processed_at: { type: 'string' }
+            }
+        }
+    })
+    @ApiResponse({ status: 200, description: '믹싱 완료 처리 성공' })
+    @ApiResponse({ status: 400, description: '잘못된 요청' })
+    @ApiResponse({ status: 500, description: '서버 내부 오류' })
     async handleMixingComplete(@Body() data: {
         stageId: string;
         status: string;
@@ -248,33 +307,27 @@ export class WebhookController {
 
                 this.logger.log(`믹싱 완료 처리 성공: ${data.stageId} -> ${data.mixed_file_path}`);
 
-                // 웹소켓으로 믹싱 완료 알림 전송 (해당 stage의 모든 사용자에게)
-                // 추후 필요에 따라 ChatGateway에 sendMixingCompleted 메서드 추가
-                
                 return {
                     status: 'success',
-                    message: '믹싱 완료 처리 완료',
+                    message: '믹싱 완료 처리 성공',
                     stageId: data.stageId,
-                    guidePath: data.mixed_file_path,
-                    stemCount: data.stem_count,
+                    mixedFilePath: data.mixed_file_path
                 };
             } else {
-                this.logger.error(`믹싱 실패: ${data.stageId}`);
-                
+                this.logger.error(`믹싱 완료 실패: ${data.stageId}`);
                 return {
                     status: 'error',
-                    message: '믹싱 실패',
-                    stageId: data.stageId,
+                    message: '믹싱 완료 실패',
+                    stageId: data.stageId
                 };
             }
         } catch (error) {
-            this.logger.error(`믹싱 완료 알림 처리 실패: ${data.stageId}`, error);
-            
+            this.logger.error(`믹싱 완료 처리 실패: ${data.stageId}`, error);
             return {
                 status: 'error',
-                message: '믹싱 완료 알림 처리 실패',
+                message: '믹싱 완료 처리 실패',
                 error: error.message,
-                stageId: data.stageId,
+                stageId: data.stageId
             };
         }
     }
