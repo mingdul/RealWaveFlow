@@ -10,26 +10,7 @@ services:
     env_file:
       - ./back-end/.env
     environment:
-      - NODE_ENV=${NODE_ENV:-development}
-      - DB_HOST=${{ secrets.DB_HOST }}
-      - DB_PORT=${{ secrets.DB_PORT }}
-      - DB_USERNAME=${{ secrets.DB_USERNAME }}
-      - DB_PASSWORD=${{ secrets.DB_PASSWORD }}
-      - DB_NAME=postgres
-      - JWT_SECRET=${{ secrets.JWT_SECRET }}
-      - RESEND_API_KEY=${{ secrets.RESEND_API_KEY }}
-      - FRONTEND_URL=${{ secrets.FRONTEND_URL }}
-      - EMAIL_USER=${{ secrets.EMAIL_USER }}
-      - EMAIL_PASS=${{ secrets.EMAIL_PASS }}
-      - GOOGLE_CLIENT_ID=${{ secrets.GOOGLE_CLIENT_ID }}
-      - GOOGLE_CLIENT_SECRET=${{ secrets.GOOGLE_CLIENT_SECRET }}
-      - GOOGLE_CALLBACK_URL=${{ secrets.GOOGLE_CALLBACK_URL }}
-      - AWS_REGION=${{ secrets.AWS_REGION }}
-      - AWS_ACCESS_KEY_ID_FOR_GITACTIONS=${{ secrets.AWS_ACCESS_KEY_ID_FOR_GITACTIONS }}
-      - AWS_SECRET_ACCESS_KEY_FOR_GITACTIONS=${{ secrets.AWS_SECRET_ACCESS_KEY_FOR_GITACTIONS }}
-      - AWS_S3_BUCKET_NAME=${{ secrets.AWS_S3_BUCKET_NAME }}
-      - MY_QUEUE_URL=${{ secrets.MY_QUEUE_URL }}
-      - NODE_ENV=development\
+      - NODE_ENV=development
     # 현재 개발 단계임. NODE_ENV 수정 금지.
     networks:
       - waveflow-network
