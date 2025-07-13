@@ -1,11 +1,38 @@
 import { Injectable, Logger } from '@nestjs/common';
 import { Resend } from 'resend';
 
+/**
+ * 이메일 서비스
+ * 
+ * WaveFlow 플랫폼의 이메일 발송을 담당하는 서비스
+ * Resend API를 사용하여 초대 이메일, 알림 이메일 등을 발송
+ * 
+ * 주요 기능:
+ * - 초대 이메일 발송 (트랙 협업 초대)
+ * - 이메일 템플릿 생성 (HTML 형식)
+ * - 이메일 전송 상태 추적 및 에러 처리
+ * - 테스트 이메일 발송
+ * 
+ * 의존성:
+ * - Resend API: 실제 이메일 발송 서비스
+ * - 환경변수: RESEND_API_KEY, FRONTEND_URL
+ * 
+ * 사용 예시:
+ * - 트랙 소유자가 협업자에게 초대 이메일 발송
+ * - 시스템 알림 이메일 발송
+ * - 이메일 서비스 상태 확인
+ */
 @Injectable()
 export class EmailService {
   private readonly logger = new Logger(EmailService.name);
   private resend: Resend;
 
+  /**
+   * EmailService 생성자
+   * 
+   * Resend API 클라이언트를 초기화하고 환경 설정을 확인
+   * RESEND_API_KEY가 없으면 이메일 발송 기능이 비활성화됨
+   */
   constructor() {
     const apiKey = process.env.RESEND_API_KEY;
     if (!apiKey) {
@@ -19,6 +46,34 @@ export class EmailService {
 
   /**
    * 초대 이메일 전송
+   * 
+   * 트랙 협업 초대를 위한 이메일을 발송합니다.
+   * 
+   * 워크플로우:
+   * 1. 초대 데이터 검증
+   * 2. 초대 URL 생성 (프론트엔드 URL + 토큰)
+   * 3. 만료 시간 포맷팅 (한국 시간대)
+   * 4. HTML 이메일 템플릿 생성
+   * 5. Resend API를 통한 이메일 발송
+   * 6. 발송 결과 로깅 및 반환
+   * 
+   * @param to - 수신자 이메일 주소
+   * @param inviteData - 초대 관련 데이터
+   * @param inviteData.trackName - 초대 대상 트랙 이름
+   * @param inviteData.inviterName - 초대자 이름
+   * @param inviteData.inviteToken - 고유한 초대 토큰
+   * @param inviteData.expiresAt - 초대 만료 시간
+   * 
+   * @returns 발송 결과 객체
+   * - success: 발송 성공 여부
+   * - messageId: Resend에서 제공하는 메시지 ID (성공 시)
+   * - error: 에러 메시지 (실패 시)
+   * 
+   * 에러 처리:
+   * - Resend API 키가 없는 경우
+   * - 네트워크 오류
+   * - Resend API 응답 오류
+   * - 이메일 형식 오류
    */
   async sendInviteEmail(
     to: string,
@@ -29,13 +84,17 @@ export class EmailService {
       expiresAt: Date;
     }
   ): Promise<{ success: boolean; messageId?: string; error?: string }> {
+    // Resend 클라이언트가 초기화되지 않은 경우 처리
     if (!this.resend) {
       this.logger.warn('Resend not initialized. Skipping email send.');
       return { success: false, error: 'Email service not configured' };
     }
 
     try {
+      // 초대 URL 생성 (프론트엔드의 초대 수락 페이지로 연결)
       const inviteUrl = `${process.env.FRONTEND_URL}/invite/accept/${inviteData.inviteToken}`;
+      
+      // 만료 시간을 한국 시간대로 포맷팅
       const expiresAtFormatted = inviteData.expiresAt.toLocaleString('ko-KR', {
         year: 'numeric',
         month: 'long',
@@ -45,6 +104,7 @@ export class EmailService {
         timeZone: 'Asia/Seoul'
       });
 
+      // HTML 이메일 템플릿 생성
       const emailHtml = this.generateInviteEmailTemplate({
         ...inviteData,
         inviteUrl,
@@ -53,6 +113,7 @@ export class EmailService {
 
       this.logger.log(`Attempting to send email to ${to} with Resend API`);
 
+      // Resend API를 통한 이메일 발송
       const result = await this.resend.emails.send({
         from: 'WaveFlow <onboarding@resend.dev>',
         to: [to],
@@ -62,6 +123,7 @@ export class EmailService {
 
       this.logger.log(`Resend API response:`, JSON.stringify(result, null, 2));
 
+      // Resend API 응답에서 에러 확인
       if (result.error) {
         this.logger.error(`Resend API error:`, result.error);
         return {
@@ -88,6 +150,24 @@ export class EmailService {
 
   /**
    * 초대 이메일 HTML 템플릿 생성
+   * 
+   * 초대 이메일의 HTML 내용을 생성합니다.
+   * 반응형 디자인과 모던한 UI를 적용하여 사용자 경험을 향상시킵니다.
+   * 
+   * 템플릿 특징:
+   * - 반응형 디자인 (모바일/데스크톱 호환)
+   * - WaveFlow 브랜딩 적용
+   * - 명확한 CTA 버튼
+   * - 만료 시간 안내
+   * - 폴백 링크 제공 (버튼이 작동하지 않을 경우)
+   * 
+   * @param data - 템플릿에 삽입할 데이터
+   * @param data.trackName - 트랙 이름
+   * @param data.inviterName - 초대자 이름
+   * @param data.inviteUrl - 초대 수락 URL
+   * @param data.expiresAtFormatted - 포맷된 만료 시간
+   * 
+   * @returns HTML 문자열
    */
   private generateInviteEmailTemplate(data: {
     trackName: string;
@@ -246,6 +326,21 @@ export class EmailService {
 
   /**
    * 이메일 전송 테스트
+   * 
+   * 이메일 서비스가 정상적으로 작동하는지 확인하기 위한 테스트 이메일을 발송합니다.
+   * 개발 및 디버깅 목적으로 사용됩니다.
+   * 
+   * @param to - 테스트 이메일을 받을 주소
+   * 
+   * @returns 테스트 결과 객체
+   * - success: 발송 성공 여부
+   * - messageId: 메시지 ID (성공 시)
+   * - error: 에러 메시지 (실패 시)
+   * 
+   * 사용 예시:
+   * - 개발 환경에서 이메일 서비스 설정 확인
+   * - Resend API 연결 상태 확인
+   * - 이메일 템플릿 테스트
    */
   async testEmail(to: string): Promise<{ success: boolean; messageId?: string; error?: string }> {
     if (!this.resend) {
