@@ -14,6 +14,7 @@ export interface WaveformClonerProps {
   currentTime: number;
   onSolo: () => void;
   isSolo: boolean;
+  onSeek?: (time: number, trackId: string) => void;
 }
 
 const WaveformCloner = ({ 
@@ -26,7 +27,8 @@ const WaveformCloner = ({
   isPlaying, 
   currentTime, 
   onSolo,
-  isSolo
+  isSolo,
+  onSeek
 }: WaveformClonerProps) => {
   const waveRef = useRef<HTMLDivElement>(null);
   const timelineRef = useRef<HTMLDivElement>(null);
@@ -71,6 +73,21 @@ const WaveformCloner = ({
       console.warn('WaveSurfer error:', error);
     });
 
+    // 사용자가 파형을 클릭하거나 드래그할 때 즉시 currentTime 업데이트
+    wavesurfer.on('interaction', (newTime: number) => {
+      if (onSeek) {
+        onSeek(newTime, id);
+      }
+    });
+
+    // seek 이벤트 (progress 기반)
+    wavesurfer.on('seek' as any, (progress: number) => {
+      const time = wavesurfer.getDuration() * progress;
+      if (onSeek) {
+        onSeek(time, id);
+      }
+    });
+
     // 오디오 로드
     wavesurfer.load(audioUrl).catch((error) => {
       if (error.name !== 'AbortError') {
@@ -89,7 +106,7 @@ const WaveformCloner = ({
         }
       }
     };
-  }, [audioUrl, waveColor, onReady, id]);
+  }, [audioUrl, waveColor, onReady, id]); // onSeek 의존성 제거
 
   useEffect(() => {
     if (wavesurferRef.current && isReady && !isDestroyed) {
