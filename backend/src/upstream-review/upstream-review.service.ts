@@ -4,6 +4,12 @@ import { Repository } from 'typeorm';
 import { UpstreamReview } from './upstream-review.entity';
 import { CreateUpstreamReviewDto } from './dto/createUpstreamReview.dto';
 import { StageReviewer } from 'src/stage-reviewer/stage-reviewer.entity';
+import { Stem } from 'src/stem/stem.entity';
+import { Upstream } from 'src/upstream/upstream.entity';
+import { UpdateStageDto } from 'src/stage/dto/updateStage.dto';
+import { Stage } from 'src/stage/stage.entity';
+import { CreateVersionStemDto } from 'src/version-stem/dto/createVersionStem.dto';
+import { VersionStem } from 'src/version-stem/version-stem.entity';
 
 @Injectable()
 export class UpstreamReviewService {
@@ -13,6 +19,14 @@ export class UpstreamReviewService {
         private upstreamReviewRepository: Repository<UpstreamReview>,
         @InjectRepository(StageReviewer)
         private stageReviewerRepository: Repository<StageReviewer>,
+        @InjectRepository(Stem)
+        private stemRepository: Repository<Stem>,
+        @InjectRepository(Upstream)
+        private upstreamRepository: Repository<Upstream>,
+        @InjectRepository(Stage)
+        private stageRepository: Repository<Stage>,
+        @InjectRepository(VersionStem)
+        private versionStemRepository: Repository<VersionStem>,
     ) {}
 
     async createUpstreamReview(createUpstreamReviewDto: CreateUpstreamReviewDto) {
@@ -59,136 +73,134 @@ export class UpstreamReviewService {
 
 
 
-    // async updateReviewStatus(reviewId: string, newStatus: 'approved' | 'rejected') {
-    //     // 리뷰 상태 업데이트
-    //     await this.upstreamReviewRepository.update({ id: reviewId }, { status: newStatus });
+    async updateReviewStatus(reviewId: string, upstreamId: string, stageId: string, newStatus: 'approved' | 'rejected') {
+        // 리뷰 상태 업데이트
+        await this.upstreamReviewRepository.update({ id: reviewId }, { status: newStatus });
 
-    //     // 해당 review의 drop_id를 조회
-    //     const review = await this.upstreamReviewRepository.findOne({
-    //         where: { id: reviewId },
-    //         relations: ['upstream'],
-    //     });
+        // 모든 리뷰어의 상태 확인
+        const allReviews = await this.upstreamReviewRepository.find({
+            where: { upstream: { id: upstreamId } },
+        });
+
+        const allApproved = allReviews.every(r => r.status === 'approved');
+        const hasRejected = allReviews.some(r => r.status === 'rejected');
+        const hasPending = allReviews.some(r => r.status === 'pending');
+
+        if (allApproved) {
+            await this.upstreamRepository.update({ id: upstreamId }, { status: 'approved' });
+            await this.finalizeUpstream(upstreamId);
+        } else if (!hasPending && hasRejected) {
+            // pending 없이 rejected가 있다면
+            await this.upstreamRepository.update({ id: upstreamId }, { status: 'rejected' });
+        }
+
+        return {
+            success: true,
+            message: `Upstream Reviewer ${newStatus} successfully`,
+            data: { reviewId, newStatus, upstreamId }
+        };
+    }
+
+    async finalizeUpstream(upstreamId: string) {
+        try {
+          // 1. upstream 정보 로딩 (stems, stage, user 포함)
+          const upstream = await this.upstreamRepository.findOne({
+            where: { id: upstreamId },
+            relations: ['stems', 'stage', 'user', 'stems.category'],
+          });
+      
+          if (!upstream || !upstream.stage) {
+            throw new NotFoundException('Upstream or associated Stage not found');
+          }
+      
+          const stage = upstream.stage;
+      
+          // 2. stage.guide_path 업데이트
+          await this.stageRepository.update(
+            { id: stage.id },
+            { guide_path: upstream.guide_path, status: 'finalized' }
+          );
+      
+
+          const stems = await this.stemRepository.find({
+            where: { upstream: {id: upstreamId}},
+            relations: ['category', 'user', 'upstream'],
+          });
+
+          if(stems.length === 0){
+            throw new NotFoundException('No stems found');
+          }
+
+          // 3. upstream.stems를 version_stems로 복사
+          for (const stem of stems) {
+            const createDto: CreateVersionStemDto = {
+              take : stage.take,
+              stem_hash: stem.stem_hash,
+              file_path: stem.file_path,
+              file_name: stem.file_name,
+              key: stem.key,
+              bpm: stem.bpm,
+              user_id: upstream.user.id,
+              category_id: stem.category.id,
+              stage_id: stage.id,
+            };
+      
+            await this.versionStemRepository.save(createDto);
+          }
+      
+          return {
+            success: true,
+            message: 'Upstream finalized: guide applied and version_stems created',
+            data: {
+              upstreamId,
+              stageId: stage.id,
+              versionStemCount: stems.length,
+            },
+          };
+        } catch (error) {
+          throw error;
+        }
+      }
+
+    async approveDropReviewer(stageId: string, upstreamId: string, userId: string) {
+        const review_user = await this.stageReviewerRepository.findOne({
+            where: { stage: {id: stageId}, user: {id: userId}},
+        });
         
-    //     if (!review) {
-    //         throw new NotFoundException('Review not found');
-    //     }
+        if(!review_user){
+            return {success: false, message: 'Have no control over the stage'};
+        }
+
+        const upstreamReviewer = await this.upstreamReviewRepository.findOne({
+            where: {upstream: {id: upstreamId}, stage_reviewer: {id: review_user.id}},
+        });
+
+        if(!upstreamReviewer){
+            return {success: false, message: 'Have no control over the upstream'};
+        }
+
+        return this.updateReviewStatus(upstreamReviewer.id, upstreamId, stageId, 'approved');
+    }
+
+    async rejectDropReviewer(stageId: string, upstreamId: string, userId: string) {
+        const review_user = await this.stageReviewerRepository.findOne({
+            where: { stage: {id: stageId}, user: {id: userId}},
+        });
         
-    //     const upstreamId = review.upstream.id;
+        if(!review_user){
+            return {success: false, message: 'Have no control over the stage'};
+        }
+        const upstreamReviewer = await this.upstreamReviewRepository.findOne({
+            where: {upstream: {id: upstreamId}, stage_reviewer: {id: review_user.id}},
+        });
 
-    //     // 모든 리뷰어의 상태 확인
-    //     const allReviews = await this.upstreamReviewRepository.find({
-    //         where: { upstream: { id: upstreamId } },
-    //     });
 
-    //     const allApproved = allReviews.every(r => r.status === 'approved');
-    //     const hasRejected = allReviews.some(r => r.status === 'rejected');
-    //     const hasPending = allReviews.some(r => r.status === 'pending');
-
-    //     if (allApproved) {
-    //         await this.upstreamRepository.update({ id: upstreamId }, { status: 'approved' });
-    //         await this.finalizeUpstream(upstreamId);
-    //     } else if (!hasPending && hasRejected) {
-    //         // pending 없이 rejected가 있다면
-    //         await this.upstreamRepository.update({ id: upstreamId }, { status: 'rejected' });
-    //     }
-
-       
-
-    //     return {
-    //         success: true,
-    //         message: `Drop Reviewer ${newStatus} successfully`,
-    //         data: { reviewId, newStatus, upstreamId }
-    //     };
-    // }
-
-    // async finalizeDrop(dropId: string) {
-    //     try {
-    //         // drop → dropSelections → stem_file 가져오기
-    //         const upstreamSelections = await this.upstreamSelectionRepository.find({
-    //             where: { upstream: { id: upstreamId } },
-    //             relations: ['stem_file', 'stem_file.category'],
-    //         });
-
-    //         const upstream = await this.upstreamRepository.findOne({
-    //             where: { id: upstreamId },
-    //             relations: ['track', 'drop_by'],
-    //         });
-
-    //         if (!upstream) {
-    //             throw new NotFoundException('Upstream not found');
-    //         }
-
-            
-    //         const createMasterTakeDto: CreateMasterTakeDto = {
-    //             track_id: drop.track.id
-    //         };
-            
-    //         const masterTakeResult = await this.masterTakeService.createMasterTake(
-    //             createMasterTakeDto, 
-    //             drop.drop_by.id
-    //         );
-            
-    //         const masterTake = masterTakeResult.data;
-
-            
-    //         for (const sel of dropSelections) {
-    //             const stemFile = sel.stem_file;
-    //             if (stemFile && stemFile.category) {
-    //                 const createMasterStemDto: CreateMasterStemDto = {
-    //                     file_path: stemFile.file_path,
-    //                     file_name: stemFile.file_name,
-    //                     key: stemFile.key,
-    //                     tag: stemFile.tag,
-    //                     description: stemFile.description,
-    //                     take: masterTake.take,
-    //                     track_id: drop.track.id,
-    //                     category_id: stemFile.category.id,
-    //                     masterTake_id: masterTake.id,
-    //                     uploaded_by: drop.drop_by.id,
-    //                 };
-                    
-    //                 await this.masterStemService.createMasterStem(createMasterStemDto);
-    //             }
-    //         }
-
-    //         return {
-    //             success: true,
-    //             message: 'Drop finalized successfully with MasterTake and MasterStems created',
-    //             data: {
-    //                 dropId,
-    //                 masterTakeId: masterTake.id,
-    //                 takeNumber: masterTake.take,
-    //                 stemsCreated: dropSelections.length
-    //             }
-    //         };
-
-    //     } catch (error) {
-    //         throw error;
-    //     }
-    // }
-
-    // async approveDropReviewer(dropId: string, userId: string) {
-    //     const upstreamReviewer = await this.upstreamReviewRepository.findOne({
-    //         where: {upstream: {id: upstreamId}, user: {id: userId}},
-    //     });
-
-    //     if(!upstreamReviewer){
-    //         return {success: false, message: 'Have no control over the upstream'};
-    //     }
-
-    //     return this.updateReviewStatus(upstreamReviewer.id, 'approved');
-    // }
-
-    // async rejectDropReviewer(dropId: string, userId: string) {
-    //     const upstreamReviewer = await this.upstreamReviewRepository.findOne({
-    //         where: {upstream: {id: upstreamId}, user: {id: userId}},
-    //     });
         
-    //     if(!upstreamReviewer){
-    //         return {success: false, message: 'Have no control over the upstream'};
-    //     }
+        if(!upstreamReviewer){
+            return {success: false, message: 'Have no control over the upstream'};
+        }
 
-    //     return this.updateReviewStatus(upstreamReviewer.id, 'rejected');
-    // }       
+        return this.updateReviewStatus(upstreamReviewer.id, upstreamId, stageId, 'rejected');
+    }       
     
 }

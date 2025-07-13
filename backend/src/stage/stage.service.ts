@@ -17,12 +17,17 @@ export class StageService {
 
     async createStage(createStageDto: CreateStageDto) {
         const { title, description, version, user_id, track_id } = createStageDto;
+        const take = await this.stageRepository.findOne({
+            where: { track: { id: track_id } },
+            order: { take: 'DESC' },
+        });
         const stage = this.stageRepository.create({
             title,
             description,
             version,
             user: { id: user_id },
             track: { id: track_id },
+            take: take.take + 1,
             created_at: new Date(),
             status: 'active',
             guide_path: null,
