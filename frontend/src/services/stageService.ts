@@ -4,19 +4,19 @@ import { CreateStageDto, Stage } from '../types/api';
 // 스테이지 생성
 export const createStage = async (stageData: CreateStageDto): Promise<Stage> => {
   const response = await apiClient.post('/stage/create', stageData);
-  return response.data.stage;
+  return response.data;
 };
 
 // 트랙별 스테이지 목록 조회
 export const getTrackStages = async (trackId: string): Promise<Stage[]> => {
   const response = await apiClient.get(`/stage/track/${trackId}`);
-  return response.data.stages;
+  return response.data;
 };
 
 // 스테이지 상세 조회
 export const getStageDetail = async (stageId: string): Promise<Stage> => {
   const response = await apiClient.get(`/stage/stage/${stageId}`);
-  return response.data.stage;
+  return response.data;
 };
 
 // 스테이지 목록이 있는지 확인

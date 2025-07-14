@@ -168,7 +168,7 @@ const TrackPage: React.FC<TrackPageProps> = () => {
         console.log('[DEBUG][TrackPage] Set mock track:', mockTrack);
         // 스테이지 목록 가져오기
         const trackStages = await getTrackStages(trackId);
-        setStages(trackStages);
+        setStages(trackStages || []);
         console.log('[DEBUG][TrackPage] Loaded stages:', trackStages);
       } catch (error) {
         console.error('[DEBUG][TrackPage] Failed to load track data:', error);
