@@ -1,71 +1,43 @@
-import React, { useState, useRef, useEffect } from 'react';
+import React, { useRef } from 'react';
 import { Plus } from 'lucide-react';
 import { Stage } from '../types/api';
 import StageCard from './StageCard';
 
 interface StageHistoryProps {
   stages: Stage[];
-  onStageSelect?: (stage: Stage) => void;
-  onOpenStageClick?: () => void;
-  disableStageOpening?: boolean;
-  isActiveStage?: boolean;
+  selectedStage: Stage | null;
+  onStageSelect: (stage: Stage) => void;
+  onOpenStageClick: () => void;
+  disableStageOpening: boolean;
 }
 
-const StageHistory: React.FC<StageHistoryProps> = ({ 
+export const StageHistory: React.FC<StageHistoryProps> = ({ 
   stages, 
+  selectedStage,
   onStageSelect, 
   onOpenStageClick,
-  disableStageOpening = false,
-  isActiveStage = false
+  disableStageOpening
 }) => {
-  const [selectedStage, setSelectedStage] = useState<Stage | null>(null);
   const scrollRef = useRef<HTMLDivElement>(null);
 
-  useEffect(() => {
-    const scrollEl = scrollRef.current;
-    if (!scrollEl) return;
-    const onWheel = (e: WheelEvent) => {
-      if (e.deltaY !== 0) {
-        e.preventDefault();
-        scrollEl.scrollLeft += e.deltaY;
-      }
-    };
-    scrollEl.addEventListener('wheel', onWheel, { passive: false });
-    return () => {
-      scrollEl.removeEventListener('wheel', onWheel);
-    };
-  }, []);
-
-  const scrollToCenter = (element: HTMLElement) => {
-    const container = scrollRef.current;
-    if (!container) return;
-
-    const containerWidth = container.offsetWidth;
-    const elementWidth = element.offsetWidth;
-    const elementLeft = element.offsetLeft;
-    
-    const scrollPosition = elementLeft - (containerWidth / 2) + (elementWidth / 2);
-    container.scrollTo({
-      left: scrollPosition,
-      behavior: 'smooth'
-    });
-  };
+  // Stages should be sorted by version number in descending order
+  const sortedStages = [...stages].sort((a, b) => b.version - a.version);
 
   const handleStageClick = (stage: Stage) => {
-    setSelectedStage(stage);
     if (onStageSelect) {
       onStageSelect(stage);
     }
 
     // Find and scroll the clicked card to center
     const cardElement = document.getElementById(`stage-card-${stage.id}`);
-    if (cardElement) {
-      scrollToCenter(cardElement);
+    if (cardElement && scrollRef.current) {
+      const scrollContainer = scrollRef.current;
+      const cardRect = cardElement.getBoundingClientRect();
+      const containerRect = scrollContainer.getBoundingClientRect();
+      const scrollLeft = scrollContainer.scrollLeft + cardRect.left - containerRect.left - (containerRect.width / 2) + (cardRect.width / 2);
+      scrollContainer.scrollTo({ left: scrollLeft, behavior: 'smooth' });
     }
   };
-
-  // 버전 순으로 정렬
-  const sortedStages = [...stages].sort((a, b) => a.version - b.version);
 
   return (
     <div>
