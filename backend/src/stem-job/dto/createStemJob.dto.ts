@@ -33,4 +33,8 @@ export class CreateStemJobDto {
     @IsUUID()
     @IsNotEmpty()
     track_id: string;
+
+    @IsString()
+    @IsOptional()
+    instrument : string;
 }
