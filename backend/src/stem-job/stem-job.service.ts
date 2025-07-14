@@ -27,7 +27,7 @@ export class StemJobService {
         track_id: string;
         key?: string;
         bpm?: string;
-        instument? : string;
+        instrument? : string;
     }, userId: string): Promise<StemJob> {
         const job = this.stemJobRepository.create({
             file_name: jobData.file_name,
@@ -38,7 +38,7 @@ export class StemJobService {
             track_id: jobData.track_id,
             key: jobData.key,
             bpm: jobData.bpm,
-            instrument : jobData.instument,
+            instrument : jobData.instrument,
             user_id: userId,
             uploaded_at: new Date(),
         });
@@ -140,6 +140,7 @@ export class StemJobService {
             category: { id: job.category_id },
             upstream: job.upstream_id ? { id: job.upstream_id } : null,
             uploaded_at: new Date(),
+            user: { id: userId }
         });
 
         const savedStem = await this.stemRepository.save(stem);
@@ -157,6 +158,7 @@ export class StemJobService {
                 stage_id: job.stage_id,
                 user_id: userId,
                 version: 1, // 기본값으로 1 설정
+                track_id: job.track_id,
             });
             
             this.logger.log(`Version-Stem 생성 완료: ${savedStem.id}`);

@@ -5,6 +5,7 @@ import { Stage } from './stage.entity';
 import { CreateStageDto } from './dto/createStage.dto';
 import { SqsService } from '../sqs/service/sqs.service';
 import { VersionStemService } from '../version-stem/version-stem.service';
+import { StageReviewerService } from 'src/stage-reviewer/stage-reviewer.service';
 
 @Injectable()
 export class StageService {
@@ -15,10 +16,11 @@ export class StageService {
         private stageRepository: Repository<Stage>,
         private sqsService: SqsService,
         private versionStemService: VersionStemService,
+        private stageReviewerService: StageReviewerService,
     ) {}
 
     async createStage(createStageDto: CreateStageDto) {
-        const { title, description, user_id, track_id } = createStageDto;
+        const { title, description, user_id, track_id, status } = createStageDto;
         const lastStage = await this.stageRepository.findOne({
             where: { track: { id: track_id } },
             order: { version: 'DESC' },
@@ -30,7 +32,7 @@ export class StageService {
             track: { id: track_id },
             version: lastStage ? lastStage.version + 1 : 1,
             created_at: new Date(),
-            status: 'active',
+            status,
             guide_path: null,
         });
 
@@ -38,17 +40,27 @@ export class StageService {
         if (!savedStage) {
             throw new BadRequestException('Failed to create stage');
         }
+
+        const stageReviewer =  await this.stageReviewerService.createStageReviewer({
+            stage_id: savedStage.id,
+            user_id: user_id,
+        });
+
+        if (!stageReviewer) {
+            throw new BadRequestException('Failed to create stage reviewer');
+        }
+
         return {
             success: true,
             message: 'Stage created successfully',
-            stage: savedStage,
+            data: savedStage,
         };
     }
 
 
     async getTrackStages(track_id: string) {
         const stages = await this.stageRepository.find({
-            where: { track: { id: track_id } },
+            where: { track : { id : track_id } },
             relations: ['track', 'user'],
         });
 
@@ -58,7 +70,7 @@ export class StageService {
         return {
             success: true,
             message: 'Stages fetched successfully',
-            stages,
+            data: stages,
         };
     }
 
@@ -74,7 +86,7 @@ export class StageService {
         return {
             success: true,
             message: 'Stage fetched successfully',
-            stage,
+            data: stage,
         };
     }
 
@@ -92,6 +104,7 @@ export class StageService {
         
         this.logger.log(`Stage guide path 업데이트 완료: ${stageId} -> ${guidePath}`);
         return updatedStage;
+        
     }
 
     async requestStemMixingByStageId(stageId: string): Promise<void> {

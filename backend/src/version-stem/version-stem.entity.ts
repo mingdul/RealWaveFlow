@@ -2,7 +2,8 @@ import { Category } from "src/category/category.entity";
 import { Stage } from "src/stage/stage.entity";
 import { Track } from "src/track/track.entity";
 import { User } from "src/users/user.entity";
-import { Column, Entity, JoinColumn, ManyToOne, PrimaryGeneratedColumn } from "typeorm";
+import { Guide } from "src/guide/guide.entity";
+import { Column, Entity, JoinColumn, ManyToMany, ManyToOne, PrimaryGeneratedColumn } from "typeorm";
 
 @Entity('version_stems')
 export class VersionStem {
@@ -55,4 +56,7 @@ export class VersionStem {
     @ManyToOne(() => Track, (track) => track.version_stems)
     @JoinColumn({ name: 'track_id' })
     track : Track;
+
+    @ManyToMany(() => Guide, (guide) => guide.version_stems)
+    guides : Guide[];
 }

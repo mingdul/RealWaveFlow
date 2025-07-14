@@ -19,8 +19,7 @@ const CreateTrackModal: React.FC<CreateTrackModalProps> = ({ onClose, onSubmit }
     genre: '',
     bpm: '',
     key_signature: '',
-    stage_title: '',
-    stage_description: '',
+    // stage_title and stage_description removed
   });
   
   const [coverImage, setCoverImage] = useState<File | null>(null);
@@ -32,6 +31,11 @@ const CreateTrackModal: React.FC<CreateTrackModalProps> = ({ onClose, onSubmit }
 
   const handleImageUpload = (e: React.ChangeEvent<HTMLInputElement>) => {
     const file = e.target.files?.[0];
+
+    if (file && !file.type.startsWith('image/')) {
+      showError('이미지 파일만 업로드할 수 있습니다.');
+      return;
+    }
     if (file) {
       setCoverImage(file);
       const reader = new FileReader();
@@ -54,20 +58,21 @@ const CreateTrackModal: React.FC<CreateTrackModalProps> = ({ onClose, onSubmit }
     setImageUploadProgress(0);
 
     try {
-      let imageUrl = '';
+      let imageKey = '';
       
       // 1. 이미지 업로드 (선택사항)
       if (coverImage) {
         console.log('[DEBUG] CreateTrackModal - Starting image upload:', coverImage.name);
         try {
-          imageUrl = await s3UploadService.uploadImage(
+          const { key } = await s3UploadService.uploadImage(
             coverImage,
             (progress) => {
               console.log('[DEBUG] CreateTrackModal - Image upload progress:', progress);
               setImageUploadProgress(progress);
             }
           );
-          console.log('[DEBUG] CreateTrackModal - Image uploaded successfully:', imageUrl);
+          imageKey = key;
+          console.log('[DEBUG] CreateTrackModal - Image uploaded successfully:', key);
         } catch (error: any) {
           console.error('[ERROR] CreateTrackModal - Image upload failed:', error);
           showError(`이미지 업로드 실패: ${error.message}`);
@@ -82,9 +87,9 @@ const CreateTrackModal: React.FC<CreateTrackModalProps> = ({ onClose, onSubmit }
         genre: formData.genre,
         bpm: formData.bpm,
         key_signature: formData.key_signature,
-        image_url: imageUrl,
-        stage_title: formData.stage_title || 'Initial Stage',
-        stage_description: formData.stage_description || 'Initial stage for track production',
+        image_url: imageKey,
+        stage_title: 'first stage',
+        stage_description: 'start your track in first stage',
       };
 
       console.log('[DEBUG] CreateTrackModal - Calling stem-job/init-start with:', initStartRequest);
@@ -208,34 +213,13 @@ const CreateTrackModal: React.FC<CreateTrackModalProps> = ({ onClose, onSubmit }
                   </div>
                 </div>
 
-                <div>
-                  <h3 className="text-lg font-semibold text-white mb-4 flex items-center">
+                
+                  {/* <h3 className="text-lg font-semibold text-white mb-4 flex items-center">
                     <span className="bg-blue-600 text-white rounded-full w-6 h-6 flex items-center justify-center text-sm mr-2">2</span>
                     Initial Stage Setup
-                  </h3>
-                  <div className="space-y-4">
-                    <div>
-                      <label className="block text-gray-300 text-sm mb-2">Stage Title</label>
-                      <input
-                        type="text"
-                        value={formData.stage_title}
-                        onChange={(e) => setFormData({ ...formData, stage_title: e.target.value })}
-                        className="w-full bg-gray-700 text-white rounded-lg px-4 py-3 border border-gray-600 focus:outline-none focus:ring-2 focus:ring-blue-500 focus:border-transparent transition-all"
-                        placeholder="e.g. Initial Recording Stage"
-                      />
-                    </div>
-                    <div>
-                      <label className="block text-gray-300 text-sm mb-2">Stage Description</label>
-                      <textarea
-                        value={formData.stage_description}
-                        onChange={(e) => setFormData({ ...formData, stage_description: e.target.value })}
-                        className="w-full bg-gray-700 text-white rounded-lg px-4 py-3 border border-gray-600 focus:outline-none focus:ring-2 focus:ring-blue-500 focus:border-transparent transition-all resize-none"
-                        placeholder="Describe what will happen in this stage"
-                        rows={3}
-                      />
-                    </div>
-                  </div>
-                </div>
+                  </h3> */}
+                  {/* Removed stage title and description input fields */}
+                
               </div>
 
               {/* Right Column - Cover Image */}

@@ -5,6 +5,7 @@ import { StageModule } from 'src/stage/stage.module';
 import { CategoryModule } from 'src/category/category.module';
 import { SqsModule } from 'src/sqs/sqs.module';
 import { WebSocketModule } from 'src/websocket/websocket.module';
+import { GuideModule } from 'src/guide/guide.module';
 
 @Module({
   imports: [
@@ -13,6 +14,7 @@ import { WebSocketModule } from 'src/websocket/websocket.module';
     CategoryModule,
     SqsModule,
     WebSocketModule,
+    GuideModule,
   ],
   controllers: [WebhookController]
 })

@@ -7,11 +7,11 @@ import { UploadProgress, MasterStem } from '../types/api';
 import { useAuth } from '../contexts/AuthContext';
 import { useToast } from '../contexts/ToastContext';
 import s3UploadService from '../services/s3UploadService';
-import stemFileService from '../services/stemFileService';
-import categoryService from '../services/categoryService';
+// import stemFileService from '../services/stemFileService';
+// import categoryService from '../services/categoryService';
 // import masterStemService from '../services/masterStemService';
-import sessionService from '../services/sessionService';
-import sessionBestService from '../services/sessionBestService';
+// import sessionService from '../services/sessionService';
+// import sessionBestService from '../services/sessionBestService';
 
 // Types
 interface UploadedFile {
@@ -546,11 +546,7 @@ const UploadModal: React.FC<UploadModalProps> = ({
     dispatch({ type: 'SET_UPLOADING', payload: true });
 
     try {
-      // Create session for this upload
-      const sessionResult = await sessionService.createSession({ 
-        name: `Upload session ${new Date().toISOString()}`, 
-        track_id: projectId 
-      });
+      // Create session for this uploa
 
       // Upload files sequentially
       for (let i = 0; i < filesToUpload.length; i++) {
@@ -570,32 +566,7 @@ const UploadModal: React.FC<UploadModalProps> = ({
             }
           );
 
-          // Create or get category
-          const categoryResult = await categoryService.createCategory({
-            name: uploadResult.fileName,
-            track_id: projectId
-          });
-
-          // Create stem file
-          const stemFileResult = await stemFileService.createStemFile({
-            file_name: uploadResult.fileName,
-            file_path: uploadResult.key,
-            key: file.key || '',
-            track_id: projectId,
-            session_id: sessionResult.data.id,
-            category_id: categoryResult.data.id,
-            tag: file.tag,
-            description: file.description
-          });
-
-          // Update session best if this is a new best
-          if (stemFileResult.data) {
-            await sessionBestService.createSessionBest({
-              session_id: sessionResult.data.id,
-              category_id: categoryResult.data.id,
-              stem_id: stemFileResult.data.id
-            });
-          }
+        
 
           dispatch({ type: 'UPDATE_FILE', payload: {
             id: file.id,

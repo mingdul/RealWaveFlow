@@ -20,10 +20,6 @@ export class S3Service {
     // AWS S3 클라이언트 초기화
     this.s3Client = new S3Client({
       region: this.configService.get('AWS_REGION'),
-      credentials: {
-        accessKeyId: this.configService.get('AWS_ACCESS_KEY_ID'),
-        secretAccessKey: this.configService.get('AWS_SECRET_ACCESS_KEY'),
-      },
     });
     this.bucketName = this.configService.get('AWS_S3_BUCKET_NAME');
   }

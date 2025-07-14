@@ -1,5 +1,4 @@
-import React, { useReducer} from 'react';
-// import { useEffect } from 'react';
+import React, { useReducer, useState, useEffect } from 'react';
 import { Check, X, FileAudio, Upload, Plus, Music, Drum, Mic, Zap, Guitar, Volume2, Users, MoreHorizontal } from 'lucide-react';
 import { UploadProgress, User } from '../types/api';
 import { useAuth } from '../contexts/AuthContext';
@@ -7,6 +6,9 @@ import { useToast } from '../contexts/ToastContext';
 import s3UploadService from '../services/s3UploadService';
 import stemJobService from '../services/stemJobService';
 import StepProgress from './StepProgress';
+import trackService from '../services/trackService';
+import { useSocket } from '../contexts/SocketContext';
+import socketService from '../services/socketService';
 
 // Types
 interface UploadedFile {
@@ -15,7 +17,6 @@ interface UploadedFile {
   size: number;
   tag: string;
   key: string;
-  description: string;
   bpm?: string;
   uploadProgress: number;
   isComplete: boolean;
@@ -104,7 +105,7 @@ const FileSelectionAndUploadStep: React.FC<{
       const newFile: UploadedFile = {
         id: Math.random().toString(36).substr(2, 9),
         name: file.name, size: file.size,
-        tag: '', key: '', description: '', bpm: '',
+        tag: '', key: '', bpm: '',
         uploadProgress: 0, isComplete: false,
         isSelected: true, file
       };
@@ -115,7 +116,8 @@ const FileSelectionAndUploadStep: React.FC<{
 
   const selectedFiles = files.filter(f => f.isSelected && !f.isComplete);
   const completedFiles = files.filter(f => f.isComplete);
-  const canStartUpload = selectedFiles.length > 0 && selectedFiles.every(f => f.tag && f.key && f.bpm);
+  // Make tag required, but key and bpm optional
+  const canStartUpload = selectedFiles.length > 0 && selectedFiles.every(f => f.tag && f.tag.trim() !== '');
 
   return (
     <div className="p-6 pt-0 max-h-[70vh] overflow-y-auto">
@@ -165,7 +167,7 @@ const FileSelectionAndUploadStep: React.FC<{
           </button>
           {!canStartUpload && (
             <p className="text-amber-400 text-sm mt-2 text-center">
-              Please set tag, key, and BPM for all selected files before uploading
+              Please set <b>tag</b> for all selected files before uploading. (Key and BPM are optional)
             </p>
           )}
         </div>
@@ -203,7 +205,7 @@ const FileSelectionAndUploadStep: React.FC<{
                       )}
                     </div>
                     
-                    <div className="grid grid-cols-1 md:grid-cols-4 gap-3 text-sm">
+                    <div className="grid grid-cols-1 md:grid-cols-3 gap-3 text-sm">
                       <div>
                         <label className="block text-gray-400 text-xs mb-2">Instrument</label>
                         <div className="grid grid-cols-4 gap-1">
@@ -239,36 +241,25 @@ const FileSelectionAndUploadStep: React.FC<{
                         )}
                       </div>
                       <div>
-                        <label className="block text-gray-400 text-xs mb-1">Key</label>
+                        <label className="block text-gray-400 text-xs mb-1">Key <span className="text-gray-500">(optional)</span></label>
                         <select 
                           value={file.key}
                           onChange={e => onUpdateFile(file.id, { key: e.target.value })}
                           disabled={file.isComplete}
                           className="w-full bg-gray-700 text-white rounded px-2 py-1 text-xs border border-gray-600 focus:outline-none focus:ring-2 focus:ring-purple-500"
                         >
-                          <option value="">Select key</option>
+                          <option value="">Select key (optional)</option>
                           {keyOptions.map(key => <option key={key} value={key}>{key}</option>)}
                         </select>
                       </div>
                       <div>
-                        <label className="block text-gray-400 text-xs mb-1">BPM</label>
+                        <label className="block text-gray-400 text-xs mb-1">BPM <span className="text-gray-500">(optional)</span></label>
                         <input 
                           type="text" 
                           value={file.bpm || ''}
                           onChange={e => onUpdateFile(file.id, { bpm: e.target.value })}
                           disabled={file.isComplete}
-                          placeholder="e.g. 120" 
-                          className="w-full bg-gray-700 text-white rounded px-2 py-1 text-xs border border-gray-600 focus:outline-none focus:ring-2 focus:ring-purple-500" 
-                        />
-                      </div>
-                      <div>
-                        <label className="block text-gray-400 text-xs mb-1">Description</label>
-                        <input 
-                          type="text" 
-                          value={file.description}
-                          onChange={e => onUpdateFile(file.id, { description: e.target.value })}
-                          disabled={file.isComplete}
-                          placeholder="Enter description" 
+                          placeholder="e.g. 120 (optional)" 
                           className="w-full bg-gray-700 text-white rounded px-2 py-1 text-xs border border-gray-600 focus:outline-none focus:ring-2 focus:ring-purple-500" 
                         />
                       </div>
@@ -321,11 +312,13 @@ const InitProjectModal: React.FC<InitProjectModalProps> = ({
 }) => {
   const { user } = useAuth();
   const { showError, showSuccess } = useToast();
-  const [state, dispatch] = useReducer(commitReducer, { 
-    uploadedFiles: [], 
-    isUploading: false, 
+    const [state, dispatch] = useReducer(commitReducer, {
+    uploadedFiles: [],
+    isUploading: false,
     currentUploadIndex: 0 
   });
+  const [completedStemCount, setCompletedStemCount] = useState(0);
+  const { isConnected } = useSocket();
 
   const steps = ['Create Track', 'Upload Files'];
 
@@ -339,7 +332,6 @@ const InitProjectModal: React.FC<InitProjectModalProps> = ({
       tag: f.tag,
       key: f.key,
       bpm: f.bpm,
-      description: f.description
     })));
 
     // 1) S3 업로드 병렬 처리
@@ -395,13 +387,17 @@ const InitProjectModal: React.FC<InitProjectModalProps> = ({
         const stemJobRequest = {
           file_name: result.fileName,
           file_path: result.key,
-          stem_hash: result.etag || '', // ETag를 stem_hash로 사용
           key: file.key || '',
           bpm: file.bpm || '',
-          upstream_id: '', // 필요 시 수정
           stage_id: stageId,
           track_id: projectId,
+          instrument: file.tag,
         };
+
+        // Validate instrument is not empty
+        if (!file.tag || file.tag.trim() === '') {
+          throw new Error(`Instrument is required for ${file.name}`);
+        }
 
         console.log('[DEBUG] InitProjectModal - Calling stem-job/create for', file.name, ':', stemJobRequest);
         const stemJobResult = await stemJobService.createStemJob(stemJobRequest);
@@ -447,7 +443,7 @@ const InitProjectModal: React.FC<InitProjectModalProps> = ({
       console.log('[DEBUG] InitProjectModal - Calling stem-job/request-mixing-init with:', mixingInitRequest);
       const mixingInitResult = await stemJobService.requestMixingInit(mixingInitRequest);
       console.log('[DEBUG] InitProjectModal - stem-job/request-mixing-init completed:', mixingInitResult);
-      
+      await trackService.updateTrackStatus(projectId, 'producing');
       showSuccess('프로젝트 초기화 완료!'); 
       onComplete();
     } catch (error: any) {
@@ -457,7 +453,64 @@ const InitProjectModal: React.FC<InitProjectModalProps> = ({
   };
 
   const completedFiles = state.uploadedFiles.filter(f => f.isComplete);
-  const canComplete = completedFiles.length > 0 && !state.isUploading;
+  const uploadedFileCount = state.uploadedFiles.filter(f => f.isComplete).length;
+  // 업로드한 모든 파일의 처리가 완료되었을 때만 Complete 버튼 활성화
+  const canComplete = completedStemCount >= uploadedFileCount && uploadedFileCount > 0 && !state.isUploading;
+
+  // 소켓 이벤트 처리
+  useEffect(() => {
+    if (!isConnected || !isOpen) return;
+
+    // 개별 스템 처리 완료 이벤트 리스너
+    const handleFileProcessingCompleted = (data: {
+      trackId: string;
+      fileName: string;
+      result: any;
+      processingTime: number;
+    }) => {
+      console.log('File processing completed event received:', data);
+      
+      if (data.trackId === projectId) {
+        setCompletedStemCount((prev: number) => prev + 1);
+        console.log(`Stem processing completed: ${data.fileName}, count: ${completedStemCount + 1}`);
+      }
+    };
+
+    // 소켓 이벤트 리스너 등록
+    socketService.on('file-processing-completed', handleFileProcessingCompleted);
+
+    // 에러 핸들링
+    const handleSocketError = (error: any) => {
+      console.error('Socket error:', error);
+    };
+
+    const handleSocketConnect = () => {
+      console.log('Socket connected');
+    };
+
+    const handleSocketDisconnect = (reason: string) => {
+      console.log('Socket disconnected:', reason);
+    };
+
+    socketService.on('error', handleSocketError);
+    socketService.on('connect', handleSocketConnect);
+    socketService.on('disconnect', handleSocketDisconnect);
+
+    // Cleanup 함수
+    return () => {
+      socketService.off('file-processing-completed', handleFileProcessingCompleted);
+      socketService.off('error', handleSocketError);
+      socketService.off('connect', handleSocketConnect);
+      socketService.off('disconnect', handleSocketDisconnect);
+    };
+  }, [isConnected, isOpen, projectId, stageId]);
+
+  // 모달이 열릴 때 상태 초기화
+  useEffect(() => {
+    if (isOpen) {
+      setCompletedStemCount(0);
+    }
+  }, [isOpen]);
 
   const handleCloseModal = () => {
     if (state.isUploading) {

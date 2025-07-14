@@ -1,6 +1,6 @@
 // 사용자 관련 타입
 export interface User {
-  id: number;
+  id: string;
   email: string;
   username: string;
   created_at: string;
@@ -43,13 +43,13 @@ export interface CreateTrackDto {
   genre?: string;
   bpm?: string;
   key_signature?: string;
-  owner_id?: number;
+  owner_id?: string;
 }
 
 export interface TrackCollaborator {
   id: number;
   track_id: number;
-  user_id: number;
+  user_id: string;
   role: 'owner' | 'collaborator' | 'viewer';
   permissions: string;
   user?: User;
@@ -72,7 +72,7 @@ export interface CreateSessionBranchDto {
   trackId: number;
   sessionName: string;
   instruments: string[];
-  userId: number;
+  userId: string;
 }
 
 // 버전 관련 타입
@@ -117,7 +117,7 @@ export interface CreatePullRequestDto {
   targetBranchId: string;
   title: string;
   description?: string;
-  userId: number;
+  userId: string;
 }
 
 export interface MergePullRequestDto {
@@ -156,7 +156,7 @@ export interface TrackStatus {
 export interface InitializeTrackDto {
   trackId: number;
   instruments: string[];
-  userId: number;
+  userId: string;
 }
 
 // 브랜치 페이지용 트랙 타입 (UI 전용)
@@ -301,7 +301,7 @@ export interface CreateStemFileDto {
 export interface UploadStemDto {
   sessionBranchId: string;
   instrumentName: string;
-  userId: number;
+  userId: string;
 }
 
 
@@ -485,11 +485,6 @@ export interface StageReviewer {
   status: string;
 }
 
-export interface VersionStem {
-  id: string;
-  stage: Stage;
-  // 추가 속성들은 필요에 따라 확장
-}
 
 export interface Upstream {
   id: string;
@@ -498,5 +493,50 @@ export interface Upstream {
 }
 
 
+// version-stem
+export interface VersionStem {
+  id: string;
+  version: number;
+  file_name: string;
+  stem_hash: string;
+  file_path: string;
+  key: string;
+  bpm: string;
+  audio_wave_path: string;
+  category: Category;
+  stage: Stage;
+  user: User;
+  track: Track;
+  guides: Guide[];
+  uploaded_at: string;
+}
 
+// guide
+export interface Guide {
+  id: string;
+  mixed_file_path: string;
+  waveform_data_path: string;
+  created_at: string;
+  stage: Stage;
+  track: Track;
+  stems: Stem[];
+  version_stems: VersionStem[];
+}
+
+
+//stem
+export interface Stem {
+  id: string;
+  file_name: string;
+  stem_hash: string;
+  file_path: string;
+  key: string;
+  bpm: string;
+  audio_wave_path: string;
+  category: Category;
+  upstream: Upstream;
+  user: User;
+  guides: Guide[];
+  uploaded_at: string;
+}
 

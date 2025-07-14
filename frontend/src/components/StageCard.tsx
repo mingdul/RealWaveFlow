@@ -7,12 +7,13 @@ interface StageCardProps {
   onClick?: (stage: Stage) => void;
   index: number;
   id?: string;
+  isActive?: boolean;
 }
 
-const StageCard: React.FC<StageCardProps> = ({ stage, isSelected, onClick, index, id }) => {
+const StageCard: React.FC<StageCardProps> = ({ stage, isSelected, onClick, index, id, isActive }) => {
   const getCardBgColor = () => {
     if (isSelected) return 'bg-purple-500 scale-105';
-    
+    if (isActive) return 'bg-gradient-to-r from-green-400 to-yellow-300 scale-105';
     switch (index % 4) {
       case 0: return 'bg-gray-700';
       case 1: return 'bg-gray-700';

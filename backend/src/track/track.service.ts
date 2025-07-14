@@ -1,4 +1,4 @@
-import { Injectable, NotFoundException, ForbiddenException } from '@nestjs/common';
+import { Injectable, NotFoundException, ForbiddenException, BadRequestException } from '@nestjs/common';
 import { InjectRepository } from '@nestjs/typeorm';
 import { Repository } from 'typeorm';
 import { Track } from './track.entity';
@@ -29,9 +29,24 @@ export class TrackService {
         });
 
         await this.trackRepository.save(track);
+
+
         console.log('[DEBUG] Track created successfully:', track);
         return { success: true, message: 'Track created successfully', data: track  };
     }
+
+
+    async updateTrackStatus(trackId: string, status: string) {
+        const track = await this.trackRepository.findOne({ where: { id: trackId } });
+        if (!track) {
+            throw new NotFoundException('Track not found');
+        }
+  
+        track.status = status;
+        await this.trackRepository.save(track);
+        return { success: true, message: 'Track status updated successfully', data: track };
+    }
+
 
     async findTrackById(id: string) {
         const track = await this.trackRepository.findOne({
@@ -49,7 +64,7 @@ export class TrackService {
     async findTracksByOwner(ownerId: string) {
         console.log('[DEBUG] findTracksByOwner ownerId:', ownerId);
         const tracks = await this.trackRepository.find({
-            where: { owner_id: { id: ownerId } },
+            where: { owner_id: { id: ownerId }, status: 'producing' },
             order: { updated_date: 'DESC' },
             relations: ['owner_id', 'collaborators', 'collaborators.user_id'],
         });
@@ -63,7 +78,7 @@ export class TrackService {
         console.log('[DEBUG] findTracksByCollaborator userId:', userId);
         // 사용자가 협업자로 포함된 트랙 조회
         const collaboratorTracks = await this.trackCollaboratorRepository.find({
-            where: { user_id: { id: userId } },
+            where: { user_id: { id: userId } , status: 'producing' },
             relations: ['track_id', 'track_id.owner_id', 'track_id.collaborators', 'track_id.collaborators.user_id'],
         });
         console.log('[DEBUG] findTracksByCollaborator collaboratorTracks:', collaboratorTracks);

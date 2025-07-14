@@ -12,8 +12,10 @@ import { Upstream } from '../upstream/upstream.entity';
 import { TrackCollaborator } from '../track_collaborator/track_collaborator.entity';
 import { User } from '../users/user.entity';
 import { S3Service } from './s3.service';
+import { VersionStemService } from 'src/version-stem/version-stem.service';
+import { Category } from 'src/category/category.entity';
 
-/**
+/** 
  * Streaming Module
  * 
  * 음악 스템 파일들의 스트리밍 기능을 제공하는 모듈
@@ -42,11 +44,13 @@ import { S3Service } from './s3.service';
       VersionStem, 
       Upstream, 
       TrackCollaborator, 
-      User
+      User,
+      VersionStem,
+      Category
     ])
   ],
   controllers: [StreamingController, StreamingTestController],
-  providers: [StreamingService, StreamingTestService, S3Service],
-  exports: [StreamingService, StreamingTestService, S3Service]
+  providers: [StreamingService, StreamingTestService, S3Service, VersionStemService],
+  exports: [StreamingService, StreamingTestService, S3Service, VersionStemService]
 })
 export class StreamingModule {}
