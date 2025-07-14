@@ -1,6 +1,5 @@
 // components/PresignedImage.tsx
 import React, { useEffect, useState } from 'react';
-import axios from 'axios';
 import apiClient from '../lib/api';
 
 interface Props {
