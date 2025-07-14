@@ -7,6 +7,9 @@ import { Stage } from '../stage/stage.entity';
 import { VersionStem } from '../version-stem/version-stem.entity';
 import { S3Service } from './s3.service';
 import { StemStreamingInfo, AudioMetadata, StemInfoDto, SimpleStemStreamingInfo } from './dto/streaming.dto';
+import { VersionStemService } from 'src/version-stem/version-stem.service';
+
+
 
 /**
  * Streaming Service
@@ -27,7 +30,9 @@ export class StreamingService {
     private stageRepository: Repository<Stage>,
     @InjectRepository(VersionStem)
     private versionStemRepository: Repository<VersionStem>,
+    private versionStemService: VersionStemService,
     private s3Service: S3Service,
+
   ) {}
 
   /**
@@ -374,14 +379,7 @@ export class StreamingService {
     trackId: string,
     version: number,
     userId: string,
-  ): Promise<{
-    trackId: string;
-    version: number;
-    trackInfo: any;
-    stems: StemStreamingInfo[];
-    totalStems: number;
-    urlExpiresAt: string;
-  }> {
+  ) {
     // 트랙 존재 및 권한 확인
     const track = await this.validateTrackAccess(trackId, userId);
 
@@ -394,8 +392,11 @@ export class StreamingService {
       relations: ['version_stems', 'version_stems.category', 'user'],
     });
 
-    if (!stage || !stage.version_stems || stage.version_stems.length === 0) {
+    if (!stage) {
       return {
+        success: false,
+        message: 'No stage found',
+        data: {
         trackId,
         version,
         trackInfo: {
@@ -408,15 +409,19 @@ export class StreamingService {
         stems: [],
         totalStems: 0,
         urlExpiresAt: new Date(Date.now() + 3600 * 1000).toISOString(),
+        },
       };
     }
 
+
+    const result = await this.versionStemService.getLatestStemsPerCategoryByTrack(trackId, version);
+    const versionStems = result.data.map(item => item.stem);
     // 모든 VersionStem 파일의 presigned URL 생성
-    const stemKeys = stage.version_stems.map(stem => stem.file_path);
+    const stemKeys = versionStems.map(stem => stem.file_path);
     const presignedUrls = await this.s3Service.getBatchPresignedUrls(stemKeys);
 
     // 스트리밍 정보 구성
-    const streamingStems: StemStreamingInfo[] = stage.version_stems.map(stem => ({
+    const streamingStems: StemStreamingInfo[] = versionStems.map(stem => ({
       id: stem.id,
       fileName: stem.file_name,
       category: stem.category?.name || null,
@@ -433,6 +438,9 @@ export class StreamingService {
     }));
 
     return {
+      success: true,
+      message: 'Successfully fetched master stem streaming URLs',
+      data: {
       trackId,
       version,
       trackInfo: {
@@ -443,8 +451,9 @@ export class StreamingService {
         key_signature: track.key_signature,
       },
       stems: streamingStems,
-      totalStems: stage.version_stems.length,
+      totalStems: versionStems.length,
       urlExpiresAt: new Date(Date.now() + 3600 * 1000).toISOString(),
+      },
     };
   }
 

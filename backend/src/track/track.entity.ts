@@ -2,6 +2,7 @@ import { Category } from 'src/category/category.entity';
 import { Stage } from 'src/stage/stage.entity';
 import { TrackCollaborator } from 'src/track_collaborator/track_collaborator.entity';
 import { User } from 'src/users/user.entity';
+import { Guide } from 'src/guide/guide.entity';
 import { Entity, PrimaryGeneratedColumn, Column, CreateDateColumn, UpdateDateColumn, ManyToOne, JoinColumn, OneToMany } from 'typeorm';
 import { VersionStem } from 'src/version-stem/version-stem.entity';
 
@@ -24,7 +25,7 @@ export class Track {
     @Column({ type: 'varchar' , nullable: true , default: null})
     image_url : string;
 
-    @Column({ type: 'varchar', default: 'producing' })
+    @Column({ type: 'varchar', default: 'draft' })
     status : string;
 
     @Column({ type: 'text' , default: null })
@@ -57,4 +58,6 @@ export class Track {
     @OneToMany(() => VersionStem, (versionStem) => versionStem.track)
     version_stems: VersionStem[];
 
+    @OneToMany(() => Guide, (guide) => guide.track)
+    guides: Guide[];
 }

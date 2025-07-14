@@ -1,7 +1,8 @@
-import { Controller, Get, Post, Query, Body, Param, HttpCode, HttpStatus, Request } from '@nestjs/common';  
+import { Controller, Get, Post, Query, Body, Param, HttpCode, HttpStatus, Request, UseGuards } from '@nestjs/common';  
 import { ApiTags, ApiOperation, ApiResponse, ApiQuery, ApiParam, ApiBody } from '@nestjs/swagger';
 import { ImageService } from './image.service';
 import { UploadUrlDto } from './dto/upload-url.dto';
+import { AuthGuard } from '@nestjs/passport';
 
 @ApiTags('images')
 @Controller('images')
@@ -9,6 +10,7 @@ export class ImageController {
   constructor(private readonly imageService: ImageService) {}
 
   @Post('upload-url')
+  @UseGuards(AuthGuard('jwt'))
   @ApiOperation({ summary: '이미지 업로드용 presigned URL 생성' })
   @ApiBody({ type: UploadUrlDto })  // ✅ 수정된 부분
   @ApiResponse({

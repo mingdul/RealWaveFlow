@@ -48,10 +48,9 @@ export interface InitStartResponse {
 export interface StemJobCreateRequest {
   file_name: string;
   file_path: string;
-  stem_hash: string;
   key: string;
   bpm: string;
-  upstream_id: string;
+  instrument: string;
   stage_id: string;
   track_id: string;
 }

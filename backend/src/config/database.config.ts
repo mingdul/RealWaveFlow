@@ -12,6 +12,7 @@ import { UpstreamComment } from 'src/upstream-comment/upstream-comment.entity';
 import { UpstreamReview } from 'src/upstream-review/upstream-review.entity';
 import { InviteLink } from 'src/invite/invite.entity';
 import { StemJob } from 'src/stem-job/stem-job.entity';
+import { Guide } from 'src/guide/guide.entity';
 
 export const databaseConfig: TypeOrmModuleOptions = {
   type: 'postgres',
@@ -34,6 +35,7 @@ export const databaseConfig: TypeOrmModuleOptions = {
     Upstream,
     UpstreamComment,
     UpstreamReview,
+    Guide,
   ],
   // 개발 단계에서는 동기화 활성화
   synchronize: true,

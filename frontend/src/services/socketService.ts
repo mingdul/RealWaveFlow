@@ -37,8 +37,6 @@ class SocketService {
     this.setupEventListeners();
   }
 
-
-
   // 이벤트 리스너 설정
   private setupEventListeners() {
     if (!this.socket) return;
@@ -207,6 +205,23 @@ class SocketService {
   // 소켓 ID 반환
   getSocketId(): string | undefined {
     return this.socket?.id;
+  }
+
+  // 소켓 이벤트 리스너 등록
+  on(event: string, listener: (...args: any[]) => void) {
+    if (!this.socket) {
+      console.warn('Socket not initialized, cannot add listener for', event);
+      return;
+    }
+    this.socket.on(event, listener);
+  }
+
+  // 소켓 이벤트 리스너 제거
+  off(event: string, listener: (...args: any[]) => void) {
+    if (!this.socket) {
+      return;
+    }
+    this.socket.off(event, listener);
   }
 }
 

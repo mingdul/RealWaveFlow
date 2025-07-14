@@ -1,7 +1,8 @@
 import { Category } from "src/category/category.entity";
 import { Upstream } from "src/upstream/upstream.entity";
 import { User } from "src/users/user.entity";
-import { Column, Entity, JoinColumn, ManyToOne, PrimaryGeneratedColumn } from "typeorm";
+import { Guide } from "src/guide/guide.entity";
+import { Column, Entity, JoinColumn, ManyToMany, ManyToOne, PrimaryGeneratedColumn } from "typeorm";
 
 @Entity('stems')
 export class Stem {
@@ -50,4 +51,7 @@ export class Stem {
 
     @Column({ type: 'timestamp' })
     uploaded_at : Date;
+
+    @ManyToMany(() => Guide, (guide) => guide.stems)
+    guides: Guide[];
 }

@@ -1,5 +1,6 @@
 {
   "devDependencies": {
-    "@types/node": "^24.0.10"
+    "@types/node": "^24.0.10",
+    "tailwind-scrollbar-hide": "^4.0.0"
   }
 }

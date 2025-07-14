@@ -2,6 +2,7 @@ import { useEffect, useRef, useState, useCallback } from 'react';
 import WaveSurfer from 'wavesurfer.js';
 import WaveformCloner from '../components/wave';
 import Logo from '../components/Logo';  
+import streamingService, { StemStreamingInfo } from '../services/streamingService';
 import {
   Bell,
   Settings,
@@ -33,64 +34,46 @@ const StemSetReviewPage = () => {
   const [comments, setComments] = useState<Comment[]>([]);
   const [extraAudio, setExtraAudio] = useState<string>('');
   const [showExtraWaveform, setShowExtraWaveform] = useState(false);
+  const [streamingStems, setStreamingStems] = useState<StemStreamingInfo[]>([]);
+  const [stemsLoading, setStemsLoading] = useState(false);
 
   const wavesurferRefs = useRef<{ [id: string]: WaveSurfer }>({});
   const [readyStates, setReadyStates] = useState<{ [id: string]: boolean }>({});
   const isSeeking = useRef(false); // 무한 루프 방지용 플래그
 
-  // Available audio files in public/audio directory
-  const audioFiles = [
-    {
-      name: 'track_ex.wav',
-      path: '/audio/track_ex.wav',
-      description: '메인 트랙',
-    },
-    {
-      name: '1.wav',
-      path: '/audio/Track_ex/1.wav',
-      description: '킥 드럼',
-    },
-    {
-      name: '2.wav',
-      path: '/audio/Track_ex/2.wav',
-      description: '스네어',
-    },
-    {
-      name: '3.wav',
-      path: '/audio/Track_ex/3.wav',
-      description: '베이스',
-    },
-    {
-      name: '4.wav',
-      path: '/audio/Track_ex/4.wav',
-      description: '신스 패드',
-    },
-    {
-      name: '5.wav',
-      path: '/audio/Track_ex/5.wav',
-      description: '신스 플럭',
-    },
-    {
-      name: '6.wav',
-      path: '/audio/Track_ex/6.wav',
-      description: '트럼펫',
-    },
-    {
-      name: '7.wav',
-      path: '/audio/Track_ex/7.wav',
-      description: '보컬 코러스',
-    },
-    {
-      name: '8.wav',
-      path: '/audio/Track_ex/8.wav',
-      description: '퍼커션 벨',
-    },
-    {
-      name: '9.wav',
-      path: '/audio/Track_ex/9.wav',
-      description: '사이렌',
-    },
-  ];
+  // 스트리밍 데이터 로드
+  useEffect(() => {
+    const loadStreamingData = async () => {
+      setStemsLoading(true);
+      try {
+        // TODO: 실제 트랙 ID를 사용해야 함
+      const response = await streamingService.getTrackStems('2f4c036f-239a-4af9-b728-e21eba7e1a78');
+        if (response.success && response.data) {
+          setStreamingStems(response.data.stems);
+        } else {
+          console.error('Failed to load streaming data:', response.message);
+          setStreamingStems([]);
+        }
+      } catch (error) {
+        console.error('Failed to load streaming data:', error);
+        setStreamingStems([]);
+      } finally {
+        setStemsLoading(false);
+      }
+    };
+
+    loadStreamingData();
+  }, []);
+
+  // Legacy audioFiles를 스트리밍 데이터로 변환
+  const audioFiles = streamingStems.map((stem) => ({
+    name: stem.fileName,
+    path: stem.presignedUrl,
+    description: stem.description || `${stem.category} - ${stem.tag}`,
+    category: stem.category,
+    uploadedBy: stem.uploadedBy.username,
+    uploadedAt: stem.uploadedAt
+  }));
 
   const handleReady = useCallback((ws: WaveSurfer, id: string) => {
     wavesurferRefs.current[id] = ws;
@@ -347,13 +330,13 @@ const StemSetReviewPage = () => {
       <div className='z-50 flex flex-col gap-2 px-6 pt-4'>
         <button
           onClick={() => setShowHistory(!showHistory)}
-          className='rounded bg-[#3a3a3a] px-3 py-1 text-sm hover:bg-[#555]'
+          className='self-start rounded bg-[#3a3a3a] px-3 py-1 text-sm hover:bg-[#555]'
         >
           Show History
         </button>
         <button
           onClick={() => setShowCommentList(!showCommentList)}
-          className='rounded bg-[#3a3a3a] px-3 py-1 text-sm hover:bg-[#555]'
+          className='self-start rounded bg-[#3a3a3a] px-3 py-1 text-sm hover:bg-[#555]'
         >
           Comments
         </button>
@@ -364,7 +347,7 @@ const StemSetReviewPage = () => {
         <div className='fixed right-0 top-0 z-40 h-full w-64 bg-[#2a2a2a] px-4 py-6 shadow-lg'>
           {/* Close Button */}
           <div className='mb-4 flex items-center justify-between'>
-            <h2 className='text-lg font-bold text-white'>History</h2>
+            <h2 className='text-lg font-bold text-white'>Streaming Audio Files</h2>
             <button
               onClick={() => setShowHistory(false)}
               className='rounded-full p-1 text-gray-300 transition-all duration-200 hover:text-white'
@@ -395,22 +378,31 @@ const StemSetReviewPage = () => {
           {/* Audio Files List */}
           <div className='mb-6'>
             <h3 className='mb-3 text-sm font-semibold text-white'>
-              Available Audio Files
+              Available Stem Files
             </h3>
-            <div className='max-h-96 space-y-2 overflow-y-auto'>
-              {audioFiles.map((file, index) => (
-                <div
-                  key={index}
-                  onClick={() => handleAudioFileClick(file.path)}
-                  className='cursor-pointer rounded bg-[#3a3a3a] p-3 text-sm text-white transition-colors hover:bg-[#4a4a4a]'
-                >
-                  <div className='font-medium'>{file.name}</div>
-                  <div className='text-xs text-gray-400'>
-                    {file.description}
+            {stemsLoading ? (
+              <div className='flex justify-center py-8'>
+                <div className='animate-spin rounded-full h-8 w-8 border-b-2 border-white'></div>
+              </div>
+            ) : (
+              <div className='max-h-96 space-y-2 overflow-y-auto'>
+                {audioFiles.map((file, index) => (
+                  <div
+                    key={index}
+                    onClick={() => handleAudioFileClick(file.path)}
+                    className='cursor-pointer rounded bg-[#3a3a3a] p-3 text-sm text-white transition-colors hover:bg-[#4a4a4a]'
+                  >
+                    <div className='font-medium'>{file.name}</div>
+                    <div className='text-xs text-gray-400'>
+                      {file.description}
+                    </div>
+                    <div className='text-xs text-gray-500 mt-1'>
+                      Category: {file.category} | By: {file.uploadedBy}
+                    </div>
                   </div>
-                </div>
-              ))}
-            </div>
+                ))}
+              </div>
+            )}
           </div>
         </div>
       )}

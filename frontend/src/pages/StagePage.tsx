@@ -1,7 +1,7 @@
 import React, { useState, useEffect } from 'react';
 import { Upload, Bell, Settings } from 'lucide-react';
 import Logo from '../components/Logo';
-import { UploadModal } from '../components';
+import UploadModal from '../components/UploadModal';
 import trackService from '../services/trackService';
 import { Track } from '../types/api';
 import tapeActive from '../assets/activeTape.png';
