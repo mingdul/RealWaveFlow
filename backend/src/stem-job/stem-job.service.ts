@@ -156,8 +156,7 @@ export class StemJobService {
             upstream: job.upstream_id ? { id: job.upstream_id } : null,
             // Ensure the creator is linked so user_id is persisted
             user: { id: userId },
-            uploaded_at: new Date(),
-            user: { id: userId }
+            uploaded_at: new Date()
         });
 
         const savedStem = await this.stemRepository.save(stem);
