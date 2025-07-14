@@ -102,6 +102,15 @@ const FileSelectionAndUploadStep: React.FC<{
   completedStems,
   failedStems
 }) => {
+  const completedFiles = files.filter(f => f.isComplete);
+  
+  // Stem job completion status check
+  const uploadedStemIds = completedFiles
+    .map(file => file.stemJobId)
+    .filter(id => id) as string[]; // Filter files with stem-job ID
+  const allStemsCompleted = uploadedStemIds.length > 0 && 
+    uploadedStemIds.every(id => completedStems.includes(id));
+  const hasFailedStems = failedStems.length > 0;
   const handleFileSelection = (e: React.ChangeEvent<HTMLInputElement>) => {
     const selectedFiles = e.target.files;
     if (!selectedFiles) return;
@@ -514,10 +523,10 @@ const InitProjectModal: React.FC<InitProjectModalProps> = ({
 
   const completedFiles = state.uploadedFiles.filter(f => f.isComplete);
   
-  // 스템 작업 완료 상태 확인
+  // Stem job completion status check
   const uploadedStemIds = completedFiles
     .map(file => file.stemJobId)
-    .filter(id => id) as string[]; // stem-job ID가 있는 파일만 필터링
+    .filter(id => id) as string[]; // Filter files with stem-job ID
   const allStemsCompleted = uploadedStemIds.length > 0 && 
     uploadedStemIds.every(id => completedStems.includes(id));
   const hasFailedStems = failedStems.length > 0;

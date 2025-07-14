@@ -1,5 +1,4 @@
 import React, { createContext, useContext, useEffect, useState, ReactNode } from 'react';
-import socketService from '../services/socketService';
 import { useAuth } from './AuthContext';
 import { useToast } from './ToastContext';
 import { io, Socket } from 'socket.io-client';
@@ -31,7 +30,7 @@ export const SocketProvider: React.FC<SocketProviderProps> = ({ children }) => {
   const [onlineUsers, setOnlineUsers] = useState(0);
   const [socketId, setSocketId] = useState<string | undefined>();
   
-  const { user, logout, isAuthenticated } = useAuth();
+  const { user, isAuthenticated } = useAuth();
   const { showSuccess, showError } = useToast();
   
   // Stem job status management
@@ -76,15 +75,18 @@ export const SocketProvider: React.FC<SocketProviderProps> = ({ children }) => {
     newSocket.on('connect', () => {
       console.log('WebSocket connected');
       setIsConnected(true);
+      setSocketId(newSocket.id);
     });
 
     newSocket.on('disconnect', () => {
       console.log('WebSocket disconnected');
       setIsConnected(false);
+      setSocketId(undefined);
     });
 
     newSocket.on('connected', (data) => {
       console.log('Socket authentication successful:', data);
+      setOnlineUsers(data.onlineUsers || 0);
     });
 
     // 파일 처리 이벤트 리스너들
