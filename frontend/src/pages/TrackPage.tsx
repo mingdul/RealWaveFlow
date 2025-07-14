@@ -71,19 +71,29 @@ const TrackPage: React.FC<TrackPageProps> = () => {
     loadTrackData();
   }, [trackId]);
 
-  // 최신 버전의 스템들 로드
-  const loadLatestStems = async () => {
+  // 활성 스테이지의 스템들 로드
+  const loadActiveStems = async () => {
     if (!trackId || stages.length === 0) return;
 
     try {
       setStemsLoading(true);
       
-      // 실제 API 호출
-      const latestVersion = Math.max(...stages.map(s => s.version));
-      const response = await streamingService.getMasterStemStreams(trackId, latestVersion);
+      // status가 'active'인 스테이지 찾기
+      const activeStage = stages.find(stage => stage.status === 'active');
+      if (!activeStage) {
+        console.error('No active stage found');
+        setStems([]);
+        return;
+      }
+
+      console.log('[DEBUG][TrackPage] Loading stems for active stage:', activeStage);
+      
+      // 활성 스테이지의 버전으로 스템들 로드
+      const response = await streamingService.getMasterStemStreams(trackId, activeStage.version);
       
       if (response.success && response.data) {
         setStems(response.data.stems);
+        console.log('[DEBUG][TrackPage] Loaded stems for active stage version:', activeStage.version, response.data.stems);
       } else {
         console.error('Failed to load stems:', response.message);
         setStems([]);
@@ -96,12 +106,12 @@ const TrackPage: React.FC<TrackPageProps> = () => {
     }
   };
 
-  // 스테이지가 로드되면 스템들 로드
+  // 스테이지가 로드되면 활성 스테이지의 스템들 로드
   useEffect(() => {
     if (stages.length > 0) {
-      loadLatestStems();
+      loadActiveStems();
     }
-  }, [stages]);
+  }, [stages, trackId]);
 
   const handleBack = () => {
     navigate('/dashboard');
@@ -153,6 +163,21 @@ const TrackPage: React.FC<TrackPageProps> = () => {
     }
   };
 
+  // 현재 활성 스테이지 가져오기
+  const getActiveStage = () => {
+    const activeStage = stages.find(stage => stage.status === 'active');
+    console.log('[DEBUG][TrackPage] Active stage:', activeStage, 'All stages:', stages);
+    return activeStage;
+  };
+
+  // 버전 1 여부 확인
+  const isVersion1 = () => {
+    const activeStage = getActiveStage();
+    const isV1 = activeStage?.version === 1;
+    console.log('[DEBUG][TrackPage] Is version 1:', isV1, 'Active stage version:', activeStage?.version);
+    return isV1;
+  };
+
   if (loading) {
     console.log('[DEBUG][TrackPage] Loading...');
     return (
@@ -196,6 +221,7 @@ const TrackPage: React.FC<TrackPageProps> = () => {
           stages={stages}
           onStageSelect={handleStageClick}
           onOpenStageClick={() => setIsOpenStageModalOpen(true)}
+          disableStageOpening={isVersion1()} // 버전 1에서는 스테이지 열기 비활성화
         />
       </div>
 
@@ -209,7 +235,7 @@ const TrackPage: React.FC<TrackPageProps> = () => {
         isOpen={isStemListModalOpen}
         onClose={() => setIsStemListModalOpen(false)}
         stems={stems}
-        versionNumber={stages.length > 0 ? Math.max(...stages.map(s => s.version).filter(v => typeof v === 'number')).toString(): '1'}
+        versionNumber={getActiveStage()?.version.toString() || '1'}
         loading={stemsLoading}
       />
     </div>
