@@ -8,6 +8,7 @@ import stemJobService from '../services/stemJobService';
 import StepProgress from './StepProgress';
 import trackService from '../services/trackService';
 import { useSocket } from '../contexts/SocketContext';
+import socketService from '../services/socketService';
 
 // Types
 interface UploadedFile {
@@ -317,7 +318,7 @@ const InitProjectModal: React.FC<InitProjectModalProps> = ({
     currentUploadIndex: 0 
   });
   const [completedStemCount, setCompletedStemCount] = useState(0);
-  const { socket } = useSocket();
+  const { isConnected } = useSocket();
 
   const steps = ['Create Track', 'Upload Files'];
 
@@ -457,13 +458,7 @@ const InitProjectModal: React.FC<InitProjectModalProps> = ({
 
   // 소켓 이벤트 처리
   useEffect(() => {
-    if (!socket || !isOpen) return;
-
-    // 소켓 연결 상태 확인
-    if (!socket.connected) {
-      console.error('Socket is not connected');
-      return;
-    }
+    if (!isConnected || !isOpen) return;
 
     // 개별 스템 처리 완료 이벤트 리스너
     const handleFileProcessingCompleted = (data: {
@@ -481,7 +476,7 @@ const InitProjectModal: React.FC<InitProjectModalProps> = ({
     };
 
     // 소켓 이벤트 리스너 등록
-    socket.on('file-processing-completed', handleFileProcessingCompleted);
+    socketService.socket?.on('file-processing-completed', handleFileProcessingCompleted);
 
     // 에러 핸들링
     const handleSocketError = (error: any) => {
@@ -496,18 +491,18 @@ const InitProjectModal: React.FC<InitProjectModalProps> = ({
       console.log('Socket disconnected:', reason);
     };
 
-    socket.on('error', handleSocketError);
-    socket.on('connect', handleSocketConnect);
-    socket.on('disconnect', handleSocketDisconnect);
+    socketService.socket?.on('error', handleSocketError);
+    socketService.socket?.on('connect', handleSocketConnect);
+    socketService.socket?.on('disconnect', handleSocketDisconnect);
 
     // Cleanup 함수
     return () => {
-      socket.off('file-processing-completed', handleFileProcessingCompleted);
-      socket.off('error', handleSocketError);
-      socket.off('connect', handleSocketConnect);
-      socket.off('disconnect', handleSocketDisconnect);
+      socketService.socket?.off('file-processing-completed', handleFileProcessingCompleted);
+      socketService.socket?.off('error', handleSocketError);
+      socketService.socket?.off('connect', handleSocketConnect);
+      socketService.socket?.off('disconnect', handleSocketDisconnect);
     };
-  }, [socket, isOpen, projectId, stageId]);
+  }, [isConnected, isOpen, projectId, stageId]);
 
   // 모달이 열릴 때 상태 초기화
   useEffect(() => {
