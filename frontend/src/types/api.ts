@@ -198,6 +198,11 @@ export interface PresignedUrl {
   url: string;
 }
 
+export interface PresignedImageUrl {
+  uploadUrl: string;
+  key: string;
+}
+
 export interface PresignedUrlsResponse {
   urls: PresignedUrl[];
 }
