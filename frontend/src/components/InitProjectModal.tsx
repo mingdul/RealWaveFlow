@@ -454,7 +454,8 @@ const InitProjectModal: React.FC<InitProjectModalProps> = ({
 
   const completedFiles = state.uploadedFiles.filter(f => f.isComplete);
   const uploadedFileCount = state.uploadedFiles.filter(f => f.isComplete).length;
-  const canComplete = (completedFiles.length > 0 && !state.isUploading) || (completedStemCount >= uploadedFileCount && uploadedFileCount > 0);
+  // 업로드한 모든 파일의 처리가 완료되었을 때만 Complete 버튼 활성화
+  const canComplete = completedStemCount >= uploadedFileCount && uploadedFileCount > 0 && !state.isUploading;
 
   // 소켓 이벤트 처리
   useEffect(() => {
