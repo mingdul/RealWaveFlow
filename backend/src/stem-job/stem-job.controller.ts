@@ -143,7 +143,7 @@ export class StemJobController {
   }
 
   @Post('request-mixing-init')
-  @ApiOperation({ summary: '믹싱 초기화 요청', description: '스테이지의 믹싱 초기화를 요청합니다.' })
+  @ApiOperation({ summary: '믹싱 요청 - init', description: '스테이지의 믹싱- init를 요청합니다.' })
   @ApiBody({ 
     schema: {
       type: 'object',
@@ -152,7 +152,7 @@ export class StemJobController {
       }
     }
   })
-  @ApiResponse({ status: 200, description: '믹싱 초기화 요청 성공' })
+  @ApiResponse({ status: 200, description: ' init 믹싱  요청 성공' })
   @ApiResponse({ status: 400, description: '입력값 유효성 검사 실패' })
   @ApiResponse({ status: 401, description: '인증되지 않은 사용자' })
   @ApiResponse({ status: 404, description: '스테이지를 찾을 수 없음' })
@@ -167,7 +167,7 @@ export class StemJobController {
         stageId: requestData.stageId,
       };
     } catch (error) {
-      this.logger.error('믹싱 초기화 요청 실패:', error);
+      this.logger.error('믹싱 요청 실패:', error);
       return {
         success: false,
         message: 'Failed to send mixing initialization request',

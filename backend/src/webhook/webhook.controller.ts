@@ -50,123 +50,68 @@ export class WebhookController {
     }) {
         this.logger.log('웹훅 해시 체크 요청 수신:', data);
         
-        try {
-            // StemJob 찾기
-            const stemJob = await this.stemJobService.findJobById(data.stemId);
-            if (!stemJob) {
-                this.logger.error(`StemJob을 찾을 수 없습니다: ${data.stemId}`);
-                return {
-                    success: false,
-                    message: 'StemJob not found',
-                    stemId: data.stemId,
-                };
-            }
-
-            // 해시 값을 StemJob에 업데이트
-            await this.stemJobService.updateJobWithHash(data.stemId, data.audio_hash);
-
-            // 중복 검사: trackId + audio_hash + stageId로 검사
-            const isDuplicate = await this.stemJobService.checkDuplicateHash(
-                data.trackId,
-                data.audio_hash,
-                data.stageId,
-            );
-
-            if (isDuplicate) {
-                // 중복 있음 시나리오: 파일 삭제 요청 및 클라이언트 알림
-                this.logger.log(`중복 해시 발견: ${data.stemId}, 삭제 프로세스 시작`);
-                
-                try {
-                    // 중복 파일 삭제 요청
-                    await this.stemJobService.requestDeleteDuplicateFile(stemJob, data.userId);
-                    
-                    this.logger.log(`중복 파일 삭제 요청 전송 완료: ${data.stemId}`);
-                    
-                    // DB에서 job 삭제
-                    await this.stemJobService.deleteJob(data.stemId);
-                    this.logger.log(`DB에서 스템 작업 삭제 완료: ${data.stemId}`);
-                    
-                } catch (deleteError) {
-                    this.logger.error(`중복 파일 삭제 과정 오류: ${data.stemId}`, deleteError);
-                }
-                
-                // 클라이언트에 중복 파일 알림 (stageId 사용)
-                await this.chatGateway.sendFileDuplicateEvent(data.userId, {
-                    trackId: data.trackId,
-                    fileName: data.original_filename,
-                    stageId: data.stageId,
-                    originalFilePath: data.filepath,
-                    duplicateHash: data.audio_hash,
-                });
-                
-                this.logger.log(`중복 파일 웹소켓 이벤트 전송 완료: ${data.stemId}`);
-                
-            } else {
-                // 신규 파일 시나리오: 처리 승인 및 category 생성, 오디오 분석 시작
-                this.logger.log(`신규 파일 확인: ${data.stemId}, 처리 승인 프로세스 시작`);
-                
-                try {
-                    // 파일명에서 category 이름 추출 (확장자 제거)
-                    const categoryName = data.original_filename.replace(/\.[^/.]+$/, '');
-                    
-                    // Category 생성 (instrument는 파일명을 기본값으로 사용)
-                    const category = await this.categoryService.createCategory({
-                        name: categoryName,
-                        track_id: data.trackId,
-                        instrument: categoryName, // 파일명을 instrument로 사용
-                    });
-                    
-                    // StemJob에 category_id 업데이트
-                    await this.stemJobService.updateJobWithCategoryId(data.stemId, category.data.id);
-                    
-                    this.logger.log(`Category 생성 완료: ${category.data.id} (${categoryName})`);
-                    
-                } catch (categoryError) {
-                    this.logger.error(`Category 생성 실패: ${data.stemId}`, categoryError);
-                    // Category 생성 실패해도 계속 진행
-                }
-                
-                // 클라이언트에 처리 승인 알림 (stageId 사용)
-                await this.chatGateway.sendProcessingApprovedEvent(data.userId, {
-                    trackId: data.trackId,
-                    fileName: data.original_filename,
-                    stageId: data.stageId,
-                    stemHash: data.audio_hash,
-                    originalFilePath: data.filepath,
-                });
-                
-                this.logger.log(`처리 승인 웹소켓 이벤트 전송 완료: ${data.stemId}`);
-                
-                // 오디오 분석 요청
-                try {
-                    await this.stemJobService.sendAudioAnalysisRequest(stemJob, data.userId);
-                    this.logger.log(`오디오 분석 요청 전송: ${data.stemId}`);
-                } catch (analysisError) {
-                    this.logger.error(`오디오 분석 요청 실패: ${data.stemId}`, analysisError);
-                }
-            }
-            
+        // StemJob 찾기
+        const stemJob = await this.stemJobService.findJobById(data.stemId);
+        if (!stemJob) {
+            this.logger.error(`StemJob을 찾을 수 없습니다: ${data.stemId}`);
             return {
-                success: true,
-                message: isDuplicate ? '중복 파일 처리 완료' : '신규 파일 처리 승인',
-                isDuplicate: isDuplicate,
+                success: false,
+                message: 'StemJob not found',
                 stemId: data.stemId,
-                audio_hash: data.audio_hash
             };
+        }
+
+        // 해시 값을 StemJob에 업데이트
+        await this.stemJobService.updateJobWithHash(data.stemId, data.audio_hash);
+
+        // 신규 파일 시나리오: 처리 승인 및 category 생성, 오디오 분석 시작
+        this.logger.log(`신규 파일 확인: ${data.stemId}, 처리 승인 프로세스 시작`);
+        
+        try {
+            // 파일명에서 category 이름 추출 (확장자 제거)
+            const categoryName = data.original_filename.replace(/\.[^/.]+$/, '');
             
-        } catch (error) {
-            this.logger.error('해시 검사 실패:', error);
-            
-            // 오류 발생 시 클라이언트에 에러 알림
-            await this.chatGateway.sendFileProcessingError(data.userId, {
-                trackId: data.trackId,
-                fileName: data.original_filename,
-                error: error.message || '알 수 없는 오류',
-                stage: 'hash_check',
+            // Category 생성 (instrument는 파일명을 기본값으로 사용)
+            const category = await this.categoryService.createCategory({
+                name: categoryName,
+                track_id: data.trackId,
+                instrument: stemJob.instrument, // 파일명을 instrument로 사용
             });
             
-            throw error;
+            // StemJob에 category_id 업데이트
+            await this.stemJobService.updateJobWithCategoryId(data.stemId, category.data.id);
+            
+            this.logger.log(`Category 생성 완료: ${category.data.id} (${categoryName})`);
+            
+        } catch (categoryError) {
+            this.logger.error(`Category 생성 실패: ${data.stemId}`, categoryError);
+            // Category 생성 실패해도 계속 진행
         }
+        
+        // 클라이언트에 처리 승인 알림 (stageId 사용)
+        await this.chatGateway.sendProcessingApprovedEvent(data.userId, {
+            trackId: data.trackId,
+            fileName: data.original_filename,
+            stageId: data.stageId,
+            stemHash: data.audio_hash,
+            originalFilePath: data.filepath,
+        });
+        
+        this.logger.log(`처리 승인 웹소켓 이벤트 전송 완료: ${data.stemId}`);
+        
+        // 오디오 분석 요청
+        try {
+            await this.stemJobService.sendAudioAnalysisRequest(stemJob, data.userId);
+            this.logger.log(`오디오 분석 요청 전송: ${data.stemId}`);
+        } catch (analysisError) {
+            this.logger.error(`오디오 분석 요청 실패: ${data.stemId}`, analysisError);
+        }
+    
+        return {
+            success: true,
+            stemId: data.stemId,
+            audio_hash: data.audio_hash
+        };
     }
 
     @Post('completion')

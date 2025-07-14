@@ -57,7 +57,26 @@ export class UploadService {
    * S3 객체 키 생성
    */
   private generateS3Key(userId: string, projectId: string, filename: string): string {
-    return `users/${userId}/projects/${projectId}/stems/${filename}`;
+    // 기존 S3 Key
+    const baseKey = `users/${userId}/projects/${projectId}/stems/${filename}`;
+
+    // 업로드 시각 기반 타임스탬프 (YYYYMMDD_HHmmss)
+    const now = new Date();
+    const pad = (n: number) => n.toString().padStart(2, '0');
+    const timestamp = 
+      now.getFullYear().toString() +
+      pad(now.getMonth() + 1) +
+      pad(now.getDate()) + '_' +
+      pad(now.getHours()) +
+      pad(now.getMinutes()) +
+      pad(now.getSeconds());
+
+    // 타임스탬프가 포함된 S3 Key
+    const timestampedKey = `users/${userId}/projects/${projectId}/stems/${timestamp}_${filename}`;
+
+    // 기본적으로 baseKey를 반환하지만, 필요하다면 timestampedKey도 활용 가능
+    // 예시: return { baseKey, timestampedKey };
+    return baseKey;
   }
 
   /**
