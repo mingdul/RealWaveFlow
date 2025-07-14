@@ -5,6 +5,7 @@ import { Stage } from './stage.entity';
 import { CreateStageDto } from './dto/createStage.dto';
 import { SqsService } from '../sqs/service/sqs.service';
 import { VersionStemService } from '../version-stem/version-stem.service';
+import { StageReviewerService } from 'src/stage-reviewer/stage-reviewer.service';
 
 @Injectable()
 export class StageService {
@@ -15,6 +16,7 @@ export class StageService {
         private stageRepository: Repository<Stage>,
         private sqsService: SqsService,
         private versionStemService: VersionStemService,
+        private stageReviewerService: StageReviewerService,
     ) {}
 
     async createStage(createStageDto: CreateStageDto) {
@@ -38,10 +40,20 @@ export class StageService {
         if (!savedStage) {
             throw new BadRequestException('Failed to create stage');
         }
+
+        const stageReviewer =  await this.stageReviewerService.createStageReviewer({
+            stage_id: savedStage.id,
+            user_id: user_id,
+        });
+
+        if (!stageReviewer) {
+            throw new BadRequestException('Failed to create stage reviewer');
+        }
+
         return {
             success: true,
             message: 'Stage created successfully',
-            stage: savedStage,
+            data: savedStage,
         };
     }
 
@@ -58,7 +70,7 @@ export class StageService {
         return {
             success: true,
             message: 'Stages fetched successfully',
-            stages,
+            data: stages,
         };
     }
 
@@ -74,7 +86,7 @@ export class StageService {
         return {
             success: true,
             message: 'Stage fetched successfully',
-            stage,
+            data: stage,
         };
     }
 
