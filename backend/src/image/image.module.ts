@@ -8,5 +8,6 @@ import { Track } from '../track/track.entity';
   imports: [TypeOrmModule.forFeature([Track])],
   controllers: [ImageController],
   providers: [ImageService],
+  
 })
 export class ImageModule {}
