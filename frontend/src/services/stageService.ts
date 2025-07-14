@@ -9,8 +9,16 @@ export const createStage = async (stageData: CreateStageDto): Promise<Stage> => 
 
 // 트랙별 스테이지 목록 조회
 export const getTrackStages = async (trackId: string): Promise<Stage[]> => {
-  const response = await apiClient.get(`/stage/track/${trackId}`);
-  return response.data;
+  try {
+    const response = await apiClient.get(`/stage/track/${trackId}`);
+    if(!response.data.success){
+      throw new Error(response.data.message);
+    }
+    return response.data.data;
+  } catch (error) {
+    console.error('Failed to get track stages:', error);
+    return [];
+  }
 };
 
 // 스테이지 상세 조회
