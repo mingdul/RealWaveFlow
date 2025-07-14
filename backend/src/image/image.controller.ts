@@ -1,6 +1,7 @@
-import { Controller, Get, Post, Query, Body, Param, HttpCode, HttpStatus } from '@nestjs/common';
+import { Controller, Get, Post, Query, Body, Param, HttpCode, HttpStatus, Request } from '@nestjs/common';  
 import { ApiTags, ApiOperation, ApiResponse, ApiQuery, ApiParam } from '@nestjs/swagger';
 import { ImageService } from './image.service';
+import { UploadUrlDto } from './dto/upload-url.dto';
 
 @ApiTags('images')
 @Controller('images')
@@ -25,12 +26,8 @@ export class ImageController {
   })
   @ApiResponse({ status: 404, description: '트랙을 찾을 수 없음' })
   @ApiResponse({ status: 500, description: '서버 오류' })
-  async getUploadUrl(
-    @Query('userId') userId: string,
-    @Query('fileName') fileName: string,
-    @Query('contentType') contentType: string,
-  ) {
-    return await this.imageService.generateUploadUrl(userId, fileName, contentType);
+  async getUploadUrl(@Body() dto: UploadUrlDto, @Request() req) {
+    return await this.imageService.generateUploadUrl(req.user.id, dto);
   }
 
 
