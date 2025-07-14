@@ -55,7 +55,7 @@ class S3UploadService {
           '이미지 presigned URL 요청에 실패했습니다.'
       );
     }
-  },
+  }
 
   /**
    * 이미지 파일을 S3에 업로드
