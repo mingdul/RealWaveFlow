@@ -38,16 +38,11 @@ class S3UploadService {
    * 이미지 업로드를 위한 presigned URL 요청
    */
   async getImagePresignedUrl(
-    fileName: string,
-    contentType: string
   ): Promise<ApiResponse<{ url: string; key: string }>> {
     try {
-      const response = await apiClient.post<
+      const response = await apiClient.get<
         ApiResponse<{ url: string; key: string }>
-      >('/uploads/image-presigned-url', {
-        fileName,
-        contentType,
-      });
+      >(`/images/upload-url`);
       return response.data;
     } catch (error: any) {
       throw new Error(
@@ -68,10 +63,7 @@ class S3UploadService {
     try {
       // 1. presigned URL 요청
       console.log('[DEBUG] S3UploadService - Requesting presigned URL for image');
-      const presignedResponse = await this.getImagePresignedUrl(
-        file.name,
-        file.type
-      );
+      const presignedResponse = await this.getImagePresignedUrl();
       console.log('[DEBUG] S3UploadService - Presigned URL response:', presignedResponse);
 
       if (!presignedResponse.success || !presignedResponse.data) {
