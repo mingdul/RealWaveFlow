@@ -3,7 +3,7 @@ import WaveSurfer from 'wavesurfer.js';
 import TimelinePlugin from 'wavesurfer.js/dist/plugins/timeline';
 import MinimapPlugin from 'wavesurfer.js/dist/plugins/minimap';
 
-export interface WaveformClonerProps {
+export interface WaveProps {
   audioUrl: string;
   waveColor?: string;
   onReady?: (ws: WaveSurfer, id: string) => void;
@@ -17,7 +17,7 @@ export interface WaveformClonerProps {
   onSeek?: (time: number, trackId: string) => void;
 }
 
-const WaveformCloner = ({ 
+const Wave = ({ 
   onReady, 
   audioUrl, 
   waveColor, 
@@ -29,7 +29,7 @@ const WaveformCloner = ({
   onSolo,
   isSolo,
   onSeek
-}: WaveformClonerProps) => {
+}: WaveProps) => {
   const waveRef = useRef<HTMLDivElement>(null);
   const timelineRef = useRef<HTMLDivElement>(null);
   const minimapRef = useRef<HTMLDivElement>(null);
@@ -166,4 +166,4 @@ const WaveformCloner = ({
   );
 };
 
-export default WaveformCloner;
+export default Wave;
