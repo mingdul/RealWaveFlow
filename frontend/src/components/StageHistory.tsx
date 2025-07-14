@@ -7,12 +7,14 @@ interface StageHistoryProps {
   stages: Stage[];
   onStageSelect?: (stage: Stage) => void;
   onOpenStageClick?: () => void;
+  disableStageOpening?: boolean;
 }
 
 const StageHistory: React.FC<StageHistoryProps> = ({ 
   stages, 
   onStageSelect, 
-  onOpenStageClick 
+  onOpenStageClick,
+  disableStageOpening = false
 }) => {
   const [selectedStage, setSelectedStage] = useState<Stage | null>(null);
   const scrollRef = useRef<HTMLDivElement>(null);
@@ -80,13 +82,15 @@ const StageHistory: React.FC<StageHistoryProps> = ({
           ))}
           
           {/* Open Stage Card */}
-          <div 
-            className="bg-purple-800 p-6 rounded-lg flex flex-col items-center justify-center cursor-pointer hover:bg-purple-700 transition-colors flex-shrink-0 min-w-[200px]"
-            onClick={onOpenStageClick}
-          >
-            <div className="text-white text-2xl font-bold mb-2">OPEN STAGE</div>
-            <Plus size={32} className="text-white" />
-          </div>
+          {!disableStageOpening && (
+            <div 
+              className="bg-purple-800 p-6 rounded-lg flex flex-col items-center justify-center cursor-pointer hover:bg-purple-700 transition-colors flex-shrink-0 min-w-[200px]"
+              onClick={onOpenStageClick}
+            >
+              <div className="text-white text-2xl font-bold mb-2">OPEN STAGE</div>
+              <Plus size={32} className="text-white" />
+            </div>
+          )}
         </div>
       </div>
     </div>
