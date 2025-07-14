@@ -1,21 +1,16 @@
 import React, { createContext, useContext, useEffect, useState, ReactNode } from 'react';
+import socketService from '../services/socketService';
 import { useAuth } from './AuthContext';
 import { useToast } from './ToastContext';
-import { io, Socket } from 'socket.io-client';
 
 interface SocketContextType {
-  socket: Socket | null;
   isConnected: boolean;
   onlineUsers: number;
   socketId: string | undefined;
   sendMessage: (message: string) => void;
   ping: () => void;
-  connect: () => void;
+  connect: () => Promise<void>;
   disconnect: () => void;
-  stemJobStatus: Record<string, 'pending' | 'completed' | 'failed'>;
-  completedStems: string[];
-  failedStems: string[];
-  resetStemJobStatus: () => void;
 }
 
 const SocketContext = createContext<SocketContextType | undefined>(undefined);
@@ -25,192 +20,139 @@ interface SocketProviderProps {
 }
 
 export const SocketProvider: React.FC<SocketProviderProps> = ({ children }) => {
-  const [socket, setSocket] = useState<Socket | null>(null);
   const [isConnected, setIsConnected] = useState(false);
-  const { user, isAuthenticated } = useAuth();
-  const { showSuccess, showError } = useToast();
+  const [onlineUsers, setOnlineUsers] = useState(0);
+  const [socketId, setSocketId] = useState<string | undefined>();
   
-  // Stem job status management
-  const [stemJobStatus, setStemJobStatus] = useState<Record<string, 'pending' | 'completed' | 'failed'>>({});
-  const [completedStems, setCompletedStems] = useState<string[]>([]);
-  const [failedStems, setFailedStems] = useState<string[]>([]);
+  const { user, logout } = useAuth();
+  const { showToast } = useToast();
 
   useEffect(() => {
-    if (isAuthenticated && user) {
-      connect();
+    // 사용자가 로그인한 경우에만 소켓 연결 시도
+    if (user) {
+      initializeSocket();
     } else {
-      disconnect();
+      // 로그아웃 시 소켓 연결 해제
+      handleDisconnect();
     }
 
+    // 컴포넌트 언마운트 시 소켓 정리
     return () => {
-      disconnect();
+      socketService.destroy();
     };
-  }, [isAuthenticated, user]);
+  }, [user]);
 
-  const connect = () => {
-    if (!isAuthenticated || !user) {
-      console.log('Socket connection skipped: User not authenticated');
-      return;
+  const initializeSocket = async () => {
+    try {
+      // 소켓 이벤트 콜백 설정
+      socketService.setCallbacks({
+        onConnect: handleConnect,
+        onDisconnect: handleDisconnect,
+        onMessage: handleMessage,
+        onOnlineUsers: handleOnlineUsers,
+        onUnauthorized: handleUnauthorized,
+        onError: handleError,
+      });
+
+      // 소켓 연결 시도
+      await socketService.connect();
+      console.log('Socket connection successful');
+      
+    } catch (error) {
+      console.error('Socket connection failed:', error);
+      showToast('error', 'Failed to connect to the server.');
     }
+  };
 
-    const token = localStorage.getItem('token');
-    if (!token) {
-      console.log('Socket connection skipped: No token found');
-      return;
-    }
-
-    const socketUrl = import.meta.env.VITE_WEBSOCKET_URL || 'http://localhost:3000';
+  const handleConnect = (data: any) => {
+    setIsConnected(true);
+    setSocketId(socketService.getSocketId());
     
-    const newSocket = io(socketUrl, {
-      auth: {
-        token: token
-      },
-      transports: ['websocket', 'polling'],
-      withCredentials: true,
-    });
-
-    newSocket.on('connect', () => {
-      console.log('WebSocket connected');
-      setIsConnected(true);
-    });
-
-    newSocket.on('disconnect', () => {
-      console.log('WebSocket disconnected');
-      setIsConnected(false);
-    });
-
-    newSocket.on('connected', (data) => {
-      console.log('Socket authentication successful:', data);
-    });
-
-    // 파일 처리 이벤트 리스너들
-    newSocket.on('file-duplicate', (data) => {
-      console.log('File duplicate detected:', data);
-      showError(data.message || 'Duplicate file detected.');
-    });
-
-    newSocket.on('processing-approved', (data) => {
-      console.log('Processing approved:', data);
-      showSuccess(data.message || 'File processing approved.');
-    });
-
-    newSocket.on('file-processing-progress', (data) => {
-      console.log('File processing progress:', data);
-      // Progress update logic can be added here
-    });
-
-    newSocket.on('file-processing-completed', (data) => {
-      console.log('File processing completed:', data);
-      showSuccess(data.message || 'File processing completed.');
-    });
-
-    newSocket.on('file-processing-error', (data) => {
-      console.log('File processing error:', data);
-      showError(data.message || 'File processing error occurred.');
-    });
-
-    // Stem job completion event listeners (newly added)
-    newSocket.on('stem-job-completed', (data) => {
-      console.log('Stem job completed:', data);
-      
-      // Update stem job status
-      setStemJobStatus(prev => ({
-        ...prev,
-        [data.stemId]: 'completed'
-      }));
-      
-      // Add to completed stems list
-      setCompletedStems(prev => {
-        if (!prev.includes(data.stemId)) {
-          return [...prev, data.stemId];
-        }
-        return prev;
-      });
-      
-      // Remove from failed list (in case of retry success)
-      setFailedStems(prev => prev.filter(id => id !== data.stemId));
-      
-      showSuccess(data.message || 'Stem job completed successfully.');
-    });
-
-    newSocket.on('stem-job-failed', (data) => {
-      console.log('Stem job failed:', data);
-      
-      // Update stem job status
-      setStemJobStatus(prev => ({
-        ...prev,
-        [data.stemId]: 'failed'
-      }));
-      
-      // Add to failed stems list
-      setFailedStems(prev => {
-        if (!prev.includes(data.stemId)) {
-          return [...prev, data.stemId];
-        }
-        return prev;
-      });
-      
-      // Remove from completed list
-      setCompletedStems(prev => prev.filter(id => id !== data.stemId));
-      
-      showError(data.message || 'Stem job failed.');
-    });
-
-    newSocket.on('all-stem-jobs-completed', (data) => {
-      console.log('All stem jobs completed:', data);
-      showSuccess(data.message || 'All stem jobs completed successfully.');
-    });
-
-    newSocket.on('forceLogout', (data) => {
-      console.log('Force logout:', data);
-      showError(data.reason || 'Session expired. Please login again.');
-      // Logout handling logic needs to be added
-    });
-
-    setSocket(newSocket);
-  };
-
-  const disconnect = () => {
-    if (socket) {
-      socket.disconnect();
-      setSocket(null);
-      setIsConnected(false);
+    if (data?.userId) {
+      console.log('Socket authenticated for user:', data.userId);
+      showToast('success', 'Real-time connection established.');
     }
   };
 
-  const resetStemJobStatus = () => {
-    setStemJobStatus({});
-    setCompletedStems([]);
-    setFailedStems([]);
+  const handleDisconnect = (reason?: string) => {
+    setIsConnected(false);
+    setSocketId(undefined);
+    
+    if (reason) {
+      console.log('Socket disconnected:', reason);
+      
+      // 서버 종료나 네트워크 오류가 아닌 경우에만 토스트 표시
+      if (reason !== 'transport close' && reason !== 'ping timeout') {
+        showToast('warning', 'Real-time connection lost.');
+      }
+    }
+  };
+
+  const handleMessage = (data: any) => {
+    console.log('Received message:', data);
+    
+    // 메시지 수신 시 토스트 표시 (선택사항)
+    if (data.userId !== user?.id) {
+      showToast('info', `New message: ${data.message}`);
+    }
+  };
+
+  const handleOnlineUsers = (data: { count: number }) => {
+    setOnlineUsers(data.count);
+  };
+
+  const handleUnauthorized = (data: { reason: string }) => {
+    console.log('Socket unauthorized:', data.reason);
+    showToast('error', 'Authentication expired. Please log in again.');
+    
+    // 토큰 만료 시 자동 로그아웃
+    logout();
+  };
+
+  const handleError = (error: Error) => {
+    console.error('Socket error:', error);
+    
+    // 연결 오류 시 토스트 표시
+    if (error.message.includes('Unauthorized')) {
+      showToast('error', 'Authentication failed. Please log in again.');
+      logout();
+    } else {
+      showToast('error', 'Connection error occurred.');
+    }
   };
 
   const sendMessage = (message: string) => {
-    if (isConnected && socket) {
-      socket.emit('message', { message });
+    if (isConnected) {
+      socketService.sendMessage(message);
     } else {
-      showError('Connection lost. Cannot send messages.');
+      showToast('error', 'Connection lost. Cannot send messages.');
     }
   };
 
   const ping = () => {
-    if (isConnected && socket) {
-      socket.emit('ping');
+    if (isConnected) {
+      socketService.ping();
     }
   };
 
+  const connect = async () => {
+    if (user && !isConnected) {
+      await initializeSocket();
+    }
+  };
+
+  const disconnect = () => {
+    socketService.disconnect();
+  };
+
   const value: SocketContextType = {
-    socket,
     isConnected,
-    onlineUsers: 0,
-    socketId: undefined,
+    onlineUsers,
+    socketId,
     sendMessage,
     ping,
     connect,
     disconnect,
-    stemJobStatus,
-    completedStems,
-    failedStems,
-    resetStemJobStatus,
   };
 
   return (

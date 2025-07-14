@@ -4,7 +4,6 @@ import { Check, X, FileAudio, Upload, Plus, Music, Drum, Mic, Zap, Guitar, Volum
 import { UploadProgress, User } from '../types/api';
 import { useAuth } from '../contexts/AuthContext';
 import { useToast } from '../contexts/ToastContext';  
-import { useSocket } from '../contexts/SocketContext';
 import s3UploadService from '../services/s3UploadService';
 import stemJobService from '../services/stemJobService';
 import StepProgress from './StepProgress';
@@ -24,7 +23,6 @@ interface UploadedFile {
   s3Url?: string;
   file?: File;
   isSelected: boolean;
-  stemJobId?: string; // stem-job ID 저장
 }
 
 interface CommitState {
@@ -89,8 +87,6 @@ const FileSelectionAndUploadStep: React.FC<{
   isUploading: boolean;
   currentUploadIndex: number;
   onStartUpload: () => void;
-  completedStems: string[];
-  failedStems: string[];
 }> = ({ 
   files, 
   onAddFile, 
@@ -98,18 +94,8 @@ const FileSelectionAndUploadStep: React.FC<{
   onUpdateFile, 
   isUploading, 
   currentUploadIndex, 
-  onStartUpload,
-  completedStems,
-  failedStems
+  onStartUpload 
 }) => {
-  const completedFiles = files.filter(f => f.isComplete);
-  
-  // Stem job completion status check
-  const uploadedStemIds = completedFiles
-    .map(file => file.stemJobId)
-    .filter(id => id) as string[]; // Filter files with stem-job ID
-  const allStemsCompleted = uploadedStemIds.length > 0 && 
-    uploadedStemIds.every(id => completedStems.includes(id));
   const handleFileSelection = (e: React.ChangeEvent<HTMLInputElement>) => {
     const selectedFiles = e.target.files;
     if (!selectedFiles) return;
@@ -128,6 +114,7 @@ const FileSelectionAndUploadStep: React.FC<{
   };
 
   const selectedFiles = files.filter(f => f.isSelected && !f.isComplete);
+  const completedFiles = files.filter(f => f.isComplete);
   // Make tag required, but key and bpm optional
   const canStartUpload = selectedFiles.length > 0 && selectedFiles.every(f => f.tag && f.tag.trim() !== '');
 
@@ -288,28 +275,6 @@ const FileSelectionAndUploadStep: React.FC<{
                         <p className="text-xs text-gray-400 mt-1">{file.uploadProgress}%</p>
                       </div>
                     )}
-                    
-                    {/* Stem job status display */}
-                    {file.isComplete && file.stemJobId && (
-                      <div className="mt-2">
-                        {completedStems.includes(file.stemJobId) ? (
-                          <div className="flex items-center text-green-400 text-xs">
-                            <Check size={12} className="mr-1" />
-                            Stem job completed
-                          </div>
-                        ) : failedStems.includes(file.stemJobId) ? (
-                          <div className="flex items-center text-red-400 text-xs">
-                            <X size={12} className="mr-1" />
-                            Stem job failed
-                          </div>
-                        ) : (
-                          <div className="flex items-center text-yellow-400 text-xs">
-                            <div className="animate-spin rounded-full h-3 w-3 border-b-2 border-yellow-400 mr-1"></div>
-                            Processing stem...
-                          </div>
-                        )}
-                      </div>
-                    )}
                   </div>
                 </div>
               </div>
@@ -326,37 +291,7 @@ const FileSelectionAndUploadStep: React.FC<{
           <p className="text-gray-300 mb-4">
             Successfully uploaded {completedFiles.length} file{completedFiles.length > 1 ? 's' : ''}.
           </p>
-          
-          {/* Stem job status display */}
-          {uploadedStemIds.length > 0 && (
-            <div className="mt-4 p-4 bg-gray-800/50 rounded-lg">
-              <h4 className="text-white font-medium mb-2">Stem Job Status</h4>
-              <div className="flex items-center justify-center space-x-4 text-sm">
-                <div className="flex items-center">
-                  <div className="w-3 h-3 bg-yellow-400 rounded-full mr-2"></div>
-                  <span className="text-yellow-400">Processing: {uploadedStemIds.filter((id: string) => !completedStems.includes(id) && !failedStems.includes(id)).length}</span>
-                </div>
-                <div className="flex items-center">
-                  <div className="w-3 h-3 bg-green-400 rounded-full mr-2"></div>
-                  <span className="text-green-400">Completed: {completedStems.length}</span>
-                </div>
-                {failedStems.length > 0 && (
-                  <div className="flex items-center">
-                    <div className="w-3 h-3 bg-red-400 rounded-full mr-2"></div>
-                    <span className="text-red-400">Failed: {failedStems.length}</span>
-                  </div>
-                )}
-              </div>
-              
-              {allStemsCompleted && (
-                <div className="mt-3 p-2 bg-green-600/20 rounded border border-green-500/30">
-                  <p className="text-green-400 text-sm">✅ All stem jobs completed!</p>
-                </div>
-              )}
-            </div>
-          )}
-          
-          <p className="text-gray-400 text-sm mt-4">
+          <p className="text-gray-400 text-sm">
             You can now complete the project setup or add more files.
           </p>
         </div>
@@ -376,7 +311,6 @@ const InitProjectModal: React.FC<InitProjectModalProps> = ({
 }) => {
   const { user } = useAuth();
   const { showError, showSuccess } = useToast();
-  const { completedStems, failedStems, resetStemJobStatus } = useSocket();
   const [state, dispatch] = useReducer(commitReducer, { 
     uploadedFiles: [], 
     isUploading: false, 
@@ -385,14 +319,9 @@ const InitProjectModal: React.FC<InitProjectModalProps> = ({
 
   const steps = ['Create Track', 'Upload Files'];
 
-  const completedFiles = state.uploadedFiles.filter(f => f.isComplete);
-
   const handleStartUpload = React.useCallback(async () => {
     console.log('[DEBUG] InitProjectModal - Starting upload process');
     dispatch({ type: 'SET_UPLOADING', payload: true });
-    
-    // 스템 작업 상태 초기화
-    resetStemJobStatus();
     
     const selectedFiles = state.uploadedFiles.filter(f => f.isSelected && !f.isComplete);
     console.log('[DEBUG] InitProjectModal - Selected files for upload:', selectedFiles.map(f => ({
@@ -477,8 +406,7 @@ const InitProjectModal: React.FC<InitProjectModalProps> = ({
             uploadProgress: 100,
             isComplete: true,
             isSelected: false,
-            s3Url: result.location,
-            stemJobId: stemJobResult.data?.id // stem-job ID 저장
+            s3Url: result.location
           }
         }});
       } catch (e) {
@@ -500,7 +428,7 @@ const InitProjectModal: React.FC<InitProjectModalProps> = ({
     
     if (completedFiles.length === 0) {
       console.log('[DEBUG] InitProjectModal - No completed files, showing error');
-      showError('No uploaded files. Please upload files before completing.');
+      showError('업로드된 파일이 없습니다. 파일을 업로드한 후 완료해주세요.');
       return;
     }
 
@@ -513,25 +441,25 @@ const InitProjectModal: React.FC<InitProjectModalProps> = ({
       const mixingInitResult = await stemJobService.requestMixingInit(mixingInitRequest);
       console.log('[DEBUG] InitProjectModal - stem-job/request-mixing-init completed:', mixingInitResult);
       await trackService.updateTrackStatus(projectId, 'producing');
-      showSuccess('Project initialization completed!'); 
+      showSuccess('프로젝트 초기화 완료!'); 
       onComplete();
     } catch (error: any) {
       console.error('[ERROR] InitProjectModal - Mixing init failed:', error);
-      showError(error.message || 'Mixing initialization failed.');
+      showError(error.message || '믹싱 초기화에 실패했습니다.');
     }
   };
 
-  const canComplete = completedFiles.length > 0 && 
-    !state.isUploading;
+  const completedFiles = state.uploadedFiles.filter(f => f.isComplete);
+  const canComplete = completedFiles.length > 0 && !state.isUploading;
 
   const handleCloseModal = () => {
     if (state.isUploading) {
-      showError('Cannot close modal while uploading.');
+      showError('업로드 중에는 모달을 닫을 수 없습니다.');
       return;
     }
     
     if (state.uploadedFiles.length > 0 && completedFiles.length === 0) {
-      const confirmClose = window.confirm('There are unuploaded files. Are you sure you want to close?');
+      const confirmClose = window.confirm('업로드되지 않은 파일이 있습니다. 정말로 닫으시겠습니까?');
       if (!confirmClose) return;
     }
     
@@ -580,8 +508,6 @@ const InitProjectModal: React.FC<InitProjectModalProps> = ({
             isUploading={state.isUploading}
             currentUploadIndex={state.currentUploadIndex}
             onStartUpload={handleStartUpload}
-            completedStems={completedStems}
-            failedStems={failedStems}
           />
         </div>
 
