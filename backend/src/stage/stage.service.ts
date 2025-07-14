@@ -60,7 +60,7 @@ export class StageService {
 
     async getTrackStages(track_id: string) {
         const stages = await this.stageRepository.find({
-            where: { track: { id: track_id } },
+            where: { track : { id : track_id } },
             relations: ['track', 'user'],
         });
 
