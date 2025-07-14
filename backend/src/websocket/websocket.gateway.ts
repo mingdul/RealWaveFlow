@@ -252,7 +252,7 @@ export class ChatGateway
       originalFilePath: data.originalFilePath,
       duplicateHash: data.duplicateHash,
       timestamp: new Date().toISOString(),
-      message: `'${data.fileName}' file is duplicate and was not processed.`
+      message: `'${data.fileName}' 파일은 중복되어 처리되지 않았습니다.`
     });
   }
 
@@ -276,7 +276,7 @@ export class ChatGateway
       fileName: data.fileName,
       originalFilePath: data.originalFilePath,
       timestamp: new Date().toISOString(),
-      message: `'${data.fileName}' file processing approved.`
+      message: `'${data.fileName}' 파일 처리가 승인되었습니다.`
     });
   }
 
@@ -321,7 +321,7 @@ export class ChatGateway
       result: data.result,
       processingTime: data.processingTime,
       timestamp: new Date().toISOString(),
-      message: `'${data.fileName}' file processing completed.`
+      message: `'${data.fileName}' 파일 처리가 완료되었습니다.`
     });
   }
 
@@ -343,85 +343,7 @@ export class ChatGateway
       error: data.error,
       stage: data.stage,
       timestamp: new Date().toISOString(),
-      message: `'${data.fileName}' file processing error occurred.`
-    });
-  }
-
-  // ===========================================
-  // 스템 작업 완료 이벤트 관련 메서드들 (새로 추가)
-  // ===========================================
-
-  /**
-   * 스템 작업 완료 시 클라이언트에게 알림
-   * @param userId 사용자 ID
-   * @param data 스템 작업 완료 정보
-   */
-  sendStemJobCompleted(userId: string, data: {
-    stemId: string;
-    trackId: string;
-    stageId: string;
-    fileName: string;
-    stemHash: string;
-    audioWavePath?: string;
-  }) {
-    this.logger.log(`Sending stem-job-completed event to user: ${userId} for file: ${data.fileName}`);
-    this.sendToUser(userId, 'stem-job-completed', {
-      stemId: data.stemId,
-      trackId: data.trackId,
-      stageId: data.stageId,
-      fileName: data.fileName,
-      stemHash: data.stemHash,
-      audioWavePath: data.audioWavePath,
-      timestamp: new Date().toISOString(),
-      message: `'${data.fileName}' stem job completed.`
-    });
-  }
-
-  /**
-   * 스템 작업 실패 시 클라이언트에게 알림
-   * @param userId 사용자 ID
-   * @param data 스템 작업 실패 정보
-   */
-  sendStemJobFailed(userId: string, data: {
-    stemId: string;
-    trackId: string;
-    stageId: string;
-    fileName: string;
-    error: string;
-  }) {
-    this.logger.log(`Sending stem-job-failed event to user: ${userId} for file: ${data.fileName}`);
-    this.sendToUser(userId, 'stem-job-failed', {
-      stemId: data.stemId,
-      trackId: data.trackId,
-      stageId: data.stageId,
-      fileName: data.fileName,
-      error: data.error,
-      timestamp: new Date().toISOString(),
-      message: `'${data.fileName}' stem job failed.`
-    });
-  }
-
-  /**
-   * 모든 스템 작업 완료 시 클라이언트에게 알림
-   * @param userId 사용자 ID
-   * @param data 모든 스템 작업 완료 정보
-   */
-  sendAllStemJobsCompleted(userId: string, data: {
-    trackId: string;
-    stageId: string;
-    completedStems: Array<{
-      stemId: string;
-      fileName: string;
-      stemHash: string;
-    }>;
-  }) {
-    this.logger.log(`Sending all-stem-jobs-completed event to user: ${userId} for stage: ${data.stageId}`);
-    this.sendToUser(userId, 'all-stem-jobs-completed', {
-      trackId: data.trackId,
-      stageId: data.stageId,
-      completedStems: data.completedStems,
-      timestamp: new Date().toISOString(),
-      message: `All stem jobs completed! (${data.completedStems.length} files)`
+      message: `'${data.fileName}' 파일 처리 중 오류가 발생했습니다.`
     });
   }
 

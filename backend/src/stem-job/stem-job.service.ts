@@ -70,21 +70,6 @@ export class StemJobService {
         });
     }
 
-    async findJobsByStageId(stageId: string): Promise<StemJob[]> {
-        return await this.stemJobRepository.find({
-            where: { stage_id: stageId }
-        });
-    }
-
-    async findCompletedStemsByStageId(stageId: string): Promise<Stem[]> {
-        return await this.stemRepository.find({
-            where: { 
-                upstream: { stage: { id: stageId } }
-            },
-            relations: ['upstream', 'upstream.stage']
-        });
-    }
-
     async checkDuplicateHash(trackId: string, audioHash: string, stageId: string): Promise<boolean> {
         // stem 테이블에서 해당 트랙과 스테이지의 해시가 이미 존재하는지 확인
         const existingStem = await this.stemRepository.findOne({
@@ -154,9 +139,8 @@ export class StemJobService {
             audio_wave_path: job.audio_wave_path,
             category: { id: job.category_id },
             upstream: job.upstream_id ? { id: job.upstream_id } : null,
-            // Ensure the creator is linked so user_id is persisted
-            user: { id: userId },
-            uploaded_at: new Date()
+            uploaded_at: new Date(),
+            user: { id: userId }
         });
 
         const savedStem = await this.stemRepository.save(stem);
