@@ -89,26 +89,29 @@ const TrackPage: React.FC<TrackPageProps> = () => {
   };
 
 
-
-  const handleStageClick = async (stage: Stage) => {
-    // try {
-    //   // 최신 스테이지인지 확인 (status가 'active'인 스테이지)
-    //   const isLatestStage = stage.status === 'active';
-
-    //   if (isLatestStage) {
-    //     // 최신 스테이지면 StagePage로 이동
-    //     navigate(`/stage/${stage.id}`);
-    //   } else {
-    //     // 나머지는 상세 조회
-    //     const stageDetail = await getStageDetail(stage.id);
-    //     console.log('Stage detail:', stageDetail);
-    //     // 상세 조회 모달이나 페이지를 여기에 추가할 수 있음
-    //   }
-    // } catch (error) {
-    //   console.error('Failed to handle stage click:', error);
-    // }
-    
+  const handleStageClick = () => {
+    // TODO: 트랙 재생 로직 구현
+    console.log('stage click');
   };
+  // const handleStageClick = async (stage: Stage) => {
+  //   // try {
+  //   //   // 최신 스테이지인지 확인 (status가 'active'인 스테이지)
+  //   //   const isLatestStage = stage.status === 'active';
+
+  //   //   if (isLatestStage) {
+  //   //     // 최신 스테이지면 StagePage로 이동
+  //   //     navigate(`/stage/${stage.id}`);
+  //   //   } else {
+  //   //     // 나머지는 상세 조회
+  //   //     const stageDetail = await getStageDetail(stage.id);
+  //   //     console.log('Stage detail:', stageDetail);
+  //   //     // 상세 조회 모달이나 페이지를 여기에 추가할 수 있음
+  //   //   }
+  //   // } catch (error) {
+  //   //   console.error('Failed to handle stage click:', error);
+  //   // }
+    
+  // };
 
   const handleOpenStageSubmit = async (description: string, ) => {
     if (!user || !trackId) {
