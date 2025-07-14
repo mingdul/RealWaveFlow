@@ -476,7 +476,7 @@ const InitProjectModal: React.FC<InitProjectModalProps> = ({
     };
 
     // 소켓 이벤트 리스너 등록
-    socketService.socket?.on('file-processing-completed', handleFileProcessingCompleted);
+    socketService.on('file-processing-completed', handleFileProcessingCompleted);
 
     // 에러 핸들링
     const handleSocketError = (error: any) => {
@@ -491,16 +491,16 @@ const InitProjectModal: React.FC<InitProjectModalProps> = ({
       console.log('Socket disconnected:', reason);
     };
 
-    socketService.socket?.on('error', handleSocketError);
-    socketService.socket?.on('connect', handleSocketConnect);
-    socketService.socket?.on('disconnect', handleSocketDisconnect);
+    socketService.on('error', handleSocketError);
+    socketService.on('connect', handleSocketConnect);
+    socketService.on('disconnect', handleSocketDisconnect);
 
     // Cleanup 함수
     return () => {
-      socketService.socket?.off('file-processing-completed', handleFileProcessingCompleted);
-      socketService.socket?.off('error', handleSocketError);
-      socketService.socket?.off('connect', handleSocketConnect);
-      socketService.socket?.off('disconnect', handleSocketDisconnect);
+      socketService.off('file-processing-completed', handleFileProcessingCompleted);
+      socketService.off('error', handleSocketError);
+      socketService.off('connect', handleSocketConnect);
+      socketService.off('disconnect', handleSocketDisconnect);
     };
   }, [isConnected, isOpen, projectId, stageId]);
 
