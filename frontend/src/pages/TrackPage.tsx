@@ -110,7 +110,7 @@ const TrackPage: React.FC<TrackPageProps> = () => {
     }
   };
 
-  const handleOpenStageSubmit = async (description: string, reviewers: any[]) => {
+  const handleOpenStageSubmit = async (description: string, ) => {
     if (!user || !trackId) {
       console.error('User or track ID not available');
       return;
