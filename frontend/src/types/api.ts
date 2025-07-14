@@ -449,6 +449,49 @@ export interface CreateDropSelectionDto {
   stem_id: string;
 }
 
+// 스테이지 관련 타입
+export interface Stage {
+  id: string;
+  title: string;
+  description: string;
+  version: number;
+  status: string;
+  guide_path?: string;
+  track: Track;
+  user: User;
+  created_at: string;
+  stage_reviewers?: StageReviewer[];
+  version_stems?: VersionStem[];
+  upstreams?: Upstream[];
+}
+
+export interface CreateStageDto {
+  title: string;
+  description: string;
+  track_id: string;
+  user_id: string;
+  status: string;
+}
+
+export interface StageReviewer {
+  id: string;
+  stage: Stage;
+  user: User;
+  status: string;
+}
+
+export interface VersionStem {
+  id: string;
+  stage: Stage;
+  // 추가 속성들은 필요에 따라 확장
+}
+
+export interface Upstream {
+  id: string;
+  stage: Stage;
+  // 추가 속성들은 필요에 따라 확장
+}
+
 
 
 
