@@ -2,7 +2,7 @@ import React, { useState, useEffect } from 'react';
 // import { useParams } from 'react-router-dom';
 import { Play, Info, Upload, Bell, Settings} from 'lucide-react';
 import Logo from '../components/Logo';
-import { UploadModal } from '../components';
+import UploadModal from '../components/UploadModal';
 import trackService from '../services/trackService';
 import { Track } from '../types/api';
 
