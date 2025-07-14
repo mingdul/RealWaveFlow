@@ -75,7 +75,7 @@ class S3UploadService {
         throw new Error('이미지 presigned URL 요청 실패');
       }
 
-      const { uploadUrl, key } = presignedResponse.data;
+      const { uploadUrl } = presignedResponse.data;
 
       return await new Promise<string>((resolve, reject) => {
         const xhr = new XMLHttpRequest();
