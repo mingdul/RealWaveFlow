@@ -3,7 +3,8 @@ import { Track } from "src/track/track.entity";
 import { Upstream } from "src/upstream/upstream.entity";
 import { User } from "src/users/user.entity";
 import { VersionStem } from "src/version-stem/version-stem.entity";
-import { Column, Entity, JoinColumn, ManyToOne, OneToMany, PrimaryGeneratedColumn } from "typeorm";
+import { Guide } from "src/guide/guide.entity";
+import { Column, Entity, JoinColumn, ManyToOne, OneToMany, OneToOne, PrimaryGeneratedColumn } from "typeorm";
 
 @Entity('stages')
 export class Stage {
@@ -47,4 +48,7 @@ export class Stage {
 
     @OneToMany(() => Upstream, (upstream) => upstream.stage)
     upstreams : Upstream[];
+
+    @OneToOne(() => Guide, (guide) => guide.stage)
+    guide : Guide;
 }

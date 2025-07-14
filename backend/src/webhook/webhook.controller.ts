@@ -5,6 +5,7 @@ import { StemJobService } from 'src/stem-job/stem-job.service';
 import { StageService } from 'src/stage/stage.service';
 import { CategoryService } from 'src/category/category.service';
 import { ChatGateway } from 'src/websocket/websocket.gateway';
+import { GuideService } from 'src/guide/guide.service';
 
 @ApiTags('webhook')
 @Controller('webhook')
@@ -16,6 +17,7 @@ export class WebhookController {
         private readonly stageService: StageService,
         private readonly categoryService: CategoryService,
         private readonly chatGateway: ChatGateway,
+        private readonly guideService: GuideService,
     ) {}
     
     @Post('hash-check')
@@ -218,12 +220,13 @@ export class WebhookController {
         schema: {
             type: 'object',
             properties: {
+                task_id: { type: 'string' },
                 stageId: { type: 'string' },
                 status: { type: 'string' },
                 mixed_file_path: { type: 'string' },
+                waveform_data_path: { type: 'string' },
                 stem_count: { type: 'number' },
                 stem_paths: { type: 'array', items: { type: 'string' } },
-                task_id: { type: 'string' },
                 processed_at: { type: 'string' }
             }
         }
@@ -232,29 +235,32 @@ export class WebhookController {
     @ApiResponse({ status: 400, description: '잘못된 요청' })
     @ApiResponse({ status: 500, description: '서버 내부 오류' })
     async handleMixingComplete(@Body() data: {
+        task_id: string;
         stageId: string;
         status: string;
         mixed_file_path: string;
+        waveform_data_path: string;
         stem_count: number;
         stem_paths: string[];
-        task_id: string;
+        processed_at: string;
     }) {
         this.logger.log(`믹싱 완료 알림 수신: ${data.stageId} (상태: ${data.status})`);
 
         try {
-            if (data.status === 'completed') {
-                // 성공 시 stage의 guide_path 업데이트
-                const updatedStage = await this.stageService.updateGuidePath(
-                    data.stageId,
-                    data.mixed_file_path
-                );
+            if (data.status === 'SUCCESS') {
+                // Guide 테이블에 믹싱 결과 저장
+                const guide = await this.guideService.createGuideFromMixing(data);
 
-                this.logger.log(`믹싱 완료 처리 성공: ${data.stageId} -> ${data.mixed_file_path}`);
+                // 기존 stage의 guide_path도 업데이트 (하위 호환성)
+                await this.stageService.updateGuidePath(data.stageId, data.mixed_file_path);
+
+                this.logger.log(`믹싱 완료 처리 성공: ${data.stageId} -> Guide: ${guide.id}`);
 
                 return {
                     status: 'success',
                     message: '믹싱 완료 처리 성공',
                     stageId: data.stageId,
+                    guideId: guide.id,
                     mixedFilePath: data.mixed_file_path
                 };
             } else {

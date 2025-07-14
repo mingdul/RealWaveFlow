@@ -92,6 +92,7 @@ export class StageService {
         
         this.logger.log(`Stage guide path 업데이트 완료: ${stageId} -> ${guidePath}`);
         return updatedStage;
+        
     }
 
     async requestStemMixingByStageId(stageId: string): Promise<void> {

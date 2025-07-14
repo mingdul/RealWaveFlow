@@ -24,6 +24,7 @@ import { TrackCollaboratorModule } from './track_collaborator/track_collaborator
 import { WebSocketModule } from './websocket/websocket.module';
 import { UploadModule } from './upload/upload.module';
 import { ImageModule } from './image/image.module';
+import { GuideModule } from './guide/guide.module';
 
 
 @Module({
@@ -53,6 +54,7 @@ import { ImageModule } from './image/image.module';
     WebSocketModule,
     UploadModule,
     ImageModule,
+    GuideModule,
   ], // 추후 다른 모듈들 (예: AuthModule 등)을 여기에 추가
     controllers: [], // 라우팅 처리
   providers: [], // 비즈니스 로직/서비스 제공
