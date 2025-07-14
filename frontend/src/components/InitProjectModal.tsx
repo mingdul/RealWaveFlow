@@ -116,7 +116,7 @@ const FileSelectionAndUploadStep: React.FC<{
   const selectedFiles = files.filter(f => f.isSelected && !f.isComplete);
   const completedFiles = files.filter(f => f.isComplete);
   // Make tag required, but key and bpm optional
-  const canStartUpload = selectedFiles.length > 0 && selectedFiles.every(f => f.tag /* key and bpm are now optional */);
+  const canStartUpload = selectedFiles.length > 0 && selectedFiles.every(f => f.tag && f.tag.trim() !== '');
 
   return (
     <div className="p-6 pt-0 max-h-[70vh] overflow-y-auto">
@@ -390,6 +390,11 @@ const InitProjectModal: React.FC<InitProjectModalProps> = ({
           track_id: projectId,
           instrument: file.tag,
         };
+
+        // Validate instrument is not empty
+        if (!file.tag || file.tag.trim() === '') {
+          throw new Error(`Instrument is required for ${file.name}`);
+        }
 
         console.log('[DEBUG] InitProjectModal - Calling stem-job/create for', file.name, ':', stemJobRequest);
         const stemJobResult = await stemJobService.createStemJob(stemJobRequest);
