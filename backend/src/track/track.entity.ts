@@ -24,7 +24,7 @@ export class Track {
     @Column({ type: 'varchar' , nullable: true , default: null})
     image_url : string;
 
-    @Column({ type: 'varchar', default: 'producing' })
+    @Column({ type: 'varchar', default: 'draft' })
     status : string;
 
     @Column({ type: 'text' , default: null })
