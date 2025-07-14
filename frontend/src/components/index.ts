@@ -19,3 +19,5 @@ export { default as VersionHistory } from './VersionHistory';
 export { default as VersionCard } from './VersionCard';
 export { default as OpenStageModal } from './OpenStageModal';
 export { default as StemListModal } from './StemListModal';
+export { default as CreateTrackModal } from './CreateTrackModal';
+export { default as StepProgress } from './StepProgress';
