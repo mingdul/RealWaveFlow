@@ -30,19 +30,17 @@ export const hasStages = async (trackId: string): Promise<boolean> => {
   }
 };
 
-// 최신 스테이지 조회
+// 최신 스테이지 조회 (status: 'active'인 스테이지)
 export const getLatestStage = async (trackId: string): Promise<Stage | null> => {
-  try {
-    const stages = await getTrackStages(trackId);
-    if (stages && stages.length > 0) {
-      // version이 가장 높은 스테이지 반환
-      return stages.reduce((latest, current) => 
-        current.version > latest.version ? current : latest
-      );
+    try {
+      const stages = await getTrackStages(trackId);
+      if (stages && stages.length > 0) {
+        // status가 'active'인 스테이지 반환
+        return stages.find(stage => stage.status === 'active') || null;
+      }
+      return null;
+    } catch (error) {
+      console.error('Failed to get latest stage:', error);
+      return null;
     }
-    return null;
-  } catch (error) {
-    console.error('Failed to get latest stage:', error);
-    return null;
-  }
-}; 
+  }; 
