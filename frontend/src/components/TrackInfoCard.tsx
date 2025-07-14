@@ -3,6 +3,7 @@ import { Play, Plus, Pause } from 'lucide-react';
 import { Button, StemPlayer } from './';
 import { Track } from '../types/api';
 import { StemStreamingInfo } from '../services/streamingService';
+import PresignedImage from './PresignedImage';
 
 interface TrackInfoCardProps {
   track: Track;
@@ -36,9 +37,12 @@ const TrackInfoCard: React.FC<TrackInfoCardProps> = ({
       <div className="flex gap-8 mb-6">
         {/* Album Cover */}
         <div className="flex-shrink-0">
-          <img src="/cover.jpg" alt={track.name} className="w-80 h-80 rounded-lg shadow-lg object-cover" />
+          <PresignedImage
+            trackId={track.id}
+            alt={track.name}
+            className="w-80 h-80 rounded-lg shadow-lg object-cover"
+          />
         </div>
-
         {/* Track Details */}
         <div className="flex-1">
           {/* Track Info */}
