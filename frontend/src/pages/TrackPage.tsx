@@ -9,16 +9,16 @@ import {
   StageHistory 
 } from '../components';
 import { useAuth } from '../contexts/AuthContext';
-import trackService from '../services/trackService';
-import { getTrackStages, createStage } from '../services/stageService';
+import { getTrackStages, createStage} from '../services/stageService';
 import streamingService, { StemStreamingInfo } from '../services/streamingService';
+import trackService from '../services/trackService';
+interface TrackPageProps {}
 
-const TrackPage: React.FC = () => {
+const TrackPage: React.FC<TrackPageProps> = () => {
   const { trackId } = useParams<{ trackId: string }>();
   const navigate = useNavigate();
   const [track, setTrack] = useState<Track | null>(null);
   const [stages, setStages] = useState<Stage[]>([]);
-  const [selectedStage, setSelectedStage] = useState<Stage | null>(null);
   const [stems, setStems] = useState<StemStreamingInfo[]>([]);
   const [loading, setLoading] = useState(true);
   const [stemsLoading, setStemsLoading] = useState(false);
@@ -26,25 +26,30 @@ const TrackPage: React.FC = () => {
   const [isStemListModalOpen, setIsStemListModalOpen] = useState(false);
   const { user } = useAuth();
 
-  // 트랙 데이터와 모든 스테이지 로드
+  // 트랙 데이터와 스테이지 목록 로드
   useEffect(() => {
     const loadTrackData = async () => {
-      if (!trackId) return;
-
+      if (!trackId) {
+        console.log('[DEBUG][TrackPage] No trackId in params:', trackId);
+        return;
+      }
+      console.log('[DEBUG][TrackPage] useEffect triggered, trackId:', trackId);
+      if (!trackId) {
+        console.log('[DEBUG][TrackPage] No trackId in params:', trackId);
+        return;
+      }
+      console.log('[DEBUG][TrackPage] useEffect triggered, trackId:', trackId);
       try {
         setLoading(true);
-        const trackResponse = await trackService.getTrackById(trackId);
-        setTrack(trackResponse.data.data || null);
-
+        // TODO: 실제 트랙 API 호출로 대체 필요
+        const response = await trackService.getTrackById(trackId);
+        setTrack(response.data || null);
+        // 스테이지 목록 가져오기
         const trackStages = await getTrackStages(trackId);
         setStages(trackStages || []);
-        
-        // 'active' 상태의 스테이지를 찾아 초기 선택 스테이지로 설정
-        const activeStage = trackStages?.find((s: Stage) => s.status === 'active') || trackStages?.[0] || null;
-        setSelectedStage(activeStage);
-
       } catch (error) {
-        console.error('Failed to load track data:', error);
+        console.error('[DEBUG][TrackPage] Failed to load track data:', error);
+        setStages([]);
       } finally {
         setLoading(false);
       }
@@ -52,37 +57,72 @@ const TrackPage: React.FC = () => {
     loadTrackData();
   }, [trackId]);
 
-  // 선택된 스테이지가 변경될 때마다 스템 목록 로드
-  useEffect(() => {
-    const loadStemsForStage = async () => {
-      if (!trackId || !selectedStage) {
+  // 활성 스테이지의 스템들 로드
+  const loadActiveStems = async () => {
+    if (!trackId || stages.length === 0) return;
+
+    try {
+      setStemsLoading(true);
+      
+      // status가 'active'인 스테이지 찾기
+      const activeStage = stages.find(stage => stage.status === 'active');
+      if (!activeStage) {
+        console.error('No active stage found');
         setStems([]);
         return;
       }
 
-      try {
-        setStemsLoading(true);
-        const response = await streamingService.getMasterStemStreams(trackId, selectedStage.version);
-        setStems(response.data?.stems || []);
-      } catch (error) {
-        console.error(`Failed to load stems for stage ${selectedStage.version}:`, error);
+      // 활성 스테이지의 버전으로 스템들 로드
+      const response = await streamingService.getMasterStemStreams(trackId, activeStage.version);
+      if (response.data) {
+        setStems(response.data.stems);
+      } else {
+        console.error('Failed to load stems:', response.message);
         setStems([]);
-      } finally {
-        setStemsLoading(false);
       }
-    };
+    } catch (error) {
+      console.error('Failed to load stems:', error);
+      setStems([]);
+    } finally {
+      setStemsLoading(false);
+    }
+  };
 
-    loadStemsForStage();
-  }, [selectedStage, trackId]);
+  // 스테이지가 로드되면 활성 스테이지의 스템들 로드
+  useEffect(() => {
+    if (stages.length > 0) {
+      loadActiveStems();
+    }
+  }, [stages, trackId]);
 
-  const handleBack = () => navigate('/dashboard');
-  const handlePlay = () => console.log('Playing track:', track?.id);
-  const handleShowAllStems = () => setIsStemListModalOpen(true);
-  const handleRollBack = () => console.log('Rolling back track:', track?.id);
-  const handleStageSelect = (stage: Stage) => setSelectedStage(stage);
+  const handleBack = () => {
+    navigate('/dashboard');
+  };
 
-  const handleOpenStageSubmit = async (description: string) => {
-    if (!user || !trackId) return;
+  const handlePlay = () => {
+    // TODO: 트랙 재생 로직 구현
+    console.log('Playing track:', track?.id);
+  };
+
+  const handleShowAllStems = () => {
+    setIsStemListModalOpen(true);
+  };
+
+  const handleRollBack = () => {
+    // TODO: 롤백 로직 구현
+    console.log('Rolling back track:', track?.id);
+  };
+
+  const handleStageClick = () => {
+    // TODO: 트랙 재생 로직 구현
+    console.log('stage click');
+  };
+
+  const handleOpenStageSubmit = async (description: string, ) => {
+    if (!user || !trackId) {
+      console.error('User or track ID not available');
+      return;
+    }
 
     try {
       const stageData = {
@@ -90,21 +130,39 @@ const TrackPage: React.FC = () => {
         description,
         track_id: trackId,
         user_id: user.id,
-        status: 'active' // 새 스테이지는 항상 active로 생성된다고 가정
+        status: 'active'
       };
 
       const newStage = await createStage(stageData);
       setStages(prevStages => [...prevStages, newStage]);
-      setSelectedStage(newStage); // 새로 생성된 스테이지를 선택
+      
+      console.log('New stage created:', newStage);
+      // TODO: Reviewers 기능 구현 필요
+      
       setIsOpenStageModalOpen(false);
     } catch (error) {
       console.error('Failed to create stage:', error);
     }
   };
 
-  const isVersion1 = selectedStage?.version === 1;
+  // 현재 활성 스테이지 가져오기
+  const getActiveStage = () => {
+    const activeStage = stages.find(stage => stage.status === 'active');
+    console.log('[DEBUG][TrackPage] Active stage:', activeStage, 'All stages:', stages);
+    return activeStage;
+  };
+
+  // 버전 1 여부 확인
+  const isVersion1 = () => {
+    const activeStage = getActiveStage();
+    const isV1 = activeStage?.version === 1;
+    console.log('[DEBUG][TrackPage] Is version 1:', isV1, 'Active stage version:', activeStage?.version);
+    return isV1;
+  };
 
   if (loading) {
+    console.log('[DEBUG][TrackPage] Loading...');
+    console.log('[DEBUG][TrackPage] Loading...');
     return (
       <div className="bg-[#2a2a2a] min-h-screen flex justify-center items-center">
         <div className="animate-spin rounded-full h-12 w-12 border-b-2 border-white"></div>
@@ -113,6 +171,8 @@ const TrackPage: React.FC = () => {
   }
 
   if (!track) {
+    console.log('[DEBUG][TrackPage] Track not found, track:', track);
+    console.log('[DEBUG][TrackPage] Track not found, track:', track);
     return (
       <div className="bg-[#2a2a2a] min-h-screen flex justify-center items-center">
         <div className="text-center py-16">
@@ -121,7 +181,8 @@ const TrackPage: React.FC = () => {
       </div>
     );
   }
-
+  // Move debug log here to avoid linter error in JSX
+  console.log('[DEBUG][TrackPage] Rendering main content. track:', track, 'stages:', stages);
   return (
     <div className="bg-[#2a2a2a] min-h-screen">
       <TrackHeader 
@@ -138,15 +199,13 @@ const TrackPage: React.FC = () => {
           onPlay={handlePlay}
           onShowAllStems={handleShowAllStems}
           onRollBack={handleRollBack}
-          stage={selectedStage}
         />
 
         <StageHistory
           stages={stages}
-          selectedStage={selectedStage}
-          onStageSelect={handleStageSelect}
+          onStageSelect={handleStageClick}
           onOpenStageClick={() => setIsOpenStageModalOpen(true)}
-          disableStageOpening={isVersion1}
+          disableStageOpening={isVersion1()} // 버전 1에서는 스테이지 열기 비활성화
         />
       </div>
 
@@ -160,7 +219,7 @@ const TrackPage: React.FC = () => {
         isOpen={isStemListModalOpen}
         onClose={() => setIsStemListModalOpen(false)}
         stems={stems}
-        versionNumber={selectedStage?.version.toString() || '1'}
+        versionNumber={getActiveStage()?.version.toString() || '1'}
         loading={stemsLoading}
       />
     </div>
