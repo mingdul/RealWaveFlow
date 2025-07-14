@@ -362,7 +362,7 @@ const TrackPage: React.FC<TrackPageProps> = () => {
         isOpen={isStemListModalOpen}
         onClose={() => setIsStemListModalOpen(false)}
         stems={stems}
-        versionNumber={stages.length > 0 ? Math.max(...stages.map(s => s.version)).toString() : '1'}
+        versionNumber={stages.length > 0 ? Math.max(...stages.map(s => s.version).filter(v => typeof v === 'number')).toString(): '1'}
         loading={stemsLoading}
       />
     </div>
