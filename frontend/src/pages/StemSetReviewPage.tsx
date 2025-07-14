@@ -47,7 +47,7 @@ const StemSetReviewPage = () => {
       setStemsLoading(true);
       try {
         // TODO: 실제 트랙 ID를 사용해야 함
-        const response = await streamingService.getTrackStems('sample-track-id');
+      const response = await streamingService.getTrackStems('2f4c036f-239a-4af9-b728-e21eba7e1a78');
         if (response.success && response.data) {
           setStreamingStems(response.data.stems);
         } else {
