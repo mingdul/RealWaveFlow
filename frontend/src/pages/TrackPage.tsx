@@ -97,7 +97,7 @@ const TrackPage: React.FC<TrackPageProps> = () => {
       
       // 활성 스테이지의 버전으로 스템들 로드
       const response = await streamingService.getMasterStemStreams(trackId, activeStage.version);
-      
+      console.log('[DEBUG][TrackPage] Response:', response);
       if (response.success && response.data) {
         setStems(response.data.stems);
         console.log('[DEBUG][TrackPage] Loaded stems for active stage version:', activeStage.version, response.data.stems);

@@ -12,6 +12,7 @@ import { Upstream } from '../upstream/upstream.entity';
 import { TrackCollaborator } from '../track_collaborator/track_collaborator.entity';
 import { User } from '../users/user.entity';
 import { S3Service } from './s3.service';
+import { VersionStemService } from 'src/version-stem/version-stem.service';
 
 /**
  * Streaming Module
@@ -46,7 +47,7 @@ import { S3Service } from './s3.service';
     ])
   ],
   controllers: [StreamingController, StreamingTestController],
-  providers: [StreamingService, StreamingTestService, S3Service],
-  exports: [StreamingService, StreamingTestService, S3Service]
+  providers: [StreamingService, StreamingTestService, S3Service, VersionStemService],
+  exports: [StreamingService, StreamingTestService, S3Service, VersionStemService]
 })
 export class StreamingModule {}
