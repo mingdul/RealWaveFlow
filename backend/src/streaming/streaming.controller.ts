@@ -1,8 +1,8 @@
 import { Controller, Get, Post, Body, Param, Query, UseGuards, Request } from '@nestjs/common';
 import { ApiTags, ApiOperation, ApiResponse, ApiParam, ApiBody, ApiBearerAuth } from '@nestjs/swagger';
 import { StreamingService } from './streaming.service';
-import { JwtAuthGuard } from '../auth/jwt-auth.guard';
 import { BatchStreamRequestDto, TrackStemsQueryDto, StemInfoDto, BatchStemInfoRequestDto } from './dto/streaming.dto';
+import { AuthGuard } from '@nestjs/passport';
 
 /**
  * Streaming Controller
@@ -15,7 +15,7 @@ import { BatchStreamRequestDto, TrackStemsQueryDto, StemInfoDto, BatchStemInfoRe
 @ApiTags('streaming')
 @ApiBearerAuth()
 @Controller('streaming')
-@UseGuards(JwtAuthGuard)
+@UseGuards(AuthGuard('jwt'))
 export class StreamingController {
   constructor(private readonly streamingService: StreamingService) {}
 
