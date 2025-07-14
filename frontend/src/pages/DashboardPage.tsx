@@ -91,7 +91,7 @@ const DashboardPage = () => {
   };
 
   const handleTrackClick = (trackId: string) => {
-    navigate(`/master?trackId=${trackId}`);
+    navigate(`/track/${trackId}`);
   };
 
   const handleEditTrack = (track: Track, e: React.MouseEvent) => {
@@ -169,9 +169,9 @@ const DashboardPage = () => {
   };
 
   const handleCompleteInitProject = () => {
-    console.log('[DEBUG] DashboardPage - Init project completed, navigating to:', `/master?trackId=${initProjectModal.projectId}`);
+    console.log('[DEBUG] DashboardPage - Init project completed, navigating back to /dashboard');
     handleCloseInitProjectModal();
-    navigate(`/master?trackId=${initProjectModal.projectId}`);
+    navigate('/dashboard');
   };
 
   const ProjectCard = ({ track, isNewProject = false }: { track?: Track, isNewProject?: boolean }) => {
