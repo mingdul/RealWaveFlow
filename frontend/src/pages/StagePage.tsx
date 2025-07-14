@@ -18,14 +18,14 @@ interface VocalUpdate {
 
 const StagePage: React.FC = () => {
   const vocalUpdates: VocalUpdate[] = [
-    { id: '1', title: 'vocal update', artist: 'SALLY', status: 'ACTIVE' },
-    { id: '2', title: 'vocal update', artist: 'SALLY', status: 'APPROVED', description: "The drum files were amazing, but I didn't like the vocal files. This stage requires a vocal upgrade ....." },
-    { id: '3', title: 'vocal update', artist: 'SALLY', status: 'REJECTED' },
-    { id: '4', title: 'vocal update', artist: 'SALLY', status: 'REJECTED' },
+    { id: '8', title: 'vocal update', artist: 'SALLY', status: 'ACTIVE' },
+    { id: '7', title: 'vocal update', artist: 'SALLY', status: 'APPROVED', description: "The drum files were amazing, but I didn't like the vocal files. This stage requires a vocal upgrade ....." },
+    { id: '6', title: 'vocal update', artist: 'SALLY', status: 'REJECTED' },
     { id: '5', title: 'vocal update', artist: 'SALLY', status: 'REJECTED' },
-    { id: '6', title: 'vocal update', artist: 'SALLY', status: 'ACTIVE' },
-    { id: '7', title: 'vocal update', artist: 'SALLY', status: 'ACTIVE' },
-    { id: '8', title: 'vocal update', artist: 'SALLY', status: 'REJECTED' },
+    { id: '4', title: 'vocal update', artist: 'SALLY', status: 'REJECTED' },
+    { id: '3', title: 'vocal update', artist: 'SALLY', status: 'ACTIVE' },
+    { id: '2', title: 'vocal update', artist: 'SALLY', status: 'ACTIVE' },
+    { id: '1', title: 'vocal update', artist: 'SALLY', status: 'REJECTED' },
   ];
 
   const [isUploadModalOpen, setUploadModalOpen] = useState(false);
