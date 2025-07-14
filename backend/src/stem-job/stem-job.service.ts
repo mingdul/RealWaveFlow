@@ -27,7 +27,7 @@ export class StemJobService {
         track_id: string;
         key?: string;
         bpm?: string;
-        instument? : string;
+        instrument? : string;
     }, userId: string): Promise<StemJob> {
         const job = this.stemJobRepository.create({
             file_name: jobData.file_name,
@@ -38,7 +38,7 @@ export class StemJobService {
             track_id: jobData.track_id,
             key: jobData.key,
             bpm: jobData.bpm,
-            instrument : jobData.instument,
+            instrument : jobData.instrument,
             user_id: userId,
             uploaded_at: new Date(),
         });
