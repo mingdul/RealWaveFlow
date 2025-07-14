@@ -213,13 +213,13 @@ const CreateTrackModal: React.FC<CreateTrackModalProps> = ({ onClose, onSubmit }
                   </div>
                 </div>
 
-                <div>
-                  <h3 className="text-lg font-semibold text-white mb-4 flex items-center">
+                
+                  {/* <h3 className="text-lg font-semibold text-white mb-4 flex items-center">
                     <span className="bg-blue-600 text-white rounded-full w-6 h-6 flex items-center justify-center text-sm mr-2">2</span>
                     Initial Stage Setup
-                  </h3>
+                  </h3> */}
                   {/* Removed stage title and description input fields */}
-                </div>
+                
               </div>
 
               {/* Right Column - Cover Image */}

@@ -34,6 +34,11 @@ const TrackPage: React.FC<TrackPageProps> = () => {
         return;
       }
       console.log('[DEBUG][TrackPage] useEffect triggered, trackId:', trackId);
+      if (!trackId) {
+        console.log('[DEBUG][TrackPage] No trackId in params:', trackId);
+        return;
+      }
+      console.log('[DEBUG][TrackPage] useEffect triggered, trackId:', trackId);
       try {
         setLoading(true);
         // TODO: 실제 트랙 API 호출로 대체 필요
@@ -56,15 +61,17 @@ const TrackPage: React.FC<TrackPageProps> = () => {
         };
         setTrack(mockTrack);
         console.log('[DEBUG][TrackPage] Set mock track:', mockTrack);
+        console.log('[DEBUG][TrackPage] Set mock track:', mockTrack);
         // 스테이지 목록 가져오기
         const trackStages = await getTrackStages(trackId);
         setStages(trackStages || []);
         console.log('[DEBUG][TrackPage] Loaded stages:', trackStages);
       } catch (error) {
-        console.error('Failed to load track data:', error);
+        console.error('[DEBUG][TrackPage] Failed to load track data:', error);
         setStages([]);
       } finally {
         setLoading(false);
+        console.log('[DEBUG][TrackPage] Loading finished');
         console.log('[DEBUG][TrackPage] Loading finished');
       }
     };
@@ -180,6 +187,7 @@ const TrackPage: React.FC<TrackPageProps> = () => {
 
   if (loading) {
     console.log('[DEBUG][TrackPage] Loading...');
+    console.log('[DEBUG][TrackPage] Loading...');
     return (
       <div className="bg-[#2a2a2a] min-h-screen flex justify-center items-center">
         <div className="animate-spin rounded-full h-12 w-12 border-b-2 border-white"></div>
@@ -188,6 +196,7 @@ const TrackPage: React.FC<TrackPageProps> = () => {
   }
 
   if (!track) {
+    console.log('[DEBUG][TrackPage] Track not found, track:', track);
     console.log('[DEBUG][TrackPage] Track not found, track:', track);
     return (
       <div className="bg-[#2a2a2a] min-h-screen flex justify-center items-center">
