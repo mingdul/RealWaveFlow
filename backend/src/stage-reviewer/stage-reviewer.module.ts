@@ -8,5 +8,6 @@ import { StageReviewer } from './stage-reviewer.entity';
   imports: [TypeOrmModule.forFeature([StageReviewer])],
   controllers: [StageReviewerController],
   providers: [StageReviewerService],
+  exports: [StageReviewerService],
 })
 export class StageReviewerModule {}
