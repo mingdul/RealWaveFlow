@@ -1,10 +1,11 @@
 import React, { useState, useEffect } from 'react';
 // import { useParams } from 'react-router-dom';
-import { Play, Info, Upload, Bell, Settings} from 'lucide-react';
+import { Upload, Bell, Settings} from 'lucide-react';
 import Logo from '../components/Logo';
 import { UploadModal } from '../components';
 import trackService from '../services/trackService';
 import { Track } from '../types/api';
+import tapeImg from '../assets/tape.png';
 
 /**
  * 보컬 업데이트 정보를 담는 인터페이스
@@ -24,9 +25,6 @@ interface VocalUpdate {
  * 보컬 업데이트 목록을 표시하고, 업로드 기능을 제공
  */
 const StagePage: React.FC = () => {
-  // 현재 선택된 카드의 ID를 관리하는 상태
-  const [selectedCardId, setSelectedCardId] = useState<string>('1');
-
   /**
    * 보컬 업데이트 목록 (현재는 하드코딩된 목업 데이터)
    * 실제 구현에서는 API에서 가져올 데이터
@@ -120,70 +118,78 @@ const StagePage: React.FC = () => {
     //
   }
 
-  /**
-   * 보컬 업데이트 카드 컴포넌트
-   * 각 업데이트를 카드 형태로 표시하며, 선택 상태와 호버 효과를 제공
-   */
-  const CardComponent: React.FC<{ update: VocalUpdate; selected: boolean; onClick: () => void; }> = ({ update, selected, onClick }) => {
-    // 카드 호버 상태 관리
-    const [isHovered, setIsHovered] = useState(false);
+  // StemSetCard 컴포넌트: 카세트 테이프 형태의 카드
+  interface StemSetCardProps {
+    index: number;
+    isPlaying: boolean;
+    seek: number;
+    onPlayToggle: () => void;
+    onSeek: (value: number) => void;
+    onDetail: () => void;
+  }
 
-    return (
-      <div
-        className={`group relative cursor-pointer rounded-lg p-6 transition-all duration-300 ${
-          selected
-            ? 'border-2 border-purple-400 bg-gradient-to-br from-purple-600 to-purple-700' // 선택된 카드 스타일
-            : update.status === 'ACTIVE'
-              ? 'bg-gradient-to-br from-purple-800 to-purple-900 hover:from-purple-700 hover:to-purple-800' // 활성 상태 카드 스타일
-              : 'bg-gray-600 hover:bg-gray-500' // 거부된 상태 카드 스타일
-        }`}
-        onMouseEnter={() => setIsHovered(true)}
-        onMouseLeave={() => setIsHovered(false)}
-        onClick={onClick}
-      >
-        {/* 상태 배지 - 우상단에 표시 */}
-        <div className='absolute right-4 top-4'>
-          <span
-            className={`rounded-full px-3 py-1 text-xs font-medium ${
-              update.status === 'ACTIVE'
-                ? 'bg-green-500 text-white' // 활성 상태는 녹색
-                : 'bg-gray-500 text-gray-300' // 거부 상태는 회색
-            }`}
-          >
-            {update.status}
-          </span>
-        </div>
-
-        {/* 메인 콘텐츠 영역 */}
-        <div className='mb-8'>
-          <h3 className='mb-2 text-xl font-medium text-white'>
-            {update.title}
-          </h3>
-          <p className='text-sm text-gray-300'>{update.artist}</p>
-        </div>
-
-        {/* 호버 시 설명 표시 - 오버레이 형태 */}
-        {isHovered && update.description && (
-          <div className='absolute inset-0 flex items-center justify-center rounded-lg bg-black bg-opacity-90 p-6'>
-            <p className='text-sm leading-relaxed text-white'>
-              {update.description}
-            </p>
-          </div>
-        )}
-
-        {/* 액션 버튼들 - 재생 및 상세보기 */}
-        <div className='flex gap-3'>
-          <button className='flex items-center gap-2 rounded-md bg-white px-4 py-2 text-black transition-colors hover:bg-gray-100'>
-            <Play size={16} />
-            <span className='text-sm font-medium'>PLAY</span>
-          </button>
-          <button className='flex items-center gap-2 rounded-md bg-gray-600 px-4 py-2 text-white transition-colors hover:bg-gray-500'>
-            <Info size={16} />
-            <span className='text-sm font-medium'>DETAIL</span>
-          </button>
-        </div>
+  const StemSetCard: React.FC<StemSetCardProps> = ({
+    index, isPlaying, seek, onPlayToggle, onSeek, onDetail
+  }) => (
+    <div
+      className="relative w-[320px] h-[200px] flex flex-col items-center justify-end shadow-lg"
+      style={{
+        backgroundImage: `url(${tapeImg})`,
+        backgroundSize: 'cover',
+        backgroundPosition: 'center',
+        borderRadius: '16px',
+        boxShadow: '0 4px 16px rgba(0,0,0,0.3)'
+      }}
+    >
+      {/* 카드 타이틀 */}
+      <div className="absolute top-8 left-0 w-full text-center text-xl font-bold text-black drop-shadow">
+        AWSOME MIX VOL #{index + 1}
       </div>
-    );
+      {/* Seek Bar */}
+      <input
+        type="range"
+        min={0}
+        max={100}
+        value={seek}
+        onChange={e => onSeek(Number(e.target.value))}
+        className="w-3/4 mb-2 accent-purple-700"
+        style={{ zIndex: 2 }}
+      />
+      {/* 버튼 영역 */}
+      <div className="flex items-center gap-3 mb-4 z-10">
+        <button
+          onClick={onPlayToggle}
+          className="w-10 h-10 flex items-center justify-center rounded-full bg-purple-700 text-white shadow-lg hover:bg-purple-800 border-2 border-white"
+          aria-label={isPlaying ? '정지' : '재생'}
+        >
+          {isPlaying ? (
+            <svg width="20" height="20" fill="currentColor" viewBox="0 0 20 20"><rect x="4" y="4" width="4" height="12" rx="1"/><rect x="12" y="4" width="4" height="12" rx="1"/></svg>
+          ) : (
+            <svg width="20" height="20" fill="currentColor" viewBox="0 0 20 20"><polygon points="4,4 16,10 4,16"/></svg>
+          )}
+        </button>
+        <button
+          onClick={onDetail}
+          className="px-4 py-2 rounded-full bg-yellow-300 text-black font-semibold shadow hover:bg-yellow-400 border-2 border-white"
+        >
+          Detail
+        </button>
+      </div>
+    </div>
+  );
+
+  // Stem Set 카드 상태 관리용 목업 (실제 구현 시 API 연동 필요)
+  const [playingIndex, setPlayingIndex] = useState<number | null>(null);
+  const [seekValues, setSeekValues] = useState<number[]>(vocalUpdates.map(() => 0));
+  const handlePlayToggle = (idx: number) => {
+    setPlayingIndex(playingIndex === idx ? null : idx);
+  };
+  const handleSeek = (idx: number, value: number) => {
+    setSeekValues(prev => prev.map((v, i) => (i === idx ? value : v)));
+  };
+  const handleDetail = (idx: number) => {
+    // 추후 상세 모달 구현 예정
+    alert(`Detail for AWSOME MIX VOL #${idx + 1}`);
   };
 
   return (
@@ -256,12 +262,15 @@ const StagePage: React.FC = () => {
 
         {/* 카드 그리드 - 반응형 레이아웃 */}
         <div className='grid grid-cols-1 gap-6 md:grid-cols-2 lg:grid-cols-4'>
-          {vocalUpdates.map((update) => (
-            <CardComponent 
-              key={update.id} 
-              update={update} 
-              selected={update.id === selectedCardId}
-              onClick={() => setSelectedCardId(update.id)}
+          {vocalUpdates.map((update, idx) => (
+            <StemSetCard
+              key={update.id}
+              index={idx}
+              isPlaying={playingIndex === idx}
+              seek={seekValues[idx]}
+              onPlayToggle={() => handlePlayToggle(idx)}
+              onSeek={value => handleSeek(idx, value)}
+              onDetail={() => handleDetail(idx)}
             />
           ))}
         </div>
