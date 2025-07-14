@@ -238,7 +238,6 @@ export class WebhookController {
         stem_count: number;
         stem_paths: string[];
         task_id: string;
-        processed_at: string;
     }) {
         this.logger.log(`믹싱 완료 알림 수신: ${data.stageId} (상태: ${data.status})`);
 
