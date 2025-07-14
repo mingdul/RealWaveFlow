@@ -14,7 +14,8 @@ import { User } from '../users/user.entity';
 import { S3Service } from './s3.service';
 import { VersionStemService } from 'src/version-stem/version-stem.service';
 
-/**
+
+/** 
  * Streaming Module
  * 
  * 음악 스템 파일들의 스트리밍 기능을 제공하는 모듈
@@ -43,7 +44,8 @@ import { VersionStemService } from 'src/version-stem/version-stem.service';
       VersionStem, 
       Upstream, 
       TrackCollaborator, 
-      User
+      User,
+      VersionStem,
     ])
   ],
   controllers: [StreamingController, StreamingTestController],
