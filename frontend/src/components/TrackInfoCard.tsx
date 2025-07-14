@@ -1,18 +1,17 @@
 import React, { useState } from 'react';
 import { Play, Plus, Pause } from 'lucide-react';
 import { Button, StemPlayer } from './';
-import { Track, Stage } from '../types/api';
+import { Track } from '../types/api';
 import { StemStreamingInfo } from '../services/streamingService';
 import PresignedImage from './PresignedImage';
 
 interface TrackInfoCardProps {
   track: Track;
-  stems: StemStreamingInfo[];
-  stemsLoading: boolean;
-  onPlay: () => void;
-  onShowAllStems: () => void;
-  onRollBack: () => void;
-  stage: Stage | null;
+  stems?: StemStreamingInfo[];
+  onPlay?: () => void;
+  onShowAllStems?: () => void;
+  onRollBack?: () => void;
+  stemsLoading?: boolean;
 }
 
 const TrackInfoCard: React.FC<TrackInfoCardProps> = ({
@@ -21,8 +20,7 @@ const TrackInfoCard: React.FC<TrackInfoCardProps> = ({
   onPlay,
   onShowAllStems,
   onRollBack,
-  stemsLoading = false,
-  stage
+  stemsLoading = false
 }) => {
   const [showPlayer, setShowPlayer] = useState(false);
 
@@ -33,8 +31,6 @@ const TrackInfoCard: React.FC<TrackInfoCardProps> = ({
       onPlay();
     }
   };
-
-  if (!track) return null;
 
   return (
     <div className="mb-12">

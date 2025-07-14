@@ -1,42 +1,168 @@
-import apiClient from '../lib/api';
-import { ApiResponse } from '../lib/api';
-import { Track } from '../types/api';
+import apiClient, { ApiResponse } from '../lib/api';
+import { Track, CreateTrackDto, TrackCollaborator } from '../types/api';
+
+// 백엔드 응답 구조에 맞는 타입 정의
+interface TracksResponse {
+  tracks: Track[];
+}
+
+interface CollaboratorTracksResponse {
+  tracks: Track[];
+}
 
 class TrackService {
-  getTrackById(trackId: string) {
-    return apiClient.get<ApiResponse<Track>>(`/track/${trackId}`);
-  }
-
-  async createTrack(data: {
-    title: string;
-    description: string;
-    cover_img_path: string;
-  }): Promise<ApiResponse> {
+  /**
+   * 새 트랙 생성
+   */
+  async createTrack(trackData: CreateTrackDto): Promise<ApiResponse<Track>> {
     try {
-      const response = await apiClient.post<Track>('/track/create', data);
-      return { success: true, data: response.data };
+      console.log('[DEBUG] Creating track with data:', trackData);
+      const response = await apiClient.post<ApiResponse<Track>>(
+        '/tracks',
+        trackData
+      );
+      console.log('[DEBUG] Create track response:', response.data);
+      return response.data;
     } catch (error: any) {
-      return {
-        success: false,
-        message: error.response?.data?.message || 'Failed to create track',
-      };
+      console.error('[DEBUG] Create track error:', error);
+      throw new Error(error.response?.data?.message || '트랙 생성에 실패했습니다.');
     }
   }
 
+  /**
+   * 특정 트랙 조회
+   */
+  async getTrackById(trackId: string): Promise<ApiResponse<Track>> {
+    try {
+      const response = await apiClient.get<ApiResponse<Track>>(
+        `/tracks/${trackId}`
+      );
+      return response.data;
+    } catch (error: any) {
+      throw new Error(error.response?.data?.message || '트랙 조회에 실패했습니다.');
+    }
+  }
+
+  /**
+   * 사용자의 모든 트랙 조회 (대시보드용)
+   */
+  async getUserTracks(): Promise<ApiResponse<TracksResponse>> {
+    try {
+      const response = await apiClient.get<ApiResponse<TracksResponse>>(
+        '/tracks'
+      );
+      console.log('[DEBUG] getUserTracks response:', response.data);
+      // 백엔드에서 직접 { success: true, data: { tracks } } 형태로 반환하므로 그대로 반환
+      return response.data;
+    } catch (error: any) {
+      throw new Error(error.response?.data?.message || '트랙 목록 조회에 실패했습니다.');
+    }
+  }
+
+  /**
+   * 협업 트랙 조회
+   */
+  async getCollaboratorTracks(): Promise<ApiResponse<CollaboratorTracksResponse>> {
+    try {
+      const response = await apiClient.get<ApiResponse<CollaboratorTracksResponse>>(
+        '/tracks/collaborator'
+      );
+      // 백엔드에서 직접 { success: true, data: { tracks } } 형태로 반환하므로 그대로 반환
+      return response.data;
+    } catch (error: any) {
+      throw new Error(error.response?.data?.message || '협업 트랙 목록 조회에 실패했습니다.');
+    }
+  }
+
+  /**
+   * 트랙 업데이트
+   */
+  async updateTrack(trackId: string, trackData: Partial<CreateTrackDto>): Promise<ApiResponse<Track>> {
+    try {
+      const response = await apiClient.put<ApiResponse<Track>>(
+        `/tracks/${trackId}`,
+        trackData
+      );
+      return response.data;
+    } catch (error: any) {
+      throw new Error(error.response?.data?.message || '트랙 업데이트에 실패했습니다.');
+    }
+  }
+
+  /**
+   * 트랙 삭제
+   */
+  async deleteTrack(trackId: string): Promise<ApiResponse> {
+    try {
+      const response = await apiClient.delete<ApiResponse>(
+        `/tracks/${trackId}`
+      );
+      return response.data;
+    } catch (error: any) {
+      throw new Error(error.response?.data?.message || '트랙 삭제에 실패했습니다.');
+    }
+  }
+
+  /**
+   * 트랙 협업자 추가
+   */
+  async addCollaborator(trackId: string, collaboratorData: {
+    email: string;
+    role: 'collaborator' | 'viewer';
+    permissions: string;
+  }): Promise<ApiResponse<TrackCollaborator>> {
+    try {
+      const response = await apiClient.post<ApiResponse<TrackCollaborator>>(
+        `/tracks/${trackId}/collaborators`,
+        collaboratorData
+      );
+      return response.data;
+    } catch (error: any) {
+      throw new Error(error.response?.data?.message || '협업자 추가에 실패했습니다.');
+    }
+  }
+
+  /**
+   * 트랙 협업자 목록 조회
+   */
+  async getCollaborators(trackId: string): Promise<ApiResponse<TrackCollaborator[]>> {
+    try {
+      // 임시로 기존 엔드포인트 사용 (백엔드 수정 후 변경 예정)
+      const response = await apiClient.get<ApiResponse<TrackCollaborator[]>>(
+        `/track-collaborator/track/${trackId}`
+      );
+      return response.data;
+    } catch (error: any) {
+      throw new Error(error.response?.data?.message || '협업자 목록 조회에 실패했습니다.');
+    }
+  }
+
+  /**
+   * 트랙 협업자 제거
+   */
+  async removeCollaborator(trackId: string, collaboratorId: string): Promise<ApiResponse> {
+    try {
+      const response = await apiClient.delete<ApiResponse>(
+        `/tracks/${trackId}/collaborators/${collaboratorId}`
+      );
+      return response.data;
+    } catch (error: any) {
+      throw new Error(error.response?.data?.message || '협업자 제거에 실패했습니다.');
+    }
+  }
+
+
   async updateTrackStatus(trackId: string, status: string): Promise<ApiResponse> {
     try {
-      const response = await apiClient.patch(`/track/${trackId}/status`, { status });
-      return {
-        success: true,
-        data: response.data,
-      };
+      const response = await apiClient.put<ApiResponse>(
+        `/tracks/status/${trackId}/${status}`
+      );
+      return response.data;
     } catch (error: any) {
-      return {
-        success: false,
-        message: error.response?.data?.message || 'Failed to update track status',
-      };
+      throw new Error(error.response?.data?.message || '트랙 상태 업데이트에 실패했습니다.');
     }
   }
 }
 
-export default new TrackService();
+
+export default new TrackService(); 

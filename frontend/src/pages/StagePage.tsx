@@ -80,8 +80,8 @@ const StagePage: React.FC = () => {
     if (trackId) {
       trackService.getTrackById(trackId)
         .then(response => {
-          if (response.data) {
-            setTrack(response.data.data || null);
+          if (response.success) {
+            setTrack(response.data || null);
           } else {
             console.error("Failed to fetch track details");
           }
