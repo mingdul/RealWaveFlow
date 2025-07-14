@@ -27,9 +27,6 @@ interface SocketProviderProps {
 export const SocketProvider: React.FC<SocketProviderProps> = ({ children }) => {
   const [socket, setSocket] = useState<Socket | null>(null);
   const [isConnected, setIsConnected] = useState(false);
-  const [onlineUsers, setOnlineUsers] = useState(0);
-  const [socketId, setSocketId] = useState<string | undefined>();
-  
   const { user, isAuthenticated } = useAuth();
   const { showSuccess, showError } = useToast();
   
@@ -75,18 +72,15 @@ export const SocketProvider: React.FC<SocketProviderProps> = ({ children }) => {
     newSocket.on('connect', () => {
       console.log('WebSocket connected');
       setIsConnected(true);
-      setSocketId(newSocket.id);
     });
 
     newSocket.on('disconnect', () => {
       console.log('WebSocket disconnected');
       setIsConnected(false);
-      setSocketId(undefined);
     });
 
     newSocket.on('connected', (data) => {
       console.log('Socket authentication successful:', data);
-      setOnlineUsers(data.onlineUsers || 0);
     });
 
     // 파일 처리 이벤트 리스너들
@@ -207,8 +201,8 @@ export const SocketProvider: React.FC<SocketProviderProps> = ({ children }) => {
   const value: SocketContextType = {
     socket,
     isConnected,
-    onlineUsers,
-    socketId,
+    onlineUsers: 0,
+    socketId: undefined,
     sendMessage,
     ping,
     connect,

@@ -110,7 +110,6 @@ const FileSelectionAndUploadStep: React.FC<{
     .filter(id => id) as string[]; // Filter files with stem-job ID
   const allStemsCompleted = uploadedStemIds.length > 0 && 
     uploadedStemIds.every(id => completedStems.includes(id));
-  const hasFailedStems = failedStems.length > 0;
   const handleFileSelection = (e: React.ChangeEvent<HTMLInputElement>) => {
     const selectedFiles = e.target.files;
     if (!selectedFiles) return;
@@ -129,7 +128,6 @@ const FileSelectionAndUploadStep: React.FC<{
   };
 
   const selectedFiles = files.filter(f => f.isSelected && !f.isComplete);
-  const completedFiles = files.filter(f => f.isComplete);
   // Make tag required, but key and bpm optional
   const canStartUpload = selectedFiles.length > 0 && selectedFiles.every(f => f.tag && f.tag.trim() !== '');
 
@@ -387,6 +385,8 @@ const InitProjectModal: React.FC<InitProjectModalProps> = ({
 
   const steps = ['Create Track', 'Upload Files'];
 
+  const completedFiles = state.uploadedFiles.filter(f => f.isComplete);
+
   const handleStartUpload = React.useCallback(async () => {
     console.log('[DEBUG] InitProjectModal - Starting upload process');
     dispatch({ type: 'SET_UPLOADING', payload: true });
@@ -521,20 +521,8 @@ const InitProjectModal: React.FC<InitProjectModalProps> = ({
     }
   };
 
-  const completedFiles = state.uploadedFiles.filter(f => f.isComplete);
-  
-  // Stem job completion status check
-  const uploadedStemIds = completedFiles
-    .map(file => file.stemJobId)
-    .filter(id => id) as string[]; // Filter files with stem-job ID
-  const allStemsCompleted = uploadedStemIds.length > 0 && 
-    uploadedStemIds.every(id => completedStems.includes(id));
-  const hasFailedStems = failedStems.length > 0;
-  
   const canComplete = completedFiles.length > 0 && 
-    !state.isUploading && 
-    allStemsCompleted && 
-    !hasFailedStems;
+    !state.isUploading;
 
   const handleCloseModal = () => {
     if (state.isUploading) {
@@ -611,9 +599,7 @@ const InitProjectModal: React.FC<InitProjectModalProps> = ({
             disabled={!canComplete}
             className={`px-6 py-2 bg-purple-600 text-white rounded-lg hover:bg-purple-700 transition-colors font-medium ${!canComplete ? 'opacity-50 cursor-not-allowed' : ''}`}
           >
-            {hasFailedStems ? 'Failed' : 
-             !allStemsCompleted ? 'Processing...' : 
-             'Complete'}
+            Complete
           </button>
         </div>
       </div>
