@@ -254,6 +254,7 @@ const StemPlayer: React.FC<StemPlayerProps> = ({ stems, className = '' }) => {
           onMuteToggle={() => handleStemMuteToggle(stem.id)}
           onTimeUpdate={(time) => handleTimeUpdate(stem.id, time)}
           onLoadedMetadata={(duration) => handleStemLoadedMetadata(stem.id, duration)}
+          showProgressBar={stemStates[stem.id]?.isPlaying || false}
           className="bg-gray-800"
         />
         ))}
