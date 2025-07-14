@@ -1,4 +1,4 @@
-import React, { useState, useEffect, useRef } from 'react';
+import React, { useState, useEffect,  } from 'react';
 import { Play, Pause, Square, Volume2, VolumeX } from 'lucide-react';
 import AudioPlayer from './AudioPlayer';
 import { StemStreamingInfo } from '../services/streamingService';
@@ -21,7 +21,7 @@ const StemPlayer: React.FC<StemPlayerProps> = ({ stems, className = '' }) => {
   const [stemStates, setStemStates] = useState<Record<string, StemState>>({});
   const [masterVolume, setMasterVolume] = useState(1);
   const [masterMuted, setMasterMuted] = useState(false);
-  const timeUpdateIntervalRef = useRef<number | null>(null);
+
 
   // 스템 상태 초기화
   useEffect(() => {
@@ -59,7 +59,7 @@ const StemPlayer: React.FC<StemPlayerProps> = ({ stems, className = '' }) => {
   };
 
   // 개별 스템 재생/일시정지
-  const handleStemPlayPause = (stemId: string) => {
+  const handleStemPlayPause = () => {
     // 마스터 컨트롤을 사용하므로 개별 스템 재생은 비활성화
     // 필요시 개별 스템 모드 추가 가능
   };
@@ -210,7 +210,7 @@ const StemPlayer: React.FC<StemPlayerProps> = ({ stems, className = '' }) => {
             src={stem.presignedUrl}
             fileName={stem.fileName}
             isPlaying={isPlaying}
-            onPlayPause={() => handleStemPlayPause(stem.id)}
+            onPlayPause={() => handleStemPlayPause()}
             currentTime={currentTime}
             volume={stemStates[stem.id]?.volume * masterVolume || 0}
             onVolumeChange={(volume) => handleStemVolumeChange(stem.id, volume)}
