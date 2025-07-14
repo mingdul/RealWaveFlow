@@ -139,6 +139,8 @@ export class StemJobService {
             audio_wave_path: job.audio_wave_path,
             category: { id: job.category_id },
             upstream: job.upstream_id ? { id: job.upstream_id } : null,
+            // Ensure the creator is linked so user_id is persisted
+            user: { id: userId },
             uploaded_at: new Date(),
         });
 
