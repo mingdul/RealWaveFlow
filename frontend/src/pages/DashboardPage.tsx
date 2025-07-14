@@ -168,10 +168,10 @@ const DashboardPage = () => {
     });
   };
 
-  const handleCompleteInitProject = () => {
-    console.log('[DEBUG] DashboardPage - Init project completed, navigating back to /dashboard');
+  const handleCompleteInitProject = async () => {
+    console.log('[DEBUG] DashboardPage - Init project completed, refreshing dashboard');
     handleCloseInitProjectModal();
-    navigate('/dashboard');
+    await loadTracks();
   };
 
   const ProjectCard = ({ track, isNewProject = false }: { track?: Track, isNewProject?: boolean }) => {
