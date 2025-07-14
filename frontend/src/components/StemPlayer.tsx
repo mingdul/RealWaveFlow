@@ -13,6 +13,7 @@ interface StemState {
   muted: boolean;
   currentTime: number;
   duration: number;
+  isPlaying: boolean;
 }
 
 const StemPlayer: React.FC<StemPlayerProps> = ({ stems, className = '' }) => {
@@ -31,7 +32,8 @@ const StemPlayer: React.FC<StemPlayerProps> = ({ stems, className = '' }) => {
         volume: 1,
         muted: false,
         currentTime: 0,
-        duration: 0
+        duration: 0,
+        isPlaying: false
       };
     });
     setStemStates(initialStates);
@@ -39,7 +41,26 @@ const StemPlayer: React.FC<StemPlayerProps> = ({ stems, className = '' }) => {
 
   // 마스터 재생/일시정지
   const handleMasterPlayPause = () => {
-    setIsPlaying(!isPlaying);
+    const willPlay = !isPlaying;
+  
+    if (willPlay) {
+      // 어떤 스템이라도 재생 중이면 모두 정지
+      const anyStemPlaying = Object.values(stemStates).some(stem => stem.isPlaying);
+      if (anyStemPlaying) {
+        setStemStates(prev => {
+          const updatedStates: Record<string, StemState> = {};
+          Object.keys(prev).forEach(id => {
+            updatedStates[id] = {
+              ...prev[id],
+              isPlaying: false,
+            };
+          });
+          return updatedStates;
+        });
+      }
+    }
+  
+    setIsPlaying(willPlay);
   };
 
   // 마스터 정지
@@ -59,9 +80,24 @@ const StemPlayer: React.FC<StemPlayerProps> = ({ stems, className = '' }) => {
   };
 
   // 개별 스템 재생/일시정지
-  const handleStemPlayPause = () => {
-    // 마스터 컨트롤을 사용하므로 개별 스템 재생은 비활성화
-    // 필요시 개별 스템 모드 추가 가능
+  const handleStemPlayPause = (stemId: string) => {
+
+    if(isPlaying){
+      setIsPlaying(false);
+    }
+
+    setStemStates(prev => {
+      const updatedStemStates : Record<string, StemState> = {};
+
+      Object.keys(prev).forEach(id => {
+        updatedStemStates[id] = {
+          ...prev[id],
+          isPlaying: id == stemId ? !prev[id].isPlaying : false,
+        };
+      });
+
+      return updatedStemStates;
+    });
   };
 
   // 개별 스템 볼륨 변경
@@ -206,20 +242,20 @@ const StemPlayer: React.FC<StemPlayerProps> = ({ stems, className = '' }) => {
         <h3 className="text-lg font-semibold text-white mb-3">스템 트랙</h3>
         {stems.map((stem) => (
           <AudioPlayer
-            key={stem.id}
-            src={stem.presignedUrl}
-            fileName={stem.fileName}
-            isPlaying={isPlaying}
-            onPlayPause={() => handleStemPlayPause()}
-            currentTime={currentTime}
-            volume={stemStates[stem.id]?.volume * masterVolume || 0}
-            onVolumeChange={(volume) => handleStemVolumeChange(stem.id, volume)}
-            muted={stemStates[stem.id]?.muted || masterMuted}
-            onMuteToggle={() => handleStemMuteToggle(stem.id)}
-            onTimeUpdate={(time) => handleTimeUpdate(stem.id, time)}
-            onLoadedMetadata={(duration) => handleStemLoadedMetadata(stem.id, duration)}
-            className="bg-gray-800"
-          />
+          key={stem.id}
+          src={stem.presignedUrl}
+          fileName={stem.fileName}
+          isPlaying={stemStates[stem.id]?.isPlaying || false}
+          onPlayPause={() => handleStemPlayPause(stem.id)}
+          currentTime={stemStates[stem.id]?.currentTime || 0}
+          volume={(stemStates[stem.id]?.volume || 1) * masterVolume}
+          onVolumeChange={(volume) => handleStemVolumeChange(stem.id, volume)}
+          muted={stemStates[stem.id]?.muted || masterMuted}
+          onMuteToggle={() => handleStemMuteToggle(stem.id)}
+          onTimeUpdate={(time) => handleTimeUpdate(stem.id, time)}
+          onLoadedMetadata={(duration) => handleStemLoadedMetadata(stem.id, duration)}
+          className="bg-gray-800"
+        />
         ))}
       </div>
     </div>
