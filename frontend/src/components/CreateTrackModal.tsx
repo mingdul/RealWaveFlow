@@ -1,7 +1,10 @@
 import React, { useState } from 'react';
-import { X, Upload} from 'lucide-react';
+import { X, Upload, Loader2} from 'lucide-react';
 // import Button from './Button';
 import StepProgress from './StepProgress';
+import s3UploadService from '../services/s3UploadService';
+import stemJobService from '../services/stemJobService';
+import { useToast } from '../contexts/ToastContext';
 
 interface CreateTrackModalProps {
   onClose: () => void;
@@ -9,16 +12,21 @@ interface CreateTrackModalProps {
 }
 
 const CreateTrackModal: React.FC<CreateTrackModalProps> = ({ onClose, onSubmit }) => {
+  const { showError, showSuccess } = useToast();
   const [formData, setFormData] = useState({
     name: '',
     description: '',
     genre: '',
     bpm: '',
     key_signature: '',
+    stage_title: '',
+    stage_description: '',
   });
   
   const [coverImage, setCoverImage] = useState<File | null>(null);
   const [coverImagePreview, setCoverImagePreview] = useState<string | null>(null);
+  const [isSubmitting, setIsSubmitting] = useState(false);
+  const [imageUploadProgress, setImageUploadProgress] = useState(0);
 
   const steps = ['Create Track', 'Upload Files'];
 
@@ -39,9 +47,68 @@ const CreateTrackModal: React.FC<CreateTrackModalProps> = ({ onClose, onSubmit }
     setCoverImagePreview(null);
   };
 
-  const handleSubmit = (e: React.FormEvent) => {
+  const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
-    onSubmit({ ...formData, coverImage });
+    console.log('[DEBUG] CreateTrackModal - Form submitted with data:', formData);
+    setIsSubmitting(true);
+    setImageUploadProgress(0);
+
+    try {
+      let imageUrl = '';
+      
+      // 1. 이미지 업로드 (선택사항)
+      if (coverImage) {
+        console.log('[DEBUG] CreateTrackModal - Starting image upload:', coverImage.name);
+        try {
+          imageUrl = await s3UploadService.uploadImage(
+            coverImage,
+            (progress) => {
+              console.log('[DEBUG] CreateTrackModal - Image upload progress:', progress);
+              setImageUploadProgress(progress);
+            }
+          );
+          console.log('[DEBUG] CreateTrackModal - Image uploaded successfully:', imageUrl);
+        } catch (error: any) {
+          console.error('[ERROR] CreateTrackModal - Image upload failed:', error);
+          showError(`이미지 업로드 실패: ${error.message}`);
+          return;
+        }
+      }
+
+      // 2. stem-job/init-start API 호출
+      const initStartRequest = {
+        title: formData.name,
+        description: formData.description,
+        genre: formData.genre,
+        bpm: formData.bpm,
+        key_signature: formData.key_signature,
+        image_url: imageUrl,
+        stage_title: formData.stage_title || 'Initial Stage',
+        stage_description: formData.stage_description || 'Initial stage for track production',
+      };
+
+      console.log('[DEBUG] CreateTrackModal - Calling stem-job/init-start with:', initStartRequest);
+      const result = await stemJobService.initStart(initStartRequest);
+      console.log('[DEBUG] CreateTrackModal - stem-job/init-start response:', result);
+      
+      if (result.success && result.data) {
+        console.log('[DEBUG] CreateTrackModal - Track and stage created successfully:', result.data);
+        showSuccess('Track and stage created successfully!');
+        onSubmit({
+          track: result.data.track,
+          stage: result.data.stage,
+        });
+      } else {
+        console.error('[ERROR] CreateTrackModal - Failed to create track and stage:', result);
+        showError('Failed to create track and stage');
+      }
+    } catch (error: any) {
+      console.error('[ERROR] CreateTrackModal - Track creation error:', error);
+      showError(error.message || 'Failed to create track');
+    } finally {
+      setIsSubmitting(false);
+      setImageUploadProgress(0);
+    }
   };
 
   const handleCloseModal = () => {
@@ -75,67 +142,100 @@ const CreateTrackModal: React.FC<CreateTrackModalProps> = ({ onClose, onSubmit }
         <div className="flex-1 overflow-hidden p-6">
           <StepProgress currentStep={1} steps={steps} />
           
-          <div className="max-h-[60vh] overflow-y-auto">
-            <h3 className="text-lg font-semibold text-white mb-6">Track Information</h3>
-            
+                      <div className="max-h-[60vh] overflow-y-auto">
             <div className="grid grid-cols-1 lg:grid-cols-2 gap-8">
               {/* Left Column - Track Info */}
-              <div className="space-y-4">
-                <form onSubmit={handleSubmit} className="space-y-4">
-                  <div>
-                    <label className="block text-gray-300 text-sm mb-2">Track Name</label>
-                    <input
-                      type="text"
-                      value={formData.name}
-                      onChange={(e) => setFormData({ ...formData, name: e.target.value })}
-                      className="w-full bg-gray-700 text-white rounded-lg px-4 py-3 border border-gray-600 focus:outline-none focus:ring-2 focus:ring-purple-500 focus:border-transparent transition-all"
-                      placeholder="Enter track name"
-                      required
-                    />
-                  </div>
-                  <div>
-                    <label className="block text-gray-300 text-sm mb-2">Description</label>
-                    <textarea
-                      value={formData.description}
-                      onChange={(e) => setFormData({ ...formData, description: e.target.value })}
-                      className="w-full bg-gray-700 text-white rounded-lg px-4 py-3 border border-gray-600 focus:outline-none focus:ring-2 focus:ring-purple-500 focus:border-transparent transition-all resize-none"
-                      placeholder="Describe your track"
-                      rows={3}
-                    />
-                  </div>
-                  <div className="grid grid-cols-2 gap-4">
+              <div className="space-y-6">
+                <div>
+                  <h3 className="text-lg font-semibold text-white mb-4 flex items-center">
+                    <span className="bg-purple-600 text-white rounded-full w-6 h-6 flex items-center justify-center text-sm mr-2">1</span>
+                    Track Information
+                  </h3>
+                  <div className="space-y-4">
                     <div>
-                      <label className="block text-gray-300 text-sm mb-2">Genre</label>
+                      <label className="block text-gray-300 text-sm mb-2">Track Name</label>
                       <input
                         type="text"
-                        value={formData.genre}
-                        onChange={(e) => setFormData({ ...formData, genre: e.target.value })}
+                        value={formData.name}
+                        onChange={(e) => setFormData({ ...formData, name: e.target.value })}
                         className="w-full bg-gray-700 text-white rounded-lg px-4 py-3 border border-gray-600 focus:outline-none focus:ring-2 focus:ring-purple-500 focus:border-transparent transition-all"
-                        placeholder="e.g. Hip-hop, Pop"
+                        placeholder="Enter track name"
+                        required
                       />
                     </div>
                     <div>
-                      <label className="block text-gray-300 text-sm mb-2">BPM</label>
+                      <label className="block text-gray-300 text-sm mb-2">Description</label>
+                      <textarea
+                        value={formData.description}
+                        onChange={(e) => setFormData({ ...formData, description: e.target.value })}
+                        className="w-full bg-gray-700 text-white rounded-lg px-4 py-3 border border-gray-600 focus:outline-none focus:ring-2 focus:ring-purple-500 focus:border-transparent transition-all resize-none"
+                        placeholder="Describe your track"
+                        rows={3}
+                      />
+                    </div>
+                    <div className="grid grid-cols-2 gap-4">
+                      <div>
+                        <label className="block text-gray-300 text-sm mb-2">Genre</label>
+                        <input
+                          type="text"
+                          value={formData.genre}
+                          onChange={(e) => setFormData({ ...formData, genre: e.target.value })}
+                          className="w-full bg-gray-700 text-white rounded-lg px-4 py-3 border border-gray-600 focus:outline-none focus:ring-2 focus:ring-purple-500 focus:border-transparent transition-all"
+                          placeholder="e.g. Hip-hop, Pop"
+                        />
+                      </div>
+                      <div>
+                        <label className="block text-gray-300 text-sm mb-2">BPM</label>
+                        <input
+                          type="text"
+                          value={formData.bpm}
+                          onChange={(e) => setFormData({ ...formData, bpm: e.target.value })}
+                          className="w-full bg-gray-700 text-white rounded-lg px-4 py-3 border border-gray-600 focus:outline-none focus:ring-2 focus:ring-purple-500 focus:border-transparent transition-all"
+                          placeholder="e.g. 120"
+                        />
+                      </div>
+                    </div>
+                    <div>
+                      <label className="block text-gray-300 text-sm mb-2">Key Signature</label>
                       <input
                         type="text"
-                        value={formData.bpm}
-                        onChange={(e) => setFormData({ ...formData, bpm: e.target.value })}
+                        value={formData.key_signature}
+                        onChange={(e) => setFormData({ ...formData, key_signature: e.target.value })}
                         className="w-full bg-gray-700 text-white rounded-lg px-4 py-3 border border-gray-600 focus:outline-none focus:ring-2 focus:ring-purple-500 focus:border-transparent transition-all"
-                        placeholder="e.g. 120"
+                        placeholder="e.g. C major, A minor"
                       />
                     </div>
                   </div>
-                  <div>
-                    <label className="block text-gray-300 text-sm mb-2">Key Signature</label>
-                    <input
-                      type="text"
-                      value={formData.key_signature}
-                      onChange={(e) => setFormData({ ...formData, key_signature: e.target.value })}
-                      className="w-full bg-gray-700 text-white rounded-lg px-4 py-3 border border-gray-600 focus:outline-none focus:ring-2 focus:ring-purple-500 focus:border-transparent transition-all"
-                      placeholder="e.g. C major, A minor"
-                    />
+                </div>
+
+                <div>
+                  <h3 className="text-lg font-semibold text-white mb-4 flex items-center">
+                    <span className="bg-blue-600 text-white rounded-full w-6 h-6 flex items-center justify-center text-sm mr-2">2</span>
+                    Initial Stage Setup
+                  </h3>
+                  <div className="space-y-4">
+                    <div>
+                      <label className="block text-gray-300 text-sm mb-2">Stage Title</label>
+                      <input
+                        type="text"
+                        value={formData.stage_title}
+                        onChange={(e) => setFormData({ ...formData, stage_title: e.target.value })}
+                        className="w-full bg-gray-700 text-white rounded-lg px-4 py-3 border border-gray-600 focus:outline-none focus:ring-2 focus:ring-blue-500 focus:border-transparent transition-all"
+                        placeholder="e.g. Initial Recording Stage"
+                      />
+                    </div>
+                    <div>
+                      <label className="block text-gray-300 text-sm mb-2">Stage Description</label>
+                      <textarea
+                        value={formData.stage_description}
+                        onChange={(e) => setFormData({ ...formData, stage_description: e.target.value })}
+                        className="w-full bg-gray-700 text-white rounded-lg px-4 py-3 border border-gray-600 focus:outline-none focus:ring-2 focus:ring-blue-500 focus:border-transparent transition-all resize-none"
+                        placeholder="Describe what will happen in this stage"
+                        rows={3}
+                      />
+                    </div>
                   </div>
-                </form>
+                </div>
               </div>
 
               {/* Right Column - Cover Image */}
@@ -152,10 +252,11 @@ const CreateTrackModal: React.FC<CreateTrackModalProps> = ({ onClose, onSubmit }
                         accept="image/*"
                         onChange={handleImageUpload}
                         className="hidden"
+                        disabled={isSubmitting}
                       />
                       <label
                         htmlFor="cover-image-input"
-                        className="block w-full h-48 border-2 border-dashed border-gray-600 rounded-lg cursor-pointer hover:border-purple-500 hover:bg-purple-900/10 transition-all duration-200"
+                        className={`block w-full h-48 border-2 border-dashed border-gray-600 rounded-lg cursor-pointer hover:border-purple-500 hover:bg-purple-900/10 transition-all duration-200 ${isSubmitting ? 'opacity-50 cursor-not-allowed' : ''}`}
                       >
                         <div className="flex flex-col items-center justify-center h-full">
                           <Upload size={32} className="text-gray-400 mb-3" />
@@ -171,16 +272,32 @@ const CreateTrackModal: React.FC<CreateTrackModalProps> = ({ onClose, onSubmit }
                         alt="Cover preview"
                         className="w-full h-48 object-cover rounded-lg"
                       />
-                      <button
-                        type="button"
-                        onClick={handleRemoveImage}
-                        className="absolute top-2 right-2 p-2 bg-red-600 text-white rounded-full hover:bg-red-700 transition-colors"
-                      >
-                        <X size={16} />
-                      </button>
+                      {!isSubmitting && (
+                        <button
+                          type="button"
+                          onClick={handleRemoveImage}
+                          className="absolute top-2 right-2 p-2 bg-red-600 text-white rounded-full hover:bg-red-700 transition-colors"
+                        >
+                          <X size={16} />
+                        </button>
+                      )}
                       <div className="absolute bottom-2 left-2 bg-black bg-opacity-50 text-white px-2 py-1 rounded text-xs">
                         {coverImage?.name}
                       </div>
+                      {isSubmitting && imageUploadProgress > 0 && (
+                        <div className="absolute inset-0 bg-black bg-opacity-50 flex items-center justify-center rounded-lg">
+                          <div className="text-center">
+                            <div className="text-white text-sm mb-2">Uploading image...</div>
+                            <div className="w-32 bg-gray-600 rounded-full h-2">
+                              <div
+                                className="bg-purple-500 h-2 rounded-full transition-all duration-300"
+                                style={{ width: `${imageUploadProgress}%` }}
+                              />
+                            </div>
+                            <div className="text-white text-xs mt-1">{imageUploadProgress}%</div>
+                          </div>
+                        </div>
+                      )}
                     </div>
                   )}
                 </div>
@@ -215,16 +332,18 @@ const CreateTrackModal: React.FC<CreateTrackModalProps> = ({ onClose, onSubmit }
         <div className="flex items-center justify-between p-6 border-t border-gray-700 bg-gray-900/50 rounded-b-xl">
           <button 
             onClick={handleCloseModal}
-            className="px-6 py-2 bg-gray-600 text-white rounded-lg hover:bg-gray-700 transition-colors font-medium"
+            disabled={isSubmitting}
+            className={`px-6 py-2 bg-gray-600 text-white rounded-lg hover:bg-gray-700 transition-colors font-medium ${isSubmitting ? 'opacity-50 cursor-not-allowed' : ''}`}
           >
             Cancel
           </button>
           <button
             onClick={handleSubmit}
-            disabled={!formData.name.trim()}
-            className={`px-6 py-2 bg-purple-600 text-white rounded-lg hover:bg-purple-700 transition-colors font-medium ${!formData.name.trim() ? 'opacity-50 cursor-not-allowed' : ''}`}
+            disabled={!formData.name.trim() || isSubmitting}
+            className={`px-6 py-2 bg-purple-600 text-white rounded-lg hover:bg-purple-700 transition-colors font-medium flex items-center space-x-2 ${!formData.name.trim() || isSubmitting ? 'opacity-50 cursor-not-allowed' : ''}`}
           >
-            Next Step
+            {isSubmitting && <Loader2 size={16} className="animate-spin" />}
+            <span>{isSubmitting ? 'Creating...' : 'Next Step'}</span>
           </button>
         </div>
       </div>

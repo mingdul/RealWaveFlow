@@ -29,11 +29,13 @@ const DashboardPage = () => {
     projectId: string;
     projectName: string;
     projectDescription: string;
+    stageId?: string;
   }>({
     isOpen: false,
     projectId: '',
     projectName: '',
-    projectDescription: ''
+    projectDescription: '',
+    stageId: undefined,
   });
   // const [testMessage, setTestMessage] = useState('');
 
@@ -110,30 +112,37 @@ const DashboardPage = () => {
     }
   };
 
-  const handleCreateTrack = async (trackData: any) => {
+  const handleCreateTrack = async (data: any) => {
     try {
-      console.log('[DEBUG] Creating track with data:', trackData);
-      const result = await trackService.createTrack(trackData);
-      console.log('[DEBUG] Track creation result:', result);
+      console.log('[DEBUG] DashboardPage - Creating track with data:', data);
       
-      showSuccess('New track created successfully.');
-      setIsCreating(false);
-      
-      // 첫 번째 음악 파일을 업로드하기 위해 InitProjectModal 띄우기
-      if (result.success && result.data) {
-        console.log('[DEBUG] Track creation result:', result);
+      // CreateTrackModal에서 이미 stem-job/init-start를 호출했으므로
+      // 여기서는 결과를 받아서 InitProjectModal을 띄우기만 하면 됨
+      if (data.track && data.stage) {
+        console.log('[DEBUG] DashboardPage - Track and stage created successfully:', {
+          trackId: data.track.id,
+          trackTitle: data.track.title,
+          stageId: data.stage.id,
+          stageTitle: data.stage.title
+        });
+        
+        showSuccess('New track created successfully.');
+        setIsCreating(false);
+        
+        // 첫 번째 음악 파일을 업로드하기 위해 InitProjectModal 띄우기
         setInitProjectModal({
           isOpen: true,
-          projectId: result.data.id,
-          projectName: trackData.name,
-          projectDescription: trackData.description || ''
+          projectId: data.track.id,
+          projectName: data.track.title,
+          projectDescription: data.track.description || '',
+          stageId: data.stage.id,
         });
       } else {
-        // 트랙 목록 새로고침 
-        await loadTracks();
+        console.error('[ERROR] DashboardPage - Missing track or stage data:', data);
+        showError('Failed to create track and stage');
       }
     } catch (error: any) {
-      console.error('[DEBUG] Track creation error:', error);
+      console.error('[ERROR] DashboardPage - Track creation error:', error);
       showError(error.message || 'Failed to create track.');
     }
   };
@@ -154,11 +163,13 @@ const DashboardPage = () => {
       isOpen: false,
       projectId: '',
       projectName: '',
-      projectDescription: ''
+      projectDescription: '',
+      stageId: undefined,
     });
   };
 
   const handleCompleteInitProject = () => {
+    console.log('[DEBUG] DashboardPage - Init project completed, navigating to:', `/master?trackId=${initProjectModal.projectId}`);
     handleCloseInitProjectModal();
     navigate(`/master?trackId=${initProjectModal.projectId}`);
   };
@@ -430,6 +441,7 @@ const DashboardPage = () => {
         projectId={initProjectModal.projectId}
         projectName={initProjectModal.projectName}
         projectDescription={initProjectModal.projectDescription}
+        stageId={initProjectModal.stageId}
         onComplete={handleCompleteInitProject}
       />
     </div>
