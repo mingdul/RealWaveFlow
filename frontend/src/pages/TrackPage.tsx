@@ -14,115 +14,6 @@ import streamingService, { StemStreamingInfo } from '../services/streamingServic
 
 interface TrackPageProps {}
 
-// 테스트용 목업 데이터
-const mockStemData: StemStreamingInfo[] = [
-  {
-    id: '1',
-    fileName: 'Drums - Main Beat',
-    category: 'drums',
-    tag: 'kick',
-    key: 'A minor',
-    description: 'Main drum beat with kick and snare',
-    presignedUrl: '/audio/Track_ex/1.wav',
-    metadata: {
-      duration: 180,
-      fileSize: 46137344,
-      sampleRate: 44100,
-      channels: 2,
-      format: 'wav'
-    },
-    uploadedBy: {
-      id: '1',
-      username: 'SELLY'
-    },
-    uploadedAt: '2025-01-08T10:30:00Z'
-  },
-  {
-    id: '2',
-    fileName: 'Bass - Groove Line',
-    category: 'bass',
-    tag: 'groove',
-    key: 'A minor',
-    description: 'Groovy bass line foundation',
-    presignedUrl: '/audio/Track_ex/2.wav',
-    metadata: {
-      duration: 180,
-      fileSize: 46137344,
-      sampleRate: 44100,
-      channels: 2,
-      format: 'wav'
-    },
-    uploadedBy: {
-      id: '2',
-      username: 'MARCUS'
-    },
-    uploadedAt: '2025-01-08T10:35:00Z'
-  },
-  {
-    id: '3',
-    fileName: 'Guitar - Lead Melody',
-    category: 'guitar',
-    tag: 'lead',
-    key: 'A minor',
-    description: 'Lead guitar melody with blues rock feel',
-    presignedUrl: '/audio/Track_ex/3.wav',
-    metadata: {
-      duration: 180,
-      fileSize: 46137344,
-      sampleRate: 44100,
-      channels: 2,
-      format: 'wav'
-    },
-    uploadedBy: {
-      id: '3',
-      username: 'ALEX'
-    },
-    uploadedAt: '2025-01-08T10:40:00Z'
-  },
-  {
-    id: '4',
-    fileName: 'Synth - Pad Atmosphere',
-    category: 'synth',
-    tag: 'pad',
-    key: 'A minor',
-    description: 'Atmospheric synth pad for ambience',
-    presignedUrl: '/audio/Track_ex/4.wav',
-    metadata: {
-      duration: 180,
-      fileSize: 46137344,
-      sampleRate: 44100,
-      channels: 2,
-      format: 'wav'
-    },
-    uploadedBy: {
-      id: '4',
-      username: 'JENNY'
-    },
-    uploadedAt: '2025-01-08T10:45:00Z'
-  },
-  {
-    id: '5',
-    fileName: 'Vocal - Main Harmony',
-    category: 'vocal',
-    tag: 'harmony',
-    key: 'A minor',
-    description: 'Main vocal harmony track',
-    presignedUrl: '/audio/Track_ex/5.wav',
-    metadata: {
-      duration: 180,
-      fileSize: 46137344,
-      sampleRate: 44100,
-      channels: 2,
-      format: 'wav'
-    },
-    uploadedBy: {
-      id: '5',
-      username: 'SARAH'
-    },
-    uploadedAt: '2025-01-08T10:50:00Z'
-  }
-];
-
 const TrackPage: React.FC<TrackPageProps> = () => {
   const { trackId } = useParams<{ trackId: string }>();
   const navigate = useNavigate();
@@ -133,7 +24,6 @@ const TrackPage: React.FC<TrackPageProps> = () => {
   const [stemsLoading, setStemsLoading] = useState(false);
   const [isOpenStageModalOpen, setIsOpenStageModalOpen] = useState(false);
   const [isStemListModalOpen, setIsStemListModalOpen] = useState(false);
-  const [useTestData, setUseTestData] = useState(true); // 테스트 모드 토글
   const { user } = useAuth();
 
   // 트랙 데이터와 스테이지 목록 로드
@@ -171,6 +61,7 @@ const TrackPage: React.FC<TrackPageProps> = () => {
         setStages(trackStages || []);
         console.log('[DEBUG][TrackPage] Loaded stages:', trackStages);
       } catch (error) {
+<<<<<<< Updated upstream
         console.error('[DEBUG][TrackPage] Failed to load track data:', error);
         // 스테이지 목록 로드 실패 시 목업 데이터 사용
         setStages([
@@ -189,6 +80,10 @@ const TrackPage: React.FC<TrackPageProps> = () => {
             guide_path: undefined
           }
         ]);
+=======
+        console.error('Failed to load track data:', error);
+        setStages([]);
+>>>>>>> Stashed changes
       } finally {
         setLoading(false);
         console.log('[DEBUG][TrackPage] Loading finished');
@@ -204,15 +99,6 @@ const TrackPage: React.FC<TrackPageProps> = () => {
     try {
       setStemsLoading(true);
       
-      if (useTestData) {
-        // 테스트 모드: 목업 데이터 사용
-        setTimeout(() => {
-          setStems(mockStemData);
-          setStemsLoading(false);
-        }, 1000); // 로딩 효과를 위한 지연
-        return;
-      }
-
       // 실제 API 호출
       const latestVersion = Math.max(...stages.map(s => s.version));
       const response = await streamingService.getMasterStemStreams(trackId, latestVersion);
@@ -236,7 +122,7 @@ const TrackPage: React.FC<TrackPageProps> = () => {
     if (stages.length > 0) {
       loadLatestStems();
     }
-  }, [stages, useTestData]);
+  }, [stages]);
 
   const handleBack = () => {
     navigate('/dashboard');
@@ -288,10 +174,6 @@ const TrackPage: React.FC<TrackPageProps> = () => {
     }
   };
 
-  const toggleTestMode = () => {
-    setUseTestData(!useTestData);
-  };
-
   if (loading) {
     console.log('[DEBUG][TrackPage] Loading...');
     return (
@@ -322,20 +204,6 @@ const TrackPage: React.FC<TrackPageProps> = () => {
       />
 
       <div className="px-6 py-8">
-        {/* 테스트 모드 토글 버튼 */}
-        <div className="mb-4">
-          <button
-            onClick={toggleTestMode}
-            className={`px-4 py-2 rounded-lg text-sm font-medium transition-colors ${
-              useTestData 
-                ? 'bg-green-600 text-white' 
-                : 'bg-gray-600 text-gray-300 hover:bg-gray-700'
-            }`}
-          >
-            {useTestData ? '테스트 모드 ON' : '테스트 모드 OFF'}
-          </button>
-        </div>
-
         <TrackInfoCard
           track={track}
           stems={stems}
