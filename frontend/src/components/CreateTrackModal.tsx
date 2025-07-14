@@ -53,20 +53,20 @@ const CreateTrackModal: React.FC<CreateTrackModalProps> = ({ onClose, onSubmit }
     setImageUploadProgress(0);
 
     try {
-      let imageUrl = '';
+      let key = '';
       
       // 1. 이미지 업로드 (선택사항)
       if (coverImage) {
         console.log('[DEBUG] CreateTrackModal - Starting image upload:', coverImage.name);
         try {
-          imageUrl = await s3UploadService.uploadImage(
+          const { key } = await s3UploadService.uploadImage(
             coverImage,
             (progress) => {
               console.log('[DEBUG] CreateTrackModal - Image upload progress:', progress);
               setImageUploadProgress(progress);
             }
           );
-          console.log('[DEBUG] CreateTrackModal - Image uploaded successfully:', imageUrl);
+          console.log('[DEBUG] CreateTrackModal - Image uploaded successfully:', key);
         } catch (error: any) {
           console.error('[ERROR] CreateTrackModal - Image upload failed:', error);
           showError(`이미지 업로드 실패: ${error.message}`);
@@ -81,7 +81,7 @@ const CreateTrackModal: React.FC<CreateTrackModalProps> = ({ onClose, onSubmit }
         genre: formData.genre,
         bpm: formData.bpm,
         key_signature: formData.key_signature,
-        image_url: imageUrl,
+        image_url: key,
         stage_title: 'first stage',
         stage_description: 'start your track in first stage',
       };
