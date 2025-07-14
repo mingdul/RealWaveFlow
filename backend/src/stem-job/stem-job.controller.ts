@@ -74,14 +74,14 @@ export class StemJobController {
         status : 'done',
       });
       
-      this.logger.log(`Stage 생성 완료: ${stage.stage.id}`);
+      this.logger.log(`Stage 생성 완료: ${stage.data.id}`);
       
       return {
         success: true,
         message: 'Track and Stage initialized successfully',
         data: {
           track: track.data,
-          stage: stage.stage,
+          stage: stage.data,
         },
       };
     } catch (error) {
