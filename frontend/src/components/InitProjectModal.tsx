@@ -311,11 +311,13 @@ const InitProjectModal: React.FC<InitProjectModalProps> = ({
 }) => {
   const { user } = useAuth();
   const { showError, showSuccess } = useToast();
-  const [state, dispatch] = useReducer(commitReducer, { 
-    uploadedFiles: [], 
-    isUploading: false, 
+    const [state, dispatch] = useReducer(commitReducer, {
+    uploadedFiles: [],
+    isUploading: false,
     currentUploadIndex: 0 
   });
+  const [completedStemCount, setCompletedStemCount] = useState(0);
+  const { socket } = useSocket();
 
   const steps = ['Create Track', 'Upload Files'];
 
@@ -450,7 +452,69 @@ const InitProjectModal: React.FC<InitProjectModalProps> = ({
   };
 
   const completedFiles = state.uploadedFiles.filter(f => f.isComplete);
-  const canComplete = completedFiles.length > 0 && !state.isUploading;
+  const uploadedFileCount = state.uploadedFiles.filter(f => f.isComplete).length;
+  const canComplete = (completedFiles.length > 0 && !state.isUploading) || (completedStemCount >= uploadedFileCount && uploadedFileCount > 0);
+
+  // 소켓 이벤트 처리
+  useEffect(() => {
+    if (!socket || !isOpen) return;
+
+    // 소켓 연결 상태 확인
+    if (!socket.connected) {
+      console.error('Socket is not connected');
+      return;
+    }
+
+    // 개별 스템 처리 완료 이벤트 리스너
+    const handleFileProcessingCompleted = (data: {
+      trackId: string;
+      fileName: string;
+      result: any;
+      processingTime: number;
+    }) => {
+      console.log('File processing completed event received:', data);
+      
+      if (data.trackId === projectId) {
+        setCompletedStemCount(prev => prev + 1);
+        console.log(`Stem processing completed: ${data.fileName}, count: ${completedStemCount + 1}`);
+      }
+    };
+
+    // 소켓 이벤트 리스너 등록
+    socket.on('file-processing-completed', handleFileProcessingCompleted);
+
+    // 에러 핸들링
+    const handleSocketError = (error: any) => {
+      console.error('Socket error:', error);
+    };
+
+    const handleSocketConnect = () => {
+      console.log('Socket connected');
+    };
+
+    const handleSocketDisconnect = (reason: string) => {
+      console.log('Socket disconnected:', reason);
+    };
+
+    socket.on('error', handleSocketError);
+    socket.on('connect', handleSocketConnect);
+    socket.on('disconnect', handleSocketDisconnect);
+
+    // Cleanup 함수
+    return () => {
+      socket.off('file-processing-completed', handleFileProcessingCompleted);
+      socket.off('error', handleSocketError);
+      socket.off('connect', handleSocketConnect);
+      socket.off('disconnect', handleSocketDisconnect);
+    };
+  }, [socket, isOpen, projectId, stageId]);
+
+  // 모달이 열릴 때 상태 초기화
+  useEffect(() => {
+    if (isOpen) {
+      setCompletedStemCount(0);
+    }
+  }, [isOpen]);
 
   const handleCloseModal = () => {
     if (state.isUploading) {

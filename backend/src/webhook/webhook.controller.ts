@@ -164,7 +164,7 @@ export class WebhookController {
                 if (stem) {
                     this.logger.log(`작업 완료 처리 성공: ${data.stemId} -> ${stem.id}`);
                     
-                    // 웹소켓으로 처리 완료 알림 전송
+                    // 웹소켓으로 처리 완료 알림 전송 (개별 스템 완료)
                     this.chatGateway.sendFileProcessingCompleted(data.userId, {
                         trackId: data.trackId,
                         fileName: data.original_filename || 'Unknown',
