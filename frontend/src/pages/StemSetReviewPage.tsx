@@ -21,199 +21,6 @@ interface Comment {
   timeString: string;
 }
 
-// 테스트용 목업 스트리밍 데이터
-const mockStreamingData: StemStreamingInfo[] = [
-  {
-    id: '1',
-    fileName: 'Drums - Main Beat',
-    category: 'drums',
-    tag: 'kick',
-    key: 'A minor',
-    description: 'Main drum beat with kick and snare',
-    presignedUrl: '/audio/Track_ex/1.wav',
-    metadata: {
-      duration: 180,
-      fileSize: 46137344,
-      sampleRate: 44100,
-      channels: 2,
-      format: 'wav'
-    },
-    uploadedBy: {
-      id: '1',
-      username: 'SELLY'
-    },
-    uploadedAt: '2025-01-08T10:30:00Z'
-  },
-  {
-    id: '2',
-    fileName: 'Bass - Groove Line',
-    category: 'bass',
-    tag: 'groove',
-    key: 'A minor',
-    description: 'Groovy bass line foundation',
-    presignedUrl: '/audio/Track_ex/2.wav',
-    metadata: {
-      duration: 180,
-      fileSize: 46137344,
-      sampleRate: 44100,
-      channels: 2,
-      format: 'wav'
-    },
-    uploadedBy: {
-      id: '2',
-      username: 'MARCUS'
-    },
-    uploadedAt: '2025-01-08T10:35:00Z'
-  },
-  {
-    id: '3',
-    fileName: 'Guitar - Lead Melody',
-    category: 'guitar',
-    tag: 'lead',
-    key: 'A minor',
-    description: 'Lead guitar melody with blues rock feel',
-    presignedUrl: '/audio/Track_ex/3.wav',
-    metadata: {
-      duration: 180,
-      fileSize: 46137344,
-      sampleRate: 44100,
-      channels: 2,
-      format: 'wav'
-    },
-    uploadedBy: {
-      id: '3',
-      username: 'ALEX'
-    },
-    uploadedAt: '2025-01-08T10:40:00Z'
-  },
-  {
-    id: '4',
-    fileName: 'Synth - Pad Atmosphere',
-    category: 'synth',
-    tag: 'pad',
-    key: 'A minor',
-    description: 'Atmospheric synth pad for ambience',
-    presignedUrl: '/audio/Track_ex/4.wav',
-    metadata: {
-      duration: 180,
-      fileSize: 46137344,
-      sampleRate: 44100,
-      channels: 2,
-      format: 'wav'
-    },
-    uploadedBy: {
-      id: '4',
-      username: 'JENNY'
-    },
-    uploadedAt: '2025-01-08T10:45:00Z'
-  },
-  {
-    id: '5',
-    fileName: 'Vocal - Main Harmony',
-    category: 'vocal',
-    tag: 'harmony',
-    key: 'A minor',
-    description: 'Main vocal harmony track',
-    presignedUrl: '/audio/Track_ex/5.wav',
-    metadata: {
-      duration: 180,
-      fileSize: 46137344,
-      sampleRate: 44100,
-      channels: 2,
-      format: 'wav'
-    },
-    uploadedBy: {
-      id: '5',
-      username: 'SARAH'
-    },
-    uploadedAt: '2025-01-08T10:50:00Z'
-  },
-  {
-    id: '6',
-    fileName: 'Trumpet - Melody',
-    category: 'brass',
-    tag: 'melody',
-    key: 'A minor',
-    description: 'Trumpet melody line',
-    presignedUrl: '/audio/Track_ex/6.wav',
-    metadata: {
-      duration: 180,
-      fileSize: 46137344,
-      sampleRate: 44100,
-      channels: 2,
-      format: 'wav'
-    },
-    uploadedBy: {
-      id: '6',
-      username: 'MIKE'
-    },
-    uploadedAt: '2025-01-08T10:55:00Z'
-  },
-  {
-    id: '7',
-    fileName: 'Vocal - Choir',
-    category: 'vocal',
-    tag: 'choir',
-    key: 'A minor',
-    description: 'Background vocal choir',
-    presignedUrl: '/audio/Track_ex/7.wav',
-    metadata: {
-      duration: 180,
-      fileSize: 46137344,
-      sampleRate: 44100,
-      channels: 2,
-      format: 'wav'
-    },
-    uploadedBy: {
-      id: '7',
-      username: 'LISA'
-    },
-    uploadedAt: '2025-01-08T11:00:00Z'
-  },
-  {
-    id: '8',
-    fileName: 'Percussion - Bell',
-    category: 'percussion',
-    tag: 'bell',
-    key: 'A minor',
-    description: 'Percussion bell sounds',
-    presignedUrl: '/audio/Track_ex/8.wav',
-    metadata: {
-      duration: 180,
-      fileSize: 46137344,
-      sampleRate: 44100,
-      channels: 2,
-      format: 'wav'
-    },
-    uploadedBy: {
-      id: '8',
-      username: 'DAVID'
-    },
-    uploadedAt: '2025-01-08T11:05:00Z'
-  },
-  {
-    id: '9',
-    fileName: 'FX - Police Siren',
-    category: 'fx',
-    tag: 'siren',
-    key: 'A minor',
-    description: 'Police siren sound effect',
-    presignedUrl: '/audio/Track_ex/9.wav',
-    metadata: {
-      duration: 180,
-      fileSize: 46137344,
-      sampleRate: 44100,
-      channels: 2,
-      format: 'wav'
-    },
-    uploadedBy: {
-      id: '9',
-      username: 'ALEX'
-    },
-    uploadedAt: '2025-01-08T11:10:00Z'
-  }
-];
-
 const StemSetReviewPage = () => {
   // const wavesurferRef = useRef<any>(null);
   const [volume, setVolume] = useState(1);
@@ -227,7 +34,6 @@ const StemSetReviewPage = () => {
   const [comments, setComments] = useState<Comment[]>([]);
   const [extraAudio, setExtraAudio] = useState<string>('');
   const [showExtraWaveform, setShowExtraWaveform] = useState(false);
-  const [useTestData, setUseTestData] = useState(true); // 테스트 모드 토글
   const [streamingStems, setStreamingStems] = useState<StemStreamingInfo[]>([]);
   const [stemsLoading, setStemsLoading] = useState(false);
 
@@ -238,33 +44,26 @@ const StemSetReviewPage = () => {
   // 스트리밍 데이터 로드
   useEffect(() => {
     const loadStreamingData = async () => {
-      if (useTestData) {
-        // 테스트 모드: 목업 데이터 사용
-        setStemsLoading(true);
-        setTimeout(() => {
-          setStreamingStems(mockStreamingData);
-          setStemsLoading(false);
-        }, 1000);
-      } else {
-        // 실제 API 호출
-        setStemsLoading(true);
-        try {
-          // TODO: 실제 트랙 ID를 사용해야 함
-          const response = await streamingService.getTrackStems('sample-track-id');
-          if (response.success && response.data) {
-            setStreamingStems(response.data.stems);
-          }
-        } catch (error) {
-          console.error('Failed to load streaming data:', error);
+      setStemsLoading(true);
+      try {
+        // TODO: 실제 트랙 ID를 사용해야 함
+        const response = await streamingService.getTrackStems('sample-track-id');
+        if (response.success && response.data) {
+          setStreamingStems(response.data.stems);
+        } else {
+          console.error('Failed to load streaming data:', response.message);
           setStreamingStems([]);
-        } finally {
-          setStemsLoading(false);
         }
+      } catch (error) {
+        console.error('Failed to load streaming data:', error);
+        setStreamingStems([]);
+      } finally {
+        setStemsLoading(false);
       }
     };
 
     loadStreamingData();
-  }, [useTestData]);
+  }, []);
 
   // Legacy audioFiles를 스트리밍 데이터로 변환
   const audioFiles = streamingStems.map((stem) => ({
@@ -468,10 +267,6 @@ const StemSetReviewPage = () => {
     setShowExtraWaveform(true);
   }, []);
 
-  const toggleTestMode = () => {
-    setUseTestData(!useTestData);
-  };
-
   // Solo 버튼 핸들러들을 메모이제이션
   const handleMainSolo = useCallback(() => handleSolo('main'), [handleSolo]);
   const handleExtraSolo = useCallback(() => handleSolo('extra'), [handleSolo]);
@@ -533,18 +328,6 @@ const StemSetReviewPage = () => {
 
       {/* 🔽 Header 아래로 이동된 버튼들 */}
       <div className='z-50 flex flex-col gap-2 px-6 pt-4'>
-        {/* 테스트 모드 토글 버튼 */}
-        <button
-          onClick={toggleTestMode}
-          className={`self-start rounded px-4 py-2 text-sm font-medium transition-colors ${
-            useTestData 
-              ? 'bg-green-600 text-white' 
-              : 'bg-gray-600 text-gray-300 hover:bg-gray-700'
-          }`}
-        >
-          {useTestData ? '스트리밍 테스트 모드 ON' : '스트리밍 테스트 모드 OFF'}
-        </button>
-        
         <button
           onClick={() => setShowHistory(!showHistory)}
           className='self-start rounded bg-[#3a3a3a] px-3 py-1 text-sm hover:bg-[#555]'
@@ -590,15 +373,6 @@ const StemSetReviewPage = () => {
                 />
               </svg>
             </button>
-          </div>
-
-          {/* Streaming Status */}
-          <div className='mb-4'>
-            <div className={`inline-block rounded px-2 py-1 text-xs ${
-              useTestData ? 'bg-green-800 text-green-200' : 'bg-blue-800 text-blue-200'
-            }`}>
-              {useTestData ? 'Test Mode' : 'Live Streaming'}
-            </div>
           </div>
 
           {/* Audio Files List */}

@@ -70,7 +70,6 @@ const TrackInfoCard: React.FC<TrackInfoCardProps> = ({
               ) : (
                 <Play size={20} />
               )}
-              {stemsLoading ? 'Loading...' : showPlayer ? 'HIDE PLAYER' : 'PLAY'}
             </Button>
             <Button 
               variant="outline" 
