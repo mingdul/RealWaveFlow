@@ -379,14 +379,7 @@ export class StreamingService {
     trackId: string,
     version: number,
     userId: string,
-  ): Promise<{
-    trackId: string;
-    version: number;
-    trackInfo: any;
-    stems: StemStreamingInfo[];
-    totalStems: number;
-    urlExpiresAt: string;
-  }> {
+  ) {
     // 트랙 존재 및 권한 확인
     const track = await this.validateTrackAccess(trackId, userId);
 
@@ -401,6 +394,9 @@ export class StreamingService {
 
     if (!stage) {
       return {
+        success: false,
+        message: 'No stage found',
+        data: {
         trackId,
         version,
         trackInfo: {
@@ -413,6 +409,7 @@ export class StreamingService {
         stems: [],
         totalStems: 0,
         urlExpiresAt: new Date(Date.now() + 3600 * 1000).toISOString(),
+        },
       };
     }
 
@@ -441,6 +438,9 @@ export class StreamingService {
     }));
 
     return {
+      success: true,
+      message: 'Successfully fetched master stem streaming URLs',
+      data: {
       trackId,
       version,
       trackInfo: {
@@ -451,8 +451,9 @@ export class StreamingService {
         key_signature: track.key_signature,
       },
       stems: streamingStems,
-      totalStems: stage.version_stems.length,
+      totalStems: versionStems.length,
       urlExpiresAt: new Date(Date.now() + 3600 * 1000).toISOString(),
+      },
     };
   }
 
