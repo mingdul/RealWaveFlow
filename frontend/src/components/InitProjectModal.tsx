@@ -89,6 +89,8 @@ const FileSelectionAndUploadStep: React.FC<{
   isUploading: boolean;
   currentUploadIndex: number;
   onStartUpload: () => void;
+  completedStems: string[];
+  failedStems: string[];
 }> = ({ 
   files, 
   onAddFile, 
@@ -96,7 +98,9 @@ const FileSelectionAndUploadStep: React.FC<{
   onUpdateFile, 
   isUploading, 
   currentUploadIndex, 
-  onStartUpload 
+  onStartUpload,
+  completedStems,
+  failedStems
 }) => {
   const handleFileSelection = (e: React.ChangeEvent<HTMLInputElement>) => {
     const selectedFiles = e.target.files;
@@ -278,23 +282,23 @@ const FileSelectionAndUploadStep: React.FC<{
                       </div>
                     )}
                     
-                    {/* 스템 작업 상태 표시 */}
+                    {/* Stem job status display */}
                     {file.isComplete && file.stemJobId && (
                       <div className="mt-2">
                         {completedStems.includes(file.stemJobId) ? (
                           <div className="flex items-center text-green-400 text-xs">
                             <Check size={12} className="mr-1" />
-                            스템 작업 완료
+                            Stem job completed
                           </div>
                         ) : failedStems.includes(file.stemJobId) ? (
                           <div className="flex items-center text-red-400 text-xs">
                             <X size={12} className="mr-1" />
-                            스템 작업 실패
+                            Stem job failed
                           </div>
                         ) : (
                           <div className="flex items-center text-yellow-400 text-xs">
                             <div className="animate-spin rounded-full h-3 w-3 border-b-2 border-yellow-400 mr-1"></div>
-                            스템 작업 중...
+                            Processing stem...
                           </div>
                         )}
                       </div>
@@ -316,30 +320,30 @@ const FileSelectionAndUploadStep: React.FC<{
             Successfully uploaded {completedFiles.length} file{completedFiles.length > 1 ? 's' : ''}.
           </p>
           
-          {/* 스템 작업 상태 표시 */}
+          {/* Stem job status display */}
           {uploadedStemIds.length > 0 && (
             <div className="mt-4 p-4 bg-gray-800/50 rounded-lg">
-              <h4 className="text-white font-medium mb-2">스템 작업 상태</h4>
+              <h4 className="text-white font-medium mb-2">Stem Job Status</h4>
               <div className="flex items-center justify-center space-x-4 text-sm">
                 <div className="flex items-center">
                   <div className="w-3 h-3 bg-yellow-400 rounded-full mr-2"></div>
-                  <span className="text-yellow-400">처리 중: {uploadedStemIds.filter(id => !completedStems.includes(id) && !failedStems.includes(id)).length}</span>
+                  <span className="text-yellow-400">Processing: {uploadedStemIds.filter((id: string) => !completedStems.includes(id) && !failedStems.includes(id)).length}</span>
                 </div>
                 <div className="flex items-center">
                   <div className="w-3 h-3 bg-green-400 rounded-full mr-2"></div>
-                  <span className="text-green-400">완료: {completedStems.length}</span>
+                  <span className="text-green-400">Completed: {completedStems.length}</span>
                 </div>
                 {failedStems.length > 0 && (
                   <div className="flex items-center">
                     <div className="w-3 h-3 bg-red-400 rounded-full mr-2"></div>
-                    <span className="text-red-400">실패: {failedStems.length}</span>
+                    <span className="text-red-400">Failed: {failedStems.length}</span>
                   </div>
                 )}
               </div>
               
               {allStemsCompleted && (
                 <div className="mt-3 p-2 bg-green-600/20 rounded border border-green-500/30">
-                  <p className="text-green-400 text-sm">✅ 모든 스템 작업이 완료되었습니다!</p>
+                  <p className="text-green-400 text-sm">✅ All stem jobs completed!</p>
                 </div>
               )}
             </div>
@@ -487,7 +491,7 @@ const InitProjectModal: React.FC<InitProjectModalProps> = ({
     
     if (completedFiles.length === 0) {
       console.log('[DEBUG] InitProjectModal - No completed files, showing error');
-      showError('업로드된 파일이 없습니다. 파일을 업로드한 후 완료해주세요.');
+      showError('No uploaded files. Please upload files before completing.');
       return;
     }
 
@@ -500,11 +504,11 @@ const InitProjectModal: React.FC<InitProjectModalProps> = ({
       const mixingInitResult = await stemJobService.requestMixingInit(mixingInitRequest);
       console.log('[DEBUG] InitProjectModal - stem-job/request-mixing-init completed:', mixingInitResult);
       await trackService.updateTrackStatus(projectId, 'producing');
-      showSuccess('프로젝트 초기화 완료!'); 
+      showSuccess('Project initialization completed!'); 
       onComplete();
     } catch (error: any) {
       console.error('[ERROR] InitProjectModal - Mixing init failed:', error);
-      showError(error.message || '믹싱 초기화에 실패했습니다.');
+      showError(error.message || 'Mixing initialization failed.');
     }
   };
 
@@ -525,12 +529,12 @@ const InitProjectModal: React.FC<InitProjectModalProps> = ({
 
   const handleCloseModal = () => {
     if (state.isUploading) {
-      showError('업로드 중에는 모달을 닫을 수 없습니다.');
+      showError('Cannot close modal while uploading.');
       return;
     }
     
     if (state.uploadedFiles.length > 0 && completedFiles.length === 0) {
-      const confirmClose = window.confirm('업로드되지 않은 파일이 있습니다. 정말로 닫으시겠습니까?');
+      const confirmClose = window.confirm('There are unuploaded files. Are you sure you want to close?');
       if (!confirmClose) return;
     }
     
@@ -579,6 +583,8 @@ const InitProjectModal: React.FC<InitProjectModalProps> = ({
             isUploading={state.isUploading}
             currentUploadIndex={state.currentUploadIndex}
             onStartUpload={handleStartUpload}
+            completedStems={completedStems}
+            failedStems={failedStems}
           />
         </div>
 

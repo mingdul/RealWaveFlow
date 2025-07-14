@@ -252,7 +252,7 @@ export class ChatGateway
       originalFilePath: data.originalFilePath,
       duplicateHash: data.duplicateHash,
       timestamp: new Date().toISOString(),
-      message: `'${data.fileName}' 파일은 중복되어 처리되지 않았습니다.`
+      message: `'${data.fileName}' file is duplicate and was not processed.`
     });
   }
 
@@ -276,7 +276,7 @@ export class ChatGateway
       fileName: data.fileName,
       originalFilePath: data.originalFilePath,
       timestamp: new Date().toISOString(),
-      message: `'${data.fileName}' 파일 처리가 승인되었습니다.`
+      message: `'${data.fileName}' file processing approved.`
     });
   }
 
@@ -321,7 +321,7 @@ export class ChatGateway
       result: data.result,
       processingTime: data.processingTime,
       timestamp: new Date().toISOString(),
-      message: `'${data.fileName}' 파일 처리가 완료되었습니다.`
+      message: `'${data.fileName}' file processing completed.`
     });
   }
 
@@ -343,7 +343,7 @@ export class ChatGateway
       error: data.error,
       stage: data.stage,
       timestamp: new Date().toISOString(),
-      message: `'${data.fileName}' 파일 처리 중 오류가 발생했습니다.`
+      message: `'${data.fileName}' file processing error occurred.`
     });
   }
 
@@ -373,7 +373,7 @@ export class ChatGateway
       stemHash: data.stemHash,
       audioWavePath: data.audioWavePath,
       timestamp: new Date().toISOString(),
-      message: `'${data.fileName}' 스템 작업이 완료되었습니다.`
+      message: `'${data.fileName}' stem job completed.`
     });
   }
 
@@ -397,7 +397,7 @@ export class ChatGateway
       fileName: data.fileName,
       error: data.error,
       timestamp: new Date().toISOString(),
-      message: `'${data.fileName}' 스템 작업 중 오류가 발생했습니다.`
+      message: `'${data.fileName}' stem job failed.`
     });
   }
 
@@ -421,7 +421,7 @@ export class ChatGateway
       stageId: data.stageId,
       completedStems: data.completedStems,
       timestamp: new Date().toISOString(),
-      message: `모든 스템 작업이 완료되었습니다. (${data.completedStems.length}개 파일)`
+      message: `All stem jobs completed! (${data.completedStems.length} files)`
     });
   }
 
