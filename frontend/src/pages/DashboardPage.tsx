@@ -289,9 +289,9 @@ const DashboardPage = () => {
   }
 
   return (
-    <div className="min-h-screen bg-gray-900">
+    <div className="flex flex-col h-screen bg-gray-900">
       {/* Header */}
-      <header className="flex justify-between items-center p-6 border-b border-gray-800">
+      <header className="flex-shrink-0 flex justify-between items-center p-6 border-b border-gray-800">
         {/* <div className="flex items-center space-x-3">
           <div className="text-white text-2xl font-bold">Wave FLOW</div>
           <div className="flex space-x-1">
@@ -355,12 +355,7 @@ const DashboardPage = () => {
             )}
           </div> */}
           
-          <button 
-            onClick={() => navigate('/drop-review')}
-            className="bg-gradient-to-r from-blue-400 to-purple-500 text-white px-6 py-2 rounded-full hover:from-blue-500 hover:to-purple-600 transition-all duration-300 flex items-center space-x-2"
-          >
-            <span>🎵 Drop Review</span>
-          </button>
+          
           <button 
             onClick={handleLogout}
             className="bg-gradient-to-r from-pink-400 to-purple-500 text-white px-6 py-2 rounded-full hover:from-pink-500 hover:to-purple-600 transition-all duration-300 flex items-center space-x-2"
@@ -372,7 +367,7 @@ const DashboardPage = () => {
       </header>
 
       {/* Main Content */}
-      <main className="p-6 max-w-7xl mx-auto">
+      <main className="flex-1 overflow-y-auto p-6 max-w-7xl mx-auto w-full">
         {/* Greeting */}
         <div className="mb-12 mt-8">
           <h1 className="text-5xl font-bold bg-clip-text text-transparent bg-gradient-to-r from-[#FF4E4E] to-[#2159C6] mb-2">
