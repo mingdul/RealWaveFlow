@@ -11,6 +11,7 @@ import masterTakeService from '../services/masterTakeService';
 import masterStemService from '../services/masterStemService';
 import sessionService from '../services/sessionService';
 import sessionBestService from '../services/sessionBestService';
+import StepProgress from './StepProgress';
 
 // Types
 interface UploadedFile {
@@ -111,8 +112,8 @@ const FileSelectionAndUploadStep: React.FC<{
   const canStartUpload = selectedFiles.length > 0 && selectedFiles.every(f => f.tag && f.key);
 
   return (
-    <div className="p-6 max-h-[70vh] overflow-y-auto">
-      <h2 className="text-xl font-bold text-white mb-2">Upload Audio Files</h2>
+    <div className="p-6 pt-0 max-h-[70vh] overflow-y-auto">
+      <h3 className="text-lg font-semibold text-white mb-2">Select and Upload Files</h3>
       <p className="text-gray-400 mb-6">Choose audio files, set their metadata, and upload them to the project.</p>
       
       {/* File Selection Area */}
@@ -286,6 +287,8 @@ const InitProjectModal: React.FC<InitProjectModalProps> = ({
     currentUploadIndex: 0 
   });
 
+  const steps = ['Create Track', 'Upload Files'];
+
   const handleStartUpload = React.useCallback(async () => {
     dispatch({ type: 'SET_UPLOADING', payload: true });
     
@@ -298,6 +301,7 @@ const InitProjectModal: React.FC<InitProjectModalProps> = ({
       masterTakeResult = await masterTakeService.createMasterTake({ track_id: projectId });
     } catch (e) {
       console.error('Init failed', e);
+      showError('Failed to initialize project. Please try again.');
       dispatch({ type: 'SET_UPLOADING', payload: false });
       return;
     }
@@ -380,12 +384,14 @@ const InitProjectModal: React.FC<InitProjectModalProps> = ({
         }});
       } catch (e) {
         console.error(`Post-upload APIs failed for ${file.name}`, e);
+        showError(`Failed to process ${file.name}. Please try again.`);
       }
     }
 
     dispatch({ type: 'SET_UPLOADING', payload: false });
     dispatch({ type: 'SET_CURRENT_UPLOAD_INDEX', payload: 0 });
-  }, [state.uploadedFiles, projectId, user]);
+    showSuccess('Files uploaded successfully!');
+  }, [state.uploadedFiles, projectId, user, showError, showSuccess]);
 
   const handleComplete = () => { 
     if (completedFiles.length === 0) {
@@ -421,13 +427,13 @@ const InitProjectModal: React.FC<InitProjectModalProps> = ({
       onClick={handleCloseModal}
     >
       <div 
-        className="bg-gray-800 rounded-xl w-full max-w-5xl max-h-[90vh] flex flex-col shadow-2xl"
+        className="bg-gray-800 rounded-xl w-full max-w-6xl max-h-[90vh] flex flex-col shadow-2xl"
         onClick={(e) => e.stopPropagation()}
       >
         {/* Header */}
         <div className="flex items-center justify-between p-6 border-b border-gray-700">
           <div>
-            <h2 className="text-2xl font-bold text-white">Init Project</h2>
+            <h2 className="text-2xl font-bold text-white">Upload Audio Files</h2>
             <p className="text-gray-400 text-sm mt-1">{projectName}</p>
           </div>
           <button 
@@ -440,6 +446,9 @@ const InitProjectModal: React.FC<InitProjectModalProps> = ({
 
         {/* Content */}
         <div className="flex-1 overflow-hidden">
+          <div className="p-6 pb-0">
+            <StepProgress currentStep={2} steps={steps} />
+          </div>
           <FileSelectionAndUploadStep
             files={state.uploadedFiles}
             onAddFile={file => dispatch({ type: 'ADD_FILE', payload: file })}

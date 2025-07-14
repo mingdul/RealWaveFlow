@@ -10,6 +10,7 @@ import trackService from '../services/trackService';
 import { Track } from '../types/api';
 import Logo from '../components/Logo';
 import InitProjectModal from '../components/InitProjectModal';
+import CreateTrackModal from '../components/CreateTrackModal';
 
 const DashboardPage = () => {
   const navigate = useNavigate();
@@ -431,88 +432,6 @@ const DashboardPage = () => {
         projectDescription={initProjectModal.projectDescription}
         onComplete={handleCompleteInitProject}
       />
-    </div>
-  );
-};
-
-// Create Track Modal Component
-const CreateTrackModal = ({ onClose, onSubmit }: { onClose: () => void, onSubmit: (data: any) => void }) => {
-  const [formData, setFormData] = useState({
-    name: '',
-    description: '',
-    genre: '',
-    bpm: '',
-    key_signature: '',
-  });
-
-  const handleSubmit = (e: React.FormEvent) => {
-    e.preventDefault();
-    onSubmit(formData);
-  };
-
-  return (
-    <div className="fixed inset-0 bg-black bg-opacity-50 flex items-center justify-center z-50">
-      <div className="bg-gray-800 rounded-lg p-6 w-full max-w-md">
-        <h2 className="text-xl font-bold text-white mb-4">Create New Track</h2>
-        <form onSubmit={handleSubmit} className="space-y-4">
-          <div>
-            <label className="block text-gray-300 text-sm mb-2">Track Name</label>
-            <input
-              type="text"
-              value={formData.name}
-              onChange={(e) => setFormData({ ...formData, name: e.target.value })}
-              className="w-full bg-gray-700 text-white rounded px-3 py-2"
-              required
-            />
-          </div>
-          <div>
-            <label className="block text-gray-300 text-sm mb-2">Description</label>
-            <textarea
-              value={formData.description}
-              onChange={(e) => setFormData({ ...formData, description: e.target.value })}
-              className="w-full bg-gray-700 text-white rounded px-3 py-2"
-              rows={3}
-            />
-          </div>
-          <div className="grid grid-cols-2 gap-4">
-            <div>
-              <label className="block text-gray-300 text-sm mb-2">Genre</label>
-              <input
-                type="text"
-                value={formData.genre}
-                onChange={(e) => setFormData({ ...formData, genre: e.target.value })}
-                className="w-full bg-gray-700 text-white rounded px-3 py-2"
-              />
-            </div>
-            <div>
-              <label className="block text-gray-300 text-sm mb-2">BPM</label>
-              <input
-                type="text"
-                value={formData.bpm}
-                onChange={(e) => setFormData({ ...formData, bpm: e.target.value })}
-                className="w-full bg-gray-700 text-white rounded px-3 py-2"
-              />
-            </div>
-          </div>
-          <div>
-            <label className="block text-gray-300 text-sm mb-2">Key Signature</label>
-            <input
-              type="text"
-              value={formData.key_signature}
-              onChange={(e) => setFormData({ ...formData, key_signature: e.target.value })}
-              className="w-full bg-gray-700 text-white rounded px-3 py-2"
-            />
-          </div>
-          <div className="flex space-x-3 pt-4">
-            <Button type="submit" className="flex-1 bg-purple-600 hover:bg-purple-700">
-              Create
-            </Button>
-            <Button type="button" onClick={onClose} variant="secondary" className="flex-1">
-              Cancel
-            </Button>
-          </div>
-        </form>
-      </div>
     </div>
   );
 };
