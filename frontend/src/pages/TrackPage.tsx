@@ -170,10 +170,15 @@ const TrackPage: React.FC<TrackPageProps> = () => {
     }
   };
 
+
+  let isActiveStage = false;
   // 현재 활성 스테이지 가져오기
   const getActiveStage = () => {
     const activeStage = stages.find(stage => stage.status === 'active');
     console.log('[DEBUG][TrackPage] Active stage:', activeStage, 'All stages:', stages);
+    if(activeStage){
+      isActiveStage = true;
+    }
     return activeStage;
   };
 
@@ -231,6 +236,7 @@ const TrackPage: React.FC<TrackPageProps> = () => {
           onStageSelect={handleStageClick}
           onOpenStageClick={() => setIsOpenStageModalOpen(true)}
           disableStageOpening={isVersion1()} // 버전 1에서는 스테이지 열기 비활성화
+          isActiveStage={isActiveStage}
         />
       </div>
 
