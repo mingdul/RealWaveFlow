@@ -32,13 +32,6 @@ export interface TrackStemsResponse {
   urlExpiresAt: string;
 }
 
-export interface SessionStemsResponse {
-  sessionId: string;
-  stems: StemStreamingInfo[];
-  totalStems: number;
-  urlExpiresAt: string;
-}
-
 export interface BatchStreamingResponse {
   streams: Array<{
     stemId: string;
@@ -53,6 +46,7 @@ export interface StreamingResponse<T = any> {
   success: boolean;
   message?: string;
   data?: T;
+  urlExpiresAt?: string;
 }
 
 class StreamingService {
@@ -60,7 +54,7 @@ class StreamingService {
   async getTrackStems(trackId: string, version?: string): Promise<StreamingResponse<TrackStemsResponse>> {
     try {
       const params = version ? { version } : {};
-      const response = await api.get(`/api/tracks/${trackId}/stems`, { params });
+      const response = await api.get(`/streaming/track/${trackId}/stems`, { params });
       return response.data;
     } catch (error: any) {
       console.error('Error fetching track stems:', error);
@@ -71,30 +65,16 @@ class StreamingService {
     }
   }
 
-  // 세션의 스템 파일들 스트리밍 URL 조회
-  async getSessionStems(sessionId: string): Promise<StreamingResponse<SessionStemsResponse>> {
+  // 특정 버전의 마스터 스템 파일들 스트리밍 URL 조회
+  async getMasterStemStreams(trackId: string, version: number): Promise<StreamingResponse<TrackStemsResponse>> {
     try {
-      const response = await api.get(`/api/sessions/${sessionId}/stems`);
+      const response = await api.get(`/streaming/track/${trackId}/version/${version}/master-stems`);
       return response.data;
     } catch (error: any) {
-      console.error('Error fetching session stems:', error);
+      console.error('Error fetching master stem streams:', error);
       return {
         success: false,
-        message: error.response?.data?.message || 'Failed to fetch session stems',
-      };
-    }
-  }
-
-  // 여러 스템 파일 스트리밍 URL 일괄 조회
-  async getBatchStreamingUrls(stemIds: string[]): Promise<StreamingResponse<BatchStreamingResponse>> {
-    try {
-      const response = await api.post('/api/audio/stream/batch', { stemIds });
-      return response.data;
-    } catch (error: any) {
-      console.error('Error fetching batch streaming URLs:', error);
-      return {
-        success: false,
-        message: error.response?.data?.message || 'Failed to fetch batch streaming URLs',
+        message: error.response?.data?.message || 'Failed to fetch master stem streams',
       };
     }
   }
@@ -108,7 +88,7 @@ class StreamingService {
     urlExpiresAt: string;
   }>> {
     try {
-      const response = await api.get(`/api/audio/stream/${stemId}`);
+      const response = await api.get(`/streaming/stem/${stemId}`);
       return response.data;
     } catch (error: any) {
       console.error('Error fetching stem streaming URL:', error);
@@ -119,16 +99,55 @@ class StreamingService {
     }
   }
 
-  // 특정 take의 마스터 스템 파일들 스트리밍 URL 조회
-  async getMasterStemStreams(trackId: string, take: number): Promise<StreamingResponse<TrackStemsResponse & { take: number }>> {
+  // 버전 스템 파일 스트리밍 URL 조회
+  async getVersionStemStreamingUrl(stemId: string): Promise<StreamingResponse<{
+    stemId: string;
+    fileName: string;
+    presignedUrl: string;
+    metadata: AudioMetadata;
+    urlExpiresAt: string;
+  }>> {
     try {
-      const response = await api.get(`/api/tracks/${trackId}/master-stems/${take}`);
+      const response = await api.get(`/streaming/version-stem/${stemId}`);
       return response.data;
     } catch (error: any) {
-      console.error('Error fetching master stem streams:', error);
+      console.error('Error fetching version stem streaming URL:', error);
       return {
         success: false,
-        message: error.response?.data?.message || 'Failed to fetch master stem streams',
+        message: error.response?.data?.message || 'Failed to fetch version stem streaming URL',
+      };
+    }
+  }
+
+  // 여러 스템 파일 스트리밍 URL 일괄 조회
+  async getBatchStreamingUrls(stemIds: string[]): Promise<StreamingResponse<BatchStreamingResponse>> {
+    try {
+      const response = await api.post('/streaming/batch', { stemIds });
+      return response.data;
+    } catch (error: any) {
+      console.error('Error fetching batch streaming URLs:', error);
+      return {
+        success: false,
+        message: error.response?.data?.message || 'Failed to fetch batch streaming URLs',
+      };
+    }
+  }
+
+  // 업스트림 스템 파일들 스트리밍 URL 조회
+  async getUpstreamStems(upstreamId: string): Promise<StreamingResponse<{
+    upstreamId: string;
+    stems: StemStreamingInfo[];
+    totalStems: number;
+    urlExpiresAt: string;
+  }>> {
+    try {
+      const response = await api.get(`/streaming/upstream/${upstreamId}/stems`);
+      return response.data;
+    } catch (error: any) {
+      console.error('Error fetching upstream stems:', error);
+      return {
+        success: false,
+        message: error.response?.data?.message || 'Failed to fetch upstream stems',
       };
     }
   }

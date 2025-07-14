@@ -10,20 +10,130 @@ import {
 } from '../components';
 import { useAuth } from '../contexts/AuthContext';
 import { getTrackStages, createStage} from '../services/stageService';
+import streamingService, { StemStreamingInfo } from '../services/streamingService';
 
 interface TrackPageProps {}
 
-// TODO: 실제 스템 데이터 API 호출로 대체 필요
-const mockStems: any[] = [];
+// 테스트용 목업 데이터
+const mockStemData: StemStreamingInfo[] = [
+  {
+    id: '1',
+    fileName: 'Drums - Main Beat',
+    category: 'drums',
+    tag: 'kick',
+    key: 'A minor',
+    description: 'Main drum beat with kick and snare',
+    presignedUrl: '/audio/Track_ex/1.wav',
+    metadata: {
+      duration: 180,
+      fileSize: 46137344,
+      sampleRate: 44100,
+      channels: 2,
+      format: 'wav'
+    },
+    uploadedBy: {
+      id: '1',
+      username: 'SELLY'
+    },
+    uploadedAt: '2025-01-08T10:30:00Z'
+  },
+  {
+    id: '2',
+    fileName: 'Bass - Groove Line',
+    category: 'bass',
+    tag: 'groove',
+    key: 'A minor',
+    description: 'Groovy bass line foundation',
+    presignedUrl: '/audio/Track_ex/2.wav',
+    metadata: {
+      duration: 180,
+      fileSize: 46137344,
+      sampleRate: 44100,
+      channels: 2,
+      format: 'wav'
+    },
+    uploadedBy: {
+      id: '2',
+      username: 'MARCUS'
+    },
+    uploadedAt: '2025-01-08T10:35:00Z'
+  },
+  {
+    id: '3',
+    fileName: 'Guitar - Lead Melody',
+    category: 'guitar',
+    tag: 'lead',
+    key: 'A minor',
+    description: 'Lead guitar melody with blues rock feel',
+    presignedUrl: '/audio/Track_ex/3.wav',
+    metadata: {
+      duration: 180,
+      fileSize: 46137344,
+      sampleRate: 44100,
+      channels: 2,
+      format: 'wav'
+    },
+    uploadedBy: {
+      id: '3',
+      username: 'ALEX'
+    },
+    uploadedAt: '2025-01-08T10:40:00Z'
+  },
+  {
+    id: '4',
+    fileName: 'Synth - Pad Atmosphere',
+    category: 'synth',
+    tag: 'pad',
+    key: 'A minor',
+    description: 'Atmospheric synth pad for ambience',
+    presignedUrl: '/audio/Track_ex/4.wav',
+    metadata: {
+      duration: 180,
+      fileSize: 46137344,
+      sampleRate: 44100,
+      channels: 2,
+      format: 'wav'
+    },
+    uploadedBy: {
+      id: '4',
+      username: 'JENNY'
+    },
+    uploadedAt: '2025-01-08T10:45:00Z'
+  },
+  {
+    id: '5',
+    fileName: 'Vocal - Main Harmony',
+    category: 'vocal',
+    tag: 'harmony',
+    key: 'A minor',
+    description: 'Main vocal harmony track',
+    presignedUrl: '/audio/Track_ex/5.wav',
+    metadata: {
+      duration: 180,
+      fileSize: 46137344,
+      sampleRate: 44100,
+      channels: 2,
+      format: 'wav'
+    },
+    uploadedBy: {
+      id: '5',
+      username: 'SARAH'
+    },
+    uploadedAt: '2025-01-08T10:50:00Z'
+  }
+];
 
 const TrackPage: React.FC<TrackPageProps> = () => {
   const { trackId } = useParams<{ trackId: string }>();
   const navigate = useNavigate();
   const [track, setTrack] = useState<Track | null>(null);
   const [stages, setStages] = useState<Stage[]>([]);
+  const [stems, setStems] = useState<StemStreamingInfo[]>([]);
   const [loading, setLoading] = useState(true);
+  const [stemsLoading, setStemsLoading] = useState(false);
   const [isOpenStageModalOpen, setIsOpenStageModalOpen] = useState(false);
   const [isStemListModalOpen, setIsStemListModalOpen] = useState(false);
+  const [useTestData, setUseTestData] = useState(true); // 테스트 모드 토글
   const { user } = useAuth();
 
   // 트랙 데이터와 스테이지 목록 로드
@@ -61,7 +171,23 @@ const TrackPage: React.FC<TrackPageProps> = () => {
 
       } catch (error) {
         console.error('Failed to load track data:', error);
-        setStages([]);
+        // 스테이지 목록 로드 실패 시 목업 데이터 사용
+        setStages([
+          {
+            id: 'stage-1',
+            title: 'Initial Version',
+            description: 'First version of the track',
+            version: 1,
+            status: 'active',
+            created_at: '2025-01-08T10:00:00Z',
+            track: { id: trackId || '1' } as any,
+            user: { id: '1', username: 'SELLY' } as any,
+            stage_reviewers: [],
+            version_stems: [],
+            upstreams: [],
+            guide_path: undefined
+          }
+        ]);
       } finally {
         setLoading(false);
       }
@@ -69,6 +195,47 @@ const TrackPage: React.FC<TrackPageProps> = () => {
 
     loadTrackData();
   }, [trackId]);
+
+  // 최신 버전의 스템들 로드
+  const loadLatestStems = async () => {
+    if (!trackId || stages.length === 0) return;
+
+    try {
+      setStemsLoading(true);
+      
+      if (useTestData) {
+        // 테스트 모드: 목업 데이터 사용
+        setTimeout(() => {
+          setStems(mockStemData);
+          setStemsLoading(false);
+        }, 1000); // 로딩 효과를 위한 지연
+        return;
+      }
+
+      // 실제 API 호출
+      const latestVersion = Math.max(...stages.map(s => s.version));
+      const response = await streamingService.getMasterStemStreams(trackId, latestVersion);
+      
+      if (response.success && response.data) {
+        setStems(response.data.stems);
+      } else {
+        console.error('Failed to load stems:', response.message);
+        setStems([]);
+      }
+    } catch (error) {
+      console.error('Failed to load stems:', error);
+      setStems([]);
+    } finally {
+      setStemsLoading(false);
+    }
+  };
+
+  // 스테이지가 로드되면 스템들 로드
+  useEffect(() => {
+    if (stages.length > 0) {
+      loadLatestStems();
+    }
+  }, [stages, useTestData]);
 
   const handleBack = () => {
     navigate('/dashboard');
@@ -88,30 +255,10 @@ const TrackPage: React.FC<TrackPageProps> = () => {
     console.log('Rolling back track:', track?.id);
   };
 
-
   const handleStageClick = () => {
     // TODO: 트랙 재생 로직 구현
     console.log('stage click');
   };
-  // const handleStageClick = async (stage: Stage) => {
-  //   // try {
-  //   //   // 최신 스테이지인지 확인 (status가 'active'인 스테이지)
-  //   //   const isLatestStage = stage.status === 'active';
-
-  //   //   if (isLatestStage) {
-  //   //     // 최신 스테이지면 StagePage로 이동
-  //   //     navigate(`/stage/${stage.id}`);
-  //   //   } else {
-  //   //     // 나머지는 상세 조회
-  //   //     const stageDetail = await getStageDetail(stage.id);
-  //   //     console.log('Stage detail:', stageDetail);
-  //   //     // 상세 조회 모달이나 페이지를 여기에 추가할 수 있음
-  //   //   }
-  //   // } catch (error) {
-  //   //   console.error('Failed to handle stage click:', error);
-  //   // }
-    
-  // };
 
   const handleOpenStageSubmit = async (description: string, ) => {
     if (!user || !trackId) {
@@ -140,6 +287,10 @@ const TrackPage: React.FC<TrackPageProps> = () => {
     }
   };
 
+  const toggleTestMode = () => {
+    setUseTestData(!useTestData);
+  };
+
   if (loading) {
     return (
       <div className="bg-[#2a2a2a] min-h-screen flex justify-center items-center">
@@ -158,7 +309,6 @@ const TrackPage: React.FC<TrackPageProps> = () => {
     );
   }
 
-
   return (
     <div className="bg-[#2a2a2a] min-h-screen">
       <TrackHeader 
@@ -168,8 +318,24 @@ const TrackPage: React.FC<TrackPageProps> = () => {
       />
 
       <div className="px-6 py-8">
+        {/* 테스트 모드 토글 버튼 */}
+        <div className="mb-4">
+          <button
+            onClick={toggleTestMode}
+            className={`px-4 py-2 rounded-lg text-sm font-medium transition-colors ${
+              useTestData 
+                ? 'bg-green-600 text-white' 
+                : 'bg-gray-600 text-gray-300 hover:bg-gray-700'
+            }`}
+          >
+            {useTestData ? '테스트 모드 ON' : '테스트 모드 OFF'}
+          </button>
+        </div>
+
         <TrackInfoCard
           track={track}
+          stems={stems}
+          stemsLoading={stemsLoading}
           onPlay={handlePlay}
           onShowAllStems={handleShowAllStems}
           onRollBack={handleRollBack}
@@ -191,8 +357,9 @@ const TrackPage: React.FC<TrackPageProps> = () => {
       <StemListModal
         isOpen={isStemListModalOpen}
         onClose={() => setIsStemListModalOpen(false)}
-        stems={mockStems}
+        stems={stems}
         versionNumber={stages.length > 0 ? Math.max(...stages.map(s => s.version)).toString() : '1'}
+        loading={stemsLoading}
       />
     </div>
   );
