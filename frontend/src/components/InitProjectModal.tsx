@@ -4,6 +4,7 @@ import { Check, X, FileAudio, Upload, Plus, Music, Drum, Mic, Zap, Guitar, Volum
 import { UploadProgress, User } from '../types/api';
 import { useAuth } from '../contexts/AuthContext';
 import { useToast } from '../contexts/ToastContext';  
+import { useSocket } from '../contexts/SocketContext';
 import s3UploadService from '../services/s3UploadService';
 import stemJobService from '../services/stemJobService';
 import StepProgress from './StepProgress';
@@ -23,6 +24,7 @@ interface UploadedFile {
   s3Url?: string;
   file?: File;
   isSelected: boolean;
+  stemJobId?: string; // stem-job ID 저장
 }
 
 interface CommitState {
@@ -275,6 +277,28 @@ const FileSelectionAndUploadStep: React.FC<{
                         <p className="text-xs text-gray-400 mt-1">{file.uploadProgress}%</p>
                       </div>
                     )}
+                    
+                    {/* 스템 작업 상태 표시 */}
+                    {file.isComplete && file.stemJobId && (
+                      <div className="mt-2">
+                        {completedStems.includes(file.stemJobId) ? (
+                          <div className="flex items-center text-green-400 text-xs">
+                            <Check size={12} className="mr-1" />
+                            스템 작업 완료
+                          </div>
+                        ) : failedStems.includes(file.stemJobId) ? (
+                          <div className="flex items-center text-red-400 text-xs">
+                            <X size={12} className="mr-1" />
+                            스템 작업 실패
+                          </div>
+                        ) : (
+                          <div className="flex items-center text-yellow-400 text-xs">
+                            <div className="animate-spin rounded-full h-3 w-3 border-b-2 border-yellow-400 mr-1"></div>
+                            스템 작업 중...
+                          </div>
+                        )}
+                      </div>
+                    )}
                   </div>
                 </div>
               </div>
@@ -291,7 +315,37 @@ const FileSelectionAndUploadStep: React.FC<{
           <p className="text-gray-300 mb-4">
             Successfully uploaded {completedFiles.length} file{completedFiles.length > 1 ? 's' : ''}.
           </p>
-          <p className="text-gray-400 text-sm">
+          
+          {/* 스템 작업 상태 표시 */}
+          {uploadedStemIds.length > 0 && (
+            <div className="mt-4 p-4 bg-gray-800/50 rounded-lg">
+              <h4 className="text-white font-medium mb-2">스템 작업 상태</h4>
+              <div className="flex items-center justify-center space-x-4 text-sm">
+                <div className="flex items-center">
+                  <div className="w-3 h-3 bg-yellow-400 rounded-full mr-2"></div>
+                  <span className="text-yellow-400">처리 중: {uploadedStemIds.filter(id => !completedStems.includes(id) && !failedStems.includes(id)).length}</span>
+                </div>
+                <div className="flex items-center">
+                  <div className="w-3 h-3 bg-green-400 rounded-full mr-2"></div>
+                  <span className="text-green-400">완료: {completedStems.length}</span>
+                </div>
+                {failedStems.length > 0 && (
+                  <div className="flex items-center">
+                    <div className="w-3 h-3 bg-red-400 rounded-full mr-2"></div>
+                    <span className="text-red-400">실패: {failedStems.length}</span>
+                  </div>
+                )}
+              </div>
+              
+              {allStemsCompleted && (
+                <div className="mt-3 p-2 bg-green-600/20 rounded border border-green-500/30">
+                  <p className="text-green-400 text-sm">✅ 모든 스템 작업이 완료되었습니다!</p>
+                </div>
+              )}
+            </div>
+          )}
+          
+          <p className="text-gray-400 text-sm mt-4">
             You can now complete the project setup or add more files.
           </p>
         </div>
@@ -311,6 +365,7 @@ const InitProjectModal: React.FC<InitProjectModalProps> = ({
 }) => {
   const { user } = useAuth();
   const { showError, showSuccess } = useToast();
+  const { completedStems, failedStems, resetStemJobStatus } = useSocket();
   const [state, dispatch] = useReducer(commitReducer, { 
     uploadedFiles: [], 
     isUploading: false, 
@@ -322,6 +377,9 @@ const InitProjectModal: React.FC<InitProjectModalProps> = ({
   const handleStartUpload = React.useCallback(async () => {
     console.log('[DEBUG] InitProjectModal - Starting upload process');
     dispatch({ type: 'SET_UPLOADING', payload: true });
+    
+    // 스템 작업 상태 초기화
+    resetStemJobStatus();
     
     const selectedFiles = state.uploadedFiles.filter(f => f.isSelected && !f.isComplete);
     console.log('[DEBUG] InitProjectModal - Selected files for upload:', selectedFiles.map(f => ({
@@ -406,7 +464,8 @@ const InitProjectModal: React.FC<InitProjectModalProps> = ({
             uploadProgress: 100,
             isComplete: true,
             isSelected: false,
-            s3Url: result.location
+            s3Url: result.location,
+            stemJobId: stemJobResult.data?.id // stem-job ID 저장
           }
         }});
       } catch (e) {
@@ -450,7 +509,19 @@ const InitProjectModal: React.FC<InitProjectModalProps> = ({
   };
 
   const completedFiles = state.uploadedFiles.filter(f => f.isComplete);
-  const canComplete = completedFiles.length > 0 && !state.isUploading;
+  
+  // 스템 작업 완료 상태 확인
+  const uploadedStemIds = completedFiles
+    .map(file => file.stemJobId)
+    .filter(id => id) as string[]; // stem-job ID가 있는 파일만 필터링
+  const allStemsCompleted = uploadedStemIds.length > 0 && 
+    uploadedStemIds.every(id => completedStems.includes(id));
+  const hasFailedStems = failedStems.length > 0;
+  
+  const canComplete = completedFiles.length > 0 && 
+    !state.isUploading && 
+    allStemsCompleted && 
+    !hasFailedStems;
 
   const handleCloseModal = () => {
     if (state.isUploading) {
@@ -525,7 +596,9 @@ const InitProjectModal: React.FC<InitProjectModalProps> = ({
             disabled={!canComplete}
             className={`px-6 py-2 bg-purple-600 text-white rounded-lg hover:bg-purple-700 transition-colors font-medium ${!canComplete ? 'opacity-50 cursor-not-allowed' : ''}`}
           >
-            Complete
+            {hasFailedStems ? 'Failed' : 
+             !allStemsCompleted ? 'Processing...' : 
+             'Complete'}
           </button>
         </div>
       </div>
