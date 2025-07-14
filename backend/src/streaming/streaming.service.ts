@@ -399,7 +399,7 @@ export class StreamingService {
       relations: ['version_stems', 'version_stems.category', 'user'],
     });
 
-    if (!stage || !stage.version_stems || stage.version_stems.length === 0) {
+    if (!stage) {
       return {
         trackId,
         version,
