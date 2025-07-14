@@ -22,6 +22,7 @@ import { EmailModule } from './email/email.module';
 import { WebhookModule } from './webhook/webhook.module';
 import { TrackCollaboratorModule } from './track_collaborator/track_collaborator.module';
 import { WebSocketModule } from './websocket/websocket.module';
+import { ImageModule } from './image/image.module';
 
 
 @Module({
@@ -49,6 +50,7 @@ import { WebSocketModule } from './websocket/websocket.module';
     StemJobModule,
     TrackCollaboratorModule,
     WebSocketModule,
+    ImageModule,
 
   ], // 추후 다른 모듈들 (예: AuthModule 등)을 여기에 추가
     controllers: [], // 라우팅 처리

@@ -126,4 +126,27 @@ export class TrackService {
         };
     }
 
+
+    async isUserInTrack(userId: string, trackId: string): Promise<boolean> {
+        const track = await this.trackRepository.findOne({
+          where: { id: trackId },
+          relations: ['owner_id'],
+        });
+      
+        if (!track) return false;
+        if (track.owner_id.id === userId) return true;
+      
+        const collaborator = await this.trackCollaboratorRepository.findOne({
+          where: {
+            user_id: { id: userId },
+            track_id: { id: trackId },
+            status: 'accepted',
+          },
+        });
+      
+        return !!collaborator;
+      }
+      
+
+
 }
