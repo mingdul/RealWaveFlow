@@ -1,6 +1,6 @@
 import React, { useState, useEffect } from 'react';
 import { useParams, useNavigate } from 'react-router-dom';
-import { Track, Version } from '../types/api';
+import { Track, Stage, Version } from '../types/api';
 import { 
   TrackHeader, 
   TrackInfoCard, 
@@ -8,6 +8,8 @@ import {
   OpenStageModal, 
   StemListModal 
 } from '../components';
+import { useAuth } from '../contexts/AuthContext';
+import { getTrackStages, createStage, getStageDetail } from '../services/stageService';
 
 interface TrackPageProps {}
 
@@ -46,74 +48,56 @@ const TrackPage: React.FC<TrackPageProps> = () => {
   const { trackId } = useParams<{ trackId: string }>();
   const navigate = useNavigate();
   const [track, setTrack] = useState<Track | null>(null);
-  const [versions, setVersions] = useState<Version[]>([]);
+  const [stages, setStages] = useState<Stage[]>([]);
   const [loading, setLoading] = useState(true);
   const [isOpenStageModalOpen, setIsOpenStageModalOpen] = useState(false);
   const [isStemListModalOpen, setIsStemListModalOpen] = useState(false);
-  const [selectedVersion, setSelectedVersion] = useState<Version | null>(null);
+  const [selectedStage, setSelectedStage] = useState<Stage | null>(null);
+  const { user } = useAuth();
 
-  // Mock data - 실제 구현에서는 API 호출로 대체
+  // 트랙 데이터와 스테이지 목록 로드
   useEffect(() => {
-    const mockTrack: Track = {
-      id: trackId || '1',
-      name: '버전 넘버',
-      description: '드럼 메세지 드럼이랑 베이스 바꾼 버전입니다. 드럼 메세지 드럼이랑 베이스 바꾼 버전입니다. 드럼 메세지 드럼이랑 베이스 바꾼 버전입니다. 드럼 메세지 드럼이랑 베이스 바꾼 버전입니다.',
-      genre: 'Blues rock',
-      bpm: '165 BPM',
-      key_signature: 'A minor',
-      created_date: '25.07.02',
-      updated_date: '25.07.02',
-      owner_id: {
-        id: 1,
-        email: 'selly@example.com',
-        username: 'SELLY',
-        created_at: '2024-01-01',
-        updated_at: '2024-01-01'
+    const loadTrackData = async () => {
+      if (!trackId) return;
+
+      try {
+        setLoading(true);
+        
+        // Mock 트랙 데이터 - 실제 구현에서는 API 호출로 대체
+        const mockTrack: Track = {
+          id: trackId,
+          name: '버전 넘버',
+          description: '드럼 메세지 드럼이랑 베이스 바꾼 버전입니다. 드럼 메세지 드럼이랑 베이스 바꾼 버전입니다. 드럼 메세지 드럼이랑 베이스 바꾼 버전입니다. 드럼 메세지 드럼이랑 베이스 바꾼 버전입니다.',
+          genre: 'Blues rock',
+          bpm: '165 BPM',
+          key_signature: 'A minor',
+          created_date: '25.07.02',
+          updated_date: '25.07.02',
+          owner_id: {
+            id: 1,
+            email: 'selly@example.com',
+            username: 'SELLY',
+            created_at: '2024-01-01',
+            updated_at: '2024-01-01'
+          }
+        };
+
+        setTrack(mockTrack);
+
+        // 실제 스테이지 목록 가져오기
+        const trackStages = await getTrackStages(trackId);
+        setStages(trackStages);
+
+      } catch (error) {
+        console.error('Failed to load track data:', error);
+        // 스테이지가 없는 경우 빈 배열로 설정
+        setStages([]);
+      } finally {
+        setLoading(false);
       }
     };
 
-    const mockVersions: Version[] = [
-      {
-        id: '1',
-        version_number: '1',
-        commit_message: 'Initial version',
-        branch_id: 'main',
-        created_by: 1,
-        created_at: '25.06.22',
-        created_by_user: { id: 1, email: 'andy@example.com', username: 'ANDY', created_at: '2024-01-01', updated_at: '2024-01-01' }
-      },
-      {
-        id: '2',
-        version_number: '2',
-        commit_message: 'Drum High',
-        branch_id: 'main',
-        created_by: 1,
-        created_at: '25.06.22',
-        created_by_user: { id: 1, email: 'andy@example.com', username: 'ANDY', created_at: '2024-01-01', updated_at: '2024-01-01' }
-      },
-      {
-        id: '3',
-        version_number: '3',
-        commit_message: 'BASS MIX',
-        branch_id: 'main',
-        created_by: 2,
-        created_at: '25.06.27',
-        created_by_user: { id: 2, email: 'max@example.com', username: 'MAX', created_at: '2024-01-01', updated_at: '2024-01-01' }
-      },
-      {
-        id: '4',
-        version_number: '4',
-        commit_message: 'Vocal Add',
-        branch_id: 'main',
-        created_by: 3,
-        created_at: '25.07.02',
-        created_by_user: { id: 3, email: 'selly@example.com', username: 'SELLY', created_at: '2024-01-01', updated_at: '2024-01-01' }
-      }
-    ];
-
-    setTrack(mockTrack);
-    setVersions(mockVersions);
-    setLoading(false);
+    loadTrackData();
   }, [trackId]);
 
   const handleBack = () => {
@@ -134,35 +118,56 @@ const TrackPage: React.FC<TrackPageProps> = () => {
     console.log('Rolling back track:', track?.id);
   };
 
-  const handleVersionSelect = (version: Version) => {
-    setSelectedVersion(version);
-    console.log('Selected version:', version.version_number);
+  const handleStageSelect = (stage: Stage) => {
+    setSelectedStage(stage);
+    console.log('Selected stage:', stage.title);
   };
 
-  const handleOpenStageSubmit = (description: string, reviewers: any[]) => {
-    // Create new version with the stage information
-    const newVersion: Version = {
-      id: (versions.length + 1).toString(),
-      version_number: (versions.length + 1).toString(),
-      commit_message: description.substring(0, 50) + (description.length > 50 ? '...' : ''),
-      branch_id: 'main',
-      created_by: 1, // Current user
-      created_at: new Date().toLocaleDateString('ko-KR', { 
-        year: '2-digit', 
-        month: '2-digit', 
-        day: '2-digit' 
-      }).replace(/\./g, '.').replace(/\.$/, ''),
-      created_by_user: { 
-        id: 1, 
-        email: 'current@example.com', 
-        username: 'CURRENT', 
-        created_at: '2024-01-01', 
-        updated_at: '2024-01-01' 
-      }
-    };
+  const handleStageClick = async (stage: Stage) => {
+    try {
+      // 최신 스테이지인지 확인
+      const isLatestStage = stages.length > 0 && 
+        stage.version === Math.max(...stages.map(s => s.version));
 
-    setVersions([...versions, newVersion]);
-    console.log('New stage opened:', { description, reviewers });
+      if (isLatestStage) {
+        // 최신 스테이지면 StagePage로 이동
+        navigate(`/stage/${stage.id}`);
+      } else {
+        // 나머지는 상세 조회
+        const stageDetail = await getStageDetail(stage.id);
+        console.log('Stage detail:', stageDetail);
+        // 상세 조회 모달이나 페이지를 여기에 추가할 수 있음
+      }
+    } catch (error) {
+      console.error('Failed to handle stage click:', error);
+    }
+  };
+
+  const handleOpenStageSubmit = async (description: string, reviewers: any[]) => {
+    if (!user || !trackId) {
+      console.error('User or track ID not available');
+      return;
+    }
+
+    try {
+      const stageData = {
+        title: `Stage ${stages.length + 1}`,
+        description,
+        track_id: trackId,
+        user_id: user.id.toString(),
+        status: 'active'
+      };
+
+      const newStage = await createStage(stageData);
+      setStages(prevStages => [...prevStages, newStage]);
+      
+      console.log('New stage created:', newStage);
+      console.log('Reviewers:', reviewers);
+      
+      setIsOpenStageModalOpen(false);
+    } catch (error) {
+      console.error('Failed to create stage:', error);
+    }
   };
 
   if (loading) {
@@ -183,6 +188,22 @@ const TrackPage: React.FC<TrackPageProps> = () => {
     );
   }
 
+  // Stage를 Version 형태로 변환하여 기존 컴포넌트와 호환성 유지
+  const versionsFromStages = stages.map(stage => ({
+    id: stage.id,
+    version_number: stage.version.toString(),
+    commit_message: stage.description.length > 50 ? 
+      stage.description.substring(0, 50) + '...' : stage.description,
+    branch_id: 'main',
+    created_by: parseInt(stage.user.id.toString()),
+    created_at: new Date(stage.created_at).toLocaleDateString('ko-KR', { 
+      year: '2-digit', 
+      month: '2-digit', 
+      day: '2-digit' 
+    }).replace(/\./g, '.').replace(/\.$/, ''),
+    created_by_user: stage.user
+  }));
+
   return (
     <div className="bg-[#2a2a2a] min-h-screen">
       <TrackHeader 
@@ -200,8 +221,14 @@ const TrackPage: React.FC<TrackPageProps> = () => {
         />
 
         <VersionHistory
-          versions={versions}
-          onVersionSelect={handleVersionSelect}
+          versions={versionsFromStages}
+          onVersionSelect={(version) => {
+            const stage = stages.find(s => s.id === version.id);
+            if (stage) {
+              handleStageSelect(stage);
+              handleStageClick(stage);
+            }
+          }}
           onOpenStageClick={() => setIsOpenStageModalOpen(true)}
         />
       </div>
@@ -216,7 +243,7 @@ const TrackPage: React.FC<TrackPageProps> = () => {
         isOpen={isStemListModalOpen}
         onClose={() => setIsStemListModalOpen(false)}
         stems={mockStems}
-        versionNumber={selectedVersion?.version_number || '1'}
+        versionNumber={selectedStage?.version.toString() || '1'}
       />
     </div>
   );
