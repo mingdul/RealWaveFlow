@@ -144,6 +144,7 @@ export class UpstreamReviewService {
               user_id: upstream.user.id,
               category_id: stem.category.id,
               stage_id: stage.id,
+              track_id: upstream.stage.track.id,
             };
       
             await this.versionStemRepository.save(createDto);
