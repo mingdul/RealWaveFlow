@@ -19,8 +19,7 @@ const CreateTrackModal: React.FC<CreateTrackModalProps> = ({ onClose, onSubmit }
     genre: '',
     bpm: '',
     key_signature: '',
-    stage_title: '',
-    stage_description: '',
+    // stage_title and stage_description removed
   });
   
   const [coverImage, setCoverImage] = useState<File | null>(null);
@@ -83,8 +82,8 @@ const CreateTrackModal: React.FC<CreateTrackModalProps> = ({ onClose, onSubmit }
         bpm: formData.bpm,
         key_signature: formData.key_signature,
         image_url: imageUrl,
-        stage_title: formData.stage_title || 'Initial Stage',
-        stage_description: formData.stage_description || 'Initial stage for track production',
+        stage_title: 'first stage',
+        stage_description: 'start your track in first stage',
       };
 
       console.log('[DEBUG] CreateTrackModal - Calling stem-job/init-start with:', initStartRequest);
@@ -213,28 +212,7 @@ const CreateTrackModal: React.FC<CreateTrackModalProps> = ({ onClose, onSubmit }
                     <span className="bg-blue-600 text-white rounded-full w-6 h-6 flex items-center justify-center text-sm mr-2">2</span>
                     Initial Stage Setup
                   </h3>
-                  <div className="space-y-4">
-                    <div>
-                      <label className="block text-gray-300 text-sm mb-2">Stage Title</label>
-                      <input
-                        type="text"
-                        value={formData.stage_title}
-                        onChange={(e) => setFormData({ ...formData, stage_title: e.target.value })}
-                        className="w-full bg-gray-700 text-white rounded-lg px-4 py-3 border border-gray-600 focus:outline-none focus:ring-2 focus:ring-blue-500 focus:border-transparent transition-all"
-                        placeholder="e.g. Initial Recording Stage"
-                      />
-                    </div>
-                    <div>
-                      <label className="block text-gray-300 text-sm mb-2">Stage Description</label>
-                      <textarea
-                        value={formData.stage_description}
-                        onChange={(e) => setFormData({ ...formData, stage_description: e.target.value })}
-                        className="w-full bg-gray-700 text-white rounded-lg px-4 py-3 border border-gray-600 focus:outline-none focus:ring-2 focus:ring-blue-500 focus:border-transparent transition-all resize-none"
-                        placeholder="Describe what will happen in this stage"
-                        rows={3}
-                      />
-                    </div>
-                  </div>
+                  {/* Removed stage title and description input fields */}
                 </div>
               </div>
 
