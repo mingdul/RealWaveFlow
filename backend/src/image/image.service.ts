@@ -15,10 +15,6 @@ export class ImageService {
 
   private readonly s3 = new S3Client({
     region: process.env.AWS_REGION,
-    credentials: {
-      accessKeyId: process.env.AWS_ACCESS_KEY_ID,
-      secretAccessKey: process.env.AWS_SECRET_ACCESS_KEY,
-    },
   });
 
   private readonly bucketName = process.env.AWS_S3_BUCKET_NAME || 'waveflow-bucket';
