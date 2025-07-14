@@ -1,6 +1,7 @@
 // components/PresignedImage.tsx
 import React, { useEffect, useState } from 'react';
 import axios from 'axios';
+import apiClient from '../lib/api';
 
 interface Props {
   trackId: string;
@@ -22,7 +23,7 @@ const PresignedImage: React.FC<Props> = ({
 
   const fetchPresignedUrl = async () => {
     try {
-      const response = await axios.get(`/images/${trackId}`);
+      const response = await apiClient.get(`/images/${trackId}`);
       setImageUrl(response.data.imageUrl);
     } catch (err) {
       console.error('presigned URL 요청 실패:', err);
