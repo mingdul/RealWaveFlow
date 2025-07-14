@@ -16,7 +16,6 @@ interface UploadedFile {
   size: number;
   tag: string;
   key: string;
-  description: string;
   bpm?: string;
   uploadProgress: number;
   isComplete: boolean;
@@ -105,7 +104,7 @@ const FileSelectionAndUploadStep: React.FC<{
       const newFile: UploadedFile = {
         id: Math.random().toString(36).substr(2, 9),
         name: file.name, size: file.size,
-        tag: '', key: '', description: '', bpm: '',
+        tag: '', key: '', bpm: '',
         uploadProgress: 0, isComplete: false,
         isSelected: true, file
       };
@@ -116,7 +115,8 @@ const FileSelectionAndUploadStep: React.FC<{
 
   const selectedFiles = files.filter(f => f.isSelected && !f.isComplete);
   const completedFiles = files.filter(f => f.isComplete);
-  const canStartUpload = selectedFiles.length > 0 && selectedFiles.every(f => f.tag && f.key && f.bpm);
+  // Make tag required, but key and bpm optional
+  const canStartUpload = selectedFiles.length > 0 && selectedFiles.every(f => f.tag /* key and bpm are now optional */);
 
   return (
     <div className="p-6 pt-0 max-h-[70vh] overflow-y-auto">
@@ -166,7 +166,7 @@ const FileSelectionAndUploadStep: React.FC<{
           </button>
           {!canStartUpload && (
             <p className="text-amber-400 text-sm mt-2 text-center">
-              Please set tag, key, and BPM for all selected files before uploading
+              Please set <b>tag</b> for all selected files before uploading. (Key and BPM are optional)
             </p>
           )}
         </div>
@@ -204,7 +204,7 @@ const FileSelectionAndUploadStep: React.FC<{
                       )}
                     </div>
                     
-                    <div className="grid grid-cols-1 md:grid-cols-4 gap-3 text-sm">
+                    <div className="grid grid-cols-1 md:grid-cols-3 gap-3 text-sm">
                       <div>
                         <label className="block text-gray-400 text-xs mb-2">Instrument</label>
                         <div className="grid grid-cols-4 gap-1">
@@ -240,36 +240,25 @@ const FileSelectionAndUploadStep: React.FC<{
                         )}
                       </div>
                       <div>
-                        <label className="block text-gray-400 text-xs mb-1">Key</label>
+                        <label className="block text-gray-400 text-xs mb-1">Key <span className="text-gray-500">(optional)</span></label>
                         <select 
                           value={file.key}
                           onChange={e => onUpdateFile(file.id, { key: e.target.value })}
                           disabled={file.isComplete}
                           className="w-full bg-gray-700 text-white rounded px-2 py-1 text-xs border border-gray-600 focus:outline-none focus:ring-2 focus:ring-purple-500"
                         >
-                          <option value="">Select key</option>
+                          <option value="">Select key (optional)</option>
                           {keyOptions.map(key => <option key={key} value={key}>{key}</option>)}
                         </select>
                       </div>
                       <div>
-                        <label className="block text-gray-400 text-xs mb-1">BPM</label>
+                        <label className="block text-gray-400 text-xs mb-1">BPM <span className="text-gray-500">(optional)</span></label>
                         <input 
                           type="text" 
                           value={file.bpm || ''}
                           onChange={e => onUpdateFile(file.id, { bpm: e.target.value })}
                           disabled={file.isComplete}
-                          placeholder="e.g. 120" 
-                          className="w-full bg-gray-700 text-white rounded px-2 py-1 text-xs border border-gray-600 focus:outline-none focus:ring-2 focus:ring-purple-500" 
-                        />
-                      </div>
-                      <div>
-                        <label className="block text-gray-400 text-xs mb-1">Description</label>
-                        <input 
-                          type="text" 
-                          value={file.description}
-                          onChange={e => onUpdateFile(file.id, { description: e.target.value })}
-                          disabled={file.isComplete}
-                          placeholder="Enter description" 
+                          placeholder="e.g. 120 (optional)" 
                           className="w-full bg-gray-700 text-white rounded px-2 py-1 text-xs border border-gray-600 focus:outline-none focus:ring-2 focus:ring-purple-500" 
                         />
                       </div>
@@ -340,7 +329,6 @@ const InitProjectModal: React.FC<InitProjectModalProps> = ({
       tag: f.tag,
       key: f.key,
       bpm: f.bpm,
-      description: f.description
     })));
 
     // 1) S3 업로드 병렬 처리
@@ -396,12 +384,11 @@ const InitProjectModal: React.FC<InitProjectModalProps> = ({
         const stemJobRequest = {
           file_name: result.fileName,
           file_path: result.key,
-          stem_hash: result.etag || '', // ETag를 stem_hash로 사용
           key: file.key || '',
           bpm: file.bpm || '',
-          upstream_id: '', // 필요 시 수정
           stage_id: stageId,
           track_id: projectId,
+          instrument: file.tag,
         };
 
         console.log('[DEBUG] InitProjectModal - Calling stem-job/create for', file.name, ':', stemJobRequest);
