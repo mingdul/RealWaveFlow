@@ -157,6 +157,7 @@ export class StemJobService {
                 stage_id: job.stage_id,
                 user_id: userId,
                 version: 1, // 기본값으로 1 설정
+                track_id: job.track_id,
             });
             
             this.logger.log(`Version-Stem 생성 완료: ${savedStem.id}`);

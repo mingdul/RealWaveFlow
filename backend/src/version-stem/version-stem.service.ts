@@ -16,7 +16,7 @@ export class VersionStemService {
     ) {}
 
     async createVersionStem(createVersionStemDto: CreateVersionStemDto) {
-        const { file_name, file_path, key, bpm, stem_hash, stage_id, user_id, category_id, version } = createVersionStemDto;
+        const { file_name, file_path, key, bpm, stem_hash, stage_id, user_id, category_id, version, track_id, audio_wave_path } = createVersionStemDto;
 
         const versionStem = this.versionStemRepository.create({
             file_name,
@@ -29,6 +29,8 @@ export class VersionStemService {
             category: { id: category_id },
             version,
             uploaded_at: new Date(),
+            audio_wave_path,
+            track: { id: track_id },
         });
 
         const savedVersionStem = await this.versionStemRepository.save(versionStem);

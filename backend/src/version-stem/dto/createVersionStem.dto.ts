@@ -40,4 +40,8 @@ export class CreateVersionStemDto {
     @IsNumber()
     @IsNotEmpty()
     version: number;
+
+    @IsUUID()
+    @IsNotEmpty()
+    track_id: string;
 }
