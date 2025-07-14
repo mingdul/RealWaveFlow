@@ -1,5 +1,4 @@
-import React, { useReducer} from 'react';
-// import { useEffect } from 'react';
+import React, { useReducer, useState, useEffect } from 'react';
 import { Check, X, FileAudio, Upload, Plus, Music, Drum, Mic, Zap, Guitar, Volume2, Users, MoreHorizontal } from 'lucide-react';
 import { UploadProgress, User } from '../types/api';
 import { useAuth } from '../contexts/AuthContext';
@@ -8,6 +7,7 @@ import s3UploadService from '../services/s3UploadService';
 import stemJobService from '../services/stemJobService';
 import StepProgress from './StepProgress';
 import trackService from '../services/trackService';
+import { useSocket } from '../contexts/SocketContext';
 
 // Types
 interface UploadedFile {
@@ -475,7 +475,7 @@ const InitProjectModal: React.FC<InitProjectModalProps> = ({
       console.log('File processing completed event received:', data);
       
       if (data.trackId === projectId) {
-        setCompletedStemCount(prev => prev + 1);
+        setCompletedStemCount((prev: number) => prev + 1);
         console.log(`Stem processing completed: ${data.fileName}, count: ${completedStemCount + 1}`);
       }
     };
