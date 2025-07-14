@@ -42,8 +42,12 @@ export class ImageService {
       });
 
       return {
-        uploadUrl,
-        key
+        success: true,
+        message: 'Upload URL generated successfully',
+        data: {
+          uploadUrl,
+          key
+        }
       };
     } catch (error) {
       console.error('Upload URL generation error:', error);
