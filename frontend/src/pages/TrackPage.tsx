@@ -1,6 +1,6 @@
 import React, { useState, useEffect } from 'react';
 import { useParams, useNavigate } from 'react-router-dom';
-import { Track, Stage, Version } from '../types/api';
+import { Track, Stage } from '../types/api';
 import { 
   TrackHeader, 
   TrackInfoCard, 
