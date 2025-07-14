@@ -135,6 +135,8 @@ const TrackPage: React.FC<TrackPageProps> = () => {
 
       const newStage = await createStage(stageData);
       setStages(prevStages => [...prevStages, newStage]);
+
+      newStage.user = user;
       
       newStage.user = user;
       console.log('New stage created:', newStage);

@@ -1,6 +1,6 @@
 import { useEffect, useRef, useState, useCallback } from 'react';
 import WaveSurfer from 'wavesurfer.js';
-import WaveformCloner from '../components/wave';
+import Wave from '../components/wave';
 import Logo from '../components/Logo';  
 import streamingService, { StemStreamingInfo } from '../services/streamingService';
 import {
@@ -302,12 +302,12 @@ const StemSetReviewPage = () => {
           </div>
 
           {/* 탭 버튼 */}
-          <div className='flex items-center space-x-3'>
-            <button className='text-gray-300 transition-colors hover:text-white'>
-              TRACK
+          <div className='flex items-center space-x-4'>
+            <button className='text-gray-300 transition-colors hover:text-white border-b-2 border-white pb-1'>
+              APPROVE
             </button>
-            <button className='border-b-2 border-white pb-1 text-white'>
-              STAGE
+            <button className='text-gray-300 transition-colors hover:text-white border-b-2 border-white pb-1'>
+              REJECT
             </button>
           </div>
 
@@ -334,6 +334,9 @@ const StemSetReviewPage = () => {
         >
           Show History
         </button>
+      </div>
+
+      <div className='z-50 flex flex-col gap-2 px-6 pt-4'>
         <button
           onClick={() => setShowCommentList(!showCommentList)}
           className='self-start rounded bg-[#3a3a3a] px-3 py-1 text-sm hover:bg-[#555]'
@@ -458,7 +461,7 @@ const StemSetReviewPage = () => {
 
       {/* Waveform */}
       <div className='space-y-6'>
-        <WaveformCloner
+        <Wave
           onReady={handleReady}
           audioUrl='/audio/track_ex.wav'
           waveColor='#f87171'
@@ -471,7 +474,7 @@ const StemSetReviewPage = () => {
         />
 
         {showExtraWaveform && extraAudio && (
-          <WaveformCloner
+          <Wave
             onReady={handleReady}
             audioUrl={extraAudio}
             waveColor='#60a5fa'
