@@ -13,7 +13,7 @@ import { TrackCollaborator } from '../track_collaborator/track_collaborator.enti
 import { User } from '../users/user.entity';
 import { S3Service } from './s3.service';
 import { VersionStemService } from 'src/version-stem/version-stem.service';
-
+import { Category } from 'src/category/category.entity';
 
 /** 
  * Streaming Module
@@ -46,6 +46,7 @@ import { VersionStemService } from 'src/version-stem/version-stem.service';
       TrackCollaborator, 
       User,
       VersionStem,
+      Category
     ])
   ],
   controllers: [StreamingController, StreamingTestController],
