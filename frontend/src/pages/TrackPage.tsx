@@ -4,9 +4,9 @@ import { Track, Stage } from '../types/api';
 import { 
   TrackHeader, 
   TrackInfoCard, 
-  VersionHistory, 
   OpenStageModal, 
-  StemListModal 
+  StemListModal,
+  StageHistory 
 } from '../components';
 import { useAuth } from '../contexts/AuthContext';
 import { getTrackStages, createStage, getStageDetail } from '../services/stageService';
@@ -188,21 +188,6 @@ const TrackPage: React.FC<TrackPageProps> = () => {
     );
   }
 
-  // Stage를 Version 형태로 변환하여 기존 컴포넌트와 호환성 유지
-  const versionsFromStages = stages.map(stage => ({
-    id: stage.id,
-    version_number: stage.version.toString(),
-    commit_message: stage.description.length > 50 ? 
-      stage.description.substring(0, 50) + '...' : stage.description,
-    branch_id: 'main',
-    created_by: parseInt(stage.user.id.toString()),
-    created_at: new Date(stage.created_at).toLocaleDateString('ko-KR', { 
-      year: '2-digit', 
-      month: '2-digit', 
-      day: '2-digit' 
-    }).replace(/\./g, '.').replace(/\.$/, ''),
-    created_by_user: stage.user
-  }));
 
   return (
     <div className="bg-[#2a2a2a] min-h-screen">
@@ -220,14 +205,11 @@ const TrackPage: React.FC<TrackPageProps> = () => {
           onRollBack={handleRollBack}
         />
 
-        <VersionHistory
-          versions={versionsFromStages}
-          onVersionSelect={(version) => {
-            const stage = stages.find(s => s.id === version.id);
-            if (stage) {
-              handleStageSelect(stage);
-              handleStageClick(stage);
-            }
+        <StageHistory
+          stages={stages}
+          onStageSelect={(stage) => {
+            handleStageSelect(stage);
+            handleStageClick(stage);
           }}
           onOpenStageClick={() => setIsOpenStageModalOpen(true)}
         />
