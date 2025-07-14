@@ -193,22 +193,22 @@ export class WebhookController {
                 }
                 
             } else {
-                // 실패 시 클라이언트에게 오류 알림
-                this.logger.error(`작업 완료 실패: ${data.stemId}`);
+                // Send error notification to client on failure
+                this.logger.error(`Job completion failed: ${data.stemId}`);
                 
-                // 스템 작업 실패 이벤트 전송
+                // Send stem job failure event
                 await this.chatGateway.sendStemJobFailed(data.userId, {
                     stemId: data.stemId,
                     trackId: data.trackId,
-                    stageId: data.trackId, // fallback으로 trackId 사용
+                    stageId: data.trackId, // fallback to trackId
                     fileName: data.original_filename || 'Unknown',
-                    error: data.result?.error || '알 수 없는 오류',
+                    error: data.result?.error || 'Unknown error',
                 });
                 
                 this.chatGateway.sendFileProcessingError(data.userId, {
                     trackId: data.trackId,
                     fileName: data.original_filename || 'Unknown',
-                    error: data.result?.error || '알 수 없는 오류',
+                    error: data.result?.error || 'Unknown error',
                     stage: 'audio_analysis',
                 });
             }

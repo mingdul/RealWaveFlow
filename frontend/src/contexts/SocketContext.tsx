@@ -32,9 +32,9 @@ export const SocketProvider: React.FC<SocketProviderProps> = ({ children }) => {
   const [socketId, setSocketId] = useState<string | undefined>();
   
   const { user, logout, isAuthenticated } = useAuth();
-  const { showToast, showSuccess, showError } = useToast();
+  const { showSuccess, showError } = useToast();
   
-  // 스템 작업 상태 관리
+  // Stem job status management
   const [stemJobStatus, setStemJobStatus] = useState<Record<string, 'pending' | 'completed' | 'failed'>>({});
   const [completedStems, setCompletedStems] = useState<string[]>([]);
   const [failedStems, setFailedStems] = useState<string[]>([]);
@@ -63,7 +63,7 @@ export const SocketProvider: React.FC<SocketProviderProps> = ({ children }) => {
       return;
     }
 
-    const socketUrl = process.env.REACT_APP_WEBSOCKET_URL || 'http://localhost:3000';
+    const socketUrl = import.meta.env.VITE_WEBSOCKET_URL || 'http://localhost:3000';
     
     const newSocket = io(socketUrl, {
       auth: {
@@ -90,40 +90,40 @@ export const SocketProvider: React.FC<SocketProviderProps> = ({ children }) => {
     // 파일 처리 이벤트 리스너들
     newSocket.on('file-duplicate', (data) => {
       console.log('File duplicate detected:', data);
-      showError(data.message || '중복 파일이 감지되었습니다.');
+      showError(data.message || 'Duplicate file detected.');
     });
 
     newSocket.on('processing-approved', (data) => {
       console.log('Processing approved:', data);
-      showSuccess(data.message || '파일 처리가 승인되었습니다.');
+      showSuccess(data.message || 'File processing approved.');
     });
 
     newSocket.on('file-processing-progress', (data) => {
       console.log('File processing progress:', data);
-      // 진행 상태 업데이트 로직 추가 가능
+      // Progress update logic can be added here
     });
 
     newSocket.on('file-processing-completed', (data) => {
       console.log('File processing completed:', data);
-      showSuccess(data.message || '파일 처리가 완료되었습니다.');
+      showSuccess(data.message || 'File processing completed.');
     });
 
     newSocket.on('file-processing-error', (data) => {
       console.log('File processing error:', data);
-      showError(data.message || '파일 처리 중 오류가 발생했습니다.');
+      showError(data.message || 'File processing error occurred.');
     });
 
-    // 스템 작업 완료 이벤트 리스너들 (새로 추가)
+    // Stem job completion event listeners (newly added)
     newSocket.on('stem-job-completed', (data) => {
       console.log('Stem job completed:', data);
       
-      // 스템 작업 상태 업데이트
+      // Update stem job status
       setStemJobStatus(prev => ({
         ...prev,
         [data.stemId]: 'completed'
       }));
       
-      // 완료된 스템 목록에 추가
+      // Add to completed stems list
       setCompletedStems(prev => {
         if (!prev.includes(data.stemId)) {
           return [...prev, data.stemId];
@@ -131,22 +131,22 @@ export const SocketProvider: React.FC<SocketProviderProps> = ({ children }) => {
         return prev;
       });
       
-      // 실패 목록에서 제거 (재시도 성공 시)
+      // Remove from failed list (in case of retry success)
       setFailedStems(prev => prev.filter(id => id !== data.stemId));
       
-      showSuccess(data.message || '스템 작업이 완료되었습니다.');
+      showSuccess(data.message || 'Stem job completed successfully.');
     });
 
     newSocket.on('stem-job-failed', (data) => {
       console.log('Stem job failed:', data);
       
-      // 스템 작업 상태 업데이트
+      // Update stem job status
       setStemJobStatus(prev => ({
         ...prev,
         [data.stemId]: 'failed'
       }));
       
-      // 실패한 스템 목록에 추가
+      // Add to failed stems list
       setFailedStems(prev => {
         if (!prev.includes(data.stemId)) {
           return [...prev, data.stemId];
@@ -154,21 +154,21 @@ export const SocketProvider: React.FC<SocketProviderProps> = ({ children }) => {
         return prev;
       });
       
-      // 완료 목록에서 제거
+      // Remove from completed list
       setCompletedStems(prev => prev.filter(id => id !== data.stemId));
       
-      showError(data.message || '스템 작업 중 오류가 발생했습니다.');
+      showError(data.message || 'Stem job failed.');
     });
 
     newSocket.on('all-stem-jobs-completed', (data) => {
       console.log('All stem jobs completed:', data);
-      showSuccess(data.message || '모든 스템 작업이 완료되었습니다.');
+      showSuccess(data.message || 'All stem jobs completed successfully.');
     });
 
     newSocket.on('forceLogout', (data) => {
       console.log('Force logout:', data);
-      showError(data.reason || '세션이 만료되었습니다. 다시 로그인해주세요.');
-      // 로그아웃 처리 로직 추가 필요
+      showError(data.reason || 'Session expired. Please login again.');
+      // Logout handling logic needs to be added
     });
 
     setSocket(newSocket);
@@ -188,74 +188,17 @@ export const SocketProvider: React.FC<SocketProviderProps> = ({ children }) => {
     setFailedStems([]);
   };
 
-  const handleConnect = (data: any) => {
-    setIsConnected(true);
-    setSocketId(socketService.getSocketId());
-    
-    if (data?.userId) {
-      console.log('Socket authenticated for user:', data.userId);
-      showToast('success', 'Real-time connection established.');
-    }
-  };
-
-  const handleDisconnect = (reason?: string) => {
-    setIsConnected(false);
-    setSocketId(undefined);
-    
-    if (reason) {
-      console.log('Socket disconnected:', reason);
-      
-      // 서버 종료나 네트워크 오류가 아닌 경우에만 토스트 표시
-      if (reason !== 'transport close' && reason !== 'ping timeout') {
-        showToast('warning', 'Real-time connection lost.');
-      }
-    }
-  };
-
-  const handleMessage = (data: any) => {
-    console.log('Received message:', data);
-    
-    // 메시지 수신 시 토스트 표시 (선택사항)
-    if (data.userId !== user?.id) {
-      showToast('info', `New message: ${data.message}`);
-    }
-  };
-
-  const handleOnlineUsers = (data: { count: number }) => {
-    setOnlineUsers(data.count);
-  };
-
-  const handleUnauthorized = (data: { reason: string }) => {
-    console.log('Socket unauthorized:', data.reason);
-    showToast('error', 'Authentication expired. Please log in again.');
-    
-    // 토큰 만료 시 자동 로그아웃
-    logout();
-  };
-
-  const handleError = (error: Error) => {
-    console.error('Socket error:', error);
-    
-    // 연결 오류 시 토스트 표시
-    if (error.message.includes('Unauthorized')) {
-      showToast('error', 'Authentication failed. Please log in again.');
-      logout();
-    } else {
-      showToast('error', 'Connection error occurred.');
-    }
-  };
-
   const sendMessage = (message: string) => {
-    if (isConnected) {
-      socketService.sendMessage(message);
+    if (isConnected && socket) {
+      socket.emit('message', { message });
     } else {
-      showToast('error', 'Connection lost. Cannot send messages.');
+      showError('Connection lost. Cannot send messages.');
     }
   };
 
   const ping = () => {
-    if (isConnected) {
-      socketService.ping();
+    if (isConnected && socket) {
+      socket.emit('ping');
     }
   };
 
