@@ -35,6 +35,95 @@ class S3UploadService {
   }
 
   /**
+   * 이미지 업로드를 위한 presigned URL 요청
+   */
+  async getImagePresignedUrl(
+    fileName: string,
+    contentType: string
+  ): Promise<ApiResponse<{ url: string; key: string }>> {
+    try {
+      const response = await apiClient.post<
+        ApiResponse<{ url: string; key: string }>
+      >('/uploads/image-presigned-url', {
+        fileName,
+        contentType,
+      });
+      return response.data;
+    } catch (error: any) {
+      throw new Error(
+        error.response?.data?.message || '이미지 presigned URL 요청에 실패했습니다.'
+      );
+    }
+  }
+
+  /**
+   * 이미지 파일을 S3에 업로드
+   */
+  async uploadImage(
+    file: File,
+    onProgress?: (progress: number) => void
+  ): Promise<string> {
+    console.log('[DEBUG] S3UploadService - Starting image upload:', file.name, file.type, file.size);
+    
+    try {
+      // 1. presigned URL 요청
+      console.log('[DEBUG] S3UploadService - Requesting presigned URL for image');
+      const presignedResponse = await this.getImagePresignedUrl(
+        file.name,
+        file.type
+      );
+      console.log('[DEBUG] S3UploadService - Presigned URL response:', presignedResponse);
+
+      if (!presignedResponse.success || !presignedResponse.data) {
+        throw new Error('이미지 presigned URL 요청에 실패했습니다.');
+      }
+
+      const { url, key } = presignedResponse.data;
+      console.log('[DEBUG] S3UploadService - Presigned URL obtained:', { url, key });
+
+      // 2. S3에 이미지 업로드
+      console.log('[DEBUG] S3UploadService - Starting S3 upload with XMLHttpRequest');
+      const xhr = new XMLHttpRequest();
+      
+      return new Promise<string>((resolve, reject) => {
+        // 업로드 진행률 처리
+        xhr.upload.onprogress = (event) => {
+          if (event.lengthComputable && onProgress) {
+            const progress = Math.round((event.loaded * 100) / event.total);
+            console.log('[DEBUG] S3UploadService - Image upload progress:', progress, '%');
+            onProgress(progress);
+          }
+        };
+
+        xhr.onload = () => {
+          console.log('[DEBUG] S3UploadService - Upload completed with status:', xhr.status);
+          if (xhr.status >= 200 && xhr.status < 300) {
+            // S3 URL 반환 (업로드된 URL에서 query parameter 제거)
+            const uploadedUrl = url.split('?')[0];
+            console.log('[DEBUG] S3UploadService - Image uploaded successfully:', uploadedUrl);
+            resolve(uploadedUrl);
+          } else {
+            console.error('[ERROR] S3UploadService - Upload failed with status:', xhr.status);
+            reject(new Error(`이미지 업로드 실패: HTTP ${xhr.status}`));
+          }
+        };
+
+        xhr.onerror = () => {
+          console.error('[ERROR] S3UploadService - Network error during upload');
+          reject(new Error('이미지 업로드 중 네트워크 오류 발생'));
+        };
+
+        xhr.open('PUT', url);
+        xhr.setRequestHeader('Content-Type', file.type);
+        xhr.send(file);
+      });
+    } catch (error: any) {
+      console.error('[ERROR] S3UploadService - Image upload failed:', error);
+      throw new Error(`이미지 업로드 실패: ${error.message}`);
+    }
+  }
+
+  /**
    * presigned URL 요청
    */
   async getPresignedUrls(

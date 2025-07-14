@@ -1,16 +1,11 @@
 import React, { useReducer} from 'react';
 // import { useEffect } from 'react';
-import { Check, X, FileAudio, Upload, Plus } from 'lucide-react';
+import { Check, X, FileAudio, Upload, Plus, Music, Drum, Mic, Zap, Guitar, Volume2, Users, MoreHorizontal } from 'lucide-react';
 import { UploadProgress, User } from '../types/api';
 import { useAuth } from '../contexts/AuthContext';
 import { useToast } from '../contexts/ToastContext';  
 import s3UploadService from '../services/s3UploadService';
-import stemFileService from '../services/stemFileService';
-import categoryService from '../services/categoryService';
-import masterTakeService from '../services/masterTakeService';
-import masterStemService from '../services/masterStemService';
-import sessionService from '../services/sessionService';
-import sessionBestService from '../services/sessionBestService';
+import stemJobService from '../services/stemJobService';
 import StepProgress from './StepProgress';
 
 // Types
@@ -21,6 +16,7 @@ interface UploadedFile {
   tag: string;
   key: string;
   description: string;
+  bpm?: string;
   uploadProgress: number;
   isComplete: boolean;
   matchedFileId?: string;
@@ -41,10 +37,20 @@ interface InitProjectModalProps {
   projectId: string;
   projectName: string;
   projectDescription: string;
+  stageId?: string;
   onComplete: () => void;
 }
 
-const tagOptions = ['BASS', 'DRUM', 'VOCAL', 'SYNTH', 'GUITAR', 'LEAD', 'HARMONY', 'OTHER'];
+const tagOptions = [
+  { value: 'BASS', label: 'Bass', icon: Volume2, color: 'bg-red-500' },
+  { value: 'DRUM', label: 'Drums', icon: Drum, color: 'bg-orange-500' },
+  { value: 'VOCAL', label: 'Vocal', icon: Mic, color: 'bg-blue-500' },
+  { value: 'SYNTH', label: 'Synth', icon: Zap, color: 'bg-purple-500' },
+  { value: 'GUITAR', label: 'Guitar', icon: Guitar, color: 'bg-green-500' },
+  { value: 'LEAD', label: 'Lead', icon: Music, color: 'bg-yellow-500' },
+  { value: 'HARMONY', label: 'Harmony', icon: Users, color: 'bg-pink-500' },
+  { value: 'OTHER', label: 'Other', icon: MoreHorizontal, color: 'bg-gray-500' },
+];
 const keyOptions = ['C', 'C#', 'D', 'D#', 'E', 'F', 'F#', 'G', 'G#', 'A', 'A#', 'B', 'Aminor', 'Cmajor'];
 
 const commitReducer = (state: CommitState, action: any): CommitState => {
@@ -98,7 +104,7 @@ const FileSelectionAndUploadStep: React.FC<{
       const newFile: UploadedFile = {
         id: Math.random().toString(36).substr(2, 9),
         name: file.name, size: file.size,
-        tag: '', key: '', description: '',
+        tag: '', key: '', description: '', bpm: '',
         uploadProgress: 0, isComplete: false,
         isSelected: true, file
       };
@@ -109,7 +115,7 @@ const FileSelectionAndUploadStep: React.FC<{
 
   const selectedFiles = files.filter(f => f.isSelected && !f.isComplete);
   const completedFiles = files.filter(f => f.isComplete);
-  const canStartUpload = selectedFiles.length > 0 && selectedFiles.every(f => f.tag && f.key);
+  const canStartUpload = selectedFiles.length > 0 && selectedFiles.every(f => f.tag && f.key && f.bpm);
 
   return (
     <div className="p-6 pt-0 max-h-[70vh] overflow-y-auto">
@@ -159,7 +165,7 @@ const FileSelectionAndUploadStep: React.FC<{
           </button>
           {!canStartUpload && (
             <p className="text-amber-400 text-sm mt-2 text-center">
-              Please set tag and key for all selected files before uploading
+              Please set tag, key, and BPM for all selected files before uploading
             </p>
           )}
         </div>
@@ -197,18 +203,40 @@ const FileSelectionAndUploadStep: React.FC<{
                       )}
                     </div>
                     
-                    <div className="grid grid-cols-1 md:grid-cols-3 gap-3 text-sm">
+                    <div className="grid grid-cols-1 md:grid-cols-4 gap-3 text-sm">
                       <div>
-                        <label className="block text-gray-400 text-xs mb-1">Tag</label>
-                        <select 
-                          value={file.tag}
-                          onChange={e => onUpdateFile(file.id, { tag: e.target.value })}
-                          disabled={file.isComplete}
-                          className="w-full bg-gray-700 text-white rounded px-2 py-1 text-xs border border-gray-600 focus:outline-none focus:ring-2 focus:ring-purple-500"
-                        >
-                          <option value="">Select tag</option>
-                          {tagOptions.map(tag => <option key={tag} value={tag}>{tag}</option>)}
-                        </select>
+                        <label className="block text-gray-400 text-xs mb-2">Instrument</label>
+                        <div className="grid grid-cols-4 gap-1">
+                          {tagOptions.map(tag => {
+                            const Icon = tag.icon;
+                            return (
+                              <button
+                                key={tag.value}
+                                type="button"
+                                onClick={() => onUpdateFile(file.id, { tag: tag.value })}
+                                disabled={file.isComplete}
+                                className={`relative p-2 rounded-lg border-2 transition-all duration-200 ${
+                                  file.tag === tag.value
+                                    ? `${tag.color} border-white text-white`
+                                    : 'bg-gray-700 border-gray-600 text-gray-300 hover:border-gray-500'
+                                } ${file.isComplete ? 'opacity-50 cursor-not-allowed' : 'hover:scale-105'}`}
+                                title={tag.label}
+                              >
+                                <Icon size={16} />
+                                {file.tag === tag.value && (
+                                  <div className="absolute -top-1 -right-1 bg-white rounded-full w-3 h-3 flex items-center justify-center">
+                                    <Check size={8} className="text-gray-800" />
+                                  </div>
+                                )}
+                              </button>
+                            );
+                          })}
+                        </div>
+                        {file.tag && (
+                          <p className="text-xs text-gray-400 mt-1">
+                            {tagOptions.find(t => t.value === file.tag)?.label}
+                          </p>
+                        )}
                       </div>
                       <div>
                         <label className="block text-gray-400 text-xs mb-1">Key</label>
@@ -221,6 +249,17 @@ const FileSelectionAndUploadStep: React.FC<{
                           <option value="">Select key</option>
                           {keyOptions.map(key => <option key={key} value={key}>{key}</option>)}
                         </select>
+                      </div>
+                      <div>
+                        <label className="block text-gray-400 text-xs mb-1">BPM</label>
+                        <input 
+                          type="text" 
+                          value={file.bpm || ''}
+                          onChange={e => onUpdateFile(file.id, { bpm: e.target.value })}
+                          disabled={file.isComplete}
+                          placeholder="e.g. 120" 
+                          className="w-full bg-gray-700 text-white rounded px-2 py-1 text-xs border border-gray-600 focus:outline-none focus:ring-2 focus:ring-purple-500" 
+                        />
                       </div>
                       <div>
                         <label className="block text-gray-400 text-xs mb-1">Description</label>
@@ -277,6 +316,7 @@ const InitProjectModal: React.FC<InitProjectModalProps> = ({
   projectId, 
   projectName, 
   projectDescription, 
+  stageId = '',
   onComplete 
 }) => {
   const { user } = useAuth();
@@ -290,116 +330,130 @@ const InitProjectModal: React.FC<InitProjectModalProps> = ({
   const steps = ['Create Track', 'Upload Files'];
 
   const handleStartUpload = React.useCallback(async () => {
+    console.log('[DEBUG] InitProjectModal - Starting upload process');
     dispatch({ type: 'SET_UPLOADING', payload: true });
     
     const selectedFiles = state.uploadedFiles.filter(f => f.isSelected && !f.isComplete);
+    console.log('[DEBUG] InitProjectModal - Selected files for upload:', selectedFiles.map(f => ({
+      name: f.name,
+      tag: f.tag,
+      key: f.key,
+      bpm: f.bpm,
+      description: f.description
+    })));
 
-    // 1) MasterTake & Session 생성 (순차) => POST /stem-job/init-start 호출 (Track + Stage 생성) 로 바꾸기
-    let masterTakeResult, sessionResult;
-    try {
-      sessionResult    = await sessionService.createSession({ name: 'init session', track_id: projectId });
-      masterTakeResult = await masterTakeService.createMasterTake({ track_id: projectId });
-    } catch (e) {
-      console.error('Init failed', e);
-      showError('Failed to initialize project. Please try again.');
-      dispatch({ type: 'SET_UPLOADING', payload: false });
-      return;
-    }
-
-    // 2) S3 업로드만 병렬 처리
+    // 1) S3 업로드 병렬 처리
+    console.log('[DEBUG] InitProjectModal - Starting S3 upload for', selectedFiles.length, 'files');
     const uploadPromises = selectedFiles.map(fileToUpload => {
-      if (!fileToUpload.file) return Promise.resolve({ error: true, id: fileToUpload.id });
+      if (!fileToUpload.file) {
+        console.error('[ERROR] InitProjectModal - No file object for:', fileToUpload.name);
+        return Promise.resolve({ error: true, id: fileToUpload.id });
+      }
 
+      console.log('[DEBUG] InitProjectModal - Starting S3 upload for:', fileToUpload.name);
       return s3UploadService.uploadFile(
         fileToUpload.file,
         projectId,
         (progress: UploadProgress) => {
           const pct = Math.floor((progress.uploadedBytes / progress.totalSize) * 100);
+          console.log('[DEBUG] InitProjectModal - Upload progress for', fileToUpload.name, ':', pct, '%');
           dispatch({ type: 'UPDATE_FILE', payload: { id: fileToUpload.id, updates: { uploadProgress: pct } } });
         }
       )
-      .then(result => ({
-        error: false,
-        id: fileToUpload.id,
-        result,
-        file: fileToUpload
-      }))
+      .then(result => {
+        console.log('[DEBUG] InitProjectModal - S3 upload completed for', fileToUpload.name, ':', result);
+        return {
+          error: false,
+          id: fileToUpload.id,
+          result,
+          file: fileToUpload
+        };
+      })
       .catch(err => {
-        console.error(`S3 upload failed for ${fileToUpload.name}`, err);
+        console.error('[ERROR] InitProjectModal - S3 upload failed for', fileToUpload.name, ':', err);
         return { error: true, id: fileToUpload.id };
       });
     });
 
     const s3Results = await Promise.all(uploadPromises);
+    console.log('[DEBUG] InitProjectModal - All S3 uploads completed:', s3Results);
 
-    // 3) 후속 API 호출 (순차 실행)
+    // 2) 각 파일에 대해 stem-job/create 호출
+    console.log('[DEBUG] InitProjectModal - Starting stem-job/create calls');
     for (let i = 0; i < s3Results.length; i++) {
       const res = s3Results[i];
       dispatch({ type: 'SET_CURRENT_UPLOAD_INDEX', payload: i });
-      if (res.error || !('file' in res) || !('result' in res)) continue;
+      
+      if (res.error || !('file' in res) || !('result' in res)) {
+        console.log('[DEBUG] InitProjectModal - Skipping file due to error:', res);
+        continue;
+      }
+      
       const { file, result } = res as { error: false; id: string; result: any; file: UploadedFile };
 
       try {
-        const category = await categoryService.createCategory({
-          name: result.fileName, track_id: projectId
-        });
-        const stemFile = await stemFileService.createStemFile({
-          file_name:   result.fileName,
-          file_path:   result.key,
-          key:         file.key || '',
-          track_id:    projectId,
-          session_id:  sessionResult.data.id,
-          category_id: category.data.id,
-          tag:         file.tag,
-          description: file.description
-        });
-        await masterStemService.createMasterStem({
-          file_path:     result.key,
-          file_name:     result.fileName,
-          key:           file.key,
-          tag:           file.tag,
-          description:   file.description,
-          track_id:      projectId,
-          category_id:   category.data.id,
-          masterTake_id: masterTakeResult.data.id,
-          take:          masterTakeResult.data.take,
-          uploaded_by:   user!.id.toString()
-        });
-        if (stemFile.data) {
-          await sessionBestService.createSessionBest({
-            session_id: sessionResult.data.id,
-            category_id: category.data.id,
-            stem_id:     stemFile.data.id
-          });
-        }
+        const stemJobRequest = {
+          file_name: result.fileName,
+          file_path: result.key,
+          stem_hash: result.etag || '', // ETag를 stem_hash로 사용
+          key: file.key || '',
+          bpm: file.bpm || '',
+          upstream_id: '', // 필요 시 수정
+          stage_id: stageId,
+          track_id: projectId,
+        };
+
+        console.log('[DEBUG] InitProjectModal - Calling stem-job/create for', file.name, ':', stemJobRequest);
+        const stemJobResult = await stemJobService.createStemJob(stemJobRequest);
+        console.log('[DEBUG] InitProjectModal - stem-job/create completed for', file.name, ':', stemJobResult);
 
         dispatch({ type: 'UPDATE_FILE', payload: { 
           id: file.id, 
           updates: {
             uploadProgress: 100,
-            isComplete:     true,
-            isSelected:     false,
-            s3Url:          result.location
+            isComplete: true,
+            isSelected: false,
+            s3Url: result.location
           }
         }});
       } catch (e) {
-        console.error(`Post-upload APIs failed for ${file.name}`, e);
+        console.error('[ERROR] InitProjectModal - stem-job/create failed for', file.name, ':', e);
         showError(`Failed to process ${file.name}. Please try again.`);
       }
     }
 
     dispatch({ type: 'SET_UPLOADING', payload: false });
     dispatch({ type: 'SET_CURRENT_UPLOAD_INDEX', payload: 0 });
+    console.log('[DEBUG] InitProjectModal - Upload process completed');
     showSuccess('Files uploaded successfully!');
-  }, [state.uploadedFiles, projectId, user, showError, showSuccess]);
+  }, [state.uploadedFiles, projectId, stageId, showError, showSuccess]);
 
-  const handleComplete = () => { 
+  const handleComplete = async () => { 
+    console.log('[DEBUG] InitProjectModal - Complete button clicked');
+    console.log('[DEBUG] InitProjectModal - Completed files:', completedFiles.length);
+    console.log('[DEBUG] InitProjectModal - Stage ID:', stageId);
+    
     if (completedFiles.length === 0) {
+      console.log('[DEBUG] InitProjectModal - No completed files, showing error');
       showError('업로드된 파일이 없습니다. 파일을 업로드한 후 완료해주세요.');
       return;
     }
-    showSuccess('파일 업로드 완료'); 
-    onComplete();
+
+    try {
+      const mixingInitRequest = {
+        stageId: stageId,
+      };
+      
+      console.log('[DEBUG] InitProjectModal - Calling stem-job/request-mixing-init with:', mixingInitRequest);
+      const mixingInitResult = await stemJobService.requestMixingInit(mixingInitRequest);
+      console.log('[DEBUG] InitProjectModal - stem-job/request-mixing-init completed:', mixingInitResult);
+      
+      showSuccess('프로젝트 초기화 완료!'); 
+      onComplete();
+    } catch (error: any) {
+      console.error('[ERROR] InitProjectModal - Mixing init failed:', error);
+      showError(error.message || '믹싱 초기화에 실패했습니다.');
+    }
   };
 
   const completedFiles = state.uploadedFiles.filter(f => f.isComplete);
