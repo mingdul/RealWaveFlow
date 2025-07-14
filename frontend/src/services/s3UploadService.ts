@@ -66,30 +66,30 @@ class S3UploadService {
   async uploadImage(
     file: File,
     onProgress?: (progress: number) => void
-  ): Promise<string> {
+  ): Promise<{ imageUrl: string; key: string }> {
     try {
       console.log('[DEBUG] Requesting presigned URL for image...');
       const presignedResponse = await this.getImagePresignedUrl(
         file.name,
         file.type
       );
-
+  
       if (!presignedResponse.success || !presignedResponse.data) {
         throw new Error('이미지 presigned URL 요청 실패');
       }
-
-      const { uploadUrl } = presignedResponse.data;
-
-      return await new Promise<string>((resolve, reject) => {
+  
+      const { uploadUrl, key } = presignedResponse.data;
+  
+      const imageUrl = await new Promise<string>((resolve, reject) => {
         const xhr = new XMLHttpRequest();
-
+  
         xhr.upload.onprogress = (event) => {
           if (event.lengthComputable && onProgress) {
             const progress = Math.round((event.loaded * 100) / event.total);
             onProgress(progress);
           }
         };
-
+  
         xhr.onload = () => {
           if (xhr.status >= 200 && xhr.status < 300) {
             const cleanUrl = uploadUrl.split('?')[0];
@@ -98,19 +98,22 @@ class S3UploadService {
             reject(new Error(`S3 업로드 실패: HTTP ${xhr.status}`));
           }
         };
-
+  
         xhr.onerror = () => {
           reject(new Error('이미지 업로드 중 네트워크 오류'));
         };
-
+  
         xhr.open('PUT', uploadUrl);
         xhr.setRequestHeader('Content-Type', file.type);
         xhr.send(file);
       });
+  
+      return { imageUrl, key };
     } catch (error: any) {
       throw new Error(`이미지 업로드 실패: ${error.message}`);
     }
   }
+  
 
   /**
    * presigned URL 요청
