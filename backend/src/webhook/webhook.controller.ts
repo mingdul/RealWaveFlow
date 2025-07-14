@@ -164,13 +164,30 @@ export class WebhookController {
                 if (stem) {
                     this.logger.log(`작업 완료 처리 성공: ${data.stemId} -> ${stem.id}`);
                     
-                    // 웹소켓으로 처리 완료 알림 전송
+                    // 원본 StemJob에서 stage_id 가져오기
+                    const originalJob = await this.stemJobService.findJobById(data.stemId);
+                    const stageId = originalJob?.stage_id || data.trackId; // fallback으로 trackId 사용
+                    
+                    // 스템 작업 완료 이벤트 전송
+                    await this.chatGateway.sendStemJobCompleted(data.userId, {
+                        stemId: data.stemId,
+                        trackId: data.trackId,
+                        stageId: stageId,
+                        fileName: data.original_filename || 'Unknown',
+                        stemHash: stem.stem_hash,
+                        audioWavePath: data.audio_wave_path,
+                    });
+                    
+                    // 기존 파일 처리 완료 이벤트도 유지 (하위 호환성)
                     this.chatGateway.sendFileProcessingCompleted(data.userId, {
                         trackId: data.trackId,
                         fileName: data.original_filename || 'Unknown',
                         result: data.result,
                         processingTime: data.processing_time || 0,
                     });
+                    
+                    // 해당 스테이지의 모든 스템 작업 완료 여부 확인
+                    await this.checkAndNotifyAllStemJobsCompleted(data.userId, data.trackId, stageId);
                 } else {
                     this.logger.error(`StemJob을 Stem으로 변환 실패: ${data.stemId}`);
                 }
@@ -178,6 +195,15 @@ export class WebhookController {
             } else {
                 // 실패 시 클라이언트에게 오류 알림
                 this.logger.error(`작업 완료 실패: ${data.stemId}`);
+                
+                // 스템 작업 실패 이벤트 전송
+                await this.chatGateway.sendStemJobFailed(data.userId, {
+                    stemId: data.stemId,
+                    trackId: data.trackId,
+                    stageId: data.trackId, // fallback으로 trackId 사용
+                    fileName: data.original_filename || 'Unknown',
+                    error: data.result?.error || '알 수 없는 오류',
+                });
                 
                 this.chatGateway.sendFileProcessingError(data.userId, {
                     trackId: data.trackId,
@@ -279,6 +305,43 @@ export class WebhookController {
                 error: error.message,
                 stageId: data.stageId
             };
+        }
+    }
+
+    /**
+     * 해당 스테이지의 모든 스템 작업 완료 여부를 확인하고 알림을 보냅니다.
+     * @param userId 사용자 ID
+     * @param trackId 트랙 ID
+     * @param stageId 스테이지 ID
+     */
+    private async checkAndNotifyAllStemJobsCompleted(userId: string, trackId: string, stageId: string): Promise<void> {
+        try {
+            // 해당 스테이지의 모든 StemJob 조회
+            const stemJobs = await this.stemJobService.findJobsByStageId(stageId);
+            
+            // 완료된 스템 작업들 (Stem으로 변환된 것들)
+            const completedStems = await this.stemJobService.findCompletedStemsByStageId(stageId);
+            
+            // 모든 스템 작업이 완료되었는지 확인
+            const totalJobs = stemJobs.length;
+            const completedCount = completedStems.length;
+            
+            if (totalJobs > 0 && totalJobs === completedCount) {
+                this.logger.log(`모든 스템 작업 완료: ${stageId} (${completedCount}/${totalJobs})`);
+                
+                // 모든 스템 작업 완료 이벤트 전송
+                await this.chatGateway.sendAllStemJobsCompleted(userId, {
+                    trackId: trackId,
+                    stageId: stageId,
+                    completedStems: completedStems.map(stem => ({
+                        stemId: stem.id,
+                        fileName: stem.file_name,
+                        stemHash: stem.stem_hash,
+                    })),
+                });
+            }
+        } catch (error) {
+            this.logger.error(`스템 작업 완료 확인 중 오류: ${stageId}`, error);
         }
     }
 }

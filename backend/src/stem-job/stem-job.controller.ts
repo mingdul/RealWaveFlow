@@ -71,7 +71,7 @@ export class StemJobController {
         description: initData.stage_description,
         track_id: track.data.id,
         user_id: req.user.id,
-        status : 'done',
+        status : 'approve',
       });
       
       this.logger.log(`Stage 생성 완료: ${stage.data.id}`);

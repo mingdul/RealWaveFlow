@@ -2,15 +2,21 @@ import React, { createContext, useContext, useEffect, useState, ReactNode } from
 import socketService from '../services/socketService';
 import { useAuth } from './AuthContext';
 import { useToast } from './ToastContext';
+import { io, Socket } from 'socket.io-client';
 
 interface SocketContextType {
+  socket: Socket | null;
   isConnected: boolean;
   onlineUsers: number;
   socketId: string | undefined;
   sendMessage: (message: string) => void;
   ping: () => void;
-  connect: () => Promise<void>;
+  connect: () => void;
   disconnect: () => void;
+  stemJobStatus: Record<string, 'pending' | 'completed' | 'failed'>;
+  completedStems: string[];
+  failedStems: string[];
+  resetStemJobStatus: () => void;
 }
 
 const SocketContext = createContext<SocketContextType | undefined>(undefined);
@@ -20,48 +26,166 @@ interface SocketProviderProps {
 }
 
 export const SocketProvider: React.FC<SocketProviderProps> = ({ children }) => {
+  const [socket, setSocket] = useState<Socket | null>(null);
   const [isConnected, setIsConnected] = useState(false);
   const [onlineUsers, setOnlineUsers] = useState(0);
   const [socketId, setSocketId] = useState<string | undefined>();
   
-  const { user, logout } = useAuth();
-  const { showToast } = useToast();
+  const { user, logout, isAuthenticated } = useAuth();
+  const { showToast, showSuccess, showError } = useToast();
+  
+  // 스템 작업 상태 관리
+  const [stemJobStatus, setStemJobStatus] = useState<Record<string, 'pending' | 'completed' | 'failed'>>({});
+  const [completedStems, setCompletedStems] = useState<string[]>([]);
+  const [failedStems, setFailedStems] = useState<string[]>([]);
 
   useEffect(() => {
-    // 사용자가 로그인한 경우에만 소켓 연결 시도
-    if (user) {
-      initializeSocket();
+    if (isAuthenticated && user) {
+      connect();
     } else {
-      // 로그아웃 시 소켓 연결 해제
-      handleDisconnect();
+      disconnect();
     }
 
-    // 컴포넌트 언마운트 시 소켓 정리
     return () => {
-      socketService.destroy();
+      disconnect();
     };
-  }, [user]);
+  }, [isAuthenticated, user]);
 
-  const initializeSocket = async () => {
-    try {
-      // 소켓 이벤트 콜백 설정
-      socketService.setCallbacks({
-        onConnect: handleConnect,
-        onDisconnect: handleDisconnect,
-        onMessage: handleMessage,
-        onOnlineUsers: handleOnlineUsers,
-        onUnauthorized: handleUnauthorized,
-        onError: handleError,
-      });
-
-      // 소켓 연결 시도
-      await socketService.connect();
-      console.log('Socket connection successful');
-      
-    } catch (error) {
-      console.error('Socket connection failed:', error);
-      showToast('error', 'Failed to connect to the server.');
+  const connect = () => {
+    if (!isAuthenticated || !user) {
+      console.log('Socket connection skipped: User not authenticated');
+      return;
     }
+
+    const token = localStorage.getItem('token');
+    if (!token) {
+      console.log('Socket connection skipped: No token found');
+      return;
+    }
+
+    const socketUrl = process.env.REACT_APP_WEBSOCKET_URL || 'http://localhost:3000';
+    
+    const newSocket = io(socketUrl, {
+      auth: {
+        token: token
+      },
+      transports: ['websocket', 'polling'],
+      withCredentials: true,
+    });
+
+    newSocket.on('connect', () => {
+      console.log('WebSocket connected');
+      setIsConnected(true);
+    });
+
+    newSocket.on('disconnect', () => {
+      console.log('WebSocket disconnected');
+      setIsConnected(false);
+    });
+
+    newSocket.on('connected', (data) => {
+      console.log('Socket authentication successful:', data);
+    });
+
+    // 파일 처리 이벤트 리스너들
+    newSocket.on('file-duplicate', (data) => {
+      console.log('File duplicate detected:', data);
+      showError(data.message || '중복 파일이 감지되었습니다.');
+    });
+
+    newSocket.on('processing-approved', (data) => {
+      console.log('Processing approved:', data);
+      showSuccess(data.message || '파일 처리가 승인되었습니다.');
+    });
+
+    newSocket.on('file-processing-progress', (data) => {
+      console.log('File processing progress:', data);
+      // 진행 상태 업데이트 로직 추가 가능
+    });
+
+    newSocket.on('file-processing-completed', (data) => {
+      console.log('File processing completed:', data);
+      showSuccess(data.message || '파일 처리가 완료되었습니다.');
+    });
+
+    newSocket.on('file-processing-error', (data) => {
+      console.log('File processing error:', data);
+      showError(data.message || '파일 처리 중 오류가 발생했습니다.');
+    });
+
+    // 스템 작업 완료 이벤트 리스너들 (새로 추가)
+    newSocket.on('stem-job-completed', (data) => {
+      console.log('Stem job completed:', data);
+      
+      // 스템 작업 상태 업데이트
+      setStemJobStatus(prev => ({
+        ...prev,
+        [data.stemId]: 'completed'
+      }));
+      
+      // 완료된 스템 목록에 추가
+      setCompletedStems(prev => {
+        if (!prev.includes(data.stemId)) {
+          return [...prev, data.stemId];
+        }
+        return prev;
+      });
+      
+      // 실패 목록에서 제거 (재시도 성공 시)
+      setFailedStems(prev => prev.filter(id => id !== data.stemId));
+      
+      showSuccess(data.message || '스템 작업이 완료되었습니다.');
+    });
+
+    newSocket.on('stem-job-failed', (data) => {
+      console.log('Stem job failed:', data);
+      
+      // 스템 작업 상태 업데이트
+      setStemJobStatus(prev => ({
+        ...prev,
+        [data.stemId]: 'failed'
+      }));
+      
+      // 실패한 스템 목록에 추가
+      setFailedStems(prev => {
+        if (!prev.includes(data.stemId)) {
+          return [...prev, data.stemId];
+        }
+        return prev;
+      });
+      
+      // 완료 목록에서 제거
+      setCompletedStems(prev => prev.filter(id => id !== data.stemId));
+      
+      showError(data.message || '스템 작업 중 오류가 발생했습니다.');
+    });
+
+    newSocket.on('all-stem-jobs-completed', (data) => {
+      console.log('All stem jobs completed:', data);
+      showSuccess(data.message || '모든 스템 작업이 완료되었습니다.');
+    });
+
+    newSocket.on('forceLogout', (data) => {
+      console.log('Force logout:', data);
+      showError(data.reason || '세션이 만료되었습니다. 다시 로그인해주세요.');
+      // 로그아웃 처리 로직 추가 필요
+    });
+
+    setSocket(newSocket);
+  };
+
+  const disconnect = () => {
+    if (socket) {
+      socket.disconnect();
+      setSocket(null);
+      setIsConnected(false);
+    }
+  };
+
+  const resetStemJobStatus = () => {
+    setStemJobStatus({});
+    setCompletedStems([]);
+    setFailedStems([]);
   };
 
   const handleConnect = (data: any) => {
@@ -135,17 +259,8 @@ export const SocketProvider: React.FC<SocketProviderProps> = ({ children }) => {
     }
   };
 
-  const connect = async () => {
-    if (user && !isConnected) {
-      await initializeSocket();
-    }
-  };
-
-  const disconnect = () => {
-    socketService.disconnect();
-  };
-
   const value: SocketContextType = {
+    socket,
     isConnected,
     onlineUsers,
     socketId,
@@ -153,6 +268,10 @@ export const SocketProvider: React.FC<SocketProviderProps> = ({ children }) => {
     ping,
     connect,
     disconnect,
+    stemJobStatus,
+    completedStems,
+    failedStems,
+    resetStemJobStatus,
   };
 
   return (
