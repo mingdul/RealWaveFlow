@@ -130,53 +130,78 @@ const StagePage: React.FC = () => {
 
   const StemSetCard: React.FC<StemSetCardProps> = ({
     index, isPlaying, seek, onPlayToggle, onSeek, onDetail
-  }) => (
-    <div
-      className="relative w-[320px] h-[200px] flex flex-col items-center justify-end shadow-lg"
-      style={{
-        backgroundImage: `url(${tapeImg})`,
-        backgroundSize: 'cover',
-        backgroundPosition: 'center',
-        borderRadius: '16px',
-        boxShadow: '0 4px 16px rgba(0,0,0,0.3)'
-      }}
-    >
-      {/* 카드 타이틀 */}
-      <div className="absolute top-8 left-0 w-full text-center text-xl font-bold text-black drop-shadow">
-        AWSOME MIX VOL #{index + 1}
-      </div>
-      {/* Seek Bar */}
-      <input
-        type="range"
-        min={0}
-        max={100}
-        value={seek}
-        onChange={e => onSeek(Number(e.target.value))}
-        className="w-3/4 mb-2 accent-purple-700"
-        style={{ zIndex: 2 }}
-      />
-      {/* 버튼 영역 */}
-      <div className="flex items-center gap-3 mb-4 z-10">
-        <button
-          onClick={onPlayToggle}
-          className="w-10 h-10 flex items-center justify-center rounded-full bg-purple-700 text-white shadow-lg hover:bg-purple-800 border-2 border-white"
-          aria-label={isPlaying ? '정지' : '재생'}
+  }) => {
+    const [isHovered, setIsHovered] = useState(false);
+    return (
+      <div
+        className="relative w-[320px] h-[200px] flex flex-col items-center justify-end shadow-lg"
+        style={{
+          backgroundImage: `url(${tapeImg})`,
+          backgroundSize: 'cover',
+          backgroundPosition: 'center',
+          borderRadius: '16px',
+          boxShadow: '0 4px 16px rgba(0,0,0,0.3)'
+        }}
+        onMouseEnter={() => setIsHovered(true)}
+        onMouseLeave={() => setIsHovered(false)}
+      >
+        {/* 카드 타이틀 */}
+        <div className="absolute top-8 left-0 w-full text-center text-xl font-bold text-black drop-shadow">
+          AWSOME MIX #{index + 1}
+        </div>
+        {/* Hover 시 나타나는 오버레이 */}
+        <div
+          className={`absolute left-0 top-0 w-full px-6 py-4 flex items-start justify-center transition-all duration-300 z-20
+            ${isHovered ? 'opacity-100 translate-y-0' : 'opacity-0 -translate-y-4 pointer-events-none'}`}
+          style={{
+            background: 'rgba(30,30,30,0.85)',
+            borderTopLeftRadius: 16,
+            borderTopRightRadius: 16,
+            minHeight: 80,
+          }}
         >
-          {isPlaying ? (
-            <svg width="20" height="20" fill="currentColor" viewBox="0 0 20 20"><rect x="4" y="4" width="4" height="12" rx="1"/><rect x="12" y="4" width="4" height="12" rx="1"/></svg>
-          ) : (
-            <svg width="20" height="20" fill="currentColor" viewBox="0 0 20 20"><polygon points="4,4 16,10 4,16"/></svg>
-          )}
-        </button>
-        <button
-          onClick={onDetail}
-          className="px-4 py-2 rounded-full bg-yellow-300 text-black font-semibold shadow hover:bg-yellow-400 border-2 border-white"
+          <span className="text-white text-sm text-center leading-relaxed">
+            The drum files were amazing, but I didn't like the vocal files. This stage requires a vocal upgrade .....
+          </span>
+        </div>
+        {/* Seek Bar + 버튼 fade in */}
+        <div
+          className={`w-full flex flex-col items-center transition-all duration-300 z-10
+            ${isHovered ? 'opacity-100 translate-y-0' : 'opacity-0 translate-y-4 pointer-events-none'}`}
         >
-          Detail
-        </button>
+          <input
+            type="range"
+            min={0}
+            max={100}
+            value={seek}
+            onChange={e => onSeek(Number(e.target.value))}
+            className="w-3/4 mb-2 accent-purple-700"
+            style={{ zIndex: 2 }}
+          />
+          {/* 버튼 영역 */}
+          <div className="flex items-center gap-3 mb-4">
+            <button
+              onClick={onPlayToggle}
+              className="w-10 h-10 flex items-center justify-center rounded-full bg-purple-700 text-white shadow-lg hover:bg-purple-800 border-2 border-white"
+              aria-label={isPlaying ? '정지' : '재생'}
+            >
+              {isPlaying ? (
+                <svg width="20" height="20" fill="currentColor" viewBox="0 0 20 20"><rect x="4" y="4" width="4" height="12" rx="1"/><rect x="12" y="4" width="4" height="12" rx="1"/></svg>
+              ) : (
+                <svg width="20" height="20" fill="currentColor" viewBox="0 0 20 20"><polygon points="4,4 16,10 4,16"/></svg>
+              )}
+            </button>
+            <button
+              onClick={onDetail}
+              className="px-4 py-2 rounded-full bg-yellow-300 text-black font-semibold shadow hover:bg-yellow-400 border-2 border-white"
+            >
+              Detail
+            </button>
+          </div>
+        </div>
       </div>
-    </div>
-  );
+    );
+  };
 
   // Stem Set 카드 상태 관리용 목업 (실제 구현 시 API 연동 필요)
   const [playingIndex, setPlayingIndex] = useState<number | null>(null);
@@ -189,7 +214,7 @@ const StagePage: React.FC = () => {
   };
   const handleDetail = (idx: number) => {
     // 추후 상세 모달 구현 예정
-    alert(`Detail for AWSOME MIX VOL #${idx + 1}`);
+    alert(`Detail for AWSOME MIX #${idx + 1}`);
   };
 
   return (
