@@ -13,36 +13,8 @@ import { getTrackStages, createStage, getStageDetail } from '../services/stageSe
 
 interface TrackPageProps {}
 
-// Mock stem data for demonstration
-const mockStems = [
-  {
-    id: '1',
-    name: 'Drums_Main.wav',
-    category: 'Drums',
-    duration: '3:45',
-    size: '42.1 MB',
-    uploader: 'ANDY',
-    uploadDate: '25.06.22'
-  },
-  {
-    id: '2',
-    name: 'Bass_Groove.wav',
-    category: 'Bass',
-    duration: '3:45',
-    size: '38.7 MB',
-    uploader: 'MAX',
-    uploadDate: '25.06.27'
-  },
-  {
-    id: '3',
-    name: 'Vocal_Main.wav',
-    category: 'Vocals',
-    duration: '3:45',
-    size: '51.3 MB',
-    uploader: 'SELLY',
-    uploadDate: '25.07.02'
-  }
-];
+// TODO: 실제 스템 데이터 API 호출로 대체 필요
+const mockStems: any[] = [];
 
 const TrackPage: React.FC<TrackPageProps> = () => {
   const { trackId } = useParams<{ trackId: string }>();
@@ -52,7 +24,6 @@ const TrackPage: React.FC<TrackPageProps> = () => {
   const [loading, setLoading] = useState(true);
   const [isOpenStageModalOpen, setIsOpenStageModalOpen] = useState(false);
   const [isStemListModalOpen, setIsStemListModalOpen] = useState(false);
-  const [selectedStage, setSelectedStage] = useState<Stage | null>(null);
   const { user } = useAuth();
 
   // 트랙 데이터와 스테이지 목록 로드
@@ -63,11 +34,11 @@ const TrackPage: React.FC<TrackPageProps> = () => {
       try {
         setLoading(true);
         
-        // Mock 트랙 데이터 - 실제 구현에서는 API 호출로 대체
+        // TODO: 실제 트랙 API 호출로 대체 필요
         const mockTrack: Track = {
           id: trackId,
           name: '버전 넘버',
-          description: '드럼 메세지 드럼이랑 베이스 바꾼 버전입니다. 드럼 메세지 드럼이랑 베이스 바꾼 버전입니다. 드럼 메세지 드럼이랑 베이스 바꾼 버전입니다. 드럼 메세지 드럼이랑 베이스 바꾼 버전입니다.',
+          description: '드럼 메세지 드럼이랑 베이스 바꾼 버전입니다.',
           genre: 'Blues rock',
           bpm: '165 BPM',
           key_signature: 'A minor',
@@ -84,13 +55,12 @@ const TrackPage: React.FC<TrackPageProps> = () => {
 
         setTrack(mockTrack);
 
-        // 실제 스테이지 목록 가져오기
+        // 스테이지 목록 가져오기
         const trackStages = await getTrackStages(trackId);
         setStages(trackStages);
 
       } catch (error) {
         console.error('Failed to load track data:', error);
-        // 스테이지가 없는 경우 빈 배열로 설정
         setStages([]);
       } finally {
         setLoading(false);
@@ -118,10 +88,7 @@ const TrackPage: React.FC<TrackPageProps> = () => {
     console.log('Rolling back track:', track?.id);
   };
 
-  const handleStageSelect = (stage: Stage) => {
-    setSelectedStage(stage);
-    console.log('Selected stage:', stage.title);
-  };
+
 
   const handleStageClick = async (stage: Stage) => {
     try {
@@ -162,7 +129,7 @@ const TrackPage: React.FC<TrackPageProps> = () => {
       setStages(prevStages => [...prevStages, newStage]);
       
       console.log('New stage created:', newStage);
-      console.log('Reviewers:', reviewers);
+      // TODO: Reviewers 기능 구현 필요
       
       setIsOpenStageModalOpen(false);
     } catch (error) {
@@ -207,10 +174,7 @@ const TrackPage: React.FC<TrackPageProps> = () => {
 
         <StageHistory
           stages={stages}
-          onStageSelect={(stage) => {
-            handleStageSelect(stage);
-            handleStageClick(stage);
-          }}
+          onStageSelect={handleStageClick}
           onOpenStageClick={() => setIsOpenStageModalOpen(true)}
         />
       </div>
@@ -225,7 +189,7 @@ const TrackPage: React.FC<TrackPageProps> = () => {
         isOpen={isStemListModalOpen}
         onClose={() => setIsStemListModalOpen(false)}
         stems={mockStems}
-        versionNumber={selectedStage?.version.toString() || '1'}
+        versionNumber={stages.length > 0 ? Math.max(...stages.map(s => s.version)).toString() : '1'}
       />
     </div>
   );
