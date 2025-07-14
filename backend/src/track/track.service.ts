@@ -50,10 +50,7 @@ export class TrackService {
 
     async findTrackById(id: string) {
         const track = await this.trackRepository.findOne({
-            where: { 
-                id, 
-                status: 'producing' 
-            },
+            where: { id },
             relations: ['owner_id', 'collaborators', 'collaborators.user_id'],
         });
 
@@ -67,7 +64,7 @@ export class TrackService {
     async findTracksByOwner(ownerId: string) {
         console.log('[DEBUG] findTracksByOwner ownerId:', ownerId);
         const tracks = await this.trackRepository.find({
-            where: { owner_id: { id: ownerId } },
+            where: { owner_id: { id: ownerId }, status: 'producing' },
             order: { updated_date: 'DESC' },
             relations: ['owner_id', 'collaborators', 'collaborators.user_id'],
         });
@@ -81,7 +78,7 @@ export class TrackService {
         console.log('[DEBUG] findTracksByCollaborator userId:', userId);
         // 사용자가 협업자로 포함된 트랙 조회
         const collaboratorTracks = await this.trackCollaboratorRepository.find({
-            where: { user_id: { id: userId } },
+            where: { user_id: { id: userId } , status: 'producing' },
             relations: ['track_id', 'track_id.owner_id', 'track_id.collaborators', 'track_id.collaborators.user_id'],
         });
         console.log('[DEBUG] findTracksByCollaborator collaboratorTracks:', collaboratorTracks);
