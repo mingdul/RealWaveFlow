@@ -31,6 +31,11 @@ const CreateTrackModal: React.FC<CreateTrackModalProps> = ({ onClose, onSubmit }
 
   const handleImageUpload = (e: React.ChangeEvent<HTMLInputElement>) => {
     const file = e.target.files?.[0];
+
+    if (file && !file.type.startsWith('image/')) {
+      showError('이미지 파일만 업로드할 수 있습니다.');
+      return;
+    }
     if (file) {
       setCoverImage(file);
       const reader = new FileReader();
