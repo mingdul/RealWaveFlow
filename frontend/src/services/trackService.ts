@@ -150,6 +150,19 @@ class TrackService {
       throw new Error(error.response?.data?.message || '협업자 제거에 실패했습니다.');
     }
   }
+
+
+  async updateTrackStatus(trackId: string, status: string): Promise<ApiResponse> {
+    try {
+      const response = await apiClient.put<ApiResponse>(
+        `/tracks/status/${trackId}/${status}`
+      );
+      return response.data;
+    } catch (error: any) {
+      throw new Error(error.response?.data?.message || '트랙 상태 업데이트에 실패했습니다.');
+    }
+  }
 }
+
 
 export default new TrackService(); 

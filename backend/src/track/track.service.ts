@@ -1,4 +1,4 @@
-import { Injectable, NotFoundException, ForbiddenException } from '@nestjs/common';
+import { Injectable, NotFoundException, ForbiddenException, BadRequestException } from '@nestjs/common';
 import { InjectRepository } from '@nestjs/typeorm';
 import { Repository } from 'typeorm';
 import { Track } from './track.entity';
@@ -29,13 +29,31 @@ export class TrackService {
         });
 
         await this.trackRepository.save(track);
+
+
         console.log('[DEBUG] Track created successfully:', track);
         return { success: true, message: 'Track created successfully', data: track  };
     }
 
+
+    async updateTrackStatus(trackId: string, status: string) {
+        const track = await this.trackRepository.findOne({ where: { id: trackId } });
+        if (!track) {
+            throw new NotFoundException('Track not found');
+        }
+  
+        track.status = status;
+        await this.trackRepository.save(track);
+        return { success: true, message: 'Track status updated successfully', data: track };
+    }
+
+
     async findTrackById(id: string) {
         const track = await this.trackRepository.findOne({
-            where: { id },
+            where: { 
+                id, 
+                status: 'producing' 
+            },
             relations: ['owner_id', 'collaborators', 'collaborators.user_id'],
         });
 

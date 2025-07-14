@@ -24,6 +24,19 @@ export class TrackController {
         return this.trackService.createTrack(createTrackDto, req.user.id);
     }
 
+    @Put('/status/:trackId/:status')
+    @ApiOperation({ summary: '트랙 상태 업데이트', description: '트랙 상태를 업데이트합니다.' })
+    @ApiParam({ name: 'trackId', description: '트랙 ID' })
+    @ApiParam({ name: 'status', description: '트랙 상태' })
+    @ApiResponse({ status: 200, description: '트랙 상태 업데이트 성공' })
+    @ApiResponse({ status: 404, description: '트랙을 찾을 수 없음' })
+    @ApiResponse({ status: 400, description: '트랙 상태 업데이트 실패' })
+    async updateTrackStatus(@Param('trackId') trackId: string, @Param('status') status: string) {
+        return this.trackService.updateTrackStatus(trackId, status);
+    }
+
+
+
     @Get()
     @ApiOperation({ summary: '내 트랙 조회', description: '현재 사용자가 소유한 트랙들을 조회합니다.' })
     @ApiResponse({ status: 200, description: '내 트랙 목록 조회 성공' })

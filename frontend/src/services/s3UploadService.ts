@@ -45,6 +45,9 @@ class S3UploadService {
         {
           fileName,
           contentType,
+        },
+        {
+          withCredentials: true,
         }
       );
       return response.data;

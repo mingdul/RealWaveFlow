@@ -7,6 +7,7 @@ import { useToast } from '../contexts/ToastContext';
 import s3UploadService from '../services/s3UploadService';
 import stemJobService from '../services/stemJobService';
 import StepProgress from './StepProgress';
+import trackService from '../services/trackService';
 
 // Types
 interface UploadedFile {
@@ -447,7 +448,7 @@ const InitProjectModal: React.FC<InitProjectModalProps> = ({
       console.log('[DEBUG] InitProjectModal - Calling stem-job/request-mixing-init with:', mixingInitRequest);
       const mixingInitResult = await stemJobService.requestMixingInit(mixingInitRequest);
       console.log('[DEBUG] InitProjectModal - stem-job/request-mixing-init completed:', mixingInitResult);
-      
+      await trackService.updateTrackStatus(projectId, 'producing');
       showSuccess('프로젝트 초기화 완료!'); 
       onComplete();
     } catch (error: any) {
