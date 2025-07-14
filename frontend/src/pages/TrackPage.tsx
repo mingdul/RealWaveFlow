@@ -152,7 +152,9 @@ const TrackPage: React.FC<TrackPageProps> = () => {
   const getActiveStage = () => {
     const activeStage = stages.find(stage => stage.status === 'active');
     console.log('[DEBUG][TrackPage] Active stage:', activeStage, 'All stages:', stages);
-    isActiveStage = activeStage?.status === 'active';
+    if (activeStage) {
+      isActiveStage = true;
+    }
     return activeStage;
   };
 
