@@ -61,29 +61,8 @@ const TrackPage: React.FC<TrackPageProps> = () => {
         setStages(trackStages || []);
         console.log('[DEBUG][TrackPage] Loaded stages:', trackStages);
       } catch (error) {
-<<<<<<< Updated upstream
-        console.error('[DEBUG][TrackPage] Failed to load track data:', error);
-        // 스테이지 목록 로드 실패 시 목업 데이터 사용
-        setStages([
-          {
-            id: 'stage-1',
-            title: 'Initial Version',
-            description: 'First version of the track',
-            version: 1,
-            status: 'active',
-            created_at: '2025-01-08T10:00:00Z',
-            track: { id: trackId || '1' } as any,
-            user: { id: '1', username: 'SELLY' } as any,
-            stage_reviewers: [],
-            version_stems: [],
-            upstreams: [],
-            guide_path: undefined
-          }
-        ]);
-=======
         console.error('Failed to load track data:', error);
         setStages([]);
->>>>>>> Stashed changes
       } finally {
         setLoading(false);
         console.log('[DEBUG][TrackPage] Loading finished');
