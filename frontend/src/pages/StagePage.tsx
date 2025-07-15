@@ -1,4 +1,4 @@
-import React, { useState, useEffect } from 'react';
+import React, { useState, useEffect, useRef } from 'react';
 import { useParams } from 'react-router-dom';
 import { Upload, Bell, Settings } from 'lucide-react';
 import Logo from '../components/Logo';
@@ -7,6 +7,7 @@ import trackService from '../services/trackService';
 import { getStageDetail } from '../services/stageService';
 import { getStageUpstreams } from '../services/upstreamService';
 import { getStageReviewers } from '../services/stageReviewerService';
+import streamingService from '../services/streamingService';
 import { Track, Stage, Upstream, StageReviewer } from '../types/api';
 import tapeActive from '../assets/activeTape.png';
 import tapeApproved from '../assets/approveTape.png';
@@ -156,9 +157,14 @@ const StagePage: React.FC = () => {
               aria-label={isPlaying ? '정지' : '재생'}
             >
               {isPlaying ? (
-                <svg width="20" height="20" fill="currentColor" viewBox="0 0 20 20"><rect x="4" y="4" width="4" height="12" rx="1" /><rect x="12" y="4" width="4" height="12" rx="1" /></svg>
+                <svg width="16" height="16" fill="currentColor" viewBox="0 0 24 24">
+                  <rect x="6" y="4" width="4" height="16" rx="1" />
+                  <rect x="14" y="4" width="4" height="16" rx="1" />
+                </svg>
               ) : (
-                <svg width="20" height="20" fill="currentColor" viewBox="0 0 20 20"><polygon points="4,4 16,10 4,16" /></svg>
+                <svg width="16" height="16" fill="currentColor" viewBox="0 0 24 24">
+                  <path d="M8 5v14l11-7z"/>
+                </svg>
               )}
             </button>
             <button
@@ -175,14 +181,58 @@ const StagePage: React.FC = () => {
 
   const [playingIndex, setPlayingIndex] = useState<number | null>(null);
   const [seekValues, setSeekValues] = useState<number[]>([]);
+  const [audioUrl, setAudioUrl] = useState<string | null>(null);
+  const audioRef = useRef<HTMLAudioElement | null>(null);
   
   // upstreams가 변경될 때 seekValues 배열도 업데이트
   useEffect(() => {
     setSeekValues(upstreams.map(() => 0));
   }, [upstreams]);
 
-  const handlePlayToggle = (idx: number) => {
-    setPlayingIndex(playingIndex === idx ? null : idx);
+  // 오디오 URL이 설정되면 자동 재생
+  useEffect(() => {
+    if (audioUrl && audioRef.current) {
+      audioRef.current.play().catch(error => {
+        console.error('Failed to play audio:', error);
+        setPlayingIndex(null);
+        setAudioUrl(null);
+      });
+    }
+  }, [audioUrl]);
+
+  const handlePlayToggle = async (idx: number, upstream: Upstream) => {
+    if (playingIndex === idx) {
+      // 현재 재생 중인 경우 정지
+      if (audioRef.current) {
+        audioRef.current.pause();
+        audioRef.current = null;
+      }
+      setPlayingIndex(null);
+      setAudioUrl(null);
+    } else {
+      // 다른 업스트림 재생 시작
+      if (playingIndex !== null && audioRef.current) {
+        audioRef.current.pause();
+        audioRef.current = null;
+      }
+      
+      try {
+        // upstream의 guide_path가 있는지 확인
+        if (upstream.guide_path && track) {
+          const response = await streamingService.getGuidePresignedUrl(upstream.guide_path, track.id);
+          if (response.success && response.data) {
+            setAudioUrl(response.data.presignedUrl);
+            setPlayingIndex(idx);
+          } else {
+            console.error('Failed to get guide presigned URL:', response.message);
+          }
+        } else {
+          console.log('No guide path available for this upstream');
+        }
+      } catch (error) {
+        console.error('Error playing guide:', error);
+      }
+    }
   };
   
   const handleSeek = (idx: number, value: number) => {
@@ -300,7 +350,7 @@ const StagePage: React.FC = () => {
                 upstream={upstream}
                 isPlaying={playingIndex === idx}
                 seek={seekValues[idx]}
-                onPlayToggle={() => handlePlayToggle(idx)}
+                onPlayToggle={() => handlePlayToggle(idx, upstream)}
                 onSeek={value => handleSeek(idx, value)}
                 onDetail={() => handleDetail(upstream)}
               />
@@ -317,6 +367,24 @@ const StagePage: React.FC = () => {
           projectName={track ? track.title : "Loading..."}
           stageId={stageId}
           onComplete={handleUploadComplete} 
+        />
+      )}
+      
+      {/* 오디오 엘리먼트 */}
+      {audioUrl && (
+        <audio
+          ref={audioRef}
+          src={audioUrl}
+          onEnded={() => {
+            setPlayingIndex(null);
+            setAudioUrl(null);
+          }}
+          onError={(e) => {
+            console.error('Audio playback error:', e);
+            setPlayingIndex(null);
+            setAudioUrl(null);
+          }}
+          style={{ display: 'none' }}
         />
       )}
     </div>
