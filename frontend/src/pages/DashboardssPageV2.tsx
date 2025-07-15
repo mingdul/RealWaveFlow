@@ -261,12 +261,6 @@ const DashboardPagess = () => {
             </div>
           </div>
         </div>
-        
-        {/* 하단 기본 정보 (항상 표시) */}
-        <div className="p-4">
-          <h3 className="text-white text-lg font-semibold mb-1 truncate">{track.title}</h3>
-          <p className="text-gray-400 text-sm truncate">{track.genre || 'Genre not specified'}</p>
-        </div>
       </div>
     );
   };
