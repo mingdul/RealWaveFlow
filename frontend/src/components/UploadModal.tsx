@@ -36,6 +36,7 @@ interface UploadState {
   isUploading: boolean;
   currentUploadIndex: number;
   isLoadingStems: boolean;
+  description: string;
 }
 
 interface UploadModalProps {
@@ -72,6 +73,8 @@ const uploadReducer = (state: UploadState, action: any): UploadState => {
       return { ...state, currentUploadIndex: action.payload };
     case 'SET_LOADING_STEMS':
       return { ...state, isLoadingStems: action.payload };
+    case 'SET_DESCRIPTION':
+      return { ...state, description: action.payload };
     default:
       return state;
   }
@@ -256,6 +259,33 @@ const StemListPanel: React.FC<{
           })}
         </tbody>
       </table>
+      
+      {/* Add New Stem Section */}
+      <div className="mt-6 pt-6 border-t border-gray-700">
+        <div className="flex items-center justify-between mb-4">
+          <h3 className="text-white text-lg font-semibold">Add New Stem</h3>
+        </div>
+        
+        <div>
+          <input
+            type="file"
+            id="add-new-stem-input"
+            accept=".wav,.mp3,.aiff,.flac,.m4a,.ogg"
+            onChange={(e) => handleFileSelection(e)}
+            className="hidden"
+          />
+          <label
+            htmlFor="add-new-stem-input"
+            className="flex items-center justify-center p-6 border-2 border-dashed border-gray-600 rounded-lg cursor-pointer hover:border-purple-500 hover:bg-purple-900/10 transition-all duration-200"
+          >
+            <div className="text-center">
+              <Upload size={24} className="text-purple-400 mb-2 mx-auto" />
+              <p className="text-white font-medium">Add New Stem</p>
+              <p className="text-gray-400 text-sm">Select audio file to add as new stem</p>
+            </div>
+          </label>
+        </div>
+      </div>
     </div>
   );
 };
@@ -495,7 +525,8 @@ const UploadModal: React.FC<UploadModalProps> = ({
     existingStems: [],
     isUploading: false,
     currentUploadIndex: 0,
-    isLoadingStems: false
+    isLoadingStems: false,
+    description: ''
   });
 
   // Load existing stems
@@ -609,15 +640,39 @@ const UploadModal: React.FC<UploadModalProps> = ({
     }
 
     try {
+      // stem_set과 new_category_stem 데이터 구성
+      const stemSet: any[] = [];
+      const newCategoryStem: any[] = [];
+
+      completedFiles.forEach(file => {
+        if (file.matchedStemId) {
+          // 기존 스템 교체
+          stemSet.push({
+            oldStem: file.matchedStemId,
+            newStem: file.id // 실제로는 업로드 후 생성된 stem ID를 사용해야 함
+          });
+        } else {
+          // 새로운 카테고리 스템
+          newCategoryStem.push({
+            categoryName: file.tag || 'OTHER',
+            newStemId: file.id // 실제로는 업로드 후 생성된 stem ID를 사용해야 함
+          });
+        }
+      });
+
       // 업스트림 생성
       const upstreamData = {
-        title: `Stem Set ${new Date().toLocaleString()}`,
-        description: `Uploaded ${completedFiles.length} stems`,
-        stage_id: stageId,
-        user_id: user?.id || '',
+        upstream: {
+          title: `Stem Set ${new Date().toLocaleString()}`,
+          description: state.description || `Uploaded ${completedFiles.length} stems`,
+          stage_id: stageId,
+          user_id: user?.id || '',
+        },
+        stem_set: stemSet,
+        new_category_stem: newCategoryStem
       };
 
-      const response = await createUpstream(upstreamData);
+      const response = await createUpstream(upstreamData as any);
       if (response.success) {
         showSuccess('Stem set created successfully!');
         onComplete();
@@ -678,6 +733,24 @@ const UploadModal: React.FC<UploadModalProps> = ({
 
         {/* Content */}
         <div className="flex-1 p-6 overflow-auto">
+          {/* Stem Set Description */}
+          <div className="mb-6">
+            <label className="block text-gray-400 text-sm font-medium mb-2">
+              Stem Set Description
+            </label>
+            <textarea
+              value={state.description}
+              onChange={(e) => dispatch({ type: 'SET_DESCRIPTION', payload: e.target.value })}
+              placeholder="Enter description for this stem set..."
+              className="w-full bg-gray-700 text-white rounded-lg px-4 py-3 border border-gray-600 focus:outline-none focus:ring-2 focus:ring-purple-500 resize-none"
+              rows={3}
+              maxLength={200}
+            />
+            <div className="text-right text-gray-500 text-xs mt-1">
+              {state.description.length}/200
+            </div>
+          </div>
+
           {/* Upload Progress */}
           {state.isUploading && (
             <div className="mb-6 p-4 bg-gray-700 rounded-lg">
