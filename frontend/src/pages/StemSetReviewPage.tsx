@@ -34,6 +34,7 @@ import {
   ZoomOut,
   Trash2,
   Edit2,
+  Square
 } from 'lucide-react';
 
 // Comment interface updated to match backend response
@@ -649,7 +650,7 @@ const StemSetReviewPage = () => {
       className='relative min-h-screen space-y-6 overflow-hidden bg-cover bg-center'
       style={{ backgroundImage: "url('/background.jpg')" }}
     >
-      <div className='absolute inset-0 bg-black bg-opacity-60'>
+      <div className='absolute inset-0 bg-black bg-opacity-80'>
         {/* Header */}
         <div className='border-b border-[#595959] bg-[#262626] px-6 py-4'>
           <div className='flex items-center justify-between'>
@@ -692,16 +693,14 @@ const StemSetReviewPage = () => {
         </div>
 
         {/* 🔽 Header 아래로 이동된 버튼들 */}
-        <div className='z-50 flex flex-col gap-2 px-6 pt-4'>
+        <div className="flex justify-end space-x-4 mt-4">
           <button
             onClick={() => setShowHistory(!showHistory)}
             className='self-start rounded bg-[#3a3a3a] px-3 py-1 text-sm hover:bg-[#555]'
           >
             Show History
           </button>
-        </div>
 
-        <div className='z-50 flex flex-col gap-2 px-6 pt-4'>
           <button
             onClick={() => setShowCommentList(!showCommentList)}
             className='self-start rounded bg-[#3a3a3a] px-3 py-1 text-sm hover:bg-[#555]'
@@ -1062,7 +1061,7 @@ const StemSetReviewPage = () => {
             onClick={stopPlayback}
             className='ml-6 text-white hover:text-gray-300'
           >
-            <Pause size={20} />
+            <Square size={20} />
           </button>
           <button
             onClick={togglePlay}
