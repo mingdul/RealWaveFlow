@@ -40,14 +40,14 @@ const TrackInfoCard: React.FC<TrackInfoCardProps> = ({
         <div className="flex-shrink-0">
           <PresignedImage
             trackId={track.id}
-            alt={track.name}
+            alt={track.title}
             className="w-80 h-80 rounded-lg shadow-lg object-cover"
           />
         </div>
         {/* Track Details */}
         <div className="flex-1">
           {/* Track Info */}
-          <h2 className="text-4xl font-bold text-white mb-2">{track.name}</h2>
+          <h2 className="text-4xl font-bold text-white mb-2">{track.title}</h2>
           <p className="text-gray-400 text-lg mb-4">{track.created_date}</p>
           <div className="flex gap-6 mb-4">
             <span className="text-gray-400">{track.genre}</span>

@@ -223,7 +223,7 @@ const DashboardPage = () => {
           </div>
         )}
         <div className="p-4">
-          <h3 className="text-white text-lg font-semibold mb-1 truncate">{track.name}</h3>
+          <h3 className="text-white text-lg font-semibold mb-1 truncate">{track.title}</h3>
           <p className="text-gray-400 text-sm mb-2">{track.genre || 'Genre not specified'}</p>
           <p className="text-gray-500 text-xs">
             Updated {new Date(track.updated_date).toLocaleDateString('en-US')}
@@ -446,7 +446,7 @@ const DashboardPage = () => {
 // Edit Track Modal Component
 const EditTrackModal = ({ track, onClose, onSubmit }: { track: Track, onClose: () => void, onSubmit: (trackId: string, data: any) => void }) => {
   const [formData, setFormData] = useState({
-    name: track.name,
+    title: track.title,
     description: track.description || '',
     genre: track.genre || '',
     bpm: track.bpm || '',
@@ -467,8 +467,8 @@ const EditTrackModal = ({ track, onClose, onSubmit }: { track: Track, onClose: (
             <label className="block text-gray-300 text-sm mb-2">Track Name</label>
             <input
               type="text"
-              value={formData.name}
-              onChange={(e) => setFormData({ ...formData, name: e.target.value })}
+              value={formData.title}
+              onChange={(e) => setFormData({ ...formData, title: e.target.value })}
               className="w-full bg-gray-700 text-white rounded px-3 py-2"
               required
             />
