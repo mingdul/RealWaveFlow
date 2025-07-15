@@ -78,7 +78,7 @@ export class TrackService {
         console.log('[DEBUG] findTracksByCollaborator userId:', userId);
         // 사용자가 협업자로 포함된 트랙 조회
         const collaboratorTracks = await this.trackCollaboratorRepository.find({
-            where: { user_id: { id: userId } , status: 'producing' },
+            where: { user_id: { id: userId }, status: 'accepted' },
             relations: ['track_id', 'track_id.owner_id', 'track_id.collaborators', 'track_id.collaborators.user_id'],
         });
         console.log('[DEBUG] findTracksByCollaborator collaboratorTracks:', collaboratorTracks);

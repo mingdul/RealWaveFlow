@@ -91,7 +91,7 @@ const OpenStageModal: React.FC<OpenStageModalProps> = ({
             <textarea
               value={description}
               onChange={(e) => setDescription(e.target.value)}
-              placeholder="스테이지에 대한 리뷰를 작성하세요..."
+              placeholder="Enter description..."
               className="w-full h-32 p-4 bg-[#595959]/30 border border-[#595959]/50 rounded-lg text-[#D9D9D9] placeholder-[#BFBFBF] focus:outline-none focus:border-[#BFBFBF] focus:ring-1 focus:ring-[#BFBFBF]/50 transition-all duration-200 resize-none"
               rows={4}
             />
@@ -118,7 +118,7 @@ const OpenStageModal: React.FC<OpenStageModalProps> = ({
                 value={newReviewerEmail}
                 onChange={(e) => setNewReviewerEmail(e.target.value)}
                 onKeyPress={handleKeyPress}
-                placeholder="리뷰어 이메일을 입력하세요"
+                placeholder="Enter reviewer email"
                 className="bg-[#595959]/30 border-[#595959]/50 focus:border-[#BFBFBF] focus:ring-[#BFBFBF]/50"
               />
             </div>

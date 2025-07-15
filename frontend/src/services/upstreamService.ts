@@ -43,7 +43,7 @@ export const getUpstreamDetail = async (upstreamId: string) => {
 
 // 새로운 함수: 백엔드의 stem API 호출
 export const getUpstreamStems = async (upstreamId: string, trackId: string) => {
-  return await apiClient.get(`/stems/upstream/${upstreamId}/track/${trackId}`);
+  return await apiClient.get(`/stem/upstream/${upstreamId}/track/${trackId}`);
 };
 
 export default {

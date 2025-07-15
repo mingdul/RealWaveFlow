@@ -65,32 +65,24 @@ class StreamingService {
     }
   }
 
-  // 가이드 스템 파일 presigned URL 생성 ???????????????????????????????????/
-  async getGuidePresignedUrl(filePath: string, trackId: string): Promise<StreamingResponse<{
-    presignedUrl: string;
-    urlExpiresAt: string;
-  }>> {
-    try {
-      // 임시 UUID 생성 (guide를 위한 고정 UUID)
-      const generateTempUUID = () => {
-        return '00000000-0000-4000-8000-000000000000';
-      };
-
-      const response = await api.post('/streaming/stem/presigned', {
-        stemId: generateTempUUID(),
-        fileName: filePath.split('/').pop() || 'guide.wav',
-        filePath: filePath,
-        trackId: trackId,
-      });
-      return response.data;
-    } catch (error: any) {
-      console.error('Error fetching guide presigned URL:', error);
-      return {
-        success: false,
-        message: error.response?.data?.message || 'Failed to fetch guide presigned URL',
-      };
-    }
+// guidePath → stageId 기반으로 presigned URL 요청
+async getGuidePresignedUrlByStageId(stageId: string): Promise<StreamingResponse<{ presignedUrl: string; urlExpiresAt: string }>> {
+  try {
+    const response = await api.get(`/streaming/stage/${stageId}/guide`);
+    
+    // 백엔드가 직접 데이터 객체를 반환하므로 success wrapper로 감싸서 반환
+    return {
+      success: true,
+      data: response.data,
+    };
+  } catch (error: any) {
+    console.error('Error fetching guide streaming URL by stageId:', error);
+    return {
+      success: false,
+      message: error.response?.data?.message || 'Failed to fetch guide streaming URL',
+    };
   }
+}
 
   // 특정 버전의 마스터 스템 파일들 스트리밍 URL 조회
   async getMasterStemStreams(trackId: string, version: number): Promise<StreamingResponse<TrackStemsResponse>> {
@@ -175,6 +167,30 @@ class StreamingService {
       return {
         success: false,
         message: error.response?.data?.message || 'Failed to fetch upstream stems',
+      };
+    }
+  }
+
+  // 스테이지 가이드 파일 스트리밍 URL 조회
+  async getStageGuide(stageId: string): Promise<StreamingResponse<{
+    guidePath: string;
+    presignedUrl: string;
+    urlExpiresAt: string;
+    fileName: string;
+  }>> {
+    try {
+      const response = await api.get(`/streaming/stage/${stageId}/guide`);
+      
+      // 백엔드가 직접 데이터 객체를 반환하므로 success wrapper로 감싸서 반환
+      return {
+        success: true,
+        data: response.data,
+      };
+    } catch (error: any) {
+      console.error('Error fetching stage guide:', error);
+      return {
+        success: false,
+        message: error.response?.data?.message || 'Failed to fetch stage guide',
       };
     }
   }

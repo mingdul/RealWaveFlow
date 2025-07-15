@@ -234,7 +234,7 @@ const StagePage: React.FC = () => {
       try {
         // upstream의 guide_path가 있는지 확인
         if (upstream.guide_path && track) {
-          const response = await streamingService.getGuidePresignedUrl(upstream.guide_path, track.id);
+          const response = await streamingService.getGuidePresignedUrlByStageId(stageId || '');
           if (response.success && response.data) {
             setAudioUrl(response.data.presignedUrl);
             setPlayingIndex(idx);

@@ -92,7 +92,7 @@ export class EmailService {
 
     try {
       // 초대 URL 생성 (프론트엔드의 초대 수락 페이지로 연결)
-      const inviteUrl = `${process.env.FRONTEND_URL}/invite/accept/${inviteData.inviteToken}`;
+      const inviteUrl = `${process.env.FRONTEND_URL}/invite/${inviteData.inviteToken}`;
       
       // 만료 시간을 한국 시간대로 포맷팅
       const expiresAtFormatted = inviteData.expiresAt.toLocaleString('ko-KR', {
@@ -107,6 +107,8 @@ export class EmailService {
       // HTML 이메일 템플릿 생성
       const emailHtml = this.generateInviteEmailTemplate({
         ...inviteData,
+        trackName: inviteData.trackName,
+        inviterName: inviteData.inviterName,
         inviteUrl,
         expiresAtFormatted
       });
@@ -176,151 +178,481 @@ export class EmailService {
     expiresAtFormatted: string;
   }): string {
     return `
-<!DOCTYPE html>
-<html lang="ko">
-<head>
-    <meta charset="UTF-8">
-    <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>WaveFlow 트랙 초대</title>
-    <style>
-        body {
-            font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, 'Helvetica Neue', Arial, sans-serif;
-            line-height: 1.6;
-            color: #333;
-            max-width: 600px;
-            margin: 0 auto;
-            padding: 20px;
-            background-color: #111827;
-        }
-        .container {
-            background: white;
-            border-radius: 12px;
-            padding: 40px;
-            box-shadow: 0 4px 6px rgba(0, 0, 0, 0.1);
-        }
-        .header {
-            text-align: center;
-            margin-bottom: 30px;
-        }
-        .logo {
-            font-size: 28px;
-            font-weight: bold;
-            color: #6366f1;
-            margin-bottom: 10px;
-        }
-        .title {
-            font-size: 24px;
-            font-weight: 600;
-            color: #1f2937;
-            margin-bottom: 20px;
-        }
-        .content {
-            margin-bottom: 30px;
-        }
-        .track-info {
-            background: #f3f4f6;
-            border-radius: 8px;
-            padding: 20px;
-            margin: 20px 0;
-        }
-        .track-name {
-            font-size: 18px;
-            font-weight: 600;
-            color: #1f2937;
-            margin-bottom: 5px;
-        }
-        .inviter-name {
-            color: #6b7280;
-            font-size: 14px;
-        }
-        .cta-button {
-            display: inline-block;
-            background: linear-gradient(135deg, #6366f1 0%, #8b5cf6 100%);
-            color: white;
-            text-decoration: none;
-            padding: 16px 32px;
-            border-radius: 8px;
-            font-weight: 600;
-            font-size: 16px;
-            text-align: center;
-            margin: 20px 0;
-            transition: transform 0.2s;
-        }
-        .cta-button:hover {
-            transform: translateY(-2px);
-        }
-        .expire-info {
-            background: #fef3c7;
-            border: 1px solid #f59e0b;
-            border-radius: 6px;
-            padding: 12px;
-            margin: 20px 0;
-            font-size: 14px;
-            color: #92400e;
-        }
-        .footer {
-            text-align: center;
-            margin-top: 40px;
-            padding-top: 20px;
-            border-top: 1px solid #e5e7eb;
-            color: #6b7280;
-            font-size: 14px;
-        }
-        .link-fallback {
-            word-break: break-all;
-            background: #f3f4f6;
-            padding: 10px;
-            border-radius: 4px;
-            font-family: monospace;
-            font-size: 12px;
-            margin-top: 10px;
-        }
-    </style>
-</head>
-<body>
-    <div class="container">
-        <div class="header">
-            <div class="logo">WaveFlow</div>
-            <h1 class="title">트랙 협업 초대</h1>
-        </div>
-        
-        <div class="content">
-            <p>안녕하세요!</p>
-            <p><strong>${data.inviterName}</strong>님이 음악 협업 프로젝트에 초대했습니다.</p>
-            
-            <div class="track-info">
-                <div class="track-name">🎼 ${data.trackName}</div>
-                <div class="inviter-name">초대자: ${data.inviterName}</div>
-            </div>
-            
-            <p>아래 버튼을 클릭하여 초대를 수락하고 협업을 시작하세요!</p>
-            
-            <div style="text-align: center;">
-                <a href="${data.inviteUrl}" class="cta-button">
-                    초대 수락하기
-                </a>
-            </div>
-            
-            <div class="expire-info">
-                ⏰ <strong>만료 시간:</strong> ${data.expiresAtFormatted}<br>
-                이 초대 링크는 24시간 후 자동으로 만료됩니다.
-            </div>
-            
-            <p style="font-size: 14px; color: #6b7280;">
-                버튼이 작동하지 않는다면 아래 링크를 복사하여 브라우저에 붙여넣으세요:
-            </p>
-            <div class="link-fallback">
-                ${data.inviteUrl}
-            </div>
-        </div>
-        
-        <div class="footer">
-            <p>이 이메일은 WaveFlow 음악 협업 플랫폼에서 발송되었습니다.</p>
-            <p>초대를 원하지 않으시면 이 이메일을 무시하셔도 됩니다.</p>
-        </div>
-    </div>
-</body>
-</html>
+  <!DOCTYPE html>
+  <html lang="ko">
+  <head>
+      <meta charset="UTF-8">
+      <meta name="viewport" content="width=device-width, initial-scale=1.0">
+      <title>WaveFlow 트랙 초대</title>
+      <style>
+          @import url('https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600;700&display=swap');
+          
+          * {
+              margin: 0;
+              padding: 0;
+              box-sizing: border-box;
+          }
+          
+          body {
+              font-family: 'Inter', -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, sans-serif;
+              line-height: 1.6;
+              color: #1a1a1a;
+              background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+              padding: 20px;
+              min-height: 100vh;
+          }
+          
+          .email-wrapper {
+              max-width: 680px;
+              margin: 0 auto;
+              background: #ffffff;
+              border-radius: 24px;
+              overflow: hidden;
+              box-shadow: 0 25px 50px rgba(0, 0, 0, 0.15);
+          }
+          
+          .header {
+              background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+              padding: 40px 40px 60px;
+              text-align: center;
+              position: relative;
+              overflow: hidden;
+          }
+          
+          .header::before {
+              content: '';
+              position: absolute;
+              top: -50%;
+              left: -50%;
+              width: 200%;
+              height: 200%;
+              background: url('data:image/svg+xml,<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 100 100"><circle cx="50" cy="50" r="2" fill="rgba(255,255,255,0.1)"/><circle cx="25" cy="25" r="1.5" fill="rgba(255,255,255,0.08)"/><circle cx="75" cy="75" r="1" fill="rgba(255,255,255,0.06)"/><circle cx="20" cy="80" r="1.2" fill="rgba(255,255,255,0.05)"/><circle cx="90" cy="30" r="0.8" fill="rgba(255,255,255,0.04)"/></svg>');
+              animation: float 20s linear infinite;
+              opacity: 0.3;
+          }
+          
+          @keyframes float {
+              0% { transform: translate(0, 0) rotate(0deg); }
+              100% { transform: translate(-50px, -50px) rotate(360deg); }
+          }
+          
+          .logo {
+              position: relative;
+              z-index: 2;
+              font-size: 42px;
+              font-weight: 700;
+              color: #ffffff;
+              margin-bottom: 20px;
+              text-shadow: 0 2px 4px rgba(0,0,0,0.1);
+              display: flex;
+              align-items: center;
+              justify-content: center;
+              gap: 12px;
+          }
+          
+          .logo::before {
+              content: '🎵';
+              font-size: 48px;
+              animation: pulse 2s ease-in-out infinite;
+          }
+          
+          @keyframes pulse {
+              0%, 100% { transform: scale(1); }
+              50% { transform: scale(1.1); }
+          }
+          
+          .header-title {
+              position: relative;
+              z-index: 2;
+              font-size: 32px;
+              font-weight: 600;
+              color: #ffffff;
+              margin-bottom: 12px;
+              text-shadow: 0 2px 4px rgba(0,0,0,0.1);
+          }
+          
+          .header-subtitle {
+              position: relative;
+              z-index: 2;
+              font-size: 18px;
+              color: rgba(255, 255, 255, 0.9);
+              font-weight: 400;
+          }
+          
+          .content {
+              padding: 50px 40px 40px;
+              background: #ffffff;
+          }
+          
+          .greeting {
+              font-size: 18px;
+              color: #2d3748;
+              margin-bottom: 30px;
+              font-weight: 500;
+          }
+          
+          .track-showcase {
+              background: linear-gradient(135deg, #f7fafc 0%, #edf2f7 100%);
+              border: 2px solid #e2e8f0;
+              border-radius: 20px;
+              padding: 32px;
+              margin: 32px 0;
+              text-align: center;
+              position: relative;
+              overflow: hidden;
+          }
+          
+          .track-showcase::before {
+              content: '';
+              position: absolute;
+              top: -2px;
+              left: -2px;
+              right: -2px;
+              bottom: -2px;
+              background: linear-gradient(135deg, #667eea, #764ba2, #667eea);
+              border-radius: 22px;
+              z-index: -1;
+              animation: shimmer 3s ease-in-out infinite;
+          }
+          
+          @keyframes shimmer {
+              0%, 100% { opacity: 0.5; }
+              50% { opacity: 1; }
+          }
+          
+          .track-icon {
+              font-size: 64px;
+              margin-bottom: 16px;
+              display: block;
+              animation: bounce 2s ease-in-out infinite;
+          }
+          
+          @keyframes bounce {
+              0%, 100% { transform: translateY(0); }
+              50% { transform: translateY(-10px); }
+          }
+          
+          .track-name {
+              font-size: 28px;
+              font-weight: 700;
+              color: #1a202c;
+              margin-bottom: 12px;
+              background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+              -webkit-background-clip: text;
+              -webkit-text-fill-color: transparent;
+              background-clip: text;
+          }
+          
+          .inviter-info {
+              display: flex;
+              align-items: center;
+              justify-content: center;
+              gap: 8px;
+              font-size: 16px;
+              color: #4a5568;
+              margin-bottom: 20px;
+          }
+          
+          .inviter-name {
+              font-weight: 600;
+              color: #667eea;
+          }
+          
+          .collaboration-features {
+              display: grid;
+              grid-template-columns: repeat(auto-fit, minmax(150px, 1fr));
+              gap: 16px;
+              margin: 24px 0;
+              padding: 24px;
+              background: rgba(102, 126, 234, 0.05);
+              border-radius: 16px;
+              border: 1px solid rgba(102, 126, 234, 0.1);
+          }
+          
+          .feature-item {
+              text-align: center;
+              padding: 16px;
+              border-radius: 12px;
+              background: rgba(255, 255, 255, 0.8);
+              transition: all 0.3s ease;
+          }
+          
+          .feature-item:hover {
+              transform: translateY(-2px);
+              box-shadow: 0 8px 20px rgba(0, 0, 0, 0.1);
+          }
+          
+          .feature-icon {
+              font-size: 32px;
+              margin-bottom: 8px;
+              display: block;
+          }
+          
+          .feature-text {
+              font-size: 14px;
+              color: #4a5568;
+              font-weight: 500;
+          }
+          
+          .cta-container {
+              text-align: center;
+              margin: 40px 0;
+          }
+          
+          .cta-button {
+              display: inline-block;
+              background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+              color: white;
+              text-decoration: none;
+              padding: 20px 48px;
+              border-radius: 16px;
+              font-weight: 700;
+              font-size: 18px;
+              text-align: center;
+              transition: all 0.3s ease;
+              box-shadow: 0 8px 25px rgba(102, 126, 234, 0.3);
+              position: relative;
+              overflow: hidden;
+          }
+          
+          .cta-button::before {
+              content: '';
+              position: absolute;
+              top: 0;
+              left: -100%;
+              width: 100%;
+              height: 100%;
+              background: linear-gradient(90deg, transparent, rgba(255,255,255,0.2), transparent);
+              transition: left 0.5s ease;
+          }
+          
+          .cta-button:hover::before {
+              left: 100%;
+          }
+          
+          .cta-button:hover {
+              transform: translateY(-3px);
+              box-shadow: 0 12px 35px rgba(102, 126, 234, 0.4);
+          }
+          
+          .expire-warning {
+              background: linear-gradient(135deg, #fed7d7 0%, #feb2b2 100%);
+              border: 1px solid #fc8181;
+              border-radius: 12px;
+              padding: 20px;
+              margin: 32px 0;
+              text-align: center;
+              position: relative;
+          }
+          
+          .expire-warning::before {
+              content: '⏰';
+              font-size: 24px;
+              position: absolute;
+              left: 20px;
+              top: 50%;
+              transform: translateY(-50%);
+          }
+          
+          .expire-text {
+              font-size: 16px;
+              color: #c53030;
+              font-weight: 600;
+              margin-left: 40px;
+          }
+          
+          .expire-time {
+              font-size: 18px;
+              font-weight: 700;
+              color: #9b2c2c;
+              margin-top: 4px;
+          }
+          
+          .link-fallback {
+              background: #f7fafc;
+              border: 1px solid #e2e8f0;
+              border-radius: 8px;
+              padding: 16px;
+              margin: 20px 0;
+              font-family: 'Monaco', 'Consolas', monospace;
+              font-size: 14px;
+              color: #4a5568;
+              word-break: break-all;
+              text-align: left;
+          }
+          
+          .footer {
+              background: #f8f9fa;
+              padding: 40px;
+              text-align: center;
+              border-top: 1px solid #e9ecef;
+          }
+          
+          .footer-content {
+              max-width: 500px;
+              margin: 0 auto;
+          }
+          
+          .footer-title {
+              font-size: 18px;
+              font-weight: 600;
+              color: #495057;
+              margin-bottom: 16px;
+          }
+          
+          .footer-text {
+              font-size: 14px;
+              color: #6c757d;
+              line-height: 1.6;
+              margin-bottom: 8px;
+          }
+          
+          .social-links {
+              margin-top: 24px;
+              display: flex;
+              justify-content: center;
+              gap: 16px;
+          }
+          
+          .social-link {
+              display: inline-block;
+              width: 40px;
+              height: 40px;
+              background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+              border-radius: 50%;
+              color: white;
+              text-decoration: none;
+              font-size: 18px;
+              line-height: 40px;
+              transition: all 0.3s ease;
+          }
+          
+          .social-link:hover {
+              transform: translateY(-2px);
+              box-shadow: 0 4px 12px rgba(102, 126, 234, 0.3);
+          }
+          
+          @media (max-width: 600px) {
+              .email-wrapper {
+                  margin: 10px;
+                  border-radius: 16px;
+              }
+              
+              .header, .content, .footer {
+                  padding: 30px 20px;
+              }
+              
+              .logo {
+                  font-size: 36px;
+              }
+              
+              .header-title {
+                  font-size: 24px;
+              }
+              
+              .track-name {
+                  font-size: 22px;
+              }
+              
+              .collaboration-features {
+                  grid-template-columns: 1fr;
+              }
+              
+              .cta-button {
+                  padding: 18px 36px;
+                  font-size: 16px;
+              }
+          }
+      </style>
+  </head>
+  <body>
+      <div class="email-wrapper">
+          <div class="header">
+              <div class="logo">WaveFlow</div>
+              <h1 class="header-title">음악 협업 초대</h1>
+              <p class="header-subtitle">창의적인 음악 여행에 함께하세요</p>
+          </div>
+          
+          <div class="content">
+              <p class="greeting">안녕하세요! 🎶</p>
+              
+              <p style="font-size: 16px; color: #4a5568; margin-bottom: 24px;">
+                  <strong style="color: #667eea;">${data.inviterName}</strong>님이 특별한 음악 협업 프로젝트에 초대했습니다.
+              </p>
+              
+              <div class="track-showcase">
+                  <span class="track-icon">🎼</span>
+                  <div class="track-name">${data.trackName}</div>
+                  <div class="inviter-info">
+                      <span>👤</span>
+                      <span>초대자: <span class="inviter-name">${data.inviterName}</span></span>
+                  </div>
+              </div>
+              
+              <div class="collaboration-features">
+                  <div class="feature-item">
+                      <span class="feature-icon">🎹</span>
+                      <div class="feature-text">실시간 협업</div>
+                  </div>
+          
+                  <div class="feature-item">
+                      <span class="feature-icon">🎸</span>
+                      <div class="feature-text">스템 업로드</div>
+                  </div>
+                  <div class="feature-item">
+                      <span class="feature-icon">🎵</span>
+                      <div class="feature-text">음악 파일 버전 관리</div>
+                  </div>
+              </div>
+              
+              <p style="font-size: 16px; color: #4a5568; text-align: center; margin: 32px 0;">
+                  함께 음악을 만들어보세요! 아래 버튼을 클릭하여 협업을 시작하세요.
+              </p>
+              
+              <div class="cta-container">
+                  <a href="${data.inviteUrl}" class="cta-button">
+                      🎵 초대 수락하고 협업 시작하기
+                  </a>
+              </div>
+              
+              <div class="expire-warning">
+                  <div class="expire-text">초대 만료 시간</div>
+                  <div class="expire-time">${data.expiresAtFormatted}</div>
+                  <div style="font-size: 14px; color: #c53030; margin-top: 8px;">
+                      이 초대는 24시간 후 자동으로 만료됩니다.
+                  </div>
+              </div>
+              
+              <div style="margin-top: 40px; padding-top: 24px; border-top: 1px solid #e2e8f0;">
+                  <p style="font-size: 14px; color: #6b7280; margin-bottom: 12px;">
+                      버튼이 작동하지 않는다면 아래 링크를 복사하여 브라우저에 붙여넣으세요:
+                  </p>
+                  <div class="link-fallback">
+                      ${data.inviteUrl}
+                  </div>
+              </div>
+          </div>
+          
+          <div class="footer">
+              <div class="footer-content">
+                  <h3 class="footer-title">🎵 WaveFlow</h3>
+                  <p class="footer-text">
+                      음악가들을 위한 최고의 협업 플랫폼
+                  </p>
+                  <p class="footer-text">
+                      이 이메일은 WaveFlow에서 발송되었습니다. 초대를 원하지 않으시면 이 이메일을 무시하셔도 됩니다.
+                  </p>
+                  
+                  <div class="social-links">
+                      <a href="#" class="social-link">🎵</a>
+                      <a href="#" class="social-link">🎤</a>
+                      <a href="#" class="social-link">🎸</a>
+                  </div>
+              </div>
+          </div>
+      </div>
+  </body>
+  </html>
     `;
   }
 

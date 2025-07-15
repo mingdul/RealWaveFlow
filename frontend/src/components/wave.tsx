@@ -36,11 +36,12 @@ const Wave = ({
   const wavesurferRef = useRef<WaveSurfer | null>(null);
   const [isReady, setIsReady] = useState(false);
   const [isDestroyed, setIsDestroyed] = useState(false);
+  const currentAudioUrlRef = useRef<string>('');
 
+  // WaveSurfer 인스턴스 생성 (한 번만)
   useEffect(() => {
-    if (!waveRef.current || !timelineRef.current || !minimapRef.current || !audioUrl) return;
+    if (!waveRef.current || !timelineRef.current || !minimapRef.current) return;
 
-    setIsReady(false);
     setIsDestroyed(false);
 
     const wavesurfer = WaveSurfer.create({
@@ -88,13 +89,6 @@ const Wave = ({
       }
     });
 
-    // 오디오 로드
-    wavesurfer.load(audioUrl).catch((error) => {
-      if (error.name !== 'AbortError') {
-        console.warn('Failed to load audio:', error);
-      }
-    });
-
     return () => {
       setIsDestroyed(true);
       setIsReady(false);
@@ -106,7 +100,26 @@ const Wave = ({
         }
       }
     };
-  }, [audioUrl, waveColor, onReady, id]); // onSeek 의존성 제거
+  }, [waveColor, onReady, id]); // audioUrl 의존성 제거
+
+  // 오디오 URL 변경 시 로드만 다시 실행
+  useEffect(() => {
+    if (!wavesurferRef.current || !audioUrl || isDestroyed) return;
+    
+    // 이미 같은 URL이 로드되어 있으면 스킵
+    if (currentAudioUrlRef.current === audioUrl) return;
+
+    console.log(`🎵 Loading new audio URL for ${id}:`, audioUrl);
+    setIsReady(false);
+    currentAudioUrlRef.current = audioUrl;
+
+    // 오디오만 다시 로드
+    wavesurferRef.current.load(audioUrl).catch((error) => {
+      if (error.name !== 'AbortError') {
+        console.warn('Failed to load audio:', error);
+      }
+    });
+  }, [audioUrl, id, isDestroyed]);
 
   useEffect(() => {
     if (wavesurferRef.current && isReady && !isDestroyed) {
