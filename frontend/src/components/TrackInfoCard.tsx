@@ -13,6 +13,7 @@ interface TrackInfoCardProps {
   onShowAllStems?: () => void;
   onRollBack?: () => void;
   stemsLoading?: boolean;
+  versionNumber?: string;
 }
 
 const TrackInfoCard: React.FC<TrackInfoCardProps> = ({
@@ -20,6 +21,7 @@ const TrackInfoCard: React.FC<TrackInfoCardProps> = ({
   stems = [],
   onPlay,
   onShowAllStems,
+  versionNumber,
   onRollBack,
   stemsLoading = false
 }) => {
@@ -59,6 +61,10 @@ const TrackInfoCard: React.FC<TrackInfoCardProps> = ({
           <div className="mb-6">
             <h3 className="text-lg font-semibold text-white mb-2">{track.owner_id.username}</h3>
             <p className="text-gray-300 leading-relaxed">{track.description}</p>
+          </div>
+
+          <div className="mb-6">
+            <span className="text-gray-400">Version: {versionNumber}</span>
           </div>
 
           <div className="flex gap-4 mb-6">
