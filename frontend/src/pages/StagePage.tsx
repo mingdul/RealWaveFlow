@@ -275,7 +275,13 @@ const StagePage: React.FC = () => {
                 <span className='text-sm font-medium'>UPLOAD</span>
               </button>
             ) : (
-              <span className='text-gray-400 text-sm'>스테이지가 닫혀있습니다</span>
+              <button
+                className='flex items-center gap-2 rounded-md bg-gray-500 px-4 py-2 text-gray-300 cursor-not-allowed'
+                disabled
+              >
+                <Upload size={16} />
+                <span className='text-sm font-medium'>UPLOAD (스테이지가 닫혀있습니다)</span>
+              </button>
             )}
           </div>
         </div>
