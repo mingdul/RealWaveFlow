@@ -283,7 +283,7 @@ export class WebhookController {
     async handleMixingComplete(@Body() data: {
         task_id: string;
         stageId: string;
-        upstreamid: string;
+        upstreamId: string;
         status: string;
         mixed_file_path: string;
         waveform_data_path: string;
@@ -298,9 +298,9 @@ export class WebhookController {
                 // Guide 테이블에 믹싱 결과 저장
                 const guide = await this.guideService.createGuideFromMixing(data);
 
-                if(data.upstreamid != null){
+                if(data.upstreamId != null){
                     // upstreamId가 있으면 upstream의 guide_path 업데이트
-                    await this.upstreamService.updateUpstreamGuidePath(data.upstreamid, data.mixed_file_path);
+                    await this.upstreamService.updateUpstreamGuidePath(data.upstreamId, data.mixed_file_path);
                 }
                 // 기존 stage의 guide_path도 업데이트 (하위 호환성)
                 await this.stageService.updateGuidePath(data.stageId, data.mixed_file_path);
