@@ -82,21 +82,33 @@ const StemSetReviewPage = () => {
   const wavesurferRefs = useRef<{ [id: string]: WaveSurfer }>({});
   const [readyStates, setReadyStates] = useState<{ [id: string]: boolean }>({});
   const isSeeking = useRef(false); // 무한 루프 방지용 플래그
-  const { stageId: paramStageId } = useParams<{ stageId: string }>();
+  const { upstreamId: paramUpstreamId } = useParams<{ upstreamId: string }>();
   const [searchParams] = useSearchParams();
   const [stageId, setStageId] = useState<string | null>(null);
 
   // stageId 결정 로직 (URL 파라미터 또는 upstreamId로부터)
   useEffect(() => {
     const determineStageId = async () => {
-      // URL 파라미터에 stageId가 있으면 직접 사용
-      if (paramStageId) {
-        console.log('🎯 Using stageId from URL params:', paramStageId);
-        setStageId(paramStageId);
+      // URL 파라미터에 upstreamId가 있으면 upstream 정보를 통해 stageId 추출
+      if (paramUpstreamId) {
+        try {
+          console.log('🔍 Found upstreamId in URL params:', paramUpstreamId);
+          // upstream 정보를 가져와서 stageId 추출
+          const upstreamData = await getUpstreamDetail(paramUpstreamId);
+          const extractedStageId =
+            upstreamData.stage?.id || upstreamData.stage_id;
+          console.log('✅ Extracted stageId from upstream:', extractedStageId);
+          setStageId(extractedStageId);
+
+          // 선택된 upstream 설정 (나중에 사용할 수 있도록)
+          setSelectedUpstream(upstreamData);
+        } catch (error) {
+          console.error('❌ Error fetching upstream details:', error);
+        }
         return;
       }
 
-      // 쿼리 파라미터에 upstreamId가 있으면 upstream 정보를 통해 stageId 추출
+      // 쿼리 파라미터에 upstreamId가 있으면 upstream 정보를 통해 stageId 추출 (fallback)
       const upstreamId = searchParams.get('upstreamId');
       if (upstreamId) {
         try {
@@ -114,12 +126,12 @@ const StemSetReviewPage = () => {
           console.error('❌ Error fetching upstream details:', error);
         }
       } else {
-        console.log('⚠️ No stageId or upstreamId found in URL');
+        console.log('⚠️ No upstreamId found in URL');
       }
     };
 
     determineStageId();
-  }, [paramStageId, searchParams]);
+  }, [paramUpstreamId, searchParams]);
 
   // 상태 변경 추적을 위한 로그
   useEffect(() => {
