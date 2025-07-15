@@ -13,6 +13,8 @@ import { UpstreamReview } from 'src/upstream-review/upstream-review.entity';
 import { InviteLink } from 'src/invite/invite.entity';
 import { StemJob } from 'src/stem-job/stem-job.entity';
 import { Guide } from 'src/guide/guide.entity';
+import { InviteBatch } from 'src/invite/invite-batch.entity';
+import { InviteTarget } from 'src/invite/invite-target.entity';
 
 export const databaseConfig: TypeOrmModuleOptions = {
   type: 'postgres',
@@ -25,6 +27,8 @@ export const databaseConfig: TypeOrmModuleOptions = {
     User, 
     Track,
     InviteLink, 
+    InviteBatch,
+    InviteTarget,
     TrackCollaborator,
     Stage,
     StageReviewer,
