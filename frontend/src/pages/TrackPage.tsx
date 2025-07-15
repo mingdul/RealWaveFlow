@@ -215,7 +215,7 @@ const TrackPage: React.FC<TrackPageProps> = () => {
     console.log('[DEBUG][TrackPage] Loading...');
     console.log('[DEBUG][TrackPage] Loading...');
     return (
-      <div className="bg-black min-h-screen flex justify-center items-center">
+      <div className="bg-[#2a2a2a] min-h-screen flex justify-center items-center">
         <div className="animate-spin rounded-full h-12 w-12 border-b-2 border-white"></div>
       </div>
     );
@@ -225,7 +225,7 @@ const TrackPage: React.FC<TrackPageProps> = () => {
     console.log('[DEBUG][TrackPage] Track not found, track:', track);
     console.log('[DEBUG][TrackPage] Track not found, track:', track);
     return (
-      <div className="bg-black min-h-screen flex justify-center items-center">
+      <div className="bg-[#2a2a2a] min-h-screen flex justify-center items-center">
         <div className="text-center py-16">
           <h1 className="text-2xl font-bold text-gray-300">Track not found</h1>
         </div>
@@ -235,15 +235,14 @@ const TrackPage: React.FC<TrackPageProps> = () => {
   // Move debug log here to avoid linter error in JSX
   console.log('[DEBUG][TrackPage] Rendering main content. track:', track, 'stages:', stages);
   return (
-    <div className="bg-black min-h-screen">
+    <div className="bg-[#2a2a2a] min-h-screen">
       <TrackHeader 
         onBack={handleBack}
         onNotificationClick={() => console.log('Notification clicked')}
         onSettingsClick={() => console.log('Settings clicked')}
       />
 
-      {/* Main Content */}
-      <div className="px-8 py-12 max-w-7xl mx-auto">
+      <div className="px-6 py-8">
         <TrackInfoCard
           track={track}
           stems={stems}
@@ -254,16 +253,32 @@ const TrackPage: React.FC<TrackPageProps> = () => {
           onRollBack={handleRollBack}
         />
 
-        {/* Version History Section */}
-        <div className="mt-16">
-          <StageHistory
-            stages={stages}
-            onStageSelect={handleStageClick}
-            onOpenStageClick={() => setIsOpenStageModalOpen(true)}
-            disableStageOpening={isVersion1()} // 버전 1에서는 스테이지 열기 비활성화
-            isActiveStage={isActiveStage}
-          />
-        </div>
+        {/* 현재 활성 스테이지 정보 표시
+        {(() => {
+          const activeStage = getActiveStage();
+          if (!activeStage) return null;
+          return (
+            <div className="mb-8 p-6 rounded-lg bg-[#232323] border border-gray-700 shadow flex flex-col gap-2 max-w-2xl">
+              <div className="flex items-center gap-4 mb-2">
+                <span className="text-xl font-bold text-purple-400">STAGE INFO</span>
+                <span className="text-sm text-gray-400">(V{activeStage.version})</span>
+              </div>
+              <div className="text-lg text-white font-semibold mb-1">{activeStage.title}</div>
+              <div className="text-gray-300 mb-1">{activeStage.description}</div>
+              <div className="text-gray-400 text-sm mb-1">CREATED BY: {activeStage.user?.username || '-'}</div>
+              <div className="text-gray-500 text-xs">CREATED AT: {new Date(activeStage.created_at).toLocaleString('ko-KR')}</div>
+              <div className="text-gray-500 text-xs">STATUS: {activeStage.status}</div>
+            </div>
+          );
+        })()} */}
+
+        <StageHistory
+          stages={stages}
+          onStageSelect={handleStageClick}
+          onOpenStageClick={() => setIsOpenStageModalOpen(true)}
+          disableStageOpening={isVersion1()} // 버전 1에서는 스테이지 열기 비활성화
+          isActiveStage={isActiveStage}
+        />
       </div>
 
       <OpenStageModal
