@@ -495,6 +495,13 @@ const StemSetReviewPage = () => {
     }
   }, []);
 
+  useEffect(() => {
+    if (selectedUpstream?.id) {
+      loadComments(selectedUpstream.id);
+    }
+  }, [selectedUpstream, loadComments]);
+  
+
   // 댓글 삭제 함수
   const handleDeleteComment = useCallback(async (commentId: string) => {
     try {
