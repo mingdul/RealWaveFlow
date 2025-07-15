@@ -1,4 +1,3 @@
-// components/PresignedImage.tsx
 import React, { useEffect, useState } from 'react';
 import apiClient from '../lib/api';
 
@@ -19,40 +18,49 @@ const PresignedImage: React.FC<Props> = ({
 }) => {
   const [imageUrl, setImageUrl] = useState<string | null>(null);
   const [retryCount, setRetryCount] = useState(0);
+  const [isError, setIsError] = useState(false);
 
-  const fetchPresignedUrl = async () => {
-    try {
-      const response = await apiClient.get(`/images/${trackId}`);
-      setImageUrl(response.data.imageUrl);
-    } catch (err) {
-      console.error('presigned URL 요청 실패:', err);
-    }
-  };
-
+  // presigned URL 가져오기
   useEffect(() => {
-    fetchPresignedUrl();
-  }, [trackId]);
+    const fetchPresignedUrl = async () => {
+      try {
+        const response = await apiClient.get(`/images/${trackId}`);
+        setImageUrl(response.data.imageUrl);
+        setIsError(false);
+      } catch (err) {
+        console.error('presigned URL 요청 실패:', err);
+        setIsError(true);
+      }
+    };
 
+    fetchPresignedUrl();
+  }, [trackId, retryCount]);
+
+  // 이미지 로딩 실패 시 재시도 로직
   const handleImageError = () => {
     if (retryCount < maxRetries) {
       console.warn(`이미지 로딩 실패 → 재시도 (${retryCount + 1})`);
       setRetryCount((prev) => prev + 1);
-      fetchPresignedUrl();
     } else {
       console.error('이미지 재시도 초과');
-      setImageUrl('/default-cover.jpg'); // 기본 이미지 fallback (옵션)
+      setImageUrl('/default-cover.jpg'); // fallback 이미지
+      setIsError(false);
     }
   };
 
-  if (!imageUrl) {
+  // 로딩 또는 실패 상태 시 placeholder 보여주기 (애니메이션 제거 가능)
+  if (!imageUrl && !isError) {
     return (
-      <div className={`w-80 h-80 bg-gray-800 animate-pulse rounded-lg ${className}`} />
+      <div
+        className={`w-full h-full bg-neutral-800 rounded-lg ${className}`}
+        style={style}
+      />
     );
   }
 
   return (
     <img
-      src={imageUrl}
+      src={imageUrl || '/default-cover.jpg'}
       alt={alt}
       onError={handleImageError}
       className={className}
