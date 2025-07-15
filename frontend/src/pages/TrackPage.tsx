@@ -65,15 +65,15 @@ const TrackPage: React.FC<TrackPageProps> = () => {
       setStemsLoading(true);
       
       // status가 'active'인 스테이지 찾기
-      const activeStage = stages.find(stage => stage.status === 'active');
-      if (!activeStage) {
-        console.error('No active stage found');
+      const approvedStage = stages.find(stage => stage.status === 'approved');
+      if (!approvedStage) {
+        console.error('No approved stage found');
         setStems([]);
         return;
       }
 
       // 활성 스테이지의 버전으로 스템들 로드
-      const response = await streamingService.getMasterStemStreams(trackId, activeStage.version);
+      const response = await streamingService.getMasterStemStreams(trackId, approvedStage.version);
       if (response.data) {
         setStems(response.data.stems);
       } else {
