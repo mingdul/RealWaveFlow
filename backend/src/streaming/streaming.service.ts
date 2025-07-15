@@ -5,11 +5,15 @@ import { Stem } from '../stem/stem.entity';
 import { Track } from '../track/track.entity';
 import { Stage } from '../stage/stage.entity';
 import { VersionStem } from '../version-stem/version-stem.entity';
+import { Upstream } from '../upstream/upstream.entity';
 import { S3Service } from './s3.service';
 import { StemStreamingInfo, AudioMetadata, StemInfoDto, SimpleStemStreamingInfo } from './dto/streaming.dto';
 import { VersionStemService } from 'src/version-stem/version-stem.service';
 
-
+/**
+ * Guide Path 기반 스트리밍을 위한 추가 import
+ */
+import { GuidePathStreamingDto, GuidePathStreamingResponse } from './dto/streaming.dto';
 
 /**
  * Streaming Service
@@ -30,6 +34,8 @@ export class StreamingService {
     private stageRepository: Repository<Stage>,
     @InjectRepository(VersionStem)
     private versionStemRepository: Repository<VersionStem>,
+    @InjectRepository(Upstream)
+    private upstreamRepository: Repository<Upstream>,
     private versionStemService: VersionStemService,
     private s3Service: S3Service,
 
@@ -594,5 +600,187 @@ export class StreamingService {
   private getFileFormat(fileName: string): string {
     const extension = fileName.split('.').pop()?.toLowerCase();
     return extension || 'unknown';
+  }
+
+  /**
+   * Guide Path로 presigned URL 생성
+   * 
+   * @param guidePathInfo - 프론트엔드에서 제공한 guide path 정보
+   * @param userId - 요청한 사용자 ID
+   * @returns presigned URL과 메타데이터
+   * 
+   * 권한 검증: trackId를 통해 트랙 접근 권한 확인
+   */
+  async getGuidePathPresignedUrl(
+    guidePathInfo: GuidePathStreamingDto, 
+    userId: string
+  ): Promise<GuidePathStreamingResponse> {
+    // 권한 검증 - trackId를 통해 트랙 접근 권한 확인
+    await this.validateTrackAccess(guidePathInfo.trackId, userId);
+
+    // S3 presigned URL 생성 (1시간 유효)
+    const presignedUrl = await this.s3Service.getPresignedUrl(guidePathInfo.guidePath);
+    const expiresAt = new Date(Date.now() + 3600 * 1000).toISOString();
+
+    // 파일명 추출 (경로에서 마지막 부분)
+    const fileName = guidePathInfo.guidePath.split('/').pop() || 'guide.wav';
+
+    return {
+      guidePath: guidePathInfo.guidePath,
+      presignedUrl,
+      urlExpiresAt: expiresAt,
+      fileName,
+    };
+  }
+
+  /**
+   * 배치 Guide Path presigned URL 생성
+   * 
+   * @param guidePaths - 프론트엔드에서 제공한 guide paths 정보 배열
+   * @param userId - 요청한 사용자 ID
+   * @returns 모든 guide paths의 presigned URL과 메타데이터
+   * 
+   * 권한 검증: 각 guide path의 trackId를 통해 트랙 접근 권한 확인
+   */
+  async getBatchGuidePathPresignedUrls(
+    guidePaths: GuidePathStreamingDto[], 
+    userId: string
+  ): Promise<{
+    guidePaths: GuidePathStreamingResponse[];
+    urlExpiresAt: string;
+  }> {
+    if (guidePaths.length === 0) {
+      throw new NotFoundException('No guide paths provided');
+    }
+
+    // 권한 검증 - 모든 관련 트랙에 대한 접근 권한 확인
+    const trackIds = [...new Set(guidePaths.map(guide => guide.trackId))];
+    for (const trackId of trackIds) {
+      await this.validateTrackAccess(trackId, userId);
+    }
+
+    // presigned URL 생성
+    const paths = guidePaths.map(guide => guide.guidePath);
+    const presignedUrls = await this.s3Service.getBatchPresignedUrls(paths);
+
+    const expiresAt = new Date(Date.now() + 3600 * 1000).toISOString();
+
+    // 결과 구성
+    const streamingGuidePaths: GuidePathStreamingResponse[] = guidePaths.map(guide => ({
+      guidePath: guide.guidePath,
+      presignedUrl: presignedUrls[guide.guidePath],
+      urlExpiresAt: expiresAt,
+      fileName: guide.guidePath.split('/').pop() || 'guide.wav',
+    }));
+
+    return {
+      guidePaths: streamingGuidePaths,
+      urlExpiresAt: expiresAt,
+    };
+  }
+
+  /**
+   * Stage ID로 guide path 조회 후 스트리밍 URL 생성
+   * 
+   * @param stageId - Stage ID
+   * @param userId - 요청한 사용자 ID
+   * @returns guide path의 presigned URL과 메타데이터
+   * 
+   * 조회 순서: Stage.guide_path → Guide 엔티티 mixed_file_path
+   * 권한 검증: Stage → Track 경로로 트랙 접근 권한 확인
+   */
+  async getStageGuideStreamingUrl(
+    stageId: string, 
+    userId: string
+  ): Promise<GuidePathStreamingResponse> {
+    // Stage와 관련 엔티티들을 함께 조회
+    const stage = await this.stageRepository.findOne({
+      where: { id: stageId },
+      relations: ['track', 'guide'],
+    });
+
+    if (!stage) {
+      throw new NotFoundException('Stage not found');
+    }
+
+    // 권한 검증 - stage를 통해 트랙에 접근 권한 확인
+    if (!stage.track?.id) {
+      throw new NotFoundException('Track information not found for this stage');
+    }
+    await this.validateTrackAccess(stage.track.id, userId);
+
+    // guide path 결정 (우선순위: stage.guide_path → guide.mixed_file_path)
+    let guidePath: string | null = null;
+    let fileName = 'guide.wav';
+
+    if (stage.guide_path) {
+      guidePath = stage.guide_path;
+      fileName = stage.guide_path.split('/').pop() || 'guide.wav';
+    } else if (stage.guide?.mixed_file_path) {
+      guidePath = stage.guide.mixed_file_path;
+      fileName = stage.guide.mixed_file_path.split('/').pop() || 'guide.wav';
+    }
+
+    if (!guidePath) {
+      throw new NotFoundException('No guide file found for this stage');
+    }
+
+    // S3 presigned URL 생성 (1시간 유효)
+    const presignedUrl = await this.s3Service.getPresignedUrl(guidePath);
+    const expiresAt = new Date(Date.now() + 3600 * 1000).toISOString();
+
+    return {
+      guidePath,
+      presignedUrl,
+      urlExpiresAt: expiresAt,
+      fileName,
+    };
+  }
+
+  /**
+   * Upstream ID로 guide path 조회 후 스트리밍 URL 생성
+   * 
+   * @param upstreamId - Upstream ID
+   * @param userId - 요청한 사용자 ID
+   * @returns guide path의 presigned URL과 메타데이터
+   * 
+   * 권한 검증: Upstream → Stage → Track 경로로 트랙 접근 권한 확인
+   */
+  async getUpstreamGuideStreamingUrl(
+    upstreamId: string, 
+    userId: string
+  ): Promise<GuidePathStreamingResponse> {
+    // Upstream과 관련 엔티티들을 함께 조회
+    const upstream = await this.upstreamRepository.findOne({
+      where: { id: upstreamId },
+      relations: ['stage', 'stage.track'],
+    });
+
+    if (!upstream) {
+      throw new NotFoundException('Upstream not found');
+    }
+
+    // 권한 검증 - upstream을 통해 트랙에 접근 권한 확인
+    if (!upstream.stage?.track?.id) {
+      throw new NotFoundException('Track information not found for this upstream');
+    }
+    await this.validateTrackAccess(upstream.stage.track.id, userId);
+
+    if (!upstream.guide_path) {
+      throw new NotFoundException('No guide file found for this upstream');
+    }
+
+    // S3 presigned URL 생성 (1시간 유효)
+    const presignedUrl = await this.s3Service.getPresignedUrl(upstream.guide_path);
+    const expiresAt = new Date(Date.now() + 3600 * 1000).toISOString();
+
+    const fileName = upstream.guide_path.split('/').pop() || 'guide.wav';
+
+    return {
+      guidePath: upstream.guide_path,
+      presignedUrl,
+      urlExpiresAt: expiresAt,
+      fileName,
+    };
   }
 }
