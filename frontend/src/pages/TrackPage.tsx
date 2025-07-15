@@ -248,6 +248,7 @@ const TrackPage: React.FC<TrackPageProps> = () => {
           stems={stems}
           stemsLoading={stemsLoading}
           onPlay={handlePlay}
+          versionNumber={selectedStageVersion.toString()}
           onShowAllStems={handleShowAllStems}
           onRollBack={handleRollBack}
         />
