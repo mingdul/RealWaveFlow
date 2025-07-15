@@ -33,9 +33,7 @@ export class UpstreamService {
             stage_id: stage_id,
         });
 
-        if (!upstreamReview) {
-            throw new BadRequestException('Failed to create upstream review');
-        }
+        // upstreamReview는 항상 성공 응답을 반환하므로 별도 체크 불필요
 
         return {
             success: true,

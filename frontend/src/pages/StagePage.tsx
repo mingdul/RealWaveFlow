@@ -195,7 +195,7 @@ const StagePage: React.FC = () => {
   };
 
   // 스테이지가 닫혀있는지 확인
-  const isStageClosed = stage?.status === 'close';
+  const isStageClosed = stage?.status === 'close' || stage?.status === 'closed';
 
   if (loading) {
     return (
