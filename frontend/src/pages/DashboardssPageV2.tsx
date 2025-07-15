@@ -366,7 +366,8 @@ const DashboardPageV2 = () => {
       style={{ backgroundImage: "url('/background.jpg')" }}
     >
       {/* 어두운 오버레이 */}
-      <div className='absolute inset-0 bg-black bg-opacity-80'>
+      <div className='absolute inset-0 h-screen bg-black bg-opacity-80 flex flex-col'>
+
         {/* Header */}
         <header className='flex flex-shrink-0 items-center justify-between border-b border-gray-800 p-6'>
           {/* <div className="flex items-center space-x-3">
@@ -454,27 +455,27 @@ const DashboardPageV2 = () => {
 
           {/* Filter Buttons */}
           <div className="flex flex-row gap-4 justify-between">
-          <div className="flex gap-4">
-            <p className="text-white text-2xl">TRACKS</p>
+            <div className="flex gap-4">
+              <p className="text-white text-2xl">TRACKS</p>
+            </div>
+            {/* Filter Buttons */}
+            <div className="flex space-x-4 mb-8">
+              <Button
+                onClick={() => setFilter('owned')}
+                variant={filter === 'owned' ? 'primary' : 'secondary'}
+                className="flex items-center space-x-2"
+              >
+                <span>OWNED</span>
+              </Button>
+              <Button
+                onClick={() => setFilter('collaborated')}
+                variant={filter === 'collaborated' ? 'primary' : 'secondary'}
+                className="flex items-center space-x-2"
+              >
+                <span>COLLABORATED</span>
+              </Button>
+            </div>
           </div>
-          {/* Filter Buttons */}
-          <div className="flex space-x-4 mb-8">
-            <Button
-              onClick={() => setFilter('owned')}
-              variant={filter === 'owned' ? 'primary' : 'secondary'}
-              className="flex items-center space-x-2"
-            >
-              <span>OWNED</span>
-            </Button>
-            <Button
-              onClick={() => setFilter('collaborated')}
-              variant={filter === 'collaborated' ? 'primary' : 'secondary'}
-              className="flex items-center space-x-2"
-            >
-              <span>COLLABORATED</span>
-            </Button>
-          </div>
-        </div>
 
           {/* Content */}
           {isLoading ? (
