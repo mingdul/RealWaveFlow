@@ -4,7 +4,7 @@ class VersionStemService {
     
     async getLatestStemsPerCategoryByTrack(trackId: string, version: number) {
         try {
-            const response = await apiClient.get(`/version-stem/track/${trackId}/version/${version}`);
+            const response = await apiClient.get(`/version-stem/track/${trackId}/version-stem/${version}`);
             if(!response.data.success){
                 throw new Error(response.data.message);
             }
