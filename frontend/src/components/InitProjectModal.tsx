@@ -324,7 +324,7 @@ const InitProjectModal: React.FC<InitProjectModalProps> = ({
   const handleStartUpload = React.useCallback(async () => {
     console.log('[DEBUG] InitProjectModal - Starting upload process');
     dispatch({ type: 'SET_UPLOADING', payload: true });
-
+  
     const selectedFiles = state.uploadedFiles.filter(f => f.isSelected && !f.isComplete);
     console.log('[DEBUG] InitProjectModal - Selected files for upload:', selectedFiles.map(f => ({
       name: f.name,
@@ -332,98 +332,75 @@ const InitProjectModal: React.FC<InitProjectModalProps> = ({
       key: f.key,
       bpm: f.bpm,
     })));
-
-    // 1) S3 업로드 병렬 처리
-    console.log('[DEBUG] InitProjectModal - Starting S3 upload for', selectedFiles.length, 'files');
-    const uploadPromises = selectedFiles.map(fileToUpload => {
+  
+    // 병렬 업로드 및 바로 stem-job 처리
+    const uploadAndProcessPromises = selectedFiles.map((fileToUpload, index) => {
       if (!fileToUpload.file) {
         console.error('[ERROR] InitProjectModal - No file object for:', fileToUpload.name);
         return Promise.resolve({ error: true, id: fileToUpload.id });
       }
-
-      console.log('[DEBUG] InitProjectModal - Starting S3 upload for:', fileToUpload.name);
+  
       return s3UploadService.uploadFile(
         fileToUpload.file,
         projectId,
         (progress: UploadProgress) => {
           const pct = Math.floor((progress.uploadedBytes / progress.totalSize) * 100);
-          console.log('[DEBUG] InitProjectModal - Upload progress for', fileToUpload.name, ':', pct, '%');
           dispatch({ type: 'UPDATE_FILE', payload: { id: fileToUpload.id, updates: { uploadProgress: pct } } });
         }
       )
-        .then(result => {
+        .then(async result => {
           console.log('[DEBUG] InitProjectModal - S3 upload completed for', fileToUpload.name, ':', result);
-          return {
-            error: false,
-            id: fileToUpload.id,
-            result,
-            file: fileToUpload
+          dispatch({ type: 'SET_CURRENT_UPLOAD_INDEX', payload: index });
+  
+          if (!fileToUpload.tag || fileToUpload.tag.trim() === '') {
+            throw new Error(`Instrument is required for ${fileToUpload.name}`);
+          }
+  
+          const stemJobRequest = {
+            file_name: result.fileName,
+            file_path: result.key,
+            key: fileToUpload.key || '',
+            bpm: fileToUpload.bpm || '',
+            stage_id: stageId,
+            track_id: projectId,
+            instrument: fileToUpload.tag,
           };
+  
+          console.log('[DEBUG] InitProjectModal - Calling stem-job/create for', fileToUpload.name, ':', stemJobRequest);
+          const stemJobResult = await stemJobService.createStemJob(stemJobRequest);
+          console.log('[DEBUG] InitProjectModal - stem-job/create completed for', fileToUpload.name, ':', stemJobResult);
+  
+          dispatch({
+            type: 'UPDATE_FILE', payload: {
+              id: fileToUpload.id,
+              updates: {
+                uploadProgress: 100,
+                isComplete: true,
+                isSelected: false,
+                s3Url: result.location
+              }
+            }
+          });
+  
+          return { error: false };
         })
         .catch(err => {
-          console.error('[ERROR] InitProjectModal - S3 upload failed for', fileToUpload.name, ':', err);
-          return { error: true, id: fileToUpload.id };
+          console.error('[ERROR] InitProjectModal - Upload or stem-job/create failed for', fileToUpload.name, ':', err);
+          showError(`Failed to process ${fileToUpload.name}. Please try again.`);
+          return { error: true };
         });
     });
-
-    const s3Results = await Promise.all(uploadPromises);
-    console.log('[DEBUG] InitProjectModal - All S3 uploads completed:', s3Results);
-
-    // 2) 각 파일에 대해 stem-job/create 호출
-    console.log('[DEBUG] InitProjectModal - Starting stem-job/create calls');
-    for (let i = 0; i < s3Results.length; i++) {
-      const res = s3Results[i];
-      dispatch({ type: 'SET_CURRENT_UPLOAD_INDEX', payload: i });
-
-      if (res.error || !('file' in res) || !('result' in res)) {
-        console.log('[DEBUG] InitProjectModal - Skipping file due to error:', res);
-        continue;
-      }
-
-      const { file, result } = res as { error: false; id: string; result: any; file: UploadedFile };
-
-      try {
-        const stemJobRequest = {
-          file_name: result.fileName,
-          file_path: result.key,
-          key: file.key || '',
-          bpm: file.bpm || '',
-          stage_id: stageId,
-          track_id: projectId,
-          instrument: file.tag,
-        };
-
-        // Validate instrument is not empty
-        if (!file.tag || file.tag.trim() === '') {
-          throw new Error(`Instrument is required for ${file.name}`);
-        }
-
-        console.log('[DEBUG] InitProjectModal - Calling stem-job/create for', file.name, ':', stemJobRequest);
-        const stemJobResult = await stemJobService.createStemJob(stemJobRequest);
-        console.log('[DEBUG] InitProjectModal - stem-job/create completed for', file.name, ':', stemJobResult);
-
-        dispatch({
-          type: 'UPDATE_FILE', payload: {
-            id: file.id,
-            updates: {
-              uploadProgress: 100,
-              isComplete: true,
-              isSelected: false,
-              s3Url: result.location
-            }
-          }
-        });
-      } catch (e) {
-        console.error('[ERROR] InitProjectModal - stem-job/create failed for', file.name, ':', e);
-        showError(`Failed to process ${file.name}. Please try again.`);
-      }
-    }
-
+  
+    // 병렬 작업 전체 완료 대기
+    await Promise.all(uploadAndProcessPromises);
+  
     dispatch({ type: 'SET_UPLOADING', payload: false });
     dispatch({ type: 'SET_CURRENT_UPLOAD_INDEX', payload: 0 });
-    console.log('[DEBUG] InitProjectModal - Upload process completed');
-    showSuccess('Files uploaded successfully!');
+  
+    console.log('[DEBUG] InitProjectModal - Upload & stem-job process completed');
+    showSuccess('All files uploaded and processed!');
   }, [state.uploadedFiles, projectId, stageId, showError, showSuccess]);
+  
 
   const handleComplete = async () => {
     console.log('[DEBUG] InitProjectModal - Complete button clicked');
