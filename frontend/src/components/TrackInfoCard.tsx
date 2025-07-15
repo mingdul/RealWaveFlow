@@ -171,19 +171,20 @@ const TrackInfoCard: React.FC<TrackInfoCardProps> = ({
         {/* Track Details */}
         <div className="flex-1">
           <h2 className="text-4xl font-bold text-white mb-2">{track.title}</h2>
-          <div className="flex gap-6 mb-4">
-            <span className="text-gray-400">{track.genre}</span>
-            <span className="text-gray-400">{track.bpm}</span>
-            <span className="text-gray-400">{track.key_signature}</span>
+          <p className="text-gray-400 text-lg mb-4">Created: {track.created_date}</p>
+          <div className="flex gap-2 mb-4 flex-wrap">
+            <span className="px-3 py-1 bg-gray-100 text-sm text-gray-600 rounded-full">#{track.genre}</span>
+            <span className="px-3 py-1 bg-gray-100 text-sm text-gray-600 rounded-full">#{track.bpm}</span>
+            <span className="px-3 py-1 bg-gray-100 text-sm text-gray-600 rounded-full">#{track.key_signature}</span>
           </div>
 
           <div className="mb-6">
-            <h3 className="text-lg font-semibold text-white mb-2">{track.owner_id.username}</h3>
-            <p className="text-gray-300 leading-relaxed">{track.description}</p>
+            <h3 className="text-lg font-semibold text-white mb-2">Owner: {track.owner_id.username}</h3>
+            <p className="text-gray-300 leading-relaxed">Description: {track.description}</p>
           </div>
 
           <div className="mb-6">
-            <span className="text-gray-400">Version: {versionNumber}</span>
+            <h4 className="text-gray-400">Version: {versionNumber}</h4>
           </div>
 
           <div className="flex gap-4 mb-6">
