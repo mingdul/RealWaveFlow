@@ -9,6 +9,7 @@ import { useToast } from '../contexts/ToastContext';
 import s3UploadService from '../services/s3UploadService';
 import { createUpstream } from '../services/upstreamService';
 import versionstemService from '../services/versionstemService';
+import stemJobService from '../services/stemJobService';
 // import stemFileService from '../services/stemFileService';
 // import categoryService from '../services/categoryService';
 // import masterStemService from '../services/masterStemService';
@@ -695,18 +696,39 @@ const UploadModal: React.FC<UploadModalProps> = ({
             }
           );
 
-          // TODO: 여기서 실제 stem-job/create를 호출하여 stem ID를 받아와야 함
-          // 현재는 임시로 파일 ID를 사용
-          dispatch({ type: 'UPDATE_FILE', payload: {
-            id: file.id,
-            updates: {
-              uploadProgress: 100,
-              isComplete: true,
-              s3Url: uploadResult.location,
-              // TODO: 실제 stem ID로 교체 필요
-              stemId: file.id
+          // stem-job/create 호출하여 실제 stem job 생성
+          try {
+            const stemJobRequest = {
+              file_name: uploadResult.fileName,
+              file_path: uploadResult.key,
+              key: file.key || '',
+              bpm: file.bpm || '',
+              stage_id: stageId || '',
+              track_id: projectId,
+              instrument: file.tag,
+            };
+
+            console.log('[DEBUG] Creating stem job for:', file.name, stemJobRequest);
+            const stemJobResult = await stemJobService.createStemJob(stemJobRequest);
+            console.log('[DEBUG] Stem job created:', stemJobResult);
+
+            if (stemJobResult.success && (stemJobResult as any).job) {
+              dispatch({ type: 'UPDATE_FILE', payload: {
+                id: file.id,
+                updates: {
+                  uploadProgress: 100,
+                  isComplete: true,
+                  s3Url: uploadResult.location,
+                  stemId: (stemJobResult as any).job.id // 실제 stem job ID 사용
+                }
+              }});
+            } else {
+              throw new Error('Failed to create stem job');
             }
-          }});
+          } catch (stemJobError) {
+            console.error('[ERROR] Failed to create stem job for', file.name, ':', stemJobError);
+            showError(`Failed to process ${file.name}. Please try again.`);
+          }
 
         } catch (error) {
           console.error(`Upload failed for ${file.name}:`, error);
@@ -750,10 +772,16 @@ const UploadModal: React.FC<UploadModalProps> = ({
           });
         } else {
           // 새로운 카테고리 스템
-          newCategoryStem.push({
-            categoryName: file.tag || 'OTHER',
-            newStemId: file.stemId || file.id // 실제 stem ID 사용
-          });
+          if (file.stemId) {
+            newCategoryStem.push({
+              categoryName: file.tag || 'OTHER',
+              newStemId: file.stemId
+            });
+          } else {
+            console.error('No stem ID for file:', file.name);
+            showError(`No stem ID for ${file.name}. Please try uploading again.`);
+            return;
+          }
         }
       });
 
