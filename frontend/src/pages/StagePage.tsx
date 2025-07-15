@@ -51,9 +51,7 @@ const StagePage: React.FC = () => {
         
         // 스테이지 상세 정보 가져오기
         const stageResponse = await getStageDetail(stageId);
-        if (stageResponse.success) {
-          setStage(stageResponse.data);
-        }
+        setStage(stageResponse.data);
 
         // 업스트림 목록 가져오기
         const upstreamsResponse = await getStageUpstreams(stageId);
