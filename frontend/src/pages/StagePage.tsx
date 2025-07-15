@@ -7,8 +7,9 @@ import { Track } from '../types/api';
 import tapeActive from '../assets/activeTape.png';
 import tapeApproved from '../assets/approveTape.png';
 import tapeRejected from '../assets/rejectedTape.png';
+import { getTrackStages } from '../services/stageService';
 
-interface VocalUpdate {
+interface stageStemSet {
   id: string;
   title: string;
   artist: string;
@@ -17,16 +18,9 @@ interface VocalUpdate {
 }
 
 const StagePage: React.FC = () => {
-  const vocalUpdates: VocalUpdate[] = [
-    { id: '1', title: 'vocal update', artist: 'SALLY', status: 'ACTIVE' },
-    { id: '2', title: 'vocal update', artist: 'SALLY', status: 'APPROVED', description: "The drum files were amazing, but I didn't like the vocal files. This stage requires a vocal upgrade ....." },
-    { id: '3', title: 'vocal update', artist: 'SALLY', status: 'REJECTED' },
-    { id: '4', title: 'vocal update', artist: 'SALLY', status: 'REJECTED' },
-    { id: '5', title: 'vocal update', artist: 'SALLY', status: 'REJECTED' },
-    { id: '6', title: 'vocal update', artist: 'SALLY', status: 'ACTIVE' },
-    { id: '7', title: 'vocal update', artist: 'SALLY', status: 'ACTIVE' },
-    { id: '8', title: 'vocal update', artist: 'SALLY', status: 'REJECTED' },
-  ];
+  // API에서 가져올 데이터를 위한 상태
+  const [stageStemSets, setstageStemSets] = useState<stageStemSet[]>([]);
+  const [loading, setLoading] = useState(true);
 
   const [isUploadModalOpen, setUploadModalOpen] = useState(false);
   const trackId = "mock-track-123";
@@ -46,7 +40,32 @@ const StagePage: React.FC = () => {
     }
   }, [trackId]);
 
-  const handleUploadComplete = () => { };
+  // Stem Set 데이터를 가져오는 useEffect (API 연동 예정)
+  useEffect(() => {
+    // TODO: API 호출로 stem sets 데이터 가져오기
+    // const fetchStemSets = async () => {
+    //   try {
+    //     setLoading(true);
+    //     // const response = await stemSetService.getStemSets(trackId);
+    //     // setstageStemSets(response.data);
+    //   } catch (error) {
+    //     console.error("Error fetching stem sets:", error);
+    //   } finally {
+    //     setLoading(false);
+    //   }
+    // };
+    // fetchStemSets();
+    
+    // 임시로 로딩 상태만 해제
+    setLoading(false);
+    // 임시로 빈 배열 설정 (TypeScript 에러 해결)
+    setstageStemSets([]);
+  }, [trackId]);
+
+  const handleUploadComplete = () => {
+    // TODO: 업로드 완료 후 stem sets 목록 새로고침
+    // fetchStemSets();
+  };
 
   interface StemSetCardProps {
     index: number;
@@ -149,16 +168,19 @@ const StagePage: React.FC = () => {
   };
 
   const [playingIndex, setPlayingIndex] = useState<number | null>(null);
-  const [seekValues, setSeekValues] = useState<number[]>(vocalUpdates.map(() => 0));
+  const [seekValues, setSeekValues] = useState<number[]>([]);
+  
+  // stageStemSets가 변경될 때 seekValues 배열도 업데이트
+  useEffect(() => {
+    setSeekValues(stageStemSets.map(() => 0));
+  }, [stageStemSets]);
 
   const handlePlayToggle = (idx: number) => {
     setPlayingIndex(playingIndex === idx ? null : idx);
   };
-
   const handleSeek = (idx: number, value: number) => {
     setSeekValues(prev => prev.map((v, i) => (i === idx ? value : v)));
   };
-
   const handleDetail = (idx: number) => {
     alert(`Detail for AWSOME MIX #${idx + 1}`);
   };
@@ -214,18 +236,28 @@ const StagePage: React.FC = () => {
         </div>
 
         <div className='grid grid-cols-1 gap-6 md:grid-cols-2 lg:grid-cols-4'>
-          {vocalUpdates.map((update, idx) => (
-            <StemSetCard
-              key={update.id}
-              index={idx}
-              isPlaying={playingIndex === idx}
-              seek={seekValues[idx]}
-              onPlayToggle={() => handlePlayToggle(idx)}
-              onSeek={value => handleSeek(idx, value)}
-              onDetail={() => handleDetail(idx)}
-              status={update.status}
-            />
-          ))}
+          {loading ? (
+            <div className="col-span-full flex justify-center items-center py-8">
+              <div className="text-white">Loading stem sets...</div>
+            </div>
+          ) : stageStemSets.length === 0 ? (
+            <div className="col-span-full flex justify-center items-center py-8">
+              <div className="text-white">No stem sets available</div>
+            </div>
+          ) : (
+            stageStemSets.map((update, idx) => (
+              <StemSetCard
+                key={update.id}
+                index={idx}
+                isPlaying={playingIndex === idx}
+                seek={seekValues[idx]}
+                onPlayToggle={() => handlePlayToggle(idx)}
+                onSeek={value => handleSeek(idx, value)}
+                onDetail={() => handleDetail(idx)}
+                status={update.status}
+              />
+            ))
+          )}
         </div>
       </main>
 
