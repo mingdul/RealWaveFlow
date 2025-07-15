@@ -13,7 +13,7 @@ import InitProjectModal from '../components/InitProjectModal';
 import CreateTrackModal from '../components/CreateTrackModal';
 import PresignedImage from '../components/PresignedImage';
 
-const DashboardPage = () => {
+const DashboardPagess = () => {
   const navigate = useNavigate();
   const { user, logout, isAuthenticated } = useAuth();
   const { showError, showSuccess } = useToast();
@@ -555,4 +555,4 @@ const EditTrackModal = ({ track, onClose, onSubmit }: { track: Track, onClose: (
   );
 };
 
-export default DashboardPage;
+export default DashboardPagess;
