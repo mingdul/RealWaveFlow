@@ -26,8 +26,9 @@ const TrackInfoCard: React.FC<TrackInfoCardProps> = ({
   stemsLoading = false,
   stageId
 }) => {
-  const [showPlayer, setShowPlayer] = useState(false);
+  const [showPlayer] = useState(false);
   const [showInviteModal, setShowInviteModal] = useState(false);
+  const [guideUrl, setGuideUrl] = useState('');
   //const [inviteEmails, setInviteEmails] = useState('');
   const [inviteLoading, setInviteLoading] = useState(false);
   const [inviteError, setInviteError] = useState('');
@@ -296,7 +297,7 @@ const handleCloseInviteModal = () => {
       {/* Stem Player */}
       {showPlayer && stems.length > 0 && (
         <div className="mt-6">
-          <StemPlayer stems={stems} />
+          <StemPlayer stems={stems} guideUrl={guideUrl} />
         </div>
       )}
 
@@ -399,6 +400,4 @@ const handleCloseInviteModal = () => {
 
 export default TrackInfoCard;
 
-function setGuideUrl(presignedUrl: string) {
-  throw new Error('Function not implemented.');
-}
+

@@ -8,6 +8,7 @@ interface StemPlayerProps {
   stems: StemStreamingInfo[];
   className?: string;
   stageId?: string; // Optional stageId for guide playback
+  guideUrl?: string;
 }
 
 interface StemState {
@@ -18,7 +19,7 @@ interface StemState {
   isPlaying: boolean;
 }
 
-const StemPlayer: React.FC<StemPlayerProps> = ({ stems, className = '', stageId }) => {
+const StemPlayer: React.FC<StemPlayerProps> = ({ stems, className = '', stageId}) => {
   const [isPlaying, setIsPlaying] = useState(false);
   const [currentTime, setCurrentTime] = useState(0);
   const [stemStates, setStemStates] = useState<Record<string, StemState>>({});
