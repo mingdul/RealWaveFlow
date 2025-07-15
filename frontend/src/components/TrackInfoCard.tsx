@@ -1,6 +1,6 @@
 import React, { useEffect, useState, useRef } from 'react';
 import { Play, Plus, Pause, X } from 'lucide-react';
-import { Button, StemPlayer } from './';
+import { Button } from './';
 import { Track } from '../types/api';
 import streamingService, { StemStreamingInfo } from '../services/streamingService';
 import PresignedImage from './PresignedImage';
@@ -20,7 +20,7 @@ interface TrackInfoCardProps {
 
 const TrackInfoCard: React.FC<TrackInfoCardProps> = ({
   track,
-  stems = [],
+
   
   onShowAllStems,
   versionNumber,
