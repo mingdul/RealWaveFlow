@@ -27,12 +27,12 @@ const TrackHeader: React.FC<TrackHeaderProps> = ({
         <Logo />
       </div>
       <div className="flex space-x-4">
-        <button
+        <nav
           className="text-white text-sm"
           onClick={() => navigate(`/dashboard`)}
         >
           Dashboard
-        </button>
+        </nav>
 
       </div>
       <div className="flex items-center gap-4">

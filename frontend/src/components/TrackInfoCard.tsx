@@ -28,7 +28,6 @@ const TrackInfoCard: React.FC<TrackInfoCardProps> = ({
   stageId,
 
 }) => {
-  const [showPlayer, setShowPlayer] = useState(false);
   const [isPlaying, setIsPlaying] = useState(false);
   const [showInviteModal, setShowInviteModal] = useState(false);
   const [guideUrl, setGuideUrl] = useState<string | undefined>(undefined);
@@ -165,7 +164,6 @@ const handleCloseInviteModal = () => {
       
       if (response.success && response.data) {
         setGuideUrl(response.data.presignedUrl);
-        setShowPlayer(true);
         setIsPlaying(true);
       } else {
         console.error('Failed to fetch guide:', response.message);
@@ -181,7 +179,6 @@ const handleCloseInviteModal = () => {
       guideAudioRef.current.pause();
       guideAudioRef.current.currentTime = 0;
     }
-    setShowPlayer(false);
     setIsPlaying(false);
     setGuideUrl(undefined);
   }
@@ -328,7 +325,7 @@ useEffect(() => {
       </div>
 
       {/* Stem Player */}
-      {showPlayer && (
+       {(
         <div className="mt-6">
           <StemPlayer 
             stems={stems} 
