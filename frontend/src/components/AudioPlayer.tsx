@@ -14,6 +14,7 @@ interface AudioPlayerProps {
   muted?: boolean;
   onMuteToggle?: () => void;
   className?: string;
+  showProgressBar?: boolean;
 }
 
 const AudioPlayer: React.FC<AudioPlayerProps> = ({
@@ -28,7 +29,8 @@ const AudioPlayer: React.FC<AudioPlayerProps> = ({
   onVolumeChange,
   muted = false,
   onMuteToggle,
-  className = ''
+  className = '',
+  showProgressBar = false
 }) => {
   const audioRef = useRef<HTMLAudioElement>(null);
   const [duration, setDuration] = useState<number>(0);
@@ -130,10 +132,11 @@ const AudioPlayer: React.FC<AudioPlayerProps> = ({
     );
   }
 
-  return (
-    <div className={`flex items-center gap-3 p-3 bg-gray-800 rounded-lg ${className}`}>
+return (
+  <div className={`flex flex-col gap-1 p-3 bg-gray-800 rounded-lg ${className}`}>
+    <div className="flex items-center gap-3">
       <audio ref={audioRef} src={src} preload="metadata" />
-      
+
       <button
         onClick={onPlayPause}
         disabled={loading}
@@ -178,6 +181,17 @@ const AudioPlayer: React.FC<AudioPlayerProps> = ({
         />
       </div>
     </div>
+
+    {/* ✅ 조건부 프로그레스바 */}
+    {showProgressBar && (
+    <div className="w-full h-1 bg-gray-700 rounded overflow-hidden mt-1">
+      <div
+        className="h-full bg-purple-500 transition-all duration-200"
+        style={{ width: `${(currentTime / duration) * 100}%` }}
+      />
+    </div>
+  )}
+  </div>
   );
 };
 

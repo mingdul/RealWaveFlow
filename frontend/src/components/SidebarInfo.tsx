@@ -51,7 +51,7 @@ const SidebarInfo: React.FC<SidebarInfoProps> = ( ) => {
         <div className="sidebar">
             {/* Project Info */}
             <div className="project-info">
-                <h1 className="project-title">{track.name}</h1>
+                <h1 className="project-title">{track.title}</h1>
 
                 <div className="info-section">
                     <div>

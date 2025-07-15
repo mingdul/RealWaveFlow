@@ -7,7 +7,10 @@ export class UpstreamReview {
     @PrimaryGeneratedColumn('uuid')
     id : string;
 
-    @ManyToOne(() => Upstream, (upstream) => upstream.upstream_reviews)
+    @ManyToOne(() => Upstream, (upstream) => upstream.upstream_reviews, {
+        cascade: true,
+        onDelete: 'CASCADE',
+    })
     @JoinColumn({ name: 'upstream_id' })
     upstream : Upstream;
 

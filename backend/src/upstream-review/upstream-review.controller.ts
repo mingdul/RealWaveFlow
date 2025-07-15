@@ -1,7 +1,7 @@
-import { Body, Controller, Post } from '@nestjs/common';
+import { Body, Controller, Param, Post, Put, Req } from '@nestjs/common';
 import { ApiTags, ApiOperation, ApiResponse, ApiBody } from '@nestjs/swagger';
 import { UpstreamReviewService } from './upstream-review.service';
-import { CreateUpstreamReviewDto } from './dto/createUpstreamReview.dto';
+import { CreateUpstreamReviewDto } from './dto/createUpstreamReview.dto'; 
 
 @ApiTags('upstream-review')
 @Controller('upstream-review')
@@ -15,5 +15,23 @@ export class UpstreamReviewController {
   @ApiResponse({ status: 400, description: '입력값 유효성 검사 실패' })
   async createUpstreamReview(@Body() createUpstreamReviewDto: CreateUpstreamReviewDto) {
     return this.upstreamReviewService.createUpstreamReview(createUpstreamReviewDto);
+  }
+
+
+  @Put('approve-drop-reviewer/:stageId/:upstreamId/')
+  @ApiOperation({ summary: '업스트림 리뷰 승인', description: '업스트림 리뷰를 승인합니다.' })
+  @ApiResponse({ status: 200, description: '업스트림 리뷰 승인 성공' })
+  @ApiResponse({ status: 400, description: '입력값 유효성 검사 실패' })
+  async approveDropReviewer(@Param('stageId') stageId: string, @Param('upstreamId') upstreamId: string, @Req() req) {
+    return this.upstreamReviewService.approveDropReviewer(stageId, upstreamId, req.user.id);
+  }
+
+
+  @Put('reject-drop-reviewer/:stageId/:upstreamId/')
+  @ApiOperation({ summary: '업스트림 리뷰 거절', description: '업스트림 리뷰를 거절합니다.' })
+  @ApiResponse({ status: 200, description: '업스트림 리뷰 거절 성공' })
+  @ApiResponse({ status: 400, description: '입력값 유효성 검사 실패' })
+  async rejectDropReviewer(@Param('stageId') stageId: string, @Param('upstreamId') upstreamId: string, @Req() req) {
+    return this.upstreamReviewService.rejectDropReviewer(stageId, upstreamId, req.user.id);
   }
 }

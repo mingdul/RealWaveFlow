@@ -1,6 +1,6 @@
 import { BadRequestException, Injectable, Logger, NotFoundException } from '@nestjs/common';
 import { InjectRepository } from '@nestjs/typeorm';
-import { Repository } from 'typeorm';
+import { MoreThan, Repository } from 'typeorm';
 import { Stage } from './stage.entity';
 import { CreateStageDto } from './dto/createStage.dto';
 import { SqsService } from '../sqs/service/sqs.service';
@@ -90,6 +90,22 @@ export class StageService {
         };
     }
 
+    async getStageByTrackIdAndVersion(track_id: string, version: number) {
+        const stage = await this.stageRepository.findOne({
+            where: { track: { id: track_id }, version: version },
+            relations: ['track', 'user'],
+        });
+        
+        if (!stage) {
+            throw new NotFoundException('Stage not found');
+        }
+        return {
+            success: true,
+            message: 'Stage fetched successfully',
+            data: stage,
+        };
+    }
+
     async updateGuidePath(stageId: string, guidePath: string): Promise<Stage> {
         const stage = await this.stageRepository.findOne({
             where: { id: stageId }
@@ -144,5 +160,34 @@ export class StageService {
         });
 
         this.logger.log(`스템 믹싱 요청 전송: ${stageId}, 스템 개수: ${stemPaths.length}`);
+    }
+
+
+
+    async getBackToPreviousStage(trackId: string, version: number) {
+        const stages = await this.stageRepository.find({
+            where: { track: { id: trackId }, version: MoreThan(version) },
+        });
+
+        if (stages.length === 0) {
+            throw new NotFoundException('Stage not found');
+        }
+
+        for (const stage of stages) {
+            await this.stageRepository.delete(stage.id);
+        }
+
+        const remainingStages = await this.stageRepository.find({
+            where: { track: { id: trackId }, version: MoreThan(version) },
+        });
+
+        if (remainingStages.length > 0) {
+            throw new NotFoundException('Previous stage not found');
+        }
+
+        return {
+            success: true,
+            message: 'Stage deleted successfully',
+        };
     }
 }
