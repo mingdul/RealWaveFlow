@@ -77,10 +77,10 @@ const VersionHistory: React.FC<VersionHistoryProps> = ({
               
               {/* Connection Arrow - shown after each version card except the last */}
               {index < versions.length - 1 && (
-                <div className="flex items-center mx-3">
-                  <div className="flex items-center">
-                    <div className="w-8 h-0.5 bg-gradient-to-r from-gray-400 to-gray-300"></div>
-                    <ChevronRight size={16} className="text-gray-300 ml-1" />
+                <div className="flex items-center mx-4 flex-shrink-0">
+                  <div className="flex items-center bg-gray-800/30 px-3 py-2 rounded-lg">
+                    <div className="w-12 h-1.5 bg-gradient-to-r from-blue-400 to-blue-300 rounded-full shadow-lg"></div>
+                    <ChevronRight size={20} className="text-blue-300 ml-2 drop-shadow-lg" />
                   </div>
                 </div>
               )}
@@ -89,10 +89,10 @@ const VersionHistory: React.FC<VersionHistoryProps> = ({
           
           {/* Final Connection to Open Stage */}
           {versions.length > 0 && (
-            <div className="flex items-center mx-3">
-              <div className="flex items-center">
-                <div className="w-8 h-0.5 bg-gradient-to-r from-gray-400 to-purple-400"></div>
-                <ChevronRight size={16} className="text-purple-400 ml-1" />
+            <div className="flex items-center mx-4 flex-shrink-0">
+              <div className="flex items-center bg-gray-800/30 px-3 py-2 rounded-lg">
+                <div className="w-12 h-1.5 bg-gradient-to-r from-blue-400 to-purple-400 rounded-full shadow-lg"></div>
+                <ChevronRight size={20} className="text-purple-400 ml-2 drop-shadow-lg" />
               </div>
             </div>
           )}
