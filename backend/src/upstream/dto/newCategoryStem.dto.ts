@@ -8,4 +8,8 @@ export class NewCategoryStemDto {
     @IsUUID()
     @IsNotEmpty()
     newStemId: string;
+
+    @IsString()
+    @IsNotEmpty()
+    instument : string
 }
