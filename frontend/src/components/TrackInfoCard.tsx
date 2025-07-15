@@ -92,6 +92,7 @@ const TrackInfoCard: React.FC<TrackInfoCardProps> = ({
             <Button 
               variant="outline" 
               size="lg"
+              className="flex items-center gap-2 bg-[#202426] hover:bg-[#373A3D] text-white"
               onClick={onShowAllStems}
             >
               View All Stems
@@ -101,7 +102,7 @@ const TrackInfoCard: React.FC<TrackInfoCardProps> = ({
           <Button 
             variant="secondary" 
             size="sm" 
-            className="bg-purple-600 hover:bg-purple-700"
+            className="bg-red-600 hover:bg-red-700"
             onClick={() => setShowRollbackConfirm(true)}
           >
             Roll Back
@@ -110,17 +111,17 @@ const TrackInfoCard: React.FC<TrackInfoCardProps> = ({
 
         {/* User Avatars */}
         <div className="flex-shrink-0 flex items-start gap-2">
-          <div className="w-10 h-10 bg-gray-500 rounded-full flex items-center justify-center">
-            <span className="text-white text-sm">S</span>
+          <div className="w-10 h-10 bg-gray-200 rounded-full flex items-center justify-center">
+            <span className="text-black text-sm">S</span>
           </div>
-          <div className="w-10 h-10 bg-gray-500 rounded-full flex items-center justify-center">
-            <span className="text-white text-sm">M</span>
+          <div className="w-10 h-10 bg-gray-200 rounded-full flex items-center justify-center">
+            <span className="text-black text-sm">M</span>
           </div>
-          <div className="w-10 h-10 bg-gray-500 rounded-full flex items-center justify-center">
-            <span className="text-white text-sm">A</span>
+          <div className="w-10 h-10 bg-gray-200 rounded-full flex items-center justify-center">
+            <span className="text-black text-sm">A</span>
           </div>
-          <div className="w-10 h-10 bg-gray-600 rounded-full flex items-center justify-center" onClick={onAddCollaborator}>
-            <Plus size={16} className="text-white" />
+          <div className="w-10 h-10 bg-gray-200 rounded-full flex items-center justify-center" onClick={onAddCollaborator}>
+            <Plus size={16} className="text-black" />
           </div>
         </div>
 
