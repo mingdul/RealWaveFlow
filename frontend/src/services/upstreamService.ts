@@ -1,6 +1,48 @@
 // services/upstreamService.ts
-import api from '../lib/api';
+import apiClient from '../lib/api';
+import { CreateUpstreamDto, Upstream } from '../types/api';
 
+// 업스트림 생성
+export const createUpstream = async (upstreamData: CreateUpstreamDto) => {
+  try {
+    const response = await apiClient.post('/upstream/create', upstreamData);
+    return response.data;
+  } catch (error) {
+    console.error('Failed to create upstream:', error);
+    throw error;
+  }
+};
+
+// 스테이지별 업스트림 목록 조회
 export const getStageUpstreams = async (stageId: string) => {
-  return await api.get(`/get-stage-upstreams/${stageId}`);
+  try {
+    const response = await apiClient.get(`/upstream/stage/${stageId}`);
+    if (!response.data.success) {
+      throw new Error(response.data.message);
+    }
+    return response.data.upstreams;
+  } catch (error) {
+    console.error('Failed to get stage upstreams:', error);
+    return [];
+  }
+};
+
+// 업스트림 상세 조회
+export const getUpstreamDetail = async (upstreamId: string) => {
+  try {
+    const response = await apiClient.get(`/upstream/${upstreamId}`);
+    if (!response.data.success) {
+      throw new Error(response.data.message);
+    }
+    return response.data.upstream;
+  } catch (error) {
+    console.error('Failed to get upstream detail:', error);
+    throw error;
+  }
+};
+
+export default {
+  createUpstream,
+  getStageUpstreams,
+  getUpstreamDetail,
 };

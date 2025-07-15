@@ -478,20 +478,38 @@ export interface CreateStageDto {
   status: string;
 }
 
+export interface CreateStageReviewerDto {
+  stage_id: string;
+  user_id: string;
+}
+
 export interface StageReviewer {
   id: string;
   stage: Stage;
   user: User;
-  status: string;
+  upstream_reviews?: any[];
 }
-
 
 export interface Upstream {
   id: string;
+  title: string;
+  description: string;
+  status: string;
+  guide_path?: string;
+  created_at: string;
   stage: Stage;
-  // 추가 속성들은 필요에 따라 확장
+  user: User;
+  stems?: Stem[];
+  upstream_comments?: any[];
+  upstream_reviews?: any[];
 }
 
+export interface CreateUpstreamDto {
+  title: string;
+  description?: string;
+  stage_id: string;
+  user_id: string;
+}
 
 // version-stem
 export interface VersionStem {
