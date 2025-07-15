@@ -1,16 +1,22 @@
 import React, { useState, useEffect } from 'react';
 import { useParams, useNavigate } from 'react-router-dom';
 import { Track, Stage } from '../types/api';
-import { 
-  TrackHeader, 
-  TrackInfoCard, 
-  OpenStageModal, 
+import {
+  TrackHeader,
+  TrackInfoCard,
+  OpenStageModal,
   StemListModal,
-  StageHistory 
+  StageHistory,
 } from '../components';
 import { useAuth } from '../contexts/AuthContext';
-import { getTrackStages, createStage, getBackToPreviousStage} from '../services/stageService';
-import streamingService, { StemStreamingInfo } from '../services/streamingService';
+import {
+  getTrackStages,
+  createStage,
+  getBackToPreviousStage,
+} from '../services/stageService';
+import streamingService, {
+  StemStreamingInfo,
+} from '../services/streamingService';
 import trackService from '../services/trackService';
 interface TrackPageProps {}
 
@@ -64,9 +70,11 @@ const TrackPage: React.FC<TrackPageProps> = () => {
 
     try {
       setStemsLoading(true);
-      
+
       // status가 'approve'인 스테이지 찾기
-      const approveStages = stages.filter(stage => stage.status === 'approve');
+      const approveStages = stages.filter(
+        (stage) => stage.status === 'approve'
+      );
       if (approveStages.length === 0) {
         console.error('No approve stage found');
         setStems([]);
@@ -78,7 +86,10 @@ const TrackPage: React.FC<TrackPageProps> = () => {
       });
 
       // 활성 스테이지의 버전으로 스템들 로드
-      const response = await streamingService.getMasterStemStreams(trackId, latestApproveStage.version);
+      const response = await streamingService.getMasterStemStreams(
+        trackId,
+        latestApproveStage.version
+      );
       if (response.data) {
         setStems(response.data.stems);
         setSelectedStageVersion(latestApproveStage.version);
@@ -116,26 +127,31 @@ const TrackPage: React.FC<TrackPageProps> = () => {
 
   const handleRollBack = async () => {
     console.log('Rolling back track:', track?.id);
-    if(!trackId) return;
-    const response = await getBackToPreviousStage(trackId, selectedStageVersion);
-    if(response.success){
+    if (!trackId) return;
+    const response = await getBackToPreviousStage(
+      trackId,
+      selectedStageVersion
+    );
+    if (response.success) {
       await loadStemsByVersion(selectedStageVersion);
-    }else{
+    } else {
       console.error('Failed to get back to previous stage:', response);
-      }
+    }
   };
-
 
   const loadStemsByVersion = async (version: number) => {
     if (!trackId) return;
-  
+
     try {
       setStemsLoading(true);
-      const response = await streamingService.getMasterStemStreams(trackId, version);
+      const response = await streamingService.getMasterStemStreams(
+        trackId,
+        version
+      );
       if (response.data) {
         console.log('Loaded stems by version:', version);
         setStems(response.data.stems);
-        setSelectedStageVersion(version); 
+        setSelectedStageVersion(version);
       } else {
         console.error('Failed to load stems:', response.message);
         setStems([]);
@@ -147,9 +163,8 @@ const TrackPage: React.FC<TrackPageProps> = () => {
       setStemsLoading(false);
     }
   };
-  
 
-  const handleStageClick = async  (stage: Stage) => {
+  const handleStageClick = async (stage: Stage) => {
     // active한 stage일 때만 StagePage로 라우팅
     if (stage.status === 'active') {
       navigate(`/stage/${stage.id}`);
@@ -161,7 +176,7 @@ const TrackPage: React.FC<TrackPageProps> = () => {
     }
   };
 
-  const handleOpenStageSubmit = async (description: string, ) => {
+  const handleOpenStageSubmit = async (description: string) => {
     if (!user || !trackId) {
       console.error('User or track ID not available');
       return;
@@ -173,18 +188,18 @@ const TrackPage: React.FC<TrackPageProps> = () => {
         description,
         track_id: trackId,
         user_id: user.id,
-        status: 'active'
+        status: 'active',
       };
 
       const newStage = await createStage(stageData);
-      setStages(prevStages => [...prevStages, newStage]);
+      setStages((prevStages) => [...prevStages, newStage]);
 
       newStage.user = user;
-      
+
       newStage.user = user;
       console.log('New stage created:', newStage);
       // TODO: Reviewers 기능 구현 필요
-      
+
       setIsOpenStageModalOpen(false);
     } catch (error) {
       console.error('Failed to create stage:', error);
@@ -195,8 +210,13 @@ const TrackPage: React.FC<TrackPageProps> = () => {
 
   // 현재 활성 스테이지 가져오기
   const getActiveStage = () => {
-    const activeStage = stages.find(stage => stage.status === 'active');
-    console.log('[DEBUG][TrackPage] Active stage:', activeStage, 'All stages:', stages);
+    const activeStage = stages.find((stage) => stage.status === 'active');
+    console.log(
+      '[DEBUG][TrackPage] Active stage:',
+      activeStage,
+      'All stages:',
+      stages
+    );
     if (activeStage) {
       isActiveStage = true;
     }
@@ -207,7 +227,12 @@ const TrackPage: React.FC<TrackPageProps> = () => {
   const isVersion1 = () => {
     const activeStage = getActiveStage();
     const isV1 = activeStage?.version === 1;
-    console.log('[DEBUG][TrackPage] Is version 1:', isV1, 'Active stage version:', activeStage?.version);
+    console.log(
+      '[DEBUG][TrackPage] Is version 1:',
+      isV1,
+      'Active stage version:',
+      activeStage?.version
+    );
     return isV1;
   };
 
@@ -215,8 +240,8 @@ const TrackPage: React.FC<TrackPageProps> = () => {
     console.log('[DEBUG][TrackPage] Loading...');
     console.log('[DEBUG][TrackPage] Loading...');
     return (
-      <div className="bg-[#2a2a2a] min-h-screen flex justify-center items-center">
-        <div className="animate-spin rounded-full h-12 w-12 border-b-2 border-white"></div>
+      <div className='flex min-h-screen items-center justify-center bg-[#2a2a2a]'>
+        <div className='h-12 w-12 animate-spin rounded-full border-b-2 border-white'></div>
       </div>
     );
   }
@@ -225,37 +250,45 @@ const TrackPage: React.FC<TrackPageProps> = () => {
     console.log('[DEBUG][TrackPage] Track not found, track:', track);
     console.log('[DEBUG][TrackPage] Track not found, track:', track);
     return (
-      <div className="bg-[#2a2a2a] min-h-screen flex justify-center items-center">
-        <div className="text-center py-16">
-          <h1 className="text-2xl font-bold text-gray-300">Track not found</h1>
+      <div className='flex min-h-screen items-center justify-center bg-[#2a2a2a]'>
+        <div className='py-16 text-center'>
+          <h1 className='text-2xl font-bold text-gray-300'>Track not found</h1>
         </div>
       </div>
     );
   }
   // Move debug log here to avoid linter error in JSX
-  console.log('[DEBUG][TrackPage] Rendering main content. track:', track, 'stages:', stages);
+  console.log(
+    '[DEBUG][TrackPage] Rendering main content. track:',
+    track,
+    'stages:',
+    stages
+  );
   return (
-<div className="relative min-h-screen bg-cover bg-center" style={{ backgroundImage: "url('/background.jpg')" }}>
-  {/* 어두운 오버레이 */}
-  
-      <TrackHeader 
-        onBack={handleBack}
-        onNotificationClick={() => console.log('Notification clicked')}
-        onSettingsClick={() => console.log('Settings clicked')}
-      />
-
-      <div className="px-6 py-8">
-        <TrackInfoCard
-          track={track}
-          stems={stems}
-          stemsLoading={stemsLoading}
-          onPlay={handlePlay}
-          versionNumber={selectedStageVersion.toString()}
-          onShowAllStems={handleShowAllStems}
-          onRollBack={handleRollBack}
+    <div
+      className='relative min-h-screen bg-cover bg-center'
+      style={{ backgroundImage: "url('/background.jpg')" }}
+    >
+      {/* 어두운 오버레이 */}
+      <div className='absolute inset-0 bg-black bg-opacity-60'>
+        <TrackHeader
+          onBack={handleBack}
+          onNotificationClick={() => console.log('Notification clicked')}
+          onSettingsClick={() => console.log('Settings clicked')}
         />
 
-        {/* 현재 활성 스테이지 정보 표시
+        <div className='px-6 py-8'>
+          <TrackInfoCard
+            track={track}
+            stems={stems}
+            stemsLoading={stemsLoading}
+            onPlay={handlePlay}
+            versionNumber={selectedStageVersion.toString()}
+            onShowAllStems={handleShowAllStems}
+            onRollBack={handleRollBack}
+          />
+
+          {/* 현재 활성 스테이지 정보 표시
         {(() => {
           const activeStage = getActiveStage();
           if (!activeStage) return null;
@@ -274,30 +307,30 @@ const TrackPage: React.FC<TrackPageProps> = () => {
           );
         })()} */}
 
-        <StageHistory
-          stages={stages}
-          onStageSelect={handleStageClick}
-          onOpenStageClick={() => setIsOpenStageModalOpen(true)}
-          disableStageOpening={isVersion1()} // 버전 1에서는 스테이지 열기 비활성화
-          isActiveStage={isActiveStage}
+          <StageHistory
+            stages={stages}
+            onStageSelect={handleStageClick}
+            onOpenStageClick={() => setIsOpenStageModalOpen(true)}
+            disableStageOpening={isVersion1()} // 버전 1에서는 스테이지 열기 비활성화
+            isActiveStage={isActiveStage}
+          />
+        </div>
+
+        <OpenStageModal
+          isOpen={isOpenStageModalOpen}
+          onClose={() => setIsOpenStageModalOpen(false)}
+          onSubmit={handleOpenStageSubmit}
+        />
+
+        <StemListModal
+          isOpen={isStemListModalOpen}
+          onClose={() => setIsStemListModalOpen(false)}
+          stems={stems}
+          versionNumber={selectedStageVersion.toString()}
+          loading={stemsLoading}
         />
       </div>
-
-      <OpenStageModal
-        isOpen={isOpenStageModalOpen}
-        onClose={() => setIsOpenStageModalOpen(false)}
-        onSubmit={handleOpenStageSubmit}
-      />
-
-      <StemListModal
-        isOpen={isStemListModalOpen}
-        onClose={() => setIsStemListModalOpen(false)}
-        stems={stems}
-        versionNumber={selectedStageVersion.toString()}
-        loading={stemsLoading}
-      />
     </div>
-    
   );
 };
 
