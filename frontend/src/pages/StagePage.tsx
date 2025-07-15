@@ -248,7 +248,7 @@ const StagePage: React.FC = () => {
           <div className='flex items-center gap-3'>
             <span className='text-gray-300'>REVIEWER :</span>
             <div className='flex -space-x-2'>
-              {reviewers.map((reviewer, index) => (
+              {reviewers.map((reviewer) => (
                 <div key={reviewer.id} className='h-8 w-8 rounded-full border-2 border-white bg-gray-400 flex items-center justify-center text-xs text-white'>
                   {reviewer.user?.username?.charAt(0) || 'U'}
                 </div>
