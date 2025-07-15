@@ -7,6 +7,8 @@ import { getStageDetail, getStageByTrackIdAndVersion } from '../services/stageSe
 import streamingService from '../services/streamingService';
 import { useParams } from 'react-router-dom';
 import { useAuth } from '../contexts/AuthContext';
+import { approveDropReviewer, rejectDropReviewer } from '../services/upstreamReviewService';
+
 import {
   createUpstreamComment,
   getUpstreamComments,
@@ -268,7 +270,7 @@ const StemSetReviewPage = () => {
 
   // 댓글 추가 함수
   const handleAddComment = useCallback(async () => {
-    if (!commentInput.trim() || !selectedUpstream || !user) return;
+    if (!commentInput.trim() || !user) return;
     
     const timeString = `${String(Math.floor(currentTime / 60)).padStart(2, '0')}:${String(Math.floor(currentTime % 60)).padStart(2, '0')}`;
     
@@ -508,6 +510,36 @@ const StemSetReviewPage = () => {
     }
   }, [currentTime, readyStates, isPlaying]);
 
+  const handleApprove = async () => {
+    if (!stageId || !selectedUpstream) {
+      alert('Stage 또는 Upstream이 선택되지 않았습니다.');
+      return;
+    }
+  
+    try {
+      await approveDropReviewer(stageId, selectedUpstream.id);
+      alert('승인 완료!');
+    } catch (error) {
+      console.error('승인 실패:', error);
+      alert('승인 중 오류 발생');
+    }
+  };
+  
+  const handleReject = async () => {
+    if (!stageId || !selectedUpstream) {
+      alert('Stage 또는 Upstream이 선택되지 않았습니다.');
+      return;
+    }
+  
+    try {
+      await rejectDropReviewer(stageId, selectedUpstream.id);
+      alert('거절 완료!');
+    } catch (error) {
+      console.error('거절 실패:', error);
+      alert('거절 중 오류 발생');
+    }
+  };
+
   return (
     <div className='relative min-h-screen space-y-6 overflow-hidden bg-[#1e1e1e] px-6 py-8 text-white'>
       {/* Header */}
@@ -522,10 +554,16 @@ const StemSetReviewPage = () => {
 
           {/* 탭 버튼 */}
           <div className='flex items-center space-x-4'>
-            <button className='text-gray-300 transition-colors hover:text-white border-b-2 border-white pb-1'>
+            <button 
+              onClick={handleApprove}
+              className='text-gray-300 transition-colors hover:text-white border-b-2 border-white pb-1'
+            >
               APPROVE
             </button>
-            <button className='text-gray-300 transition-colors hover:text-white border-b-2 border-white pb-1'>
+            <button 
+              onClick={handleReject}
+              className='text-gray-300 transition-colors hover:text-white border-b-2 border-white pb-1'
+            >
               REJECT
             </button>
           </div>
