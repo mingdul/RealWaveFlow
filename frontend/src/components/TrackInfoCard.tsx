@@ -128,7 +128,7 @@ const TrackInfoCard: React.FC<TrackInfoCardProps> = ({
 
     return (
       <div className="flex-shrink-0 flex items-start gap-2">
-        {users.map((user, index) => (
+        {users.map((user) => (
           <div 
             key={user.id}
             className={`w-10 h-10 rounded-full flex items-center justify-center ${
