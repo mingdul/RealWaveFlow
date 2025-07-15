@@ -46,7 +46,6 @@ interface UploadModalProps {
   onClose: () => void;
   projectId: string;
   projectName: string;
-  take?: number;
   stageId?: string;
   stageVersion?: number;
   onComplete: () => void;
@@ -597,7 +596,6 @@ const UploadModal: React.FC<UploadModalProps> = ({
   onClose,
   projectId,
   projectName,
-  take = 1,
   stageId,
   stageVersion,
   onComplete
