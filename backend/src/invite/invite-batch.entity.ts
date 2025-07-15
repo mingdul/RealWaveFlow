@@ -57,7 +57,7 @@ export class InviteBatch {
    * - 하나의 배치는 반드시 하나의 트랙에만 연결
    * - 트랙이 삭제되면 관련 초대 배치도 처리 필요
    */
-  @ManyToOne(() => Track, { eager: true })
+  @ManyToOne(() => Track, { eager: true, cascade: true, onDelete: 'CASCADE' })
   @JoinColumn({ name: 'track_id' })
   track: Track;
 
