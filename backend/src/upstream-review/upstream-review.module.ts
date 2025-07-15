@@ -13,5 +13,6 @@ import { VersionStem } from 'src/version-stem/version-stem.entity';
   imports: [TypeOrmModule.forFeature([UpstreamReview, StageReviewer, Stem, Upstream, Stage, VersionStem])], 
   controllers: [UpstreamReviewController],
   providers: [UpstreamReviewService],
+  exports: [UpstreamReviewService],
 })
 export class UpstreamReviewModule {}
