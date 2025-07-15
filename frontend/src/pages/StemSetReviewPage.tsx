@@ -69,6 +69,15 @@ const StemSetReviewPage = () => {
   const isSeeking = useRef(false); // 무한 루프 방지용 플래그
   const {stageId} = useParams<{stageId: string}>();
 
+  // 상태 변경 추적을 위한 로그
+  useEffect(() => {
+    console.log('📊 Upstreams state updated:', upstreams);
+  }, [upstreams]);
+
+  useEffect(() => {
+    console.log('📊 UpstreamStems state updated:', upstreamStems);
+  }, [upstreamStems]);
+
   // 이전 버전의 가이드 스템 URL 가져오기
   useEffect(() => {
     const fetchPreviousGuideUrl = async () => {
@@ -127,28 +136,41 @@ const StemSetReviewPage = () => {
   useEffect(() => {
     const fetchUpstreamsAndStems = async () => {
       try {
+        console.log('🚀 Starting fetchUpstreamsAndStems with stageId:', stageId);
+        
         // 1. 먼저 stage 정보를 가져와서 trackId 획득
         const stageResponse = await getStageDetail(stageId || '');
+        console.log('📊 Stage detail response:', stageResponse);
+        
         if (!stageResponse || !stageResponse.track) {
           console.error('Failed to get stage details');
           return;
         }
         
         const currentTrackId = stageResponse.track.id;
+        console.log('🎵 Current track ID:', currentTrackId);
         
         // 2. upstream 목록 가져오기
         const upstreamsResponse = await getStageUpstreams(stageId || '');
+        console.log('📁 Upstreams response:', upstreamsResponse);
+        
         if (!upstreamsResponse.data) {
           console.error('Failed to get upstreams');
           return;
         }
         
+        console.log('✅ Found upstreams:', upstreamsResponse.data.length, 'items');
+        console.log('📋 Upstreams data:', upstreamsResponse.data);
         setUpstreams(upstreamsResponse.data);
         
         // 3. 각 upstream에 대해 stem 정보 가져오기
-        const stemPromises = upstreamsResponse.data.map(async (upstream: any) => {
+        // const stemPromises = upstreamsResponse.data.map(async (upstream: any) => {
+        const stemPromises = upstreamsResponse.data.map(async (upstream: any, index: number) => {
           try {
+            console.log(`🔍 Fetching stems for upstream ${index + 1}/${upstreamsResponse.data.length}:`, upstream.id);
             const stemResponse = await getUpstreamStems(upstream.id, currentTrackId);
+            console.log(`📦 Stem response for upstream ${upstream.id}:`, stemResponse);
+            
             return {
               upstreamId: upstream.id,
               stemData: stemResponse.data || null
@@ -163,6 +185,7 @@ const StemSetReviewPage = () => {
         });
         
         const stemsResults = await Promise.all(stemPromises);
+        console.log('🎯 All stems results:', stemsResults);
         setUpstreamStems(stemsResults);
         
       } catch (error) {
@@ -170,7 +193,13 @@ const StemSetReviewPage = () => {
       }
     };
   
-    if (stageId) fetchUpstreamsAndStems();
+    // if (stageId) fetchUpstreamsAndStems();
+    if (stageId) {
+      console.log('🎬 useEffect triggered with stageId:', stageId);
+      fetchUpstreamsAndStems();
+    } else {
+      console.log('⚠️ No stageId provided');
+    }
   }, [stageId]);
 
   const handleReady = useCallback((ws: WaveSurfer, id: string) => {
@@ -460,29 +489,38 @@ const StemSetReviewPage = () => {
 
   const handleAudioFileClick = useCallback(async (upstream: any) => {
     try {
+      console.log('🎵 Audio file clicked:', upstream);
+      
       // 선택된 upstream 설정
       setSelectedUpstream(upstream);
+      console.log('✅ Selected upstream set');
       
       // 해당 upstream의 댓글 로드
+      console.log('💬 Loading comments for upstream:', upstream.id);
       await loadComments(upstream.id);
       
       // 스트리밍 최적화된 URL을 가져오기
+      console.log('🌊 Getting streaming URL for upstream:', upstream.id);
       const response = await streamingService.getUpstreamStems(upstream.id);
+      console.log('🌊 Streaming response:', response);
       
       if (response.success && response.data && response.data.stems.length > 0) {
         // 첫 번째 스템의 presigned URL 사용
         const streamingUrl = response.data.stems[0].presignedUrl;
+        console.log('✅ Using streaming URL:', streamingUrl);
         setExtraAudio(streamingUrl);
         setShowExtraWaveform(true);
       } else {
         // 스트리밍 실패 시 원래 URL 사용
-        console.warn('Streaming URL failed, using original URL');
+        console.warn('⚠️ Streaming URL failed, using original URL');
+        console.log('🔗 Original presigned URL:', upstream.presignedUrl);
         setExtraAudio(upstream.presignedUrl);
         setShowExtraWaveform(true);
       }
     } catch (error) {
       console.error('Error loading streaming URL:', error);
       // 에러 발생 시 원래 URL 사용
+      console.log('🔗 Fallback to original URL:', upstream.presignedUrl);
       setExtraAudio(upstream.presignedUrl);
       setShowExtraWaveform(true);
     }
@@ -646,7 +684,8 @@ const StemSetReviewPage = () => {
               </div>
             ) : (
               <div className='max-h-96 space-y-2 overflow-y-auto'>
-                {upstreams.map((upstream, index) => {
+                
+                {/* {upstreams.map((upstream, index) => {
                   // 해당 upstream의 stem 정보 찾기
                   const stemInfo = upstreamStems.find(s => s.upstreamId === upstream.id);
                   
@@ -661,10 +700,10 @@ const StemSetReviewPage = () => {
                         <div className='text-xs text-gray-500 mt-1'>
                           Category: {upstream.category} | By: {upstream.uploadedBy?.username}
                         </div>
-                      </div>
+                      </div> */}
                       
                       {/* Stem 정보 표시 */}
-                      {stemInfo?.stemData && (
+                      {/* {stemInfo?.stemData && (
                         <div className='ml-4 space-y-1 rounded bg-[#2a2a2a] p-2 text-xs'>
                           <div className='font-medium text-blue-400'>📁 Stems in this upstream:</div>
                           {stemInfo.stemData.map((item: any, stemIndex: number) => (
@@ -686,7 +725,68 @@ const StemSetReviewPage = () => {
                       )}
                     </div>
                   );
-                })}
+                })}  */}
+
+
+                {(() => {
+                  console.log('🎨 Rendering upstreams. Total count:', upstreams.length);
+                  console.log('🎨 Upstreams array:', upstreams);
+                  console.log('🎨 UpstreamStems array:', upstreamStems);
+                  
+                  if (upstreams.length === 0) {
+                    console.log('⚠️ No upstreams to render');
+                    return (
+                      <div className='text-center py-8 text-gray-400'>
+                        No audio files found for this stage
+                      </div>
+                    );
+                  }
+                  
+                  return upstreams.map((upstream, index) => {
+                    console.log(`🎨 Rendering upstream ${index + 1}:`, upstream);
+                    
+                    // 해당 upstream의 stem 정보 찾기
+                    const stemInfo = upstreamStems.find(s => s.upstreamId === upstream.id);
+                    console.log(`🎨 Stem info for upstream ${upstream.id}:`, stemInfo);
+                    
+                    return (
+                      <div key={index} className='space-y-2'>
+                        <div
+                          onClick={() => handleAudioFileClick(upstream)}
+                          className='cursor-pointer rounded bg-[#3a3a3a] p-3 text-sm text-white transition-colors hover:bg-[#4a4a4a]'
+                        >
+                          <div className='font-medium'>{upstream.fileName || 'Unnamed File'}</div>
+                          <div className='text-xs text-gray-400'>{upstream.description || 'No description'}</div>
+                          <div className='text-xs text-gray-500 mt-1'>
+                            Category: {upstream.category || 'Unknown'} | By: {upstream.uploadedBy?.username || 'Unknown'}
+                          </div>
+                        </div>
+                        
+                        {/* Stem 정보 표시 */}
+                        {stemInfo?.stemData && (
+                          <div className='ml-4 space-y-1 rounded bg-[#2a2a2a] p-2 text-xs'>
+                            <div className='font-medium text-blue-400'>📁 Stems in this upstream:</div>
+                            {stemInfo.stemData.map((item: any, stemIndex: number) => (
+                              <div key={stemIndex} className='flex items-center justify-between'>
+                                <span className='text-white'>
+                                  {item.category?.name || 'Unknown Category'} 
+                                  <span className={`ml-2 px-2 py-1 rounded text-xs ${
+                                    item.type === 'new' ? 'bg-green-600' :
+                                    item.type === 'modify' ? 'bg-yellow-600' :
+                                    'bg-gray-600'
+                                  }`}>
+                                    {item.type || 'unknown'}
+                                  </span>
+                                </span>
+                                <span className='text-gray-400'>{item.stem?.file_name || 'Unknown file'}</span>
+                              </div>
+                            ))}
+                          </div>
+                        )}
+                      </div>
+                    );
+                  });
+                })()}
             </div>
             )}
           </div>
