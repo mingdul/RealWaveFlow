@@ -15,7 +15,6 @@ export const createUpstream = async (upstreamData: CreateUpstreamDto) => {
 
 // 스테이지별 업스트림 목록 조회
 export const getStageUpstreams = async (stageId: string) => {
-<<<<<<< Updated upstream
   try {
     const response = await apiClient.get(`/upstream/stage/${stageId}`);
     if (!response.data.success) {
@@ -42,16 +41,14 @@ export const getUpstreamDetail = async (upstreamId: string) => {
   }
 };
 
+// 새로운 함수: 백엔드의 stem API 호출
+export const getUpstreamStems = async (upstreamId: string, trackId: string) => {
+  return await apiClient.get(`/stems/upstream/${upstreamId}/track/${trackId}`);
+};
+
 export default {
   createUpstream,
   getStageUpstreams,
   getUpstreamDetail,
-=======
-  return await api.get(`/get-stage-upstreams/${stageId}`);
-};
-
-// 새로운 함수: 백엔드의 stem API 호출
-export const getUpstreamStems = async (upstreamId: string, trackId: string) => {
-  return await api.get(`/stems/upstream/${upstreamId}/track/${trackId}`);
->>>>>>> Stashed changes
+  getUpstreamStems
 };
