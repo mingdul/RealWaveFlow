@@ -24,6 +24,7 @@ const TrackPage: React.FC<TrackPageProps> = () => {
   const [stemsLoading, setStemsLoading] = useState(false);
   const [isOpenStageModalOpen, setIsOpenStageModalOpen] = useState(false);
   const [isStemListModalOpen, setIsStemListModalOpen] = useState(false);
+  const [selectedStageVersion, setSelectedStageVersion] = useState<number>(1);
   const { user } = useAuth();
 
   // 트랙 데이터와 스테이지 목록 로드
@@ -65,17 +66,22 @@ const TrackPage: React.FC<TrackPageProps> = () => {
       setStemsLoading(true);
       
       // status가 'approve'인 스테이지 찾기
-      const approveStage = stages.find(stage => stage.status === 'approve');
-      if (!approveStage) {
+      const approveStages = stages.filter(stage => stage.status === 'approve');
+      if (approveStages.length === 0) {
         console.error('No approve stage found');
         setStems([]);
         return;
       }
 
+      const latestApproveStage = approveStages.reduce((prev, current) => {
+        return current.version > prev.version ? current : prev;
+      });
+
       // 활성 스테이지의 버전으로 스템들 로드
-      const response = await streamingService.getMasterStemStreams(trackId, approveStage.version);
+      const response = await streamingService.getMasterStemStreams(trackId, latestApproveStage.version);
       if (response.data) {
         setStems(response.data.stems);
+        setSelectedStageVersion(latestApproveStage.version);
       } else {
         console.error('Failed to load stems:', response.message);
         setStems([]);
@@ -113,12 +119,36 @@ const TrackPage: React.FC<TrackPageProps> = () => {
     console.log('Rolling back track:', track?.id);
   };
 
-  const handleStageClick = (stage: Stage) => {
+
+  const loadStemsByVersion = async (version: number) => {
+    if (!trackId) return;
+  
+    try {
+      setStemsLoading(true);
+      const response = await streamingService.getMasterStemStreams(trackId, version);
+      if (response.data) {
+        setStems(response.data.stems);
+      } else {
+        console.error('Failed to load stems:', response.message);
+        setStems([]);
+      }
+    } catch (error) {
+      console.error('Error loading stems by version:', error);
+      setStems([]);
+    } finally {
+      setStemsLoading(false);
+    }
+  };
+  
+
+  const handleStageClick = async  (stage: Stage) => {
     // active한 stage일 때만 StagePage로 라우팅
     if (stage.status === 'active') {
       navigate(`/stage/${stage.id}`);
     } else {
       // 비활성 stage는 트랙 재생 로직 (기존 TODO)
+      await loadStemsByVersion(stage.version);
+      setSelectedStageVersion(stage.version);
       console.log('Playing track version:', stage.version);
     }
   };
@@ -252,7 +282,7 @@ const TrackPage: React.FC<TrackPageProps> = () => {
         isOpen={isStemListModalOpen}
         onClose={() => setIsStemListModalOpen(false)}
         stems={stems}
-        versionNumber={getActiveStage()?.version.toString() || '1'}
+        versionNumber={selectedStageVersion.toString()}
         loading={stemsLoading}
       />
     </div>
