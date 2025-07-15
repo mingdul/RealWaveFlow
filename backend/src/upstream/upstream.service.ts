@@ -19,6 +19,7 @@ export class UpstreamService {
         const upstream = this.upstreamRepository.create({
             title,
             description,
+            status: 'ACTIVE', // 기본 상태 설정
             stage: { id: stage_id },
             user: { id: user_id },  
         });
