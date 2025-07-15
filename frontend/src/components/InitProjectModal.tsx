@@ -120,7 +120,7 @@ const FileSelectionAndUploadStep: React.FC<{
     const canStartUpload = selectedFiles.length > 0 && selectedFiles.every(f => f.tag && f.tag.trim() !== '');
 
     return (
-      <div className="p-6 pt-0 max-h-[70vh] overflow-y-auto">
+      <div className="p-6 pt-0 max-h-[70vh] pb-[100px] overflow-y-auto">
         <h3 className="text-lg font-semibold text-white mb-2">Select and Upload Files</h3>
         <p className="text-gray-400 mb-6">Choose audio files, set their metadata, and upload them to the project.</p>
 
@@ -553,7 +553,7 @@ const InitProjectModal: React.FC<InitProjectModalProps> = ({
           </div>
 
           {/* Footer */}
-          <div className="flex items-center justify-between p-6 border-t border-gray-700 bg-gray-900/50 rounded-b-xl">
+          <div className="flex items-center justify-between p-4 border-t border-gray-700 bg-gray-900/50 rounded-b-xl">
             <button
               onClick={handleCloseModal}
               disabled={state.isUploading}

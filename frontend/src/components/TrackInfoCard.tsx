@@ -1,4 +1,4 @@
-import React, { useState } from 'react';
+import React, { useEffect, useState, useRef } from 'react';
 import { Play, Plus, Pause, X } from 'lucide-react';
 import { Button, StemPlayer } from './';
 import { Track } from '../types/api';
@@ -15,20 +15,27 @@ interface TrackInfoCardProps {
   stemsLoading?: boolean;
   versionNumber?: string;
   stageId?: string;
+  guideUrl?: string;
 }
 
 const TrackInfoCard: React.FC<TrackInfoCardProps> = ({
   track,
   stems = [],
-  onPlay,
+  
   onShowAllStems,
   versionNumber,
   stemsLoading = false,
-  stageId
+  stageId,
+
 }) => {
-  const [showPlayer] = useState(false);
+  const [showPlayer, setShowPlayer] = useState(false);
+  const [isPlaying, setIsPlaying] = useState(false);
   const [showInviteModal, setShowInviteModal] = useState(false);
-  const [guideUrl, setGuideUrl] = useState('');
+  const [guideUrl, setGuideUrl] = useState<string | undefined>(undefined);
+  const [guideLoading, setGuideLoading] = useState(false);
+  const guideAudioRef = useRef<HTMLAudioElement>(null);
+
+
   //const [inviteEmails, setInviteEmails] = useState('');
   const [inviteLoading, setInviteLoading] = useState(false);
   const [inviteError, setInviteError] = useState('');
@@ -149,21 +156,47 @@ const handleCloseInviteModal = () => {
 
 
   const handlePlayClick = async () => {
-
-    if (stems.length > 0) {
-      // setShowPlayer(!showPlayer);
-      const response = await streamingService.getGuidePresignedUrlByStageId(stageId || '');
+  if (!isPlaying && stageId) {
+    try {
+      setGuideLoading(true);
+      const response = await streamingService.getGuidePresignedUrlByStageId(stageId);
+      
       console.log('Guide API response:', response);
-      console.log('Response success:', response.success);
-      console.log('Response data:', response.data);
+      
       if (response.success && response.data) {
         setGuideUrl(response.data.presignedUrl);
+        setShowPlayer(true);
+        setIsPlaying(true);
+      } else {
+        console.error('Failed to fetch guide:', response.message);
       }
-      
-    } else if (onPlay) {
-      onPlay();
+    } catch (error) {
+      console.error('Error fetching guide:', error);
+    } finally {
+      setGuideLoading(false);
     }
-  };
+  } else {
+    // 정지
+    if (guideAudioRef.current) {
+      guideAudioRef.current.pause();
+      guideAudioRef.current.currentTime = 0;
+    }
+    setShowPlayer(false);
+    setIsPlaying(false);
+    setGuideUrl(undefined);
+  }
+};
+
+useEffect(() => {
+  const guideAudio = guideAudioRef.current;
+  if (!guideAudio || !guideUrl) return;
+
+  if (isPlaying) {
+    guideAudio.play().catch(console.error);
+  } else {
+    guideAudio.pause();
+  }
+}, [isPlaying, guideUrl]);
 
   const handleShowAllStems = () => {
     if (onShowAllStems) {
@@ -269,11 +302,11 @@ const handleCloseInviteModal = () => {
               size="lg" 
               className="rounded-full flex items-center gap-2 bg-purple-600 hover:bg-purple-700"
               onClick={handlePlayClick}
-              disabled={stemsLoading}
+              disabled={stemsLoading || guideLoading}
             >
-              {stemsLoading ? (
+              {stemsLoading || guideLoading ? (
                 <div className="w-5 h-5 border-2 border-white border-t-transparent rounded-full animate-spin" />
-              ) : showPlayer ? (
+              ) : isPlaying ? (
                 <Pause size={20} />
               ) : (
                 <Play size={20} />
@@ -295,9 +328,13 @@ const handleCloseInviteModal = () => {
       </div>
 
       {/* Stem Player */}
-      {showPlayer && stems.length > 0 && (
+      {showPlayer && (
         <div className="mt-6">
-          <StemPlayer stems={stems} guideUrl={guideUrl} />
+          <StemPlayer 
+            stems={stems} 
+            guideUrl={guideUrl}
+            stageId={stageId}
+          />
         </div>
       )}
 
