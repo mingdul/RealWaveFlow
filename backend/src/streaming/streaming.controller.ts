@@ -5,6 +5,11 @@ import { BatchStreamRequestDto, TrackStemsQueryDto, StemInfoDto, BatchStemInfoRe
 import { AuthGuard } from '@nestjs/passport';
 
 /**
+ * Guide Path 스트리밍을 위한 DTO import 추가
+ */
+import { GuidePathStreamingDto, BatchGuidePathStreamingDto } from './dto/streaming.dto';
+
+/**
  * Streaming Controller
  * 
  * 음악 스템 파일들의 스트리밍 URL을 제공하는 컨트롤러
@@ -200,5 +205,96 @@ export class StreamingController {
     @Request() req: any
   ) {
     return this.streamingService.getUpstreamStemsStreamingUrls(upstreamId, req.user.id);
+  }
+
+  // ===========================================
+  // Guide Path 기반 스트리밍 엔드포인트들
+  // ===========================================
+
+  /**
+   * Guide Path로 presigned URL 생성
+   * 
+   * POST /streaming/guide/presigned
+   * 
+   * 프론트엔드에서 이미 가지고 있는 guide path 정보를 제공받아
+   * 권한만 확인하고 presigned URL만 반환
+   */
+  @Post('guide/presigned')
+  @ApiOperation({ summary: 'Guide Path 스트리밍 URL 생성', description: '프론트엔드에서 제공받은 guide path 정보로 presigned streaming URL을 생성합니다.' })
+  @ApiBody({ type: GuidePathStreamingDto })
+  @ApiResponse({ status: 200, description: 'Guide Path 스트리밍 URL 생성 성공' })
+  @ApiResponse({ status: 401, description: '인증되지 않은 사용자' })
+  @ApiResponse({ status: 403, description: '권한 없음' })
+  @ApiResponse({ status: 404, description: 'Guide 파일을 찾을 수 없음' })
+  async getGuidePathPresignedUrl(
+    @Body() guidePathInfo: GuidePathStreamingDto,
+    @Request() req: any
+  ) {
+    return this.streamingService.getGuidePathPresignedUrl(guidePathInfo, req.user.id);
+  }
+
+  /**
+   * 배치 Guide Path presigned URL 생성
+   * 
+   * POST /streaming/guides/batch-presigned
+   * 
+   * 프론트엔드에서 이미 가지고 있는 guide paths 정보를 제공받아
+   * 권한만 확인하고 presigned URLs를 반환
+   */
+  @Post('guides/batch-presigned')
+  @ApiOperation({ summary: '배치 Guide Path 스트리밍 URL 생성', description: '여러 guide path 정보로 배치 presigned streaming URL을 생성합니다.' })
+  @ApiBody({ type: BatchGuidePathStreamingDto })
+  @ApiResponse({ status: 200, description: '배치 Guide Path 스트리밍 URL 생성 성공' })
+  @ApiResponse({ status: 401, description: '인증되지 않은 사용자' })
+  @ApiResponse({ status: 403, description: '권한 없음' })
+  @ApiResponse({ status: 404, description: 'Guide 파일들을 찾을 수 없음' })
+  async getBatchGuidePathPresignedUrls(
+    @Body() request: BatchGuidePathStreamingDto,
+    @Request() req: any
+  ) {
+    return this.streamingService.getBatchGuidePathPresignedUrls(request.guidePaths, req.user.id);
+  }
+
+  /**
+   * Stage ID로 guide 스트리밍 URL 조회
+   * 
+   * GET /streaming/stage/:stageId/guide
+   * 
+   * Stage ID를 받아서 DB에서 guide path를 조회하고 스트리밍 URL 반환
+   * Stage.guide_path 또는 Guide 엔티티의 mixed_file_path 사용
+   */
+  @Get('stage/:stageId/guide')
+  @ApiOperation({ summary: 'Stage Guide 스트리밍 URL 조회', description: 'Stage ID로 guide 스트리밍 URL을 조회합니다.' })
+  @ApiParam({ name: 'stageId', description: 'Stage ID' })
+  @ApiResponse({ status: 200, description: 'Stage Guide 스트리밍 URL 조회 성공' })
+  @ApiResponse({ status: 401, description: '인증되지 않은 사용자' })
+  @ApiResponse({ status: 403, description: '권한 없음' })
+  @ApiResponse({ status: 404, description: 'Stage 또는 Guide를 찾을 수 없음' })
+  async getStageGuideStreamingUrl(
+    @Param('stageId') stageId: string,
+    @Request() req: any
+  ) {
+    return this.streamingService.getStageGuideStreamingUrl(stageId, req.user.id);
+  }
+
+  /**
+   * Upstream ID로 guide 스트리밍 URL 조회
+   * 
+   * GET /streaming/upstream/:upstreamId/guide
+   * 
+   * Upstream ID를 받아서 DB에서 guide path를 조회하고 스트리밍 URL 반환
+   */
+  @Get('upstream/:upstreamId/guide')
+  @ApiOperation({ summary: 'Upstream Guide 스트리밍 URL 조회', description: 'Upstream ID로 guide 스트리밍 URL을 조회합니다.' })
+  @ApiParam({ name: 'upstreamId', description: 'Upstream ID' })
+  @ApiResponse({ status: 200, description: 'Upstream Guide 스트리밍 URL 조회 성공' })
+  @ApiResponse({ status: 401, description: '인증되지 않은 사용자' })
+  @ApiResponse({ status: 403, description: '권한 없음' })
+  @ApiResponse({ status: 404, description: 'Upstream 또는 Guide를 찾을 수 없음' })
+  async getUpstreamGuideStreamingUrl(
+    @Param('upstreamId') upstreamId: string,
+    @Request() req: any
+  ) {
+    return this.streamingService.getUpstreamGuideStreamingUrl(upstreamId, req.user.id);
   }
 }
