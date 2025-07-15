@@ -3,7 +3,7 @@ import { Stem } from "src/stem/stem.entity";
 import { UpstreamComment } from "src/upstream-comment/upstream-comment.entity";
 import { UpstreamReview } from "src/upstream-review/upstream-review.entity";
 import { User } from "src/users/user.entity";
-import { Entity, JoinColumn, ManyToOne, OneToMany } from "typeorm";
+import { Entity, JoinColumn, ManyToOne, OneToMany, CreateDateColumn } from "typeorm";
 import { Column } from "typeorm";
 import { PrimaryGeneratedColumn } from "typeorm";
 
@@ -24,7 +24,7 @@ export class Upstream {
     @Column({ type: 'varchar', nullable: true , default: null})
     guide_path : string;
 
-    @Column({ type: 'timestamp' })
+    @CreateDateColumn({ type: 'timestamp' })
     created_at : Date;
 
     
