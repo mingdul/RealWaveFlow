@@ -3,7 +3,7 @@ import apiClient from '../lib/api';
 import { CreateUpstreamDto } from '../types/api';
 
 // 업스트림 생성
-export const createUpstream = async (upstreamData: CreateUpstreamDto) => {
+export const createUpstream = async (upstreamData: CreateUpstreamDto | any) => {
   try {
     const response = await apiClient.post('/upstream/create', upstreamData);
     return response.data;

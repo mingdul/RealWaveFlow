@@ -114,6 +114,21 @@ const StagePage: React.FC = () => {
         <div className="absolute right-4 top-4 z-30">
           <span className={`rounded-full px-2 py-0.5 text-[10px] font-medium ${statusColor}`}>{status}</span>
         </div>
+        
+        {/* 생성 시간 표시 */}
+        <div className="absolute left-4 top-4 z-30">
+          <span className="text-white text-[10px] font-medium">
+            {upstream.created_at ? new Date(upstream.created_at).toLocaleString('ko-KR', {
+              year: 'numeric',
+              month: '2-digit',
+              day: '2-digit',
+              hour: '2-digit',
+              minute: '2-digit',
+              second: '2-digit',
+              hour12: false
+            }) : ''}
+          </span>
+        </div>
 
         <img
           src={tapeImg}
