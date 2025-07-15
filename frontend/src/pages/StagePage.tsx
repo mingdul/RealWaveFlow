@@ -1,7 +1,7 @@
 import React, { useState, useEffect, useRef } from 'react';
 import { useParams } from 'react-router-dom';
-import { Upload, Bell, Settings } from 'lucide-react';
-import Logo from '../components/Logo';
+import { Upload} from 'lucide-react';
+// import Logo from '../components/Logo';
 import UploadModal from '../components/UploadModal';
 import trackService from '../services/trackService';
 import { getStageDetail } from '../services/stageService';
@@ -12,10 +12,12 @@ import { Track, Stage, Upstream, StageReviewer } from '../types/api';
 import tapeActive from '../assets/activeTape.png';
 import tapeApproved from '../assets/approveTape.png';
 import tapeRejected from '../assets/rejectedTape.png';
+import TrackHeader from '../components/TrackHeader';
+import { useNavigate } from 'react-router-dom';
 
 const StagePage: React.FC = () => {
   const { trackId, stageId } = useParams<{ trackId: string; stageId: string }>();
-  
+  const navigate = useNavigate();
   // 상태 관리
   const [stage, setStage] = useState<Stage | null>(null);
   const [upstreams, setUpstreams] = useState<Upstream[]>([]);
@@ -282,23 +284,37 @@ const StagePage: React.FC = () => {
 
   return (
     <div className="min-h-screen bg-black">
-      <header className='flex items-center justify-between px-8 py-6'>
-        <div className='flex items-center gap-8'>
-          <Logo />
-          <nav className='flex gap-8'>
-            <button className='text-gray-300 transition-colors hover:text-white'>TRACK</button>
-            <button className='border-b-2 border-white pb-1 text-white'>STAGE</button>
-          </nav>
-        </div>
-        <div className='flex items-center gap-4'>
-          <button className='relative text-white transition-colors hover:text-gray-300'>
-            <Bell size={20} />
-            <span className='absolute -right-1 -top-1 flex h-4 w-4 items-center justify-center rounded-full bg-red-500 text-xs text-white'>1</span>
-          </button>
-          <button className='text-white transition-colors hover:text-gray-300'><Settings size={20} /></button>
-        </div>
-      </header>
+      {/* <header className='flex items-center justify-between px-8 py-6'>
+      <div className="bg-black px-6 py-4 flex items-center justify-between">
+      <div className="flex items-center gap-4">
+        <Button size="sm" className="p-2 bg-black text-white" onClick={onBack}>
+          <ChevronLeft size={20} />
+        </Button>
+        <Logo />
+      </div>
+      <div className="flex space-x-4">
+        <button
+          className="text-white text-sm"
+          onClick={() => navigate(`/dashboard`)}
+        >
+          Dashboard
+        </button>
 
+      </div>
+      <div className="flex items-center gap-4">
+        <Button size="sm" className="p-2 bg-black text-white" onClick={onNotificationClick}>
+          <Bell size={20} />
+        </Button>
+        <Button size="sm" className="p-2 bg-black text-white" onClick={onSettingsClick}>
+          <Settings size={20} />
+        </Button>
+      </div>
+    </div>
+      </header> */}
+      
+      <TrackHeader
+      onBack={() => navigate(`/track/${trackId}`)}/>
+      
       <main className='px-8 pb-8'>
         <div className='mb-8'>
           <h2 className='mb-4 text-3xl font-bold text-white'>{stage.title} - V{stage.version}</h2>
