@@ -113,9 +113,14 @@ const TrackPage: React.FC<TrackPageProps> = () => {
     console.log('Rolling back track:', track?.id);
   };
 
-  const handleStageClick = () => {
-    // TODO: 트랙 재생 로직 구현
-    console.log('stage click');
+  const handleStageClick = (stage: Stage) => {
+    // active한 stage일 때만 StagePage로 라우팅
+    if (stage.status === 'active') {
+      navigate(`/stage/${stage.id}`);
+    } else {
+      // 비활성 stage는 트랙 재생 로직 (기존 TODO)
+      console.log('Playing track version:', stage.version);
+    }
   };
 
   const handleOpenStageSubmit = async (description: string, ) => {

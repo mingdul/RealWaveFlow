@@ -367,7 +367,7 @@ const DashboardPage = () => {
       </header>
 
       {/* Main Content */}
-      <main className="flex-1 overflow-y-auto p-6 max-w-7xl mx-auto w-full">
+      <main className="flex-1 overflow-y-auto scrollbar-hide p-6 max-w-7xl mx-auto w-full">
         {/* Greeting */}
         <div className="mb-12 mt-8">
           <h1 className="text-5xl font-bold bg-clip-text text-transparent bg-gradient-to-r from-[#FF4E4E] to-[#2159C6] mb-2">
