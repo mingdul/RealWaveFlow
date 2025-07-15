@@ -31,6 +31,7 @@ export interface Track {
   genre?: string;
   bpm?: string;
   key_signature?: string;
+  image_url?: string;
   created_date: string;
   updated_date: string;
   owner_id: User;
@@ -43,6 +44,7 @@ export interface CreateTrackDto {
   genre?: string;
   bpm?: string;
   key_signature?: string;
+  image_url?: string;
   owner_id?: string;
 }
 
