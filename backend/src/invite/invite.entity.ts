@@ -6,7 +6,7 @@ export class InviteLink {
   @PrimaryGeneratedColumn('uuid')
   id: string;
 
-  @ManyToOne(() => Track, { eager: true })
+  @ManyToOne(() => Track, { eager: true, cascade: true, onDelete: 'CASCADE' })
   track: Track;
 
   @Column({type: 'varchar', unique: true })
