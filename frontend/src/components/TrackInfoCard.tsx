@@ -14,6 +14,7 @@ interface TrackInfoCardProps {
   onRollBack?: () => void;
   stemsLoading?: boolean;
   versionNumber?: string;
+  stageId?: string; // Optional stageId for guide playback
 }
 
 const TrackInfoCard: React.FC<TrackInfoCardProps> = ({
@@ -22,7 +23,8 @@ const TrackInfoCard: React.FC<TrackInfoCardProps> = ({
   onPlay,
   onShowAllStems,
   versionNumber,
-  stemsLoading = false
+  stemsLoading = false,
+  stageId
 }) => {
   const [showPlayer, setShowPlayer] = useState(false);
   const [showInviteModal, setShowInviteModal] = useState(false);
@@ -276,7 +278,7 @@ const handleCloseInviteModal = () => {
       {/* Stem Player */}
       {showPlayer && stems.length > 0 && (
         <div className="mt-6">
-          <StemPlayer stems={stems} />
+          <StemPlayer stems={stems} stageId={stageId} />
         </div>
       )}
 

@@ -1,11 +1,13 @@
-import React, { useState, useEffect,  } from 'react';
+import React, { useState, useEffect, useRef } from 'react';
 import { Play, Pause, Square, Volume2, VolumeX } from 'lucide-react';
 import AudioPlayer from './AudioPlayer';
 import { StemStreamingInfo } from '../services/streamingService';
+import streamingService from '../services/streamingService';
 
 interface StemPlayerProps {
   stems: StemStreamingInfo[];
   className?: string;
+  stageId?: string; // Optional stageId for guide playback
 }
 
 interface StemState {
@@ -16,12 +18,17 @@ interface StemState {
   isPlaying: boolean;
 }
 
-const StemPlayer: React.FC<StemPlayerProps> = ({ stems, className = '' }) => {
+const StemPlayer: React.FC<StemPlayerProps> = ({ stems, className = '', stageId }) => {
   const [isPlaying, setIsPlaying] = useState(false);
   const [currentTime, setCurrentTime] = useState(0);
   const [stemStates, setStemStates] = useState<Record<string, StemState>>({});
   const [masterVolume, setMasterVolume] = useState(1);
   const [masterMuted, setMasterMuted] = useState(false);
+
+  // Guide audio states
+  const [guideUrl, setGuideUrl] = useState<string | null>(null);
+  const [guideLoading, setGuideLoading] = useState(false);
+  const guideAudioRef = useRef<HTMLAudioElement>(null);
 
 
   // 스템 상태 초기화
@@ -40,7 +47,7 @@ const StemPlayer: React.FC<StemPlayerProps> = ({ stems, className = '' }) => {
   }, [stems]);
 
   // 마스터 재생/일시정지
-  const handleMasterPlayPause = () => {
+  const handleMasterPlayPause = async () => {
     const willPlay = !isPlaying;
   
     if (willPlay) {
@@ -58,6 +65,32 @@ const StemPlayer: React.FC<StemPlayerProps> = ({ stems, className = '' }) => {
           return updatedStates;
         });
       }
+
+      // If stageId is provided, fetch and play guide file
+      if (stageId) {
+        try {
+          setGuideLoading(true);
+          const response = await streamingService.getStageGuide(stageId);
+          
+          if (response.success && response.data) {
+            setGuideUrl(response.data.presignedUrl);
+            console.log('Guide file loaded:', response.data.fileName);
+          } else {
+            console.error('Failed to fetch guide:', response.message);
+          }
+        } catch (error) {
+          console.error('Error fetching guide:', error);
+        } finally {
+          setGuideLoading(false);
+        }
+      }
+    } else {
+      // Stop guide playback when pausing
+      if (guideAudioRef.current) {
+        guideAudioRef.current.pause();
+        guideAudioRef.current.currentTime = 0;
+      }
+      setGuideUrl(null);
     }
   
     setIsPlaying(willPlay);
@@ -163,6 +196,26 @@ const StemPlayer: React.FC<StemPlayerProps> = ({ stems, className = '' }) => {
     setCurrentTime(newTime);
   };
 
+  // Handle guide audio playback
+  useEffect(() => {
+    const guideAudio = guideAudioRef.current;
+    if (!guideAudio || !guideUrl) return;
+
+    if (isPlaying) {
+      guideAudio.play().catch(console.error);
+    } else {
+      guideAudio.pause();
+    }
+  }, [isPlaying, guideUrl]);
+
+  // Handle guide audio volume
+  useEffect(() => {
+    const guideAudio = guideAudioRef.current;
+    if (guideAudio) {
+      guideAudio.volume = masterMuted ? 0 : masterVolume;
+    }
+  }, [masterVolume, masterMuted]);
+
   if (stems.length === 0) {
     return (
       <div className={`p-6 bg-gray-900 rounded-lg ${className}`}>
@@ -204,9 +257,12 @@ const StemPlayer: React.FC<StemPlayerProps> = ({ stems, className = '' }) => {
         <div className="flex items-center gap-4 mb-4">
           <button
             onClick={handleMasterPlayPause}
-            className="flex items-center justify-center w-12 h-12 bg-purple-600 hover:bg-purple-700 rounded-full transition-colors"
+            disabled={guideLoading}
+            className="flex items-center justify-center w-12 h-12 bg-purple-600 hover:bg-purple-700 disabled:bg-gray-600 rounded-full transition-colors"
           >
-            {isPlaying ? (
+            {guideLoading ? (
+              <div className="w-5 h-5 border-2 border-white border-t-transparent rounded-full animate-spin" />
+            ) : isPlaying ? (
               <Pause size={20} className="text-white" />
             ) : (
               <Play size={20} className="text-white ml-0.5" />
@@ -221,6 +277,11 @@ const StemPlayer: React.FC<StemPlayerProps> = ({ stems, className = '' }) => {
           <div className="text-sm text-gray-400">
             {formatTime(currentTime)} / {formatTime(maxDuration)}
           </div>
+          {stageId && (
+            <div className="text-xs text-purple-400 ml-2">
+              {guideLoading ? '가이드 로딩 중...' : '가이드 재생'}
+            </div>
+          )}
         </div>
 
         {/* 프로그레스 바 */}
@@ -259,6 +320,24 @@ const StemPlayer: React.FC<StemPlayerProps> = ({ stems, className = '' }) => {
         />
         ))}
       </div>
+
+      {/* Hidden Guide Audio Element */}
+      {guideUrl && (
+        <audio
+          ref={guideAudioRef}
+          src={guideUrl}
+          onEnded={() => {
+            setIsPlaying(false);
+            setGuideUrl(null);
+          }}
+          onError={(e) => {
+            console.error('Guide audio playback error:', e);
+            setIsPlaying(false);
+            setGuideUrl(null);
+          }}
+          style={{ display: 'none' }}
+        />
+      )}
     </div>
   );
 };
