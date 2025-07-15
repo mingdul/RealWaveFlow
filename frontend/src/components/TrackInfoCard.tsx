@@ -4,7 +4,7 @@ import { Button, StemPlayer } from './';
 import { Track } from '../types/api';
 import { StemStreamingInfo } from '../services/streamingService';
 import PresignedImage from './PresignedImage';
-//import inviteService from '../services/inviteService';
+import inviteService from '../services/inviteService';
 
 interface TrackInfoCardProps {
   track: Track;
@@ -110,19 +110,28 @@ const handleSendInvites = async () => {
   setInviteSuccess('');
 
   try {
-    // 실제 API 호출 시 emailList 사용
-    // const response = await sendInvites(emailList);
+    // 실제 API 호출
+    const result = await inviteService.sendTrackInvites(track.id, emailList);
     
-    // 시뮬레이션
-    await new Promise(resolve => setTimeout(resolve, 2000));
-    setInviteSuccess(`${emailList.length}명에게 초대 이메일을 발송했습니다.`);
+    if (result.success) {
+      setInviteSuccess(`${result.sent_count}개의 초대가 성공적으로 발송되었습니다.`);
+      
+      // 성공 시 이메일 목록 초기화
+      setEmailList([]);
+      setCurrentInput('');
+      
+      // 3초 후 모달 닫기
+      setTimeout(() => {
+        setShowInviteModal(false);
+        setInviteSuccess('');
+      }, 3000);
+    } else {
+      setInviteError(result.message || '초대 발송에 실패했습니다.');
+    }
     
-    // 성공 시 이메일 목록 초기화
-    setEmailList([]);
-    setCurrentInput('');
-    
-  } catch (error) {
-    setInviteError('초대 발송에 실패했습니다. 다시 시도해주세요.');
+  } catch (error: any) {
+    console.error('초대 발송 실패:', error);
+    setInviteError(error.message || '초대 발송에 실패했습니다. 다시 시도해주세요.');
   } finally {
     setInviteLoading(false);
   }
