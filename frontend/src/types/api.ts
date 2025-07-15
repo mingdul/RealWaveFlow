@@ -464,7 +464,7 @@ export interface Stage {
   guide_path?: string;
   track: Track;
   user: User;
-  created_at: string;
+  created_at: Date;
   stage_reviewers?: StageReviewer[];
   version_stems?: VersionStem[];
   upstreams?: Upstream[];
@@ -496,7 +496,7 @@ export interface Upstream {
   description: string;
   status: string;
   guide_path?: string;
-  created_at: string;
+  created_at: Date;
   stage: Stage;
   user: User;
   stems?: Stem[];

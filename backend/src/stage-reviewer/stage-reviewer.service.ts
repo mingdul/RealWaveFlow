@@ -32,14 +32,12 @@ export class StageReviewerService {
     async getStageReviewers(stage_id: string) {
         const stageReviewers = await this.stageReviewerRepository.find({
             where: { stage: { id: stage_id } },
+            relations: ['user'],
         });
 
-        if (stageReviewers.length === 0) {
-            throw new NotFoundException('No stage reviewers found');
-        }
         return {
             success: true,
-            message: 'Stage reviewers fetched successfully',
+            message: stageReviewers.length > 0 ? 'Stage reviewers fetched successfully' : 'No stage reviewers found',
             stage_reviewers: stageReviewers,
         };
     }     
