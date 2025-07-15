@@ -15,6 +15,9 @@ interface AudioPlayerProps {
   onMuteToggle?: () => void;
   className?: string;
   showProgressBar?: boolean;
+  audioRef?: React.MutableRefObject<HTMLAudioElement | null>;
+  onProgressBarClick?: (newTime: number) => void;
+  onAudioReady?: (audio: HTMLAudioElement) => void;
 }
 
 const AudioPlayer: React.FC<AudioPlayerProps> = ({
@@ -30,12 +33,28 @@ const AudioPlayer: React.FC<AudioPlayerProps> = ({
   muted = false,
   onMuteToggle,
   className = '',
-  showProgressBar = false
+  showProgressBar = false,
+  audioRef: externalAudioRef,
+  onProgressBarClick,
+  onAudioReady
 }) => {
-  const audioRef = useRef<HTMLAudioElement>(null);
+  const internalAudioRef = useRef<HTMLAudioElement>(null);
+  const audioRef = internalAudioRef;
   const [duration, setDuration] = useState<number>(0);
   const [loading, setLoading] = useState<boolean>(true);
   const [error, setError] = useState<string | null>(null);
+
+  // External ref 설정 및 onAudioReady 콜백
+  useEffect(() => {
+    if (audioRef.current) {
+      if (externalAudioRef) {
+        externalAudioRef.current = audioRef.current;
+      }
+      if (onAudioReady) {
+        onAudioReady(audioRef.current);
+      }
+    }
+  }, [externalAudioRef, onAudioReady]);
 
   useEffect(() => {
     const audio = audioRef.current;
@@ -184,7 +203,18 @@ return (
 
     {/* ✅ 조건부 프로그레스바 */}
     {showProgressBar && (
-    <div className="w-full h-1 bg-gray-700 rounded overflow-hidden mt-1">
+    <div 
+      className="w-full h-1 bg-gray-700 rounded overflow-hidden mt-1 cursor-pointer"
+      onClick={(e) => {
+        if (onProgressBarClick && duration > 0) {
+          const rect = e.currentTarget.getBoundingClientRect();
+          const clickX = e.clientX - rect.left;
+          const barWidth = rect.width;
+          const newTime = (clickX / barWidth) * duration;
+          onProgressBarClick(newTime);
+        }
+      }}
+    >
       <div
         className="h-full bg-purple-500 transition-all duration-200"
         style={{ width: `${(currentTime / duration) * 100}%` }}
