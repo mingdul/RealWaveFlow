@@ -139,6 +139,7 @@ export class StageService {
         await this.sqsService.sendMixingStemsRequest({
             stageId: stageId,
             stem_paths: stemPaths,
+            upstreamId : null,
         });
 
         this.logger.log(`스테이지 기반 믹싱 요청 전송: ${stageId}, 스템 개수: ${stemPaths.length}`);
@@ -157,6 +158,7 @@ export class StageService {
         await this.sqsService.sendMixingStemsRequest({
             stageId: stageId,
             stem_paths: stemPaths,
+            upstreamId : null,
         });
 
         this.logger.log(`스템 믹싱 요청 전송: ${stageId}, 스템 개수: ${stemPaths.length}`);

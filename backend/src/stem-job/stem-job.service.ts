@@ -3,8 +3,11 @@ import { StemJob } from './stem-job.entity';
 import { Repository } from 'typeorm';
 import { InjectRepository } from '@nestjs/typeorm';
 import { Stem } from '../stem/stem.entity';
+import { VersionStem } from '../version-stem/version-stem.entity';
+import { Stage } from '../stage/stage.entity';
 import { VersionStemService } from '../version-stem/version-stem.service';
 import { SqsService } from '../sqs/service/sqs.service';
+import { StageService } from '../stage/stage.service';
 
 @Injectable()
 export class StemJobService {
@@ -15,13 +18,19 @@ export class StemJobService {
         private stemJobRepository: Repository<StemJob>,
         @InjectRepository(Stem)
         private stemRepository: Repository<Stem>,
+        @InjectRepository(VersionStem)
+        private versionStemRepository: Repository<VersionStem>,
+        @InjectRepository(Stage)
+        private stageRepository: Repository<Stage>,
         private sqsService: SqsService,
         private versionStemService: VersionStemService,
+        private stageService: StageService,
     ) {}
 
-    async createJob(jobData: {
+    async dubjob(jobData: {
         file_name: string;
         file_path: string;
+        category_id?: string;
         upstream_id?: string;
         stage_id: string;
         track_id: string;
@@ -32,7 +41,50 @@ export class StemJobService {
         const job = this.stemJobRepository.create({
             file_name: jobData.file_name,
             file_path: jobData.file_path,
-            category_id: null, // category는 나중에 생성됨
+            category_id: jobData.category_id || null, 
+            upstream_id: jobData.upstream_id || null,
+            stage_id: jobData.stage_id,
+            track_id: jobData.track_id,
+            key: jobData.key,
+            bpm: jobData.bpm,
+            instrument : jobData.instrument,
+            user_id: userId,
+            jobtype : 'dub',
+            uploaded_at: new Date(),
+        });
+
+        const savedJob = await this.stemJobRepository.save(job);
+        
+        // SQS로 해시 생성 요청 보내기
+        await this.sqsService.sendHashGenerationRequest({
+            userId: userId,
+            trackId: jobData.track_id,
+            stemId: savedJob.id,
+            stageId: jobData.stage_id,
+            filepath: jobData.file_path,
+            timestamp: new Date().toISOString(),
+            original_filename: jobData.file_name,
+        });
+
+        this.logger.log(`Stem job 생성 및 해시 생성 요청 전송: ${savedJob.id}`);
+        return savedJob;
+    }
+
+    async createJob(jobData: {
+        file_name: string;
+        file_path: string;
+        category_id?: string;
+        upstream_id?: string;
+        stage_id: string;
+        track_id: string;
+        key?: string;
+        bpm?: string;
+        instrument? : string;
+    }, userId: string): Promise<StemJob> {
+        const job = this.stemJobRepository.create({
+            file_name: jobData.file_name,
+            file_path: jobData.file_path,
+            category_id: jobData.category_id || null, // category는 나중에 생성됨
             upstream_id: jobData.upstream_id || null,
             stage_id: jobData.stage_id,
             track_id: jobData.track_id,
@@ -71,18 +123,41 @@ export class StemJobService {
     }
 
     async checkDuplicateHash(trackId: string, audioHash: string, stageId: string): Promise<boolean> {
-        // stem 테이블에서 해당 트랙과 스테이지의 해시가 이미 존재하는지 확인
-        const existingStem = await this.stemRepository.findOne({
-            where: { 
-                stem_hash: audioHash,
-                upstream: { stage: { track: { id: trackId }, id: stageId } }
-            },
-            relations: ['upstream', 'upstream.stage', 'upstream.stage.track']
+        // 현재 스테이지 조회
+        const currentStage = await this.stageRepository.findOne({
+            where: { id: stageId },
+            relations: ['track']
         });
 
-        return !!existingStem;
-    }
+        if (!currentStage) {
+            return false;
+        }
 
+        // 현재 스테이지보다 version이 1 작은 스테이지 조회
+        const targetStage = await this.stageRepository.findOne({
+            where: {
+                track: { id: trackId },
+                version: currentStage.version - 1
+            },
+            relations: ['track']
+        });
+
+        if (!targetStage) {
+            return false;
+        }
+
+        // targetStage에서 같은 audioHash를 가진 version stem이 있는지 확인
+        const existingVersionStem = await this.versionStemRepository.findOne({
+            where: {
+                stem_hash: audioHash,
+                stage: { id: targetStage.id },
+                track: { id: trackId }
+            },
+            relations: ['stage', 'track']
+        });
+
+        return !!existingVersionStem;
+    }
     async updateJobWithHash(jobId: string, audioHash: string): Promise<StemJob | null> {
         const job = await this.stemJobRepository.findOne({ where: { id: jobId } });
         if (!job) {
@@ -103,6 +178,16 @@ export class StemJobService {
         return await this.stemJobRepository.save(job);
     }
 
+    async updateJobWithUpstreamId(jobId: string, upstreamId: string): Promise<StemJob | null> {
+        const job = await this.stemJobRepository.findOne({ where: { id: jobId } });
+        if (!job) {
+            return null;
+        }
+
+        job.upstream_id = upstreamId;
+        return await this.stemJobRepository.save(job);
+    }
+
     async updateJobWithWavePath(jobId: string, audioWavePath: string): Promise<StemJob | null> {
         const job = await this.stemJobRepository.findOne({ where: { id: jobId } });
         if (!job) {
@@ -116,6 +201,34 @@ export class StemJobService {
     async deleteJob(jobId: string): Promise<void> {
         await this.stemJobRepository.delete(jobId);
         this.logger.log(`Stem job 삭제 완료: ${jobId}`);
+    }
+
+    async convertJobToStemNoVersion(jobId: string, userId: string): Promise<Stem | null> {
+        const job = await this.stemJobRepository.findOne({ where: { id: jobId } });
+        if (!job) {
+            return null;
+        }
+
+        if (!job.category_id) {
+            this.logger.error(`Category ID가 없어서 Stem 생성 불가: ${jobId}`);
+            return null;
+        }
+
+        // Stem 엔티티 생성
+        const stem = this.stemRepository.create({
+            file_name: job.file_name,
+            stem_hash: job.stem_hash,
+            file_path: job.file_path,
+            key: job.key,
+            bpm: job.bpm,
+            audio_wave_path: job.audio_wave_path,
+            category: { id: job.category_id },
+            upstream: job.upstream_id ? { id: job.upstream_id } : null,
+            uploaded_at: new Date(),
+            user: { id: userId }
+        });
+
+        return  await this.stemRepository.save(stem);
     }
 
     async convertJobToStem(jobId: string, userId: string): Promise<Stem | null> {

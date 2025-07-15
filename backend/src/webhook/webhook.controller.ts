@@ -6,6 +6,7 @@ import { StageService } from 'src/stage/stage.service';
 import { CategoryService } from 'src/category/category.service';
 import { ChatGateway } from 'src/websocket/websocket.gateway';
 import { GuideService } from 'src/guide/guide.service';
+import { UpstreamService } from 'src/upstream/upstream.service';
 
 @ApiTags('webhook')
 @Controller('webhook')
@@ -18,6 +19,7 @@ export class WebhookController {
         private readonly categoryService: CategoryService,
         private readonly chatGateway: ChatGateway,
         private readonly guideService: GuideService,
+        private readonly upstreamService: UpstreamService,
     ) {}
     
     @Post('hash-check')
@@ -61,6 +63,49 @@ export class WebhookController {
                 message: 'StemJob not found',
                 stemId: data.stemId,
             };
+        }
+
+        if (stemJob.jobtype == 'dub'){
+            // jobtype이 'dub'인 경우 중복 검사 로직 분기
+            const isDuplicate = await this.stemJobService.checkDuplicateHash(
+                data.trackId,
+                data.audio_hash,
+                data.stageId,
+            );
+
+            if (isDuplicate) {
+                // 중복일 경우: 유저에게 중복 알림 소켓 전송
+                await this.chatGateway.sendDubCheckResultEvent(data.userId, {
+                    stemJobId: data.stemId,
+                    isDuplicate: true,
+                    fileName: data.original_filename,
+                    trackId: data.trackId,
+                    stageId: data.stageId,
+                });
+                this.logger.log(`중복된 dub 파일: ${data.stemId}, 유저에게 중복 알림 전송`);
+                return {
+                    success: false,
+                    message: '중복된 파일입니다.',
+                    stemId: data.stemId,
+                };
+            } else {
+                // 중복이 아닐 경우: 유저에게 중복 아님 알림 소켓 전송
+                await this.chatGateway.sendDubCheckResultEvent(data.userId, {
+                    stemJobId: data.stemId,
+                    isDuplicate: false,
+                    fileName: data.original_filename,
+                    trackId: data.trackId,
+                    stageId: data.stageId,
+                });
+                await this.stemJobService.updateJobWithHash(data.stemId, data.audio_hash);
+
+                this.logger.log(`중복이 아닌 dub 파일: ${data.stemId}, 유저에게 중복 아님 알림 전송`);
+                return {
+                    success: true,
+                    message: '중복이 아닌 파일입니다.',
+                    stemId: data.stemId,
+                };
+            }
         }
 
         // 해시 값을 StemJob에 업데이트
@@ -222,6 +267,7 @@ export class WebhookController {
             properties: {
                 task_id: { type: 'string' },
                 stageId: { type: 'string' },
+                upstreamId: { type: 'string' },
                 status: { type: 'string' },
                 mixed_file_path: { type: 'string' },
                 waveform_data_path: { type: 'string' },
@@ -237,6 +283,7 @@ export class WebhookController {
     async handleMixingComplete(@Body() data: {
         task_id: string;
         stageId: string;
+        upstreamid: string;
         status: string;
         mixed_file_path: string;
         waveform_data_path: string;
@@ -251,6 +298,10 @@ export class WebhookController {
                 // Guide 테이블에 믹싱 결과 저장
                 const guide = await this.guideService.createGuideFromMixing(data);
 
+                if(data.upstreamid != null){
+                    // upstreamId가 있으면 upstream의 guide_path 업데이트
+                    await this.upstreamService.updateUpstreamGuidePath(data.upstreamid, data.mixed_file_path);
+                }
                 // 기존 stage의 guide_path도 업데이트 (하위 호환성)
                 await this.stageService.updateGuidePath(data.stageId, data.mixed_file_path);
 

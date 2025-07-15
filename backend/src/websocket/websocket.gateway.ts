@@ -347,6 +347,35 @@ export class ChatGateway
     });
   }
 
+  /**
+   * Dub 중복 체크 결과 알림
+   * @param userId 사용자 ID
+   * @param data 중복 체크 결과 정보
+   */
+  sendDubCheckResultEvent(userId: string, data: {
+    stemJobId: string;
+    isDuplicate: boolean;
+    fileName?: string;
+    trackId?: string;
+    stageId?: string;
+  }) {
+    this.logger.log(`Sending dub-check-result event to user: ${userId} for stemJob: ${data.stemJobId}, isDuplicate: ${data.isDuplicate}`);
+    
+    const message = data.isDuplicate 
+      ? `'${data.fileName || 'Unknown'}' 파일은 중복되어 처리되지 않았습니다.`
+      : `'${data.fileName || 'Unknown'}' 파일은 중복이 아닙니다. 처리를 계속합니다.`;
+
+    this.sendToUser(userId, 'dub-check-result', {
+      stemJobId: data.stemJobId,
+      isDuplicate: data.isDuplicate,
+      fileName: data.fileName,
+      trackId: data.trackId,
+      stageId: data.stageId,
+      timestamp: new Date().toISOString(),
+      message: message
+    });
+  }
+
 
 
   // ===========================================
