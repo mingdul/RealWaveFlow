@@ -237,7 +237,7 @@ const TrackPage: React.FC<TrackPageProps> = () => {
   return (
 <div className="relative min-h-screen bg-cover bg-center" style={{ backgroundImage: "url('/background.jpg')" }}>
   {/* 어두운 오버레이 */}
-  <div className="absolute inset-0 bg-black bg-opacity-60">
+  
       <TrackHeader 
         onBack={handleBack}
         onNotificationClick={() => console.log('Notification clicked')}
@@ -297,7 +297,7 @@ const TrackPage: React.FC<TrackPageProps> = () => {
         loading={stemsLoading}
       />
     </div>
-    </div>
+    
   );
 };
 
