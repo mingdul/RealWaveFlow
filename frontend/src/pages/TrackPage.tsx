@@ -214,6 +214,25 @@ const TrackPage: React.FC<TrackPageProps> = () => {
           onRollBack={handleRollBack}
         />
 
+        {/* 현재 활성 스테이지 정보 표시 */}
+        {(() => {
+          const activeStage = getActiveStage();
+          if (!activeStage) return null;
+          return (
+            <div className="mb-8 p-6 rounded-lg bg-[#232323] border border-gray-700 shadow flex flex-col gap-2 max-w-2xl">
+              <div className="flex items-center gap-4 mb-2">
+                <span className="text-xl font-bold text-purple-400">STAGE INFO</span>
+                <span className="text-sm text-gray-400">(V{activeStage.version})</span>
+              </div>
+              <div className="text-lg text-white font-semibold mb-1">{activeStage.title}</div>
+              <div className="text-gray-300 mb-1">{activeStage.description}</div>
+              <div className="text-gray-400 text-sm mb-1">CREATED BY: {activeStage.user?.username || '-'}</div>
+              <div className="text-gray-500 text-xs">CREATED AT: {new Date(activeStage.created_at).toLocaleString('ko-KR')}</div>
+              <div className="text-gray-500 text-xs">STATUS: {activeStage.status}</div>
+            </div>
+          );
+        })()}
+
         <StageHistory
           stages={stages}
           onStageSelect={handleStageClick}
