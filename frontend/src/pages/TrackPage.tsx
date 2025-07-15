@@ -235,7 +235,9 @@ const TrackPage: React.FC<TrackPageProps> = () => {
   // Move debug log here to avoid linter error in JSX
   console.log('[DEBUG][TrackPage] Rendering main content. track:', track, 'stages:', stages);
   return (
-    <div className="bg-[#2a2a2a] min-h-screen">
+<div className="relative min-h-screen bg-cover bg-center" style={{ backgroundImage: "url('/background.jpg')" }}>
+  {/* 어두운 오버레이 */}
+  <div className="absolute inset-0 bg-black bg-opacity-60">
       <TrackHeader 
         onBack={handleBack}
         onNotificationClick={() => console.log('Notification clicked')}
@@ -294,6 +296,7 @@ const TrackPage: React.FC<TrackPageProps> = () => {
         versionNumber={selectedStageVersion.toString()}
         loading={stemsLoading}
       />
+    </div>
     </div>
   );
 };

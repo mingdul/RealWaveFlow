@@ -77,7 +77,7 @@ const TrackInfoCard: React.FC<TrackInfoCardProps> = ({
             <Button 
               variant="primary" 
               size="lg" 
-              className="flex items-center gap-2"
+              className="flex items-center gap-2 bg-purple-600 hover:bg-purple-700"
               onClick={handlePlayClick}
               disabled={stemsLoading}
             >
