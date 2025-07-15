@@ -381,6 +381,7 @@ const StagePage: React.FC = () => {
           projectId={stage.track.id}
           projectName={track ? track.title : "Loading..."}
           stageId={stageId}
+          stageVersion={stage.version}
           onComplete={handleUploadComplete} 
         />
       )}

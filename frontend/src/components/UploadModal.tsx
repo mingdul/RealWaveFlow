@@ -1,6 +1,6 @@
 import React, { useReducer, useEffect} from 'react';
 // import { useState } from 'react';
-import { Check, X, FileAudio, Upload,  Play } from 'lucide-react';
+import { Check, X, FileAudio, Upload,  Play, Plus, Music, Drum, Mic, Zap, Guitar, Volume2, Users, MoreHorizontal } from 'lucide-react';
 // import {Plus, ArrowRight} from 'lucide-react';
 import { UploadProgress, MasterStem } from '../types/api';
 // import { StemFile, User } from '../types/api';
@@ -8,6 +8,7 @@ import { useAuth } from '../contexts/AuthContext';
 import { useToast } from '../contexts/ToastContext';
 import s3UploadService from '../services/s3UploadService';
 import { createUpstream } from '../services/upstreamService';
+import versionstemService from '../services/versionstemService';
 // import stemFileService from '../services/stemFileService';
 // import categoryService from '../services/categoryService';
 // import masterStemService from '../services/masterStemService';
@@ -21,6 +22,7 @@ interface UploadedFile {
   size: number;
   tag: string;
   key: string;
+  bpm?: string;
   description: string;
   uploadProgress: number;
   isComplete: boolean;
@@ -46,8 +48,22 @@ interface UploadModalProps {
   projectName: string;
   take?: number;
   stageId?: string;
+  stageVersion?: number;
   onComplete: () => void;
 }
+
+const tagOptions = [
+  { value: 'BASS', label: 'Bass', icon: Volume2, color: 'bg-red-500' },
+  { value: 'DRUM', label: 'Drums', icon: Drum, color: 'bg-orange-500' },
+  { value: 'VOCAL', label: 'Vocal', icon: Mic, color: 'bg-blue-500' },
+  { value: 'SYNTH', label: 'Synth', icon: Zap, color: 'bg-purple-500' },
+  { value: 'GUITAR', label: 'Guitar', icon: Guitar, color: 'bg-green-500' },
+  { value: 'LEAD', label: 'Lead', icon: Music, color: 'bg-yellow-500' },
+  { value: 'HARMONY', label: 'Harmony', icon: Users, color: 'bg-pink-500' },
+  { value: 'OTHER', label: 'Other', icon: MoreHorizontal, color: 'bg-gray-500' },
+];
+
+const keyOptions = ['C', 'C#', 'D', 'D#', 'E', 'F', 'F#', 'G', 'G#', 'A', 'A#', 'B', 'Aminor', 'Cmajor'];
 
 // const tagOptions = ['BASS', 'DRUM', 'VOCAL', 'SYNTH', 'GUITAR', 'LEAD', 'HARMONY', 'OTHER'];
 // const keyOptions = ['C', 'C#', 'D', 'D#', 'E', 'F', 'F#', 'G', 'G#', 'A', 'A#', 'B', 'Aminor', 'Cmajor'];
@@ -80,47 +96,7 @@ const uploadReducer = (state: UploadState, action: any): UploadState => {
   }
 };
 
-const mockStems: MasterStem[] = [
-  {
-    id: 'stem1',
-    file_name: 'Vocal_Take1.wav',
-    tag: 'VOCAL',
-    key: 'C',
-    description: 'Main vocal track',
-    file_path: '/path/to/vocal1',
-    track_id: 'track1',
-    category_id: 'cat1',
-    session_id: 'session1',
-    created_at: new Date().toISOString(),
-    updated_at: new Date().toISOString()
-  },
-  {
-    id: 'stem2',
-    file_name: 'Bass_Take1.wav',
-    tag: 'BASS',
-    key: 'C',
-    description: 'Bass line',
-    file_path: '/path/to/bass1',
-    track_id: 'track1',
-    category_id: 'cat2',
-    session_id: 'session1',
-    created_at: new Date().toISOString(),
-    updated_at: new Date().toISOString()
-  },
-  {
-    id: 'stem3',
-    file_name: 'Drum_Take1.wav',
-    tag: 'DRUM',
-    key: 'C',
-    description: 'Drum track',
-    file_path: '/path/to/drum1',
-    track_id: 'track1',
-    category_id: 'cat3',
-    session_id: 'session1',
-    created_at: new Date().toISOString(),
-    updated_at: new Date().toISOString()
-  }
-];
+
 
 const StemListPanel: React.FC<{
   stems: MasterStem[];
@@ -144,6 +120,7 @@ const StemListPanel: React.FC<{
         size: file.size,
         tag: '',
         key: '',
+        bpm: '',
         description: '',
         uploadProgress: 0,
         isComplete: false,
@@ -266,6 +243,112 @@ const StemListPanel: React.FC<{
           <h3 className="text-white text-lg font-semibold">Add New Stem</h3>
         </div>
         
+        {/* New Stem Files List */}
+        {uploadedFiles.filter(f => !f.isMatched).length > 0 && (
+          <div className="space-y-3 mb-4">
+            {uploadedFiles.filter(f => !f.isMatched).map(file => (
+              <div key={file.id} className="border rounded-lg p-4 border-gray-600 bg-gray-800 hover:border-gray-500">
+                <div className="flex items-start space-x-3">
+                  <FileAudio className="text-gray-400 mt-1 flex-shrink-0" size={20} />
+                  <div className="flex-1 min-w-0">
+                    <div className="flex items-center justify-between mb-3">
+                      <div className="flex items-center space-x-2">
+                        <span className="text-white font-medium text-sm truncate">{file.name}</span>
+                        <span className="text-gray-400 text-xs whitespace-nowrap">
+                          {(file.size / (1024 * 1024)).toFixed(2)} MB
+                        </span>
+                        {file.isComplete && (
+                          <span className="text-green-400 text-xs font-medium">✓ Uploaded</span>
+                        )}
+                      </div>
+                      {!file.isComplete && (
+                        <button
+                          onClick={() => onUpdateFile(file.id, { isMatched: false, matchedStemId: undefined })}
+                          className="p-1 text-red-400 hover:text-red-500 hover:bg-red-400/10 rounded transition-colors flex-shrink-0"
+                        >
+                          <X size={16} />
+                        </button>
+                      )}
+                    </div>
+
+                    <div className="grid grid-cols-1 md:grid-cols-3 gap-3 text-sm">
+                      <div>
+                        <label className="block text-gray-400 text-xs mb-2">Instrument</label>
+                        <div className="grid grid-cols-8 gap-1">
+                          {tagOptions.map(tag => {
+                            const Icon = tag.icon;
+                            return (
+                              <button
+                                key={tag.value}
+                                type="button"
+                                onClick={() => onUpdateFile(file.id, { tag: tag.value })}
+                                disabled={file.isComplete}
+                                className={`relative p-2 rounded-lg border-2 transition-all duration-200 ${file.tag === tag.value
+                                    ? `${tag.color} border-white text-white`
+                                    : 'bg-gray-700 border-gray-600 text-gray-300 hover:border-gray-500'
+                                  } ${file.isComplete ? 'opacity-50 cursor-not-allowed' : 'hover:scale-105'}`}
+                                title={tag.label}
+                              >
+                                <Icon size={16} />
+                                {file.tag === tag.value && (
+                                  <div className="absolute -top-1 -right-1 bg-white rounded-full w-3 h-3 flex items-center justify-center">
+                                    <Check size={8} className="text-gray-800" />
+                                  </div>
+                                )}
+                              </button>
+                            );
+                          })}
+                        </div>
+                        {file.tag && (
+                          <p className="text-xs text-gray-400 mt-1">
+                            {tagOptions.find(t => t.value === file.tag)?.label}
+                          </p>
+                        )}
+                      </div>
+                      <div>
+                        <label className="block text-gray-400 text-xs mb-1">Key <span className="text-gray-500">(optional)</span></label>
+                        <select
+                          value={file.key}
+                          onChange={e => onUpdateFile(file.id, { key: e.target.value })}
+                          disabled={file.isComplete}
+                          className="w-full bg-gray-700 text-white rounded px-2 py-1 text-xs border border-gray-600 focus:outline-none focus:ring-2 focus:ring-purple-500"
+                        >
+                          <option value="">Select key (optional)</option>
+                          {keyOptions.map(key => <option key={key} value={key}>{key}</option>)}
+                        </select>
+                      </div>
+                      <div>
+                        <label className="block text-gray-400 text-xs mb-1">BPM <span className="text-gray-500">(optional)</span></label>
+                        <input
+                          type="text"
+                          value={file.bpm || ''}
+                          onChange={e => onUpdateFile(file.id, { bpm: e.target.value })}
+                          disabled={file.isComplete}
+                          placeholder="e.g. 120 (optional)"
+                          className="w-full bg-gray-700 text-white rounded px-2 py-1 text-xs border border-gray-600 focus:outline-none focus:ring-2 focus:ring-purple-500"
+                        />
+                      </div>
+                    </div>
+
+                    {file.uploadProgress > 0 && file.uploadProgress < 100 && (
+                      <div className="mt-2">
+                        <div className="w-full bg-gray-600 rounded-full h-2">
+                          <div
+                            className="bg-gradient-to-r from-purple-500 to-blue-500 h-2 rounded-full transition-all duration-300"
+                            style={{ width: `${file.uploadProgress}%` }}
+                          />
+                        </div>
+                        <p className="text-xs text-gray-400 mt-1">{file.uploadProgress}%</p>
+                      </div>
+                    )}
+                  </div>
+                </div>
+              </div>
+            ))}
+          </div>
+        )}
+        
+        {/* Add New Stem Button */}
         <div>
           <input
             type="file"
@@ -279,7 +362,7 @@ const StemListPanel: React.FC<{
             className="flex items-center justify-center p-6 border-2 border-dashed border-gray-600 rounded-lg cursor-pointer hover:border-purple-500 hover:bg-purple-900/10 transition-all duration-200"
           >
             <div className="text-center">
-              <Upload size={24} className="text-purple-400 mb-2 mx-auto" />
+              <Plus size={24} className="text-purple-400 mb-2 mx-auto" />
               <p className="text-white font-medium">Add New Stem</p>
               <p className="text-gray-400 text-sm">Select audio file to add as new stem</p>
             </div>
@@ -516,6 +599,7 @@ const UploadModal: React.FC<UploadModalProps> = ({
   projectName,
   take = 1,
   stageId,
+  stageVersion,
   onComplete
 }) => {
   const { user } = useAuth();
@@ -531,31 +615,31 @@ const UploadModal: React.FC<UploadModalProps> = ({
 
   // Load existing stems
   useEffect(() => {
-    if (isOpen && projectId) {
+    if (isOpen && projectId && stageId) {
       dispatch({ type: 'SET_LOADING_STEMS', payload: true });
       
-      // Use mock data instead of API call for testing
-      dispatch({ type: 'SET_EXISTING_STEMS', payload: mockStems });
-      dispatch({ type: 'SET_LOADING_STEMS', payload: false });
+      // projectId is the track_id, and we need to get stage info to get version
+      const trackId = projectId;
+      const version = stageVersion ? stageVersion - 1 : 1; // stage.version - 1
       
-      // Comment out the actual API call for now
-      /*
-      masterStemService.getLatestStemsPerCategoryByTrack(projectId, take)
+      versionstemService.getLatestStemsPerCategoryByTrack(trackId, version)
         .then(response => {
-          if (response.success && response.data) {
-            dispatch({ type: 'SET_EXISTING_STEMS', payload: response.data });
+          if (response && Array.isArray(response)) {
+            dispatch({ type: 'SET_EXISTING_STEMS', payload: response });
+          } else {
+            dispatch({ type: 'SET_EXISTING_STEMS', payload: [] });
           }
         })
         .catch(error => {
           console.error('Failed to load existing stems:', error);
           showError('Failed to load existing stems');
+          dispatch({ type: 'SET_EXISTING_STEMS', payload: [] });
         })
         .finally(() => {
           dispatch({ type: 'SET_LOADING_STEMS', payload: false });
         });
-      */
     }
-  }, [isOpen, projectId, take, showError]);
+  }, [isOpen, projectId, stageId, showError]);
 
   const handleMatchStem = (fileId: string, stemId: string) => {
     // Remove any existing match for this stem
