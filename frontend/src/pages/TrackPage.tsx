@@ -134,6 +134,7 @@ const TrackPage: React.FC<TrackPageProps> = () => {
     );
     if (response.success) {
       await loadStemsByVersion(selectedStageVersion);
+      window.location.reload();
     } else {
       console.error('Failed to get back to previous stage:', response);
     }
