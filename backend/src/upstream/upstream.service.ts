@@ -51,12 +51,9 @@ export class UpstreamService {
             relations: ['stage', 'user'],
         });
 
-        if (upstreams.length === 0) {
-            throw new NotFoundException('No upstreams found');
-        }
         return {
             success: true,
-            message: 'Upstreams fetched successfully',
+            message: upstreams.length > 0 ? 'Upstreams fetched successfully' : 'No upstreams found',
             upstreams,
         };
     }   
