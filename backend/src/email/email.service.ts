@@ -92,7 +92,7 @@ export class EmailService {
 
     try {
       // 초대 URL 생성 (프론트엔드의 초대 수락 페이지로 연결)
-      const inviteUrl = `${process.env.FRONTEND_URL}/invite/accept/${inviteData.inviteToken}`;
+      const inviteUrl = `${process.env.FRONTEND_URL}/invite/${inviteData.inviteToken}`;
       
       // 만료 시간을 한국 시간대로 포맷팅
       const expiresAtFormatted = inviteData.expiresAt.toLocaleString('ko-KR', {
@@ -190,61 +190,73 @@ export class EmailService {
             max-width: 600px;
             margin: 0 auto;
             padding: 20px;
-            background-color: #111827;
+            background-color: #f8fafc;
         }
         .container {
             background: white;
-            border-radius: 12px;
+            border-radius: 16px;
             padding: 40px;
-            box-shadow: 0 4px 6px rgba(0, 0, 0, 0.1);
+            box-shadow: 0 10px 25px rgba(0, 0, 0, 0.1);
+            border: 1px solid #e2e8f0;
         }
         .header {
             text-align: center;
-            margin-bottom: 30px;
+            margin-bottom: 40px;
         }
         .logo {
-            font-size: 28px;
+            font-size: 32px;
             font-weight: bold;
-            color: #6366f1;
-            margin-bottom: 10px;
+            background: linear-gradient(135deg, #6366f1 0%, #8b5cf6 100%);
+            -webkit-background-clip: text;
+            -webkit-text-fill-color: transparent;
+            background-clip: text;
+            margin-bottom: 16px;
         }
         .title {
-            font-size: 24px;
-            font-weight: 600;
+            font-size: 28px;
+            font-weight: 700;
             color: #1f2937;
-            margin-bottom: 20px;
+            margin-bottom: 12px;
+        }
+        .subtitle {
+            font-size: 16px;
+            color: #6b7280;
+            margin-bottom: 32px;
         }
         .content {
-            margin-bottom: 30px;
+            margin-bottom: 40px;
         }
         .track-info {
-            background: #f3f4f6;
-            border-radius: 8px;
-            padding: 20px;
-            margin: 20px 0;
+            background: linear-gradient(135deg, #f8fafc 0%, #f1f5f9 100%);
+            border: 1px solid #e2e8f0;
+            border-radius: 12px;
+            padding: 24px;
+            margin: 24px 0;
         }
         .track-name {
-            font-size: 18px;
-            font-weight: 600;
+            font-size: 20px;
+            font-weight: 700;
             color: #1f2937;
-            margin-bottom: 5px;
+            margin-bottom: 8px;
         }
         .inviter-name {
-            color: #6b7280;
-            font-size: 14px;
+            color: #6366f1;
+            font-size: 16px;
+            font-weight: 600;
         }
         .cta-button {
             display: inline-block;
             background: linear-gradient(135deg, #6366f1 0%, #8b5cf6 100%);
             color: white;
             text-decoration: none;
-            padding: 16px 32px;
-            border-radius: 8px;
-            font-weight: 600;
-            font-size: 16px;
+            padding: 18px 36px;
+            border-radius: 12px;
+            font-weight: 700;
+            font-size: 18px;
             text-align: center;
-            margin: 20px 0;
-            transition: transform 0.2s;
+            margin: 24px 0;
+            transition: all 0.3s ease;
+            box-shadow: 0 4px 12px rgba(99, 102, 241, 0.3);
         }
         .cta-button:hover {
             transform: translateY(-2px);
