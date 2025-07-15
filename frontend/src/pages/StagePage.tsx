@@ -3,73 +3,87 @@ import { useParams } from 'react-router-dom';
 import { Upload, Bell, Settings } from 'lucide-react';
 import Logo from '../components/Logo';
 import UploadModal from '../components/UploadModal';
-// import trackService from '../services/trackService';
+import trackService from '../services/trackService';
 import { getStageDetail } from '../services/stageService';
-import { Track, Stage } from '../types/api';
+import { getStageUpstreams } from '../services/upstreamService';
+import { getStageReviewers } from '../services/stageReviewerService';
+import { Track, Stage, Upstream, StageReviewer } from '../types/api';
 import tapeActive from '../assets/activeTape.png';
 import tapeApproved from '../assets/approveTape.png';
 import tapeRejected from '../assets/rejectedTape.png';
-import { getTrackStages } from '../services/stageService';
-
-interface stageStemSet {
-  id: string;
-  title: string;
-  artist: string;
-  status: 'ACTIVE' | 'REJECTED' | 'APPROVED';
-  description?: string;
-}
 
 const StagePage: React.FC = () => {
-  // API에서 가져올 데이터를 위한 상태
-  const [stageStemSets, setstageStemSets] = useState<stageStemSet[]>([]);
+  const { trackId, stageId } = useParams<{ trackId: string; stageId: string }>();
+  
+  // 상태 관리
+  const [stage, setStage] = useState<Stage | null>(null);
+  const [upstreams, setUpstreams] = useState<Upstream[]>([]);
+  const [reviewers, setReviewers] = useState<StageReviewer[]>([]);
   const [loading, setLoading] = useState(true);
-
   const [isUploadModalOpen, setUploadModalOpen] = useState(false);
-  const trackId = "mock-track-123";
   const [track, setTrack] = useState<Track | null>(null);
 
+  // 트랙 정보 가져오기
   useEffect(() => {
     if (trackId) {
       trackService.getTrackById(trackId)
-        .then(response => {
+        .then((response: any) => {
           if (response.success) {
             setTrack(response.data || null);
           } else {
             console.error("Failed to fetch track details");
           }
         })
-        .catch(error => console.error("Error fetching track details:", error));
+        .catch((error: any) => console.error("Error fetching track details:", error));
     }
   }, [trackId]);
 
-  // Stem Set 데이터를 가져오는 useEffect (API 연동 예정)
+  // 스테이지 정보 가져오기
   useEffect(() => {
-    // TODO: API 호출로 stem sets 데이터 가져오기
-    // const fetchStemSets = async () => {
-    //   try {
-    //     setLoading(true);
-    //     // const response = await stemSetService.getStemSets(trackId);
-    //     // setstageStemSets(response.data);
-    //   } catch (error) {
-    //     console.error("Error fetching stem sets:", error);
-    //   } finally {
-    //     setLoading(false);
-    //   }
-    // };
-    // fetchStemSets();
-    
-    // 임시로 로딩 상태만 해제
-    setLoading(false);
-    // 임시로 빈 배열 설정 (TypeScript 에러 해결)
-    setstageStemSets([]);
-  }, [trackId]);
+    const fetchStageData = async () => {
+      if (!stageId) {
+        setLoading(false);
+        return;
+      }
+      
+      try {
+        setLoading(true);
+        
+        // 스테이지 상세 정보 가져오기
+        const stageResponse = await getStageDetail(stageId);
+        if (stageResponse.success) {
+          setStage(stageResponse.data);
+        }
+
+        // 업스트림 목록 가져오기
+        const upstreamsResponse = await getStageUpstreams(stageId);
+        setUpstreams(upstreamsResponse);
+
+        // 리뷰어 목록 가져오기
+        const reviewersResponse = await getStageReviewers(stageId);
+        setReviewers(reviewersResponse);
+
+      } catch (error) {
+        console.error("Error fetching stage data:", error);
+      } finally {
+        setLoading(false);
+      }
+    };
+
+    fetchStageData();
+  }, [stageId]);
 
   const handleUploadComplete = () => {
-    // TODO: 업로드 완료 후 stem sets 목록 새로고침
-    // fetchStemSets();
+    // 업로드 완료 후 업스트림 목록 새로고침
+    if (stageId) {
+      getStageUpstreams(stageId)
+        .then(setUpstreams)
+        .catch(error => console.error("Error refreshing upstreams:", error));
+    }
   };
 
   interface StemSetCardProps {
+    upstream: Upstream;
     index: number;
     isPlaying: boolean;
     seek: number;
@@ -78,17 +92,13 @@ const StagePage: React.FC = () => {
     onDetail: () => void;
   }
 
-  const StemSetCard: React.FC<StemSetCardProps & { status: 'ACTIVE' | 'REJECTED' | 'APPROVED' }> = ({
-    index, isPlaying, seek, onPlayToggle, onSeek, onDetail, status
+  const StemSetCard: React.FC<StemSetCardProps> = ({
+    upstream, index, isPlaying, seek, onPlayToggle, onSeek, onDetail
   }) => {
     const [isHovered, setIsHovered] = useState(false);
 
-    // const shadowFilter = status === 'APPROVED'
-    //   ? 'drop-shadow-[0_0_12px_#9d4edd]'
-    //   : status === 'ACTIVE'
-    //     ? 'drop-shadow-[0_0_12px_#05d182]'
-    //     : 'drop-shadow-[0_0_12px_#ff4d6d]';
-
+    const status = upstream.status as 'ACTIVE' | 'REJECTED' | 'APPROVED';
+    
     const statusColor = status === 'ACTIVE'
       ? 'bg-[#05d182] text-black'
       : status === 'REJECTED'
@@ -111,11 +121,10 @@ const StagePage: React.FC = () => {
           src={tapeImg}
           alt={`Stem Set ${index}`}
           className={`absolute inset-0 w-full h-full object-contain scale-110`} 
-          // ${shadowFilter}
         />
 
         <div className="absolute top-[67px] left-0 w-full text-center text-xl font-bold text-black drop-shadow z-20">
-          AWSOME MIX #{index + 1}
+          {upstream.title || `AWSOME MIX #${index + 1}`}
         </div>
 
         <div
@@ -129,9 +138,7 @@ const StagePage: React.FC = () => {
           }}
         >
           <span className="text-white text-sm text-center leading-relaxed line-clamp-2 break-words overflow-hidden">
-            {status === 'APPROVED'
-              ? "The drum files were amazing, but I didn't like the vocal files. This stage requires a vocal upgrade ....."
-              : "No feedback yet."}
+            {upstream.description || "No feedback yet."}
           </span>
         </div>
 
@@ -172,20 +179,26 @@ const StagePage: React.FC = () => {
   const [playingIndex, setPlayingIndex] = useState<number | null>(null);
   const [seekValues, setSeekValues] = useState<number[]>([]);
   
-  // stageStemSets가 변경될 때 seekValues 배열도 업데이트
+  // upstreams가 변경될 때 seekValues 배열도 업데이트
   useEffect(() => {
-    setSeekValues(stageStemSets.map(() => 0));
-  }, [stageStemSets]);
+    setSeekValues(upstreams.map(() => 0));
+  }, [upstreams]);
 
   const handlePlayToggle = (idx: number) => {
     setPlayingIndex(playingIndex === idx ? null : idx);
   };
+  
   const handleSeek = (idx: number, value: number) => {
     setSeekValues(prev => prev.map((v, i) => (i === idx ? value : v)));
   };
-  const handleDetail = (idx: number) => {
-    alert(`Detail for AWSOME MIX #${idx + 1}`);
+  
+  const handleDetail = (upstream: Upstream) => {
+    // Review Page로 이동
+    window.location.href = `/review?upstreamId=${upstream.id}`;
   };
+
+  // 스테이지가 닫혀있는지 확인
+  const isStageClosed = stage?.status === 'close';
 
   if (loading) {
     return (
@@ -236,8 +249,17 @@ const StagePage: React.FC = () => {
           <div className='flex items-center gap-3'>
             <span className='text-gray-300'>REVIEWER :</span>
             <div className='flex -space-x-2'>
-              <div className='h-8 w-8 rounded-full border-2 border-white bg-gray-400'></div>
-              <div className='h-8 w-8 rounded-full border-2 border-white bg-gray-400'></div>
+              {reviewers.map((reviewer, index) => (
+                <div key={reviewer.id} className='h-8 w-8 rounded-full border-2 border-white bg-gray-400 flex items-center justify-center text-xs text-white'>
+                  {reviewer.user?.username?.charAt(0) || 'U'}
+                </div>
+              ))}
+              {reviewers.length === 0 && (
+                <>
+                  <div className='h-8 w-8 rounded-full border-2 border-white bg-gray-400'></div>
+                  <div className='h-8 w-8 rounded-full border-2 border-white bg-gray-400'></div>
+                </>
+              )}
             </div>
           </div>
         </div>
@@ -245,13 +267,17 @@ const StagePage: React.FC = () => {
         <div className='mb-8'>
           <div className='mb-6 flex items-center gap-4'>
             <h3 className='text-xl font-medium text-white'>STEM SET LIST</h3>
-            <button
-              className='flex items-center gap-2 rounded-md bg-purple-600 px-4 py-2 text-white transition-colors hover:bg-purple-500'
-              onClick={() => setUploadModalOpen(true)}
-            >
-              <Upload size={16} />
-              <span className='text-sm font-medium'>UPLOAD</span>
-            </button>
+            {!isStageClosed ? (
+              <button
+                className='flex items-center gap-2 rounded-md bg-purple-600 px-4 py-2 text-white transition-colors hover:bg-purple-500'
+                onClick={() => setUploadModalOpen(true)}
+              >
+                <Upload size={16} />
+                <span className='text-sm font-medium'>UPLOAD</span>
+              </button>
+            ) : (
+              <span className='text-gray-400 text-sm'>스테이지가 닫혀있습니다</span>
+            )}
           </div>
         </div>
 
@@ -260,21 +286,21 @@ const StagePage: React.FC = () => {
             <div className="col-span-full flex justify-center items-center py-8">
               <div className="text-white">Loading stem sets...</div>
             </div>
-          ) : stageStemSets.length === 0 ? (
+          ) : upstreams.length === 0 ? (
             <div className="col-span-full flex justify-center items-center py-8">
               <div className="text-white">No stem sets available</div>
             </div>
           ) : (
-            stageStemSets.map((update, idx) => (
+            upstreams.map((upstream, idx) => (
               <StemSetCard
-                key={update.id}
+                key={upstream.id}
+                upstream={upstream}
                 index={idx}
                 isPlaying={playingIndex === idx}
                 seek={seekValues[idx]}
                 onPlayToggle={() => handlePlayToggle(idx)}
                 onSeek={value => handleSeek(idx, value)}
-                onDetail={() => handleDetail(idx)}
-                status={update.status}
+                onDetail={() => handleDetail(upstream)}
               />
             ))
           )}
@@ -287,6 +313,7 @@ const StagePage: React.FC = () => {
           onClose={() => setUploadModalOpen(false)}
           projectId={stage.track.id}
           projectName={track ? track.title : "Loading..."}
+          stageId={stageId}
           onComplete={handleUploadComplete} 
         />
       )}

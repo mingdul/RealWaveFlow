@@ -7,6 +7,7 @@ import { UploadProgress, MasterStem } from '../types/api';
 import { useAuth } from '../contexts/AuthContext';
 import { useToast } from '../contexts/ToastContext';
 import s3UploadService from '../services/s3UploadService';
+import { createUpstream } from '../services/upstreamService';
 // import stemFileService from '../services/stemFileService';
 // import categoryService from '../services/categoryService';
 // import masterStemService from '../services/masterStemService';
@@ -43,6 +44,7 @@ interface UploadModalProps {
   projectId: string;
   projectName: string;
   take?: number;
+  stageId?: string;
   onComplete: () => void;
 }
 
@@ -483,6 +485,7 @@ const UploadModal: React.FC<UploadModalProps> = ({
   projectId,
   projectName,
   take = 1,
+  stageId,
   onComplete
 }) => {
   const { user } = useAuth();
@@ -593,15 +596,39 @@ const UploadModal: React.FC<UploadModalProps> = ({
     }
   }, [state.uploadedFiles, projectId, user, showError, showSuccess]);
 
-  const handleComplete = () => {
+  const handleComplete = async () => {
     const completedFiles = state.uploadedFiles.filter(f => f.isComplete);
     if (completedFiles.length === 0) {
       showError('No files have been uploaded');
       return;
     }
-    
-    onComplete();
-    onClose();
+
+    if (!stageId) {
+      showError('Stage ID is required');
+      return;
+    }
+
+    try {
+      // 업스트림 생성
+      const upstreamData = {
+        title: `Stem Set ${new Date().toLocaleString()}`,
+        description: `Uploaded ${completedFiles.length} stems`,
+        stage_id: stageId,
+        user_id: user?.id || '',
+      };
+
+      const response = await createUpstream(upstreamData);
+      if (response.success) {
+        showSuccess('Stem set created successfully!');
+        onComplete();
+        onClose();
+      } else {
+        showError('Failed to create stem set');
+      }
+    } catch (error) {
+      console.error('Error creating upstream:', error);
+      showError('Failed to create stem set');
+    }
   };
 
   const handleCloseModal = () => {
