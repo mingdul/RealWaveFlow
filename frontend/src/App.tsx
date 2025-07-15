@@ -35,8 +35,8 @@ const App = () => {
               <Route path="/" element={<LandingPage />} />
               <Route path="/login" element={<PublicRoute><LoginPage /></PublicRoute>} />
               <Route path="/signup" element={<PublicRoute><SignUpPage /></PublicRoute>} />
-              <Route path="/dashboard" element={<DashboardPage />} />
-              <Route path="/newdash" element={<DashboardPageV2 />} />
+              <Route path="/dashboard" element={<DashboardPageV2 />} />
+              <Route path="/newdash" element={<DashboardPage />} />
               <Route path="/track/:trackId" element={<TrackPage />} />
               <Route path="*" element={<Notfound />} />
               <Route path="/stage/:stageId" element={<StagePage />} />

@@ -212,50 +212,51 @@ const DashboardPageV2 = () => {
           />
           
           {/* 호버 시 나타나는 정보 오버레이 */}
-          <div className="absolute inset-0 bg-black bg-opacity-80 opacity-0 group-hover:opacity-100 transition-opacity duration-300 flex flex-col justify-between p-4">
-            {/* 상단 편집/삭제 버튼 */}
-            {filter === 'owned' && (
-              <div className="flex justify-end space-x-2">
-                <button
-                  onClick={(e) => handleEditTrack(track, e)}
-                  className="bg-blue-600 hover:bg-blue-700 text-white p-2 rounded-full transition-colors"
-                >
-                  <Edit size={16} />
-                </button>
-                <button
-                  onClick={(e) => handleDeleteTrack(track.id, e)}
-                  className="bg-red-600 hover:bg-red-700 text-white p-2 rounded-full transition-colors"
-                >
-                  <Trash2 size={16} />
-                </button>
+          <div className="absolute inset-0 bg-black bg-opacity-80 opacity-0 group-hover:opacity-100 transition-opacity duration-300 flex justify-start items-start p-4">
+          {/* 상단 오른쪽 편집/삭제 버튼 */}
+          {filter === 'owned' && (
+            <div className="absolute top-4 right-4 flex space-x-2">
+              <button
+                onClick={(e) => handleEditTrack(track, e)}
+                className="bg-blue-600 hover:bg-blue-700 text-white p-2 rounded-full transition-colors"
+              >
+                <Edit size={16} />
+              </button>
+              <button
+                onClick={(e) => handleDeleteTrack(track.id, e)}
+                className="bg-red-600 hover:bg-red-700 text-white p-2 rounded-full transition-colors"
+              >
+                <Trash2 size={16} />
+              </button>
+            </div>
+          )}
+
+          {/* 중앙 정보 */}
+          <div className="m-auto text-center text-white px-4">
+            <h2 className="text-xl font-bold mb-2">TITLE: {track.title}</h2>
+            {track.genre && (
+              <p className="text-gray-300 text-sm mb-2">GENRE: {track.genre}</p>
+            )}
+            {track.bpm && (
+              <p className="text-gray-300 text-sm mb-2">BPM: {track.bpm}</p>
+            )}
+            {track.key_signature && (
+              <p className="text-gray-300 text-sm mb-2">KEY: {track.key_signature}</p>
+            )}
+            <p className="text-gray-400 text-xs mb-2">
+              Updated: {new Date(track.updated_date).toLocaleDateString('en-US')}
+            </p>
+            {track.collaborators && track.collaborators.length > 0 && (
+              <div className="flex items-center justify-center">
+                <Users size={14} className="text-gray-400 mr-1" />
+                <span className="text-sm text-gray-400">
+                  {track.collaborators.length} collaborators
+                </span>
               </div>
             )}
-            
-            {/* 하단 트랙 정보 */}
-            <div className="text-center text-white">
-              <h3 className="text-xl font-bold mb-2">{track.title}</h3>
-              {track.genre && (
-                <p className="text-gray-300 text-sm mb-2">{track.genre}</p>
-              )}
-              {track.bpm && (
-                <p className="text-gray-300 text-sm mb-2">{track.bpm} BPM</p>
-              )}
-              {track.key_signature && (
-                <p className="text-gray-300 text-sm mb-2">Key: {track.key_signature}</p>
-              )}
-              <p className="text-gray-400 text-xs mb-2">
-                Updated {new Date(track.updated_date).toLocaleDateString('en-US')}
-              </p>
-              {track.collaborators && track.collaborators.length > 0 && (
-                <div className="flex items-center justify-center">
-                  <Users size={14} className="text-gray-400 mr-1" />
-                  <span className="text-sm text-gray-400">
-                    {track.collaborators.length} collaborators
-                  </span>
-                </div>
-              )}
-            </div>
           </div>
+        </div>
+
         </div>
         <div className="p-4">
           <h3 className="text-white text-lg font-semibold mb-1 truncate">{track.title}</h3>
