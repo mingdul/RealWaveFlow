@@ -23,8 +23,16 @@ export const getTrackStages = async (trackId: string) => {
 
 // 스테이지 상세 조회
 export const getStageDetail = async (stageId: string) => {
-  const response = await apiClient.get(`/stage/stage/${stageId}`);
-  return response.data.data;
+  try {
+    const response = await apiClient.get(`/stage/stage/${stageId}`);
+    if (!response.data.success) {
+      throw new Error(response.data.message);
+    }
+    return response.data;
+  } catch (error) {
+    console.error('Failed to get stage detail:', error);
+    throw error;
+  }
 };
 
 // 트랙 ID와 버전으로 스테이지 조회
