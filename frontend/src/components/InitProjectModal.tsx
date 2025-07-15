@@ -336,7 +336,7 @@ const InitProjectModal: React.FC<InitProjectModalProps> = ({
     // S3 업로드와 stem-job/create를 각 파일별로 독립적으로 처리
     console.log('[DEBUG] InitProjectModal - Starting parallel upload and processing for', selectedFiles.length, 'files');
     
-    const uploadPromises = selectedFiles.map(async (fileToUpload, index) => {
+    const uploadPromises = selectedFiles.map(async (fileToUpload, _index) => {
       if (!fileToUpload.file) {
         console.error('[ERROR] InitProjectModal - No file object for:', fileToUpload.name);
         return { error: true, id: fileToUpload.id };
