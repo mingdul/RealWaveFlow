@@ -13,7 +13,7 @@ import StagePage from './pages/StagePage';
 import PublicRoute from './components/PublicRoute.tsx';
 import TrackPage from './pages/TrackPage.tsx';
 import StemSetReviewPage from './pages/StemSetReviewPage.tsx';
-import DashboardssPage from './pages/DashboardssPage.tsx';
+import DashboardPageV2 from './pages/DashboardssPageV2.tsx';
 // import PR_Page from './pages/PR_Page.tsx';     
 // import MasterPage from './pages/MasterPage';
 // import CommitPage from './pages/UploadPage';
@@ -36,7 +36,7 @@ const App = () => {
               <Route path="/login" element={<PublicRoute><LoginPage /></PublicRoute>} />
               <Route path="/signup" element={<PublicRoute><SignUpPage /></PublicRoute>} />
               <Route path="/dashboard" element={<DashboardPage />} />
-              <Route path="/newdash" element={<DashboardssPage />} />
+              <Route path="/newdash" element={<DashboardPageV2 />} />
               <Route path="/track/:trackId" element={<TrackPage />} />
               <Route path="*" element={<Notfound />} />
               <Route path="/stage/:stageId" element={<StagePage />} />
