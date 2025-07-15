@@ -60,7 +60,7 @@ const PresignedImage: React.FC<Props> = ({
 
   return (
     <img
-      src={imageUrl || '/default-cover.jpg'}
+      src={imageUrl || ''}
       alt={alt}
       onError={handleImageError}
       className={className}
