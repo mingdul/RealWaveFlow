@@ -27,6 +27,7 @@ interface UploadedFile {
   uploadProgress: number;
   isComplete: boolean;
   matchedStemId?: string;
+  stemId?: string; // 실제 생성된 stem ID
   s3Url?: string;
   file?: File;
   isMatched: boolean;
@@ -666,7 +667,7 @@ const UploadModal: React.FC<UploadModalProps> = ({
   };
 
   const handleStartUpload = React.useCallback(async () => {
-    const filesToUpload = state.uploadedFiles.filter(f => f.file && (f.isMatched || (!f.isMatched && f.tag && f.key)));
+    const filesToUpload = state.uploadedFiles.filter(f => f.file && (f.isMatched || (!f.isMatched && f.tag)));
     
     if (filesToUpload.length === 0) {
       showError('No files to upload or missing metadata');
@@ -676,8 +677,6 @@ const UploadModal: React.FC<UploadModalProps> = ({
     dispatch({ type: 'SET_UPLOADING', payload: true });
 
     try {
-      // Create session for this uploa
-
       // Upload files sequentially
       for (let i = 0; i < filesToUpload.length; i++) {
         const file = filesToUpload[i];
@@ -696,14 +695,16 @@ const UploadModal: React.FC<UploadModalProps> = ({
             }
           );
 
-        
-
+          // TODO: 여기서 실제 stem-job/create를 호출하여 stem ID를 받아와야 함
+          // 현재는 임시로 파일 ID를 사용
           dispatch({ type: 'UPDATE_FILE', payload: {
             id: file.id,
             updates: {
               uploadProgress: 100,
               isComplete: true,
-              s3Url: uploadResult.location
+              s3Url: uploadResult.location,
+              // TODO: 실제 stem ID로 교체 필요
+              stemId: file.id
             }
           }});
 
@@ -745,13 +746,13 @@ const UploadModal: React.FC<UploadModalProps> = ({
           // 기존 스템 교체
           stemSet.push({
             oldStem: file.matchedStemId,
-            newStem: file.id // 실제로는 업로드 후 생성된 stem ID를 사용해야 함
+            newStem: file.stemId || file.id // 실제 stem ID 사용
           });
         } else {
           // 새로운 카테고리 스템
           newCategoryStem.push({
             categoryName: file.tag || 'OTHER',
-            newStemId: file.id // 실제로는 업로드 후 생성된 stem ID를 사용해야 함
+            newStemId: file.stemId || file.id // 실제 stem ID 사용
           });
         }
       });
