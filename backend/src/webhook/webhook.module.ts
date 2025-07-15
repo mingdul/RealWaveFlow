@@ -6,6 +6,7 @@ import { CategoryModule } from 'src/category/category.module';
 import { SqsModule } from 'src/sqs/sqs.module';
 import { WebSocketModule } from 'src/websocket/websocket.module';
 import { GuideModule } from 'src/guide/guide.module';
+import { UpstreamModule } from 'src/upstream/upstream.module';
 
 @Module({
   imports: [
@@ -15,6 +16,7 @@ import { GuideModule } from 'src/guide/guide.module';
     SqsModule,
     WebSocketModule,
     GuideModule,
+    UpstreamModule,
   ],
   controllers: [WebhookController]
 })

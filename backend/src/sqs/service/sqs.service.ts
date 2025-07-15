@@ -134,6 +134,7 @@ export class SqsService {
     // 믹싱 작업 요청
     async sendMixingStemsRequest(data: {
         stageId: string;
+        upstreamId: string;
         stem_paths: string[];
       }) {
         const message = {
@@ -142,6 +143,7 @@ export class SqsService {
           args: [],
           kwargs: {
             stageId: data.stageId,
+            upstreamId: data.upstreamId,
             stem_paths: data.stem_paths,
           },
         };
