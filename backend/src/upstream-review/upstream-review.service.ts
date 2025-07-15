@@ -118,7 +118,7 @@ export class UpstreamReviewService {
           // 2. stage.guide_path 업데이트
           await this.stageRepository.update(
             { id: stage.id },
-            { guide_path: upstream.guide_path, status: 'finalized' }
+            { guide_path: upstream.guide_path }
           );
       
 

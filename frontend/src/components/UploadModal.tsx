@@ -742,7 +742,7 @@ const UploadModal: React.FC<UploadModalProps> = ({
                     new_category_stem: [{
                       categoryName: file.tag || 'OTHER',
                       newStemId: stemJobId,
-                      instrument: file.tag || 'OTHER'                      
+                      instrument: file.tag?.toLowerCase() || 'other'
                     }]
                   };
 
@@ -784,7 +784,9 @@ const UploadModal: React.FC<UploadModalProps> = ({
 
   const handleComplete = async () => {
     const completedFiles = state.uploadedFiles.filter(f => f.isComplete && f.matchedStemId);
-    if (completedFiles.length === 0) {
+    
+    // 기존 스템이 없고 완료된 교체 파일도 없는 경우
+    if (completedFiles.length === 0 && state.existingStems.length === 0) {
       showSuccess('All uploads completed successfully!');
       onComplete();
       onClose();
@@ -797,32 +799,35 @@ const UploadModal: React.FC<UploadModalProps> = ({
     }
 
     try {
-      // 기존 스템 교체만 처리
+      // 모든 기존 스템을 stem_set에 포함 (교체된 것과 안된 것 모두)
       const stemSet: any[] = [];
 
+      console.log('[DEBUG] Processing all existing stems:', state.existingStems);
       console.log('[DEBUG] Processing completed files for replacement:', completedFiles);
 
-      completedFiles.forEach(file => {
-        console.log('[DEBUG] Processing replacement file:', file.name, 'stemId:', file.stemId, 'matchedStemId:', file.matchedStemId);
+      // 모든 기존 스템에 대해 처리
+      state.existingStems.forEach(existingStem => {
+        const replacementFile = completedFiles.find(file => file.matchedStemId === existingStem.id);
         
-        if (file.matchedStemId && file.stemId) {
+        if (replacementFile && replacementFile.stemId) {
+          // 교체된 경우: oldStem과 newStem 모두 포함
           stemSet.push({
-            oldStem: file.matchedStemId,
-            newStem: file.stemId
+            oldStem: existingStem.id,
+            newStem: replacementFile.stemId
           });
-          console.log('[DEBUG] Added to stem_set:', { oldStem: file.matchedStemId, newStem: file.stemId });
-        }
-        else {
+          console.log('[DEBUG] Added replacement to stem_set:', { oldStem: existingStem.id, newStem: replacementFile.stemId });
+        } else {
+          // 교체되지 않은 경우: oldStem만 포함
           stemSet.push({
-            oldStem: file.matchedStemId,
-            });
-          }
+            oldStem: existingStem.id
+          });
+          console.log('[DEBUG] Added unchanged to stem_set:', { oldStem: existingStem.id });
+        }
       });
 
+             console.log('[DEBUG] Final stem_set with all stems:', stemSet);
 
-
-
-
+      // 기존 스템은 있지만 교체 파일이 없는 경우에도 upstream 생성
       if (stemSet.length === 0) {
         showSuccess('All uploads completed successfully!');
         onComplete();
@@ -830,13 +835,12 @@ const UploadModal: React.FC<UploadModalProps> = ({
         return;
       }
 
-      console.log('[DEBUG] Final stem_set for replacement:', stemSet);
-
-      // 업스트림 생성 (기존 스템 교체만)
+      // 업스트림 생성 (모든 스템 포함)
+      const replacementCount = completedFiles.length;
       const upstreamData = {
         upstream: {
           title: `Stem Set ${new Date().toLocaleString()}`,
-          description: state.description || `Replaced ${stemSet.length} stems`,
+          description: state.description || `Updated stem set with ${replacementCount} replacement(s)`,
           stage_id: stageId,
           user_id: user?.id || '',
         },
@@ -844,15 +848,15 @@ const UploadModal: React.FC<UploadModalProps> = ({
         new_category_stem: []
       };
 
-      console.log('[DEBUG] Creating upstream for replacements:', upstreamData);
+      console.log('[DEBUG] Creating upstream with all stems:', upstreamData);
 
       const response = await createUpstream(upstreamData);
       if (response.success) {
-        showSuccess('Stem replacements completed successfully!');
+        showSuccess('Stem set update completed successfully!');
         onComplete();
         onClose();
       } else {
-        showError('Failed to create stem replacements');
+        showError('Failed to create stem set update');
       }
     } catch (error) {
       console.error('Error creating upstream for replacements:', error);
