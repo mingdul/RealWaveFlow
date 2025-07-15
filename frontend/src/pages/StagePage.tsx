@@ -56,7 +56,7 @@ const StagePage: React.FC = () => {
 
         // 업스트림 목록 가져오기
         const upstreamsResponse = await getStageUpstreams(stageId);
-        setUpstreams(upstreamsResponse);
+        setUpstreams(upstreamsResponse || []);
 
         // 리뷰어 목록 가져오기
         const reviewersResponse = await getStageReviewers(stageId);
@@ -186,7 +186,7 @@ const StagePage: React.FC = () => {
   
   // upstreams가 변경될 때 seekValues 배열도 업데이트
   useEffect(() => {
-    setSeekValues(upstreams.map(() => 0));
+    setSeekValues((upstreams || []).map(() => 0));
   }, [upstreams]);
 
   // 오디오 URL이 설정되면 자동 재생
@@ -339,7 +339,7 @@ const StagePage: React.FC = () => {
             <div className="col-span-full flex justify-center items-center py-8">
               <div className="text-white">Loading stem sets...</div>
             </div>
-          ) : upstreams.length === 0 ? (
+          ) : (!upstreams || upstreams.length === 0) ? (
             <div className="col-span-full flex justify-center items-center py-8">
               <div className="text-white">No stem sets available</div>
             </div>
