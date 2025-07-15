@@ -14,11 +14,12 @@ import {
 import streamingService from '../services/streamingService';
 import { useParams, useSearchParams } from 'react-router-dom';
 import { useAuth } from '../contexts/AuthContext';
+import Button from '../components/Button';
 import {
   approveDropReviewer,
   rejectDropReviewer,
 } from '../services/upstreamReviewService';
-
+import { useNavigate } from 'react-router-dom';
 import {
   createUpstreamComment,
   getUpstreamComments,
@@ -36,6 +37,7 @@ import {
   Trash2,
   Edit2,
   Square,
+  ChevronLeft,
 } from 'lucide-react';
 
 // Comment interface updated to match backend response
@@ -53,6 +55,7 @@ interface Comment {
 
 const StemSetReviewPage = () => {
   const { user } = useAuth();
+  const navigate = useNavigate();
   // const wavesurferRef = useRef<any>(null);
   const [volume, setVolume] = useState(1);
   const [currentTime, setCurrentTime] = useState(0);
@@ -456,9 +459,9 @@ const StemSetReviewPage = () => {
             timeString: comment.time,
             user: comment.user
               ? {
-                  id: comment.user.id,
-                  username: comment.user.username,
-                }
+                id: comment.user.id,
+                username: comment.user.username,
+              }
               : undefined,
           };
         });
@@ -687,6 +690,8 @@ const StemSetReviewPage = () => {
     }
   };
 
+
+
   return (
     <div
       className='relative min-h-screen space-y-6 overflow-hidden bg-cover bg-center'
@@ -694,11 +699,14 @@ const StemSetReviewPage = () => {
     >
       <div className='absolute inset-0 bg-black bg-opacity-80'>
         {/* Header */}
-        <div className='border-b border-[#595959] bg-[#262626] px-6 py-4'>
+        <div className="bg-black px-6 py-4 flex items-center justify-between">
           <div className='flex items-center justify-between'>
             {/* 로고 */}
             <div className='flex items-center space-x-4'>
               <div className='flex items-center space-x-2'>
+                <Button size="sm" className="p-2 bg-black text-white" onClick={() => navigate(`/stage/${stageId}`)}>
+                  <ChevronLeft size={20} />
+                </Button>
                 <Logo />
               </div>
             </div>
@@ -707,29 +715,26 @@ const StemSetReviewPage = () => {
             <div className='flex items-center space-x-4'>
               <button
                 onClick={handleApprove}
-                className='border-b-2 border-white pb-1 text-gray-300 transition-colors hover:text-white'
+                className='border-b-2 bg-yellow-500 border-white pb-1 text-gray-300 hover:text-white'
               >
                 APPROVE
               </button>
               <button
                 onClick={handleReject}
-                className='border-b-2 border-white pb-1 text-gray-300 transition-colors hover:text-white'
+                className='border-b-2 border-white pb-1 text-gray-300 bg-red-500 hover:text-white'
               >
                 REJECT
               </button>
             </div>
 
             {/* 알림/설정 버튼 가로 정렬 */}
-            <div className='flex items-center gap-4'>
-              <button className='relative text-white transition-colors hover:text-gray-300'>
+            <div className="flex items-center gap-4">
+              <Button size="sm" className="p-2 bg-black text-white">
                 <Bell size={20} />
-                <span className='absolute -right-1 -top-1 flex h-4 w-4 items-center justify-center rounded-full bg-red-500 text-xs text-white'>
-                  1
-                </span>
-              </button>
-              <button className='text-white transition-colors hover:text-gray-300'>
+              </Button>
+              <Button size="sm" className="p-2 bg-black text-white">
                 <Settings size={20} />
-              </button>
+              </Button>
             </div>
           </div>
         </div>
@@ -905,13 +910,12 @@ const StemSetReviewPage = () => {
                                       {item.category?.name ||
                                         'Unknown Category'}
                                       <span
-                                        className={`ml-2 rounded px-2 py-1 text-xs ${
-                                          item.type === 'new'
-                                            ? 'bg-green-600'
-                                            : item.type === 'modify'
-                                              ? 'bg-yellow-600'
-                                              : 'bg-gray-600'
-                                        }`}
+                                        className={`ml-2 rounded px-2 py-1 text-xs ${item.type === 'new'
+                                          ? 'bg-green-600'
+                                          : item.type === 'modify'
+                                            ? 'bg-yellow-600'
+                                            : 'bg-gray-600'
+                                          }`}
                                       >
                                         {item.type || 'unknown'}
                                       </span>
@@ -1191,11 +1195,10 @@ const StemSetReviewPage = () => {
               }}
             />
             <button
-              className={`${
-                selectedUpstream && commentInput.trim()
-                  ? 'text-blue-400 hover:text-blue-300'
-                  : 'cursor-not-allowed text-gray-600'
-              }`}
+              className={`${selectedUpstream && commentInput.trim()
+                ? 'text-blue-400 hover:text-blue-300'
+                : 'cursor-not-allowed text-gray-600'
+                }`}
               onClick={handleAddComment}
               disabled={!selectedUpstream || !commentInput.trim()}
             >

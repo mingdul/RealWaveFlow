@@ -30,7 +30,7 @@ const Logo: React.FC<LogoProps> = ({
       <div>
         <div className="mb-2 flex items-center justify-center">
           <h1 className={`mr-3 font-bold text-white ${sizeClasses[size]}`}>
-            wave FLOW
+            WAVEFLOW
           </h1>
           <div className="flex items-center space-x-1">
             {waveBars.map((bar) => (

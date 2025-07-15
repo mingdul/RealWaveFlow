@@ -79,7 +79,7 @@ const StemListModal: React.FC<StemListModalProps> = ({
 
         {/* Roll Back Button */}
         {onRollBack && (
-          <div className="mt-6 pt-6 border-t border-[#595959] flex justify-end">
+          <div className="mt-6 pt-6 border-t border-[#595959] flex">
             <Button 
               variant="secondary" 
               size="sm" 

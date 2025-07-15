@@ -8,8 +8,8 @@ interface StepProgressProps {
 
 const StepProgress: React.FC<StepProgressProps> = ({ currentStep, steps }) => {
   return (
-    <div className="w-full mb-8">
-      <div className="flex items-center justify-between">
+    <div className="w-full mb-8 flex justify-center">
+      <div className="flex items-center justify-between max-w-2xl w-full">
         {steps.map((step, index) => {
           const stepNumber = index + 1;
           const isActive = stepNumber === currentStep;
@@ -24,7 +24,7 @@ const StepProgress: React.FC<StepProgressProps> = ({ currentStep, steps }) => {
                   ${isCompleted 
                     ? 'bg-green-500 text-white' 
                     : isActive 
-                      ? 'bg-purple-600 text-white ring-4 ring-purple-600/30' 
+                      ? 'bg-white text-black ring-4 ring-purple-600/30' 
                       : 'bg-gray-600 text-gray-400'
                   }
                 `}>
