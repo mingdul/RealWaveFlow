@@ -15,7 +15,7 @@ import PresignedImage from '../components/PresignedImage';
 
 const DashboardPageV2 = () => {
   const navigate = useNavigate();
-  const { user, logout, isAuthenticated } = useAuth();
+  const { user, logout, isAuthenticated, isLoading: authLoading } = useAuth();
   const { showError, showSuccess } = useToast();
   // const { isConnected, onlineUsers, sendMessage, ping } = useSocket();
   
@@ -42,10 +42,10 @@ const DashboardPageV2 = () => {
 
 
   useEffect(() => {
-    if (!isAuthenticated) {
+    if (!authLoading && !isAuthenticated) {
       navigate('/login');
     }
-  }, [isAuthenticated, navigate]);
+  }, [isAuthenticated, authLoading, navigate]);
 
   // 트랙 목록 로드
   useEffect(() => {
@@ -307,6 +307,17 @@ const DashboardPageV2 = () => {
       </div>
     </div>
   );
+
+  if (authLoading) {
+    return (
+      <div className="flex items-center justify-center h-screen bg-gray-900">
+        <div className="text-center">
+          <Loader2 className="h-12 w-12 animate-spin text-purple-500 mx-auto mb-4" />
+          <p className="text-gray-400">Loading...</p>
+        </div>
+      </div>
+    );
+  }
 
   if (!isAuthenticated || !user) {
     return null; // 리다이렉트 처리 중
