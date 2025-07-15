@@ -709,7 +709,7 @@ const UploadModal: React.FC<UploadModalProps> = ({
             };
 
             console.log('[DEBUG] Creating stem job for:', file.name, stemJobRequest);
-            const stemJobResult = await stemJobService.createStemJob(stemJobRequest);
+            const stemJobResult = await stemJobService.dupCheck(stemJobRequest);
             console.log('[DEBUG] Stem job created:', stemJobResult);
 
             if (stemJobResult.success && (stemJobResult as any).job) {
