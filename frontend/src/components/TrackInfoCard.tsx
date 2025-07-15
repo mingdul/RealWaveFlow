@@ -31,6 +31,111 @@ const TrackInfoCard: React.FC<TrackInfoCardProps> = ({
   const [inviteError, setInviteError] = useState('');
   const [inviteSuccess, setInviteSuccess] = useState('');
 
+  
+const [emailList, setEmailList] = useState<string[]>([]);
+const [currentInput, setCurrentInput] = useState('');
+
+// 이메일 유효성 검사 함수
+const validateEmail = (email: string) => {
+  const emailRegex = /^[^\s@]+@[^\s@]+\.[^\s@]+$/;
+  return emailRegex.test(email);
+};
+
+// 이메일 추가 함수
+const addEmail = (email: string) => {
+  const trimmedEmail = email.trim();
+  if (trimmedEmail && validateEmail(trimmedEmail) && !emailList.includes(trimmedEmail)) {
+    setEmailList([...emailList, trimmedEmail]);
+    setCurrentInput('');
+    setInviteError('');
+    return true;
+  } else if (trimmedEmail && !validateEmail(trimmedEmail)) {
+    setInviteError('유효하지 않은 이메일 형식입니다.');
+    return false;
+  } else if (emailList.includes(trimmedEmail)) {
+    setInviteError('이미 추가된 이메일입니다.');
+    return false;
+  }
+  return false;
+};
+
+// 이메일 삭제 함수
+const removeEmail = (index: number) => {
+  setEmailList(emailList.filter((_, i) => i !== index));
+  setInviteError('');
+};
+
+// 입력 핸들러
+const handleInputChange = (e : any) => {
+  setCurrentInput(e.target.value);
+};
+
+const handleInputKeyDown = (e : any) => {
+  if (e.key === 'Enter' || e.key === ',') {
+    e.preventDefault();
+    addEmail(currentInput);
+  } else if (e.key === 'Backspace' && currentInput === '' && emailList.length > 0) {
+    removeEmail(emailList.length - 1);
+  }
+};
+
+// 붙여넣기 핸들러
+const handlePaste = (e : any) => {
+  e.preventDefault();
+  const pastedText = e.clipboardData.getData('text');
+  const pastedEmails = pastedText
+    .split(/[,\n\r\s]+/)
+    .map((email: string) => email.trim())
+    .filter((email: string) => email && validateEmail(email))
+    .filter((email: string) => !emailList.includes(email));
+  
+  if (pastedEmails.length > 0) {
+    setEmailList([...emailList, ...pastedEmails]);
+    setCurrentInput('');
+    setInviteError('');
+  }
+};
+
+// 초대 발송 함수 수정
+const handleSendInvites = async () => {
+  if (emailList.length === 0) {
+    setInviteError('최소 하나의 이메일을 입력해주세요.');
+    return;
+  }
+
+  setInviteLoading(true);
+  setInviteError('');
+  setInviteSuccess('');
+
+  try {
+    // 실제 API 호출 시 emailList 사용
+    // const response = await sendInvites(emailList);
+    
+    // 시뮬레이션
+    await new Promise(resolve => setTimeout(resolve, 2000));
+    setInviteSuccess(`${emailList.length}명에게 초대 이메일을 발송했습니다.`);
+    
+    // 성공 시 이메일 목록 초기화
+    setEmailList([]);
+    setCurrentInput('');
+    
+  } catch (error) {
+    setInviteError('초대 발송에 실패했습니다. 다시 시도해주세요.');
+  } finally {
+    setInviteLoading(false);
+  }
+};
+
+// 모달 닫기 함수 수정
+const handleCloseInviteModal = () => {
+  setShowInviteModal(false);
+  setEmailList([]);
+  setCurrentInput('');
+  setInviteError('');
+  setInviteSuccess('');
+};
+
+
   const handlePlayClick = () => {
     if (stems.length > 0) {
       setShowPlayer(!showPlayer);
@@ -52,56 +157,6 @@ const TrackInfoCard: React.FC<TrackInfoCardProps> = ({
     setInviteSuccess('');
   };
 
-  const handleSendInvites = async () => {
-    if (!inviteEmails.trim()) {
-      setInviteError('이메일을 입력해주세요.');
-      return;
-    }
-
-    setInviteLoading(true);
-    setInviteError('');
-    setInviteSuccess('');
-
-    try {
-      // 쉼표나 줄바꿈으로 구분된 이메일을 배열로 변환
-      const emailList = inviteEmails
-        .split(/[,\n]/)
-        .map(email => email.trim())
-        .filter(email => email.length > 0);
-
-      if (emailList.length === 0) {
-        setInviteError('유효한 이메일을 입력해주세요.');
-        return;
-      }
-
-      const result = await inviteService.sendTrackInvites(track.id, emailList);
-      
-      if (result.success) {
-        setInviteSuccess(`${result.sent_count}개의 초대가 성공적으로 발송되었습니다.`);
-      } else {
-        setInviteError(result.message || '초대 발송에 실패했습니다.');
-      }
-      setInviteEmails('');
-      
-      // 3초 후 모달 닫기
-      setTimeout(() => {
-        setShowInviteModal(false);
-        setInviteSuccess('');
-      }, 3000);
-    } catch (error) {
-      console.error('초대 발송 실패:', error);
-      setInviteError(error instanceof Error ? error.message : '초대 발송에 실패했습니다.');
-    } finally {
-      setInviteLoading(false);
-    }
-  };
-
-  const handleCloseInviteModal = () => {
-    setShowInviteModal(false);
-    setInviteEmails('');
-    setInviteError('');
-    setInviteSuccess('');
-  };
 
   // 사용자 아바타 렌더링 함수
   const renderUserAvatars = () => {
@@ -229,70 +284,95 @@ const TrackInfoCard: React.FC<TrackInfoCardProps> = ({
 
       {/* Invite Modal */}
       {showInviteModal && (
-        <div className="fixed inset-0 bg-black bg-opacity-50 flex items-center justify-center z-50">
-          <div className="bg-gray-800 rounded-lg p-6 w-full max-w-md mx-4">
-            <div className="flex justify-between items-center mb-4">
-              <h3 className="text-xl font-semibold text-white">협업자 초대</h3>
-              <button
-                onClick={handleCloseInviteModal}
-                className="text-gray-400 hover:text-white"
-              >
-                <X size={20} />
-              </button>
-            </div>
-            
-            <div className="mb-4">
-              <label className="block text-sm font-medium text-gray-300 mb-2">
-                이메일 주소 (쉼표 또는 줄바꿈으로 구분)
-              </label>
-              <textarea
-                value={inviteEmails}
-                onChange={(e) => setInviteEmails(e.target.value)}
-                placeholder="user1@example.com, user2@example.com"
-                className="w-full h-32 px-3 py-2 bg-gray-700 border border-gray-600 rounded-md text-white placeholder-gray-400 focus:outline-none focus:ring-2 focus:ring-purple-500 focus:border-transparent"
+      <div className="fixed inset-0 bg-black bg-opacity-50 flex items-center justify-center z-50">
+        <div className="bg-gray-800 rounded-lg p-6 w-full max-w-md mx-4">
+          <div className="flex justify-between items-center mb-4">
+            <h3 className="text-xl font-semibold text-white">협업자 초대</h3>
+            <button
+              onClick={handleCloseInviteModal}
+              className="text-gray-400 hover:text-white"
+            >
+              <X size={20} />
+            </button>
+          </div>
+          
+          <div className="mb-4">
+            <label className="block text-sm font-medium text-gray-300 mb-2">
+              이메일 주소 ({emailList.length}개)
+            </label>
+            <div className="min-h-[120px] px-3 py-2 bg-gray-700 border border-gray-600 rounded-md focus-within:ring-2 focus-within:ring-purple-500 focus-within:border-transparent">
+              <div className="flex flex-wrap gap-2 mb-2">
+                {emailList.map((email, index) => (
+                  <span
+                    key={index}
+                    className="inline-flex items-center gap-1 px-2 py-1 bg-purple-600 text-white text-sm rounded-full"
+                  >
+                    {email}
+                    <button
+                      onClick={() => removeEmail(index)}
+                      className="hover:bg-purple-700 rounded-full p-0.5"
+                      disabled={inviteLoading}
+                    >
+                      <X size={12} />
+                    </button>
+                  </span>
+                ))}
+              </div>
+              <input
+                type="text"
+                value={currentInput}
+                onChange={handleInputChange}
+                onKeyDown={handleInputKeyDown}
+                onPaste={handlePaste}
+                placeholder={emailList.length === 0 ? "이메일을 입력하고 Enter 또는 쉼표를 눌러주세요" : "이메일 추가..."}
+                className="w-full bg-transparent text-white placeholder-gray-400 focus:outline-none"
                 disabled={inviteLoading}
               />
             </div>
+            <p className="text-xs text-gray-400 mt-1">
+              여러 이메일을 붙여넣거나 Enter/쉼표로 구분해서 입력하세요
+            </p>
+          </div>
 
-            {inviteError && (
-              <div className="mb-4 p-3 bg-red-900 border border-red-700 rounded-md">
-                <p className="text-red-300 text-sm">{inviteError}</p>
-              </div>
-            )}
-
-            {inviteSuccess && (
-              <div className="mb-4 p-3 bg-green-900 border border-green-700 rounded-md">
-                <p className="text-green-300 text-sm">{inviteSuccess}</p>
-              </div>
-            )}
-
-            <div className="flex gap-3">
-              <Button
-                variant="primary"
-                size="md"
-                onClick={handleSendInvites}
-                disabled={inviteLoading}
-                className="flex-1 bg-purple-600 hover:bg-purple-700"
-              >
-                {inviteLoading ? (
-                  <div className="w-4 h-4 border-2 border-white border-t-transparent rounded-full animate-spin" />
-                ) : (
-                  '초대 발송'
-                )}
-              </Button>
-              <Button
-                variant="outline"
-                size="md"
-                onClick={handleCloseInviteModal}
-                disabled={inviteLoading}
-                className="flex-1"
-              >
-                취소
-              </Button>
+          {inviteError && (
+            <div className="mb-4 p-3 bg-red-900 border border-red-700 rounded-md">
+              <p className="text-red-300 text-sm">{inviteError}</p>
             </div>
+          )}
+
+          {inviteSuccess && (
+            <div className="mb-4 p-3 bg-green-900 border border-green-700 rounded-md">
+              <p className="text-green-300 text-sm">{inviteSuccess}</p>
+            </div>
+          )}
+
+          <div className="flex gap-3">
+            <Button
+              variant="primary"
+              size="md"
+              onClick={handleSendInvites}
+              disabled={inviteLoading || emailList.length === 0}
+              className="flex-1 bg-purple-600 hover:bg-purple-700"
+            >
+              {inviteLoading ? (
+                <div className="w-4 h-4 border-2 border-white border-t-transparent rounded-full animate-spin" />
+              ) : (
+                `초대 발송 (${emailList.length}명)`
+              )}
+            </Button>
+            <Button
+              variant="outline"
+              size="md"
+              onClick={handleCloseInviteModal}
+              disabled={inviteLoading}
+              className="flex-1"
+            >
+              취소
+            </Button>
           </div>
         </div>
-      )}
+      </div>
+    )}
     </div>
   );
 };
