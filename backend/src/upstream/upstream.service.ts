@@ -3,6 +3,7 @@ import { Upstream } from './upstream.entity';
 import { InjectRepository } from '@nestjs/typeorm';
 import { Repository } from 'typeorm';
 import { CreateUpstreamDto } from './dto/createUpstream.dto';
+import { UpstreamReviewService } from 'src/upstream-review/upstream-review.service';
 
 @Injectable()
 export class UpstreamService {
@@ -10,7 +11,8 @@ export class UpstreamService {
     constructor(
         @InjectRepository(Upstream)
         private upstreamRepository: Repository<Upstream>,
-    ) {}
+        private upstreamReviewService: UpstreamReviewService,
+        ) {}
 
     async createUpstream(createUpstreamDto: CreateUpstreamDto) {
         const { title, description, stage_id, user_id  } = createUpstreamDto;
@@ -25,6 +27,16 @@ export class UpstreamService {
         if (!savedUpstream) {
             throw new BadRequestException('Failed to create upstream');
         }
+
+        const upstreamReview = await this.upstreamReviewService.createUpstreamReview({
+            upstream_id: savedUpstream.id,
+            stage_id: stage_id,
+        });
+
+        if (!upstreamReview) {
+            throw new BadRequestException('Failed to create upstream review');
+        }
+
         return {
             success: true,
             message: 'Upstream created successfully',

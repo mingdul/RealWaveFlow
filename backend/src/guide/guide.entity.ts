@@ -18,7 +18,10 @@ export class Guide {
     @Column({ type: 'timestamp', default: () => 'CURRENT_TIMESTAMP' })
     created_at: Date;
 
-    @OneToOne(() => Stage, (stage) => stage.guide)
+    @OneToOne(() => Stage, (stage) => stage.guide, {
+        cascade: true,
+        onDelete: 'CASCADE',
+    })
     @JoinColumn({ name: 'stage_id' })
     stage: Stage;
 

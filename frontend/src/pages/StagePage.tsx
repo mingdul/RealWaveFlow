@@ -1,9 +1,11 @@
 import React, { useState, useEffect } from 'react';
+import { useParams } from 'react-router-dom';
 import { Upload, Bell, Settings } from 'lucide-react';
 import Logo from '../components/Logo';
 import UploadModal from '../components/UploadModal';
-import trackService from '../services/trackService';
-import { Track } from '../types/api';
+// import trackService from '../services/trackService';
+import { getStageDetail } from '../services/stageService';
+import { Track, Stage } from '../types/api';
 import tapeActive from '../assets/activeTape.png';
 import tapeApproved from '../assets/approveTape.png';
 import tapeRejected from '../assets/rejectedTape.png';
@@ -185,6 +187,24 @@ const StagePage: React.FC = () => {
     alert(`Detail for AWSOME MIX #${idx + 1}`);
   };
 
+  if (loading) {
+    return (
+      <div className="bg-[#2a2a2a] min-h-screen flex justify-center items-center">
+        <div className="animate-spin rounded-full h-12 w-12 border-b-2 border-white"></div>
+      </div>
+    );
+  }
+
+  if (!stage) {
+    return (
+      <div className="bg-[#2a2a2a] min-h-screen flex justify-center items-center">
+        <div className="text-center py-16">
+          <h1 className="text-2xl font-bold text-gray-300">Stage not found</h1>
+        </div>
+      </div>
+    );
+  }
+
   return (
     <div className="min-h-screen bg-black">
       <header className='flex items-center justify-between px-8 py-6'>
@@ -206,9 +226,9 @@ const StagePage: React.FC = () => {
 
       <main className='px-8 pb-8'>
         <div className='mb-8'>
-          <h2 className='mb-4 text-3xl font-bold text-white'>OPEN Stage - 5</h2>
+          <h2 className='mb-4 text-3xl font-bold text-white'>{stage.title} - V{stage.version}</h2>
           <div className='mb-6 rounded-lg bg-gray-700 p-4'>
-            <p className='text-white'>스테이지 업데이트 쌓는 메시지</p>
+            <p className='text-white'>{stage.description}</p>
           </div>
         </div>
 
@@ -261,13 +281,13 @@ const StagePage: React.FC = () => {
         </div>
       </main>
 
-      {trackId && (
+      {stage.track && (
         <UploadModal
           isOpen={isUploadModalOpen}
           onClose={() => setUploadModalOpen(false)}
-          projectId={trackId}
-          projectName={track ? track.name : "Loading..."}
-          onComplete={handleUploadComplete}
+          projectId={stage.track.id}
+          projectName={track ? track.title : "Loading..."}
+          onComplete={handleUploadComplete} 
         />
       )}
     </div>

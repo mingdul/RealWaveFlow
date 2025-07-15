@@ -4,7 +4,7 @@ import { CreateStageDto, Stage } from '../types/api';
 // 스테이지 생성
 export const createStage = async (stageData: CreateStageDto) => {
   const response = await apiClient.post('/stage/create', stageData);
-  return response.data;
+  return response.data.data;
 };
 
 // 트랙별 스테이지 목록 조회
@@ -24,7 +24,21 @@ export const getTrackStages = async (trackId: string) => {
 // 스테이지 상세 조회
 export const getStageDetail = async (stageId: string) => {
   const response = await apiClient.get(`/stage/stage/${stageId}`);
-  return response.data;
+  return response.data.data;
+};
+
+// 트랙 ID와 버전으로 스테이지 조회
+export const getStageByTrackIdAndVersion = async (trackId: string, version: number) => {
+  try {
+    const response = await apiClient.get(`/stage/track/${trackId}/version/${version}`);
+    if(!response.data.success){
+      throw new Error(response.data.message);
+    }
+    return response.data.data;
+  } catch (error) {
+    console.error('Failed to get stage by track ID and version:', error);
+    return null;
+  }
 };
 
 // 스테이지 목록이 있는지 확인
@@ -52,3 +66,16 @@ export const getLatestStage = async (trackId: string) => {
       return null;
     }
   }; 
+
+export const getBackToPreviousStage = async (trackId: string, version: number) => {
+  try { 
+    const response = await apiClient.get(`/stage/back-to-previous-stage/${trackId}/${version}`);
+    if(!response.data.success){
+      throw new Error(response.data.message);
+    }
+    return response.data.message;
+  } catch (error: any) {
+    console.error('Failed to get back to previous stage:', error);
+    return error.response?.data?.message || 'Failed to get back to previous stage';
+  }
+};

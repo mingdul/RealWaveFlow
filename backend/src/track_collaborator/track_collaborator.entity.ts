@@ -7,11 +7,17 @@ export class TrackCollaborator {
   @PrimaryGeneratedColumn('uuid')
   id: string;
 
-  @ManyToOne(() => User)
+  @ManyToOne(() => User, {
+    cascade: true,
+    onDelete: 'CASCADE',
+  })
   @JoinColumn({ name: 'user_id' })
   user_id: User;
 
-  @ManyToOne(() => Track)
+  @ManyToOne(() => Track, {
+    cascade: true,
+    onDelete: 'CASCADE',
+  })
   @JoinColumn({ name: 'track_id' })
   track_id: Track;
 

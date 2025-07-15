@@ -1,8 +1,11 @@
 import { useEffect, useRef, useState, useCallback } from 'react';
 import WaveSurfer from 'wavesurfer.js';
-import WaveformCloner from '../components/wave';
+import Wave from '../components/wave';
 import Logo from '../components/Logo';  
-import streamingService, { StemStreamingInfo } from '../services/streamingService';
+import { getStageUpstreams } from '../services/upstreamService';
+import { getStageDetail, getStageByTrackIdAndVersion } from '../services/stageService';
+import streamingService from '../services/streamingService';
+import { useParams } from 'react-router-dom';
 import {
   Bell,
   Settings,
@@ -34,46 +37,85 @@ const StemSetReviewPage = () => {
   const [comments, setComments] = useState<Comment[]>([]);
   const [extraAudio, setExtraAudio] = useState<string>('');
   const [showExtraWaveform, setShowExtraWaveform] = useState(false);
-  const [streamingStems, setStreamingStems] = useState<StemStreamingInfo[]>([]);
-  const [stemsLoading, setStemsLoading] = useState(false);
+  const [stemsLoading] = useState(false);
+  const [upstreams, setUpstreams] = useState<any[]>([]);
+  const [guideAudioUrl, setGuideAudioUrl] = useState<string>('');
+  const [guideLoading, setGuideLoading] = useState(false);
 
   const wavesurferRefs = useRef<{ [id: string]: WaveSurfer }>({});
   const [readyStates, setReadyStates] = useState<{ [id: string]: boolean }>({});
   const isSeeking = useRef(false); // 무한 루프 방지용 플래그
+  const {stageId} = useParams<{stageId: string}>();
 
-  // 스트리밍 데이터 로드
+  // 이전 버전의 가이드 스템 URL 가져오기
   useEffect(() => {
-    const loadStreamingData = async () => {
-      setStemsLoading(true);
+    const fetchPreviousGuideUrl = async () => {
+      if (!stageId) return;
+      
       try {
-        // TODO: 실제 트랙 ID를 사용해야 함
-      const response = await streamingService.getTrackStems('2f4c036f-239a-4af9-b728-e21eba7e1a78');
-        if (response.success && response.data) {
-          setStreamingStems(response.data.stems);
-        } else {
-          console.error('Failed to load streaming data:', response.message);
-          setStreamingStems([]);
+        setGuideLoading(true);
+        
+        // 1. 현재 스테이지 정보 가져오기
+        const currentStage = await getStageDetail(stageId);
+        if (!currentStage) {
+          console.error('Current stage not found');
+          return;
         }
+        
+        const { track, version } = currentStage;
+        const trackId = track.id;
+        const currentVersion = version;
+        
+        // 2. 이전 버전이 있는지 확인
+        if (currentVersion <= 1) {
+          console.log('No previous version available');
+          return;
+        }
+        
+        // 3. 이전 버전의 스테이지 정보 가져오기
+        const previousStage = await getStageByTrackIdAndVersion(trackId, currentVersion - 1);
+        if (!previousStage) {
+          console.error('Previous stage not found');
+          return;
+        }
+        
+        // 4. 이전 스테이지의 guide_path 확인
+        const guidePath = previousStage.guide_path;
+        if (!guidePath) {
+          console.log('No guide path in previous stage');
+          return;
+        }
+        
+        // 5. guide_path를 presigned URL로 변환
+        const response = await streamingService.getGuidePresignedUrl(guidePath, trackId);
+        if (response.success && response.data) {
+          setGuideAudioUrl(response.data.presignedUrl);
+        }
+        
       } catch (error) {
-        console.error('Failed to load streaming data:', error);
-        setStreamingStems([]);
+        console.error('Failed to fetch previous guide URL:', error);
       } finally {
-        setStemsLoading(false);
+        setGuideLoading(false);
       }
     };
 
-    loadStreamingData();
-  }, []);
+    fetchPreviousGuideUrl();
+  }, [stageId]);
 
-  // Legacy audioFiles를 스트리밍 데이터로 변환
-  const audioFiles = streamingStems.map((stem) => ({
-    name: stem.fileName,
-    path: stem.presignedUrl,
-    description: stem.description || `${stem.category} - ${stem.tag}`,
-    category: stem.category,
-    uploadedBy: stem.uploadedBy.username,
-    uploadedAt: stem.uploadedAt
-  }));
+  useEffect(() => {
+    const fetchUpstreams = async () => {
+      try {
+        const response = await getStageUpstreams(stageId || '');  // 👈 여기!
+        if (response.data) {
+          setUpstreams(response.data);
+        }
+      } catch (error) {
+        console.error('Failed to fetch stage upstreams', error);
+      }
+    };
+  
+    if (stageId) fetchUpstreams();
+  }, [stageId]);
 
   const handleReady = useCallback((ws: WaveSurfer, id: string) => {
     wavesurferRefs.current[id] = ws;
@@ -262,9 +304,28 @@ const StemSetReviewPage = () => {
     }, 100);
   }, [readyStates]);
 
-  const handleAudioFileClick = useCallback((audioPath: string) => {
-    setExtraAudio(audioPath);
-    setShowExtraWaveform(true);
+  const handleAudioFileClick = useCallback(async (upstream: any) => {
+    try {
+      // 스트리밍 최적화된 URL을 가져오기
+      const response = await streamingService.getUpstreamStems(upstream.id);
+      
+      if (response.success && response.data && response.data.stems.length > 0) {
+        // 첫 번째 스템의 presigned URL 사용
+        const streamingUrl = response.data.stems[0].presignedUrl;
+        setExtraAudio(streamingUrl);
+        setShowExtraWaveform(true);
+      } else {
+        // 스트리밍 실패 시 원래 URL 사용
+        console.warn('Streaming URL failed, using original URL');
+        setExtraAudio(upstream.presignedUrl);
+        setShowExtraWaveform(true);
+      }
+    } catch (error) {
+      console.error('Error loading streaming URL:', error);
+      // 에러 발생 시 원래 URL 사용
+      setExtraAudio(upstream.presignedUrl);
+      setShowExtraWaveform(true);
+    }
   }, []);
 
   // Solo 버튼 핸들러들을 메모이제이션
@@ -302,12 +363,12 @@ const StemSetReviewPage = () => {
           </div>
 
           {/* 탭 버튼 */}
-          <div className='flex items-center space-x-3'>
-            <button className='text-gray-300 transition-colors hover:text-white'>
-              TRACK
+          <div className='flex items-center space-x-4'>
+            <button className='text-gray-300 transition-colors hover:text-white border-b-2 border-white pb-1'>
+              APPROVE
             </button>
-            <button className='border-b-2 border-white pb-1 text-white'>
-              STAGE
+            <button className='text-gray-300 transition-colors hover:text-white border-b-2 border-white pb-1'>
+              REJECT
             </button>
           </div>
 
@@ -334,6 +395,9 @@ const StemSetReviewPage = () => {
         >
           Show History
         </button>
+      </div>
+
+      <div className='z-50 flex flex-col gap-2 px-6 pt-4'>
         <button
           onClick={() => setShowCommentList(!showCommentList)}
           className='self-start rounded bg-[#3a3a3a] px-3 py-1 text-sm hover:bg-[#555]'
@@ -386,22 +450,20 @@ const StemSetReviewPage = () => {
               </div>
             ) : (
               <div className='max-h-96 space-y-2 overflow-y-auto'>
-                {audioFiles.map((file, index) => (
-                  <div
-                    key={index}
-                    onClick={() => handleAudioFileClick(file.path)}
-                    className='cursor-pointer rounded bg-[#3a3a3a] p-3 text-sm text-white transition-colors hover:bg-[#4a4a4a]'
-                  >
-                    <div className='font-medium'>{file.name}</div>
-                    <div className='text-xs text-gray-400'>
-                      {file.description}
-                    </div>
-                    <div className='text-xs text-gray-500 mt-1'>
-                      Category: {file.category} | By: {file.uploadedBy}
-                    </div>
+                {upstreams.map((upstream, index) => (
+                <div
+                  key={index}
+                  onClick={() => handleAudioFileClick(upstream)}
+                  className='cursor-pointer rounded bg-[#3a3a3a] p-3 text-sm text-white transition-colors hover:bg-[#4a4a4a]'
+                >
+                  <div className='font-medium'>{upstream.fileName}</div>
+                  <div className='text-xs text-gray-400'>{upstream.description}</div>
+                  <div className='text-xs text-gray-500 mt-1'>
+                    Category: {upstream.category} | By: {upstream.uploadedBy?.username}
                   </div>
-                ))}
-              </div>
+                </div>
+              ))}
+            </div>
             )}
           </div>
         </div>
@@ -458,20 +520,27 @@ const StemSetReviewPage = () => {
 
       {/* Waveform */}
       <div className='space-y-6'>
-        <WaveformCloner
-          onReady={handleReady}
-          audioUrl='/audio/track_ex.wav'
-          waveColor='#f87171'
-          id='main'
-          isPlaying={isPlaying}
-          currentTime={currentTime}
-          onSolo={handleMainSolo}
-          isSolo={soloTrack === 'main'}
-          onSeek={handleSeek}
-        />
+        {guideLoading ? (
+          <div className='flex justify-center items-center py-8'>
+            <div className='animate-spin rounded-full h-8 w-8 border-b-2 border-white mr-3'></div>
+            <span className='text-white'>Loading previous guide...</span>
+          </div>
+        ) : (
+          <Wave
+            onReady={handleReady}
+            audioUrl={guideAudioUrl || '/audio/track_ex.wav'}
+            waveColor='#f87171'
+            id='main'
+            isPlaying={isPlaying}
+            currentTime={currentTime}
+            onSolo={handleMainSolo}
+            isSolo={soloTrack === 'main'}
+            onSeek={handleSeek}
+          />
+        )}
 
         {showExtraWaveform && extraAudio && (
-          <WaveformCloner
+          <Wave
             onReady={handleReady}
             audioUrl={extraAudio}
             waveColor='#60a5fa'

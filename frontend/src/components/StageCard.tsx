@@ -36,7 +36,7 @@ const StageCard: React.FC<StageCardProps> = ({ stage, isSelected, onClick, index
       day: '2-digit' 
     }).replace(/\./g, '.').replace(/\.$/, '');
   };
-
+  console.log('StageCard stage:', stage);
   return (
     <div
       id={id}

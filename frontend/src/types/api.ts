@@ -26,7 +26,7 @@ export interface LoginResponse {
 // 트랙 관련 타입
 export interface Track {
   id: string;
-  name: string;
+  title: string;
   description?: string;
   genre?: string;
   bpm?: string;

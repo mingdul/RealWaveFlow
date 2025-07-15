@@ -13,100 +13,9 @@ import InitProjectModal from '../components/InitProjectModal';
 import CreateTrackModal from '../components/CreateTrackModal';
 import PresignedImage from '../components/PresignedImage';
 
-// ProjectCard 컴포넌트를 별도로 정의하여 불필요한 리렌더링 방지
-interface ProjectCardProps {
-  track?: Track;
-  isNewProject?: boolean;
-  filter: 'owned' | 'collaborated';
-  onNewProject: () => void;
-  onTrackClick: (trackId: string) => void;
-  onEditTrack: (track: Track, e: React.MouseEvent) => void;
-  onDeleteTrack: (trackId: string, e: React.MouseEvent) => void;
-}
-
-const ProjectCard: React.FC<ProjectCardProps> = ({ 
-  track, 
-  isNewProject = false, 
-  filter,
-  onNewProject,
-  onTrackClick,
-  onEditTrack,
-  onDeleteTrack
-}) => {
-  if (isNewProject) {
-    return (
-      <div 
-        onClick={onNewProject}
-        className="bg-neutral-800 rounded-xl p-8 shadow-lg hover:shadow-xl hover:scale-105 transition-all duration-300 cursor-pointer group"
-      >
-        <div className="flex flex-col items-center justify-center h-48">
-          <div className="bg-white rounded-full p-6 mb-4 group-hover:bg-gray-100 transition-colors">
-            <Plus size={48} className="text-neutral-800" />
-          </div>
-          <h3 className="text-white text-xl font-semibold">New Track</h3>
-          <p className="text-gray-400 text-sm mt-2">Start a new Track</p>
-        </div>
-      </div>
-    );
-  }
-
-  if (!track) return null;
-
-  return (
-    <div 
-      onClick={() => onTrackClick(track.id)}
-      className="bg-neutral-800 rounded-xl overflow-hidden shadow-lg hover:shadow-xl hover:scale-105 transition-all duration-300 cursor-pointer relative group"
-    >
-      <div className="aspect-video bg-gradient-to-br from-purple-600 to-blue-600 flex items-center justify-center relative">
-        <Headphones size={64} className="text-white opacity-60" />
-        <PresignedImage
-          trackId={track.id}
-          alt={track.title}
-          className="absolute inset-0 w-full h-full object-cover"
-        />
-      </div>
-      
-      {/* 편집/삭제 버튼 */}
-      {filter === 'owned' && (
-        <div className="absolute top-2 right-2 opacity-0 group-hover:opacity-100 transition-opacity">
-          <div className="flex space-x-2">
-            <button
-              onClick={(e) => onEditTrack(track, e)}
-              className="bg-blue-600 hover:bg-blue-700 text-white p-2 rounded-full transition-colors"
-            >
-              <Edit size={16} />
-            </button>
-            <button
-              onClick={(e) => onDeleteTrack(track.id, e)}
-              className="bg-red-600 hover:bg-red-700 text-white p-2 rounded-full transition-colors"
-            >
-              <Trash2 size={16} />
-            </button>
-          </div>
-        </div>
-      )}
-      <div className="p-4">
-        <h3 className="text-white text-lg font-semibold mb-1 truncate">{track.title}</h3>
-        <p className="text-gray-400 text-sm mb-2">{track.genre || 'Genre not specified'}</p>
-        <p className="text-gray-500 text-xs">
-          Updated {new Date(track.updated_date).toLocaleDateString('en-US')}
-        </p>
-        {track.collaborators && track.collaborators.length > 0 && (
-          <div className="flex items-center mt-2">
-            <Users size={12} className="text-gray-400 mr-1" />
-            <span className="text-xs text-gray-400">
-              {track.collaborators.length} collaborators
-            </span>
-          </div>
-        )}
-      </div>
-    </div>
-  );
-};
-
-const DashboardPage = () => {
+const DashboardPageV2 = () => {
   const navigate = useNavigate();
-  const { user, logout, isAuthenticated } = useAuth();
+  const { user, logout, isAuthenticated, isLoading: authLoading } = useAuth();
   const { showError, showSuccess } = useToast();
   // const { isConnected, onlineUsers, sendMessage, ping } = useSocket();
   
@@ -133,10 +42,10 @@ const DashboardPage = () => {
 
 
   useEffect(() => {
-    if (!isAuthenticated) {
+    if (!authLoading && !isAuthenticated) {
       navigate('/login');
     }
-  }, [isAuthenticated, navigate]);
+  }, [isAuthenticated, authLoading, navigate]);
 
   // 트랙 목록 로드
   useEffect(() => {
@@ -266,7 +175,95 @@ const DashboardPage = () => {
     await loadTracks();
   };
 
+  const ProjectCard = ({ track, isNewProject = false }: { track?: Track, isNewProject?: boolean }) => {
+    if (isNewProject) {
+      return (
+        <div 
+          onClick={handleNewProject}
+          className="bg-neutral-800 rounded-2xl overflow-hidden shadow-lg hover:shadow-xl transition-all duration-300 cursor-pointer group"
+        >
+          <div className="aspect-square bg-gradient-to-br from-purple-600 to-blue-600 flex items-center justify-center relative">
+            <div className="bg-white rounded-full p-6 group-hover:bg-gray-100 transition-colors">
+              <Plus size={48} className="text-neutral-800" />
+            </div>
+          </div>
+          <div className="p-4">
+            <h3 className="text-white text-lg font-semibold mb-1">New Track</h3>
+            <p className="text-gray-400 text-sm">Start a new Track</p>
+          </div>
+        </div>
+      );
+    }
 
+    if (!track) return null;
+
+    return (
+      <div 
+        onClick={() => handleTrackClick(track.id)}
+        className="bg-neutral-800 rounded-2xl overflow-hidden shadow-lg hover:shadow-xl transition-all duration-300 cursor-pointer group"
+      >
+        <div className="aspect-square bg-gradient-to-br from-purple-600 to-blue-600 flex items-center justify-center relative overflow-hidden">
+          {/* 기본 이미지 */}
+          <div className="absolute inset-0 flex items-center justify-center">
+            <Headphones size={64} className="text-white opacity-60" />
+          </div>
+          
+          {/* 실제 이미지 */}
+          <PresignedImage
+            trackId={track.id}
+            alt={track.title}
+            className="absolute inset-0 w-full h-full object-cover"
+          />
+          
+          {/* 호버 시 나타나는 정보 오버레이 */}
+          <div className="absolute inset-0 bg-black bg-opacity-80 opacity-0 group-hover:opacity-100 transition-opacity duration-300 flex flex-col justify-between p-4">
+            {/* 상단 편집/삭제 버튼 */}
+            {filter === 'owned' && (
+              <div className="flex justify-end space-x-2">
+                <button
+                  onClick={(e) => handleEditTrack(track, e)}
+                  className="bg-blue-600 hover:bg-blue-700 text-white p-2 rounded-full transition-colors"
+                >
+                  <Edit size={16} />
+                </button>
+                <button
+                  onClick={(e) => handleDeleteTrack(track.id, e)}
+                  className="bg-red-600 hover:bg-red-700 text-white p-2 rounded-full transition-colors"
+                >
+                  <Trash2 size={16} />
+                </button>
+              </div>
+            )}
+            
+            {/* 하단 트랙 정보 */}
+            <div className="text-center text-white">
+              <h3 className="text-xl font-bold mb-2">{track.title}</h3>
+              {track.genre && (
+                <p className="text-gray-300 text-sm mb-2">{track.genre}</p>
+              )}
+              {track.bpm && (
+                <p className="text-gray-300 text-sm mb-2">{track.bpm} BPM</p>
+              )}
+              {track.key_signature && (
+                <p className="text-gray-300 text-sm mb-2">Key: {track.key_signature}</p>
+              )}
+              <p className="text-gray-400 text-xs mb-2">
+                Updated {new Date(track.updated_date).toLocaleDateString('en-US')}
+              </p>
+              {track.collaborators && track.collaborators.length > 0 && (
+                <div className="flex items-center justify-center">
+                  <Users size={14} className="text-gray-400 mr-1" />
+                  <span className="text-sm text-gray-400">
+                    {track.collaborators.length} collaborators
+                  </span>
+                </div>
+              )}
+            </div>
+          </div>
+        </div>
+      </div>
+    );
+  };
 
   const LoadingState = () => (
     <div className="flex items-center justify-center py-20">
@@ -310,6 +307,17 @@ const DashboardPage = () => {
       </div>
     </div>
   );
+
+  if (authLoading) {
+    return (
+      <div className="flex items-center justify-center h-screen bg-gray-900">
+        <div className="text-center">
+          <Loader2 className="h-12 w-12 animate-spin text-purple-500 mx-auto mb-4" />
+          <p className="text-gray-400">Loading...</p>
+        </div>
+      </div>
+    );
+  }
 
   if (!isAuthenticated || !user) {
     return null; // 리다이렉트 처리 중
@@ -430,27 +438,10 @@ const DashboardPage = () => {
         ) : tracks.length === 0 ? (
           <EmptyState />
         ) : (
-          <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 xl:grid-cols-4 gap-6">
-            {filter === 'owned' && (
-              <ProjectCard 
-                isNewProject 
-                filter={filter}
-                onNewProject={handleNewProject}
-                onTrackClick={handleTrackClick}
-                onEditTrack={handleEditTrack}
-                onDeleteTrack={handleDeleteTrack}
-              />
-            )}
+          <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 xl:grid-cols-4 2xl:grid-cols-5 gap-6">
+            {filter === 'owned' && <ProjectCard isNewProject />}
             {tracks.map((track) => (
-              <ProjectCard 
-                key={track.id} 
-                track={track} 
-                filter={filter}
-                onNewProject={handleNewProject}
-                onTrackClick={handleTrackClick}
-                onEditTrack={handleEditTrack}
-                onDeleteTrack={handleDeleteTrack}
-              />
+              <ProjectCard key={track.id} track={track} />
             ))}
           </div>
         )}
@@ -569,4 +560,4 @@ const EditTrackModal = ({ track, onClose, onSubmit }: { track: Track, onClose: (
   );
 };
 
-export default DashboardPage;
+export default DashboardPageV2;
