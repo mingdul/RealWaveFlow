@@ -169,10 +169,14 @@ export class StageService {
     async getBackToPreviousStage(trackId: string, version: number) {
         const stages = await this.stageRepository.find({
             where: { track: { id: trackId }, version: MoreThan(version) },
+            relations: ['track', 'user'],
         });
 
         if (stages.length === 0) {
-            throw new NotFoundException('Stage not found');
+           return {
+            success: true,
+            message: 'No previous stage found',
+           }
         }
 
         for (const stage of stages) {
