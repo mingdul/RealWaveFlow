@@ -178,7 +178,7 @@ const StagePage: React.FC = () => {
       </div>
     );
   };
-
+// 11
   const [playingIndex, setPlayingIndex] = useState<number | null>(null);
   const [seekValues, setSeekValues] = useState<number[]>([]);
   const [audioUrl, setAudioUrl] = useState<string | null>(null);
