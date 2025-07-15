@@ -1,6 +1,6 @@
 import React, { useState } from 'react';
 import { Play, Plus, Pause, X } from 'lucide-react';
-import { Button, StemPlayer, StemListModal } from './';
+import { Button, StemPlayer } from './';
 import { Track } from '../types/api';
 import { StemStreamingInfo } from '../services/streamingService';
 import PresignedImage from './PresignedImage';
@@ -26,7 +26,6 @@ const TrackInfoCard: React.FC<TrackInfoCardProps> = ({
   stemsLoading = false
 }) => {
   const [showPlayer, setShowPlayer] = useState(false);
-  const [showStemListModal, setShowStemListModal] = useState(false);
   const [showInviteModal, setShowInviteModal] = useState(false);
   const [inviteEmails, setInviteEmails] = useState('');
   const [inviteLoading, setInviteLoading] = useState(false);
@@ -42,7 +41,6 @@ const TrackInfoCard: React.FC<TrackInfoCardProps> = ({
   };
 
   const handleShowAllStems = () => {
-    setShowStemListModal(true);
     if (onShowAllStems) {
       onShowAllStems();
     }
@@ -227,15 +225,7 @@ const TrackInfoCard: React.FC<TrackInfoCardProps> = ({
         </div>
       )}
 
-      {/* Stem List Modal */}
-      <StemListModal
-        isOpen={showStemListModal}
-        onClose={() => setShowStemListModal(false)}
-        stems={stems}
-        versionNumber={versionNumber || '1.0'}
-        loading={stemsLoading}
-        onRollBack={onRollBack}
-      />
+
 
       {/* Invite Modal */}
       {showInviteModal && (
