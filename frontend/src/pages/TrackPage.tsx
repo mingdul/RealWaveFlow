@@ -57,23 +57,23 @@ const TrackPage: React.FC<TrackPageProps> = () => {
     loadTrackData();
   }, [trackId]);
 
-  // 활성 스테이지의 스템들 로드
-  const loadActiveStems = async () => {
+  // 승인된 스테이지의 스템들 로드
+  const loadApproveStems = async () => {
     if (!trackId || stages.length === 0) return;
 
     try {
       setStemsLoading(true);
       
-      // status가 'active'인 스테이지 찾기
-      const approvedStage = stages.find(stage => stage.status === 'approved');
-      if (!approvedStage) {
-        console.error('No approved stage found');
+      // status가 'approve'인 스테이지 찾기
+      const approveStage = stages.find(stage => stage.status === 'approve');
+      if (!approveStage) {
+        console.error('No approve stage found');
         setStems([]);
         return;
       }
 
       // 활성 스테이지의 버전으로 스템들 로드
-      const response = await streamingService.getMasterStemStreams(trackId, approvedStage.version);
+      const response = await streamingService.getMasterStemStreams(trackId, approveStage.version);
       if (response.data) {
         setStems(response.data.stems);
       } else {
@@ -91,7 +91,7 @@ const TrackPage: React.FC<TrackPageProps> = () => {
   // 스테이지가 로드되면 활성 스테이지의 스템들 로드
   useEffect(() => {
     if (stages.length > 0) {
-      loadActiveStems();
+      loadApproveStems();
     }
   }, [stages, trackId]);
 
