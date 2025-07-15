@@ -1,19 +1,28 @@
 import { useEffect, useRef, useState, useCallback } from 'react';
 import WaveSurfer from 'wavesurfer.js';
 import Wave from '../components/wave';
-import Logo from '../components/Logo';  
-import { getStageUpstreams, getUpstreamStems } from '../services/upstreamService';
-import { getStageDetail, getStageByTrackIdAndVersion } from '../services/stageService';
+import Logo from '../components/Logo';
+import {
+  getStageUpstreams,
+  getUpstreamStems,
+} from '../services/upstreamService';
+import {
+  getStageDetail,
+  getStageByTrackIdAndVersion,
+} from '../services/stageService';
 import streamingService from '../services/streamingService';
 import { useParams } from 'react-router-dom';
 import { useAuth } from '../contexts/AuthContext';
-import { approveDropReviewer, rejectDropReviewer } from '../services/upstreamReviewService';
+import {
+  approveDropReviewer,
+  rejectDropReviewer,
+} from '../services/upstreamReviewService';
 
 import {
   createUpstreamComment,
   getUpstreamComments,
   deleteUpstreamComment,
-  updateUpstreamComment
+  updateUpstreamComment,
 } from '../services/upstreamCommentService';
 import {
   Bell,
@@ -67,7 +76,7 @@ const StemSetReviewPage = () => {
   const wavesurferRefs = useRef<{ [id: string]: WaveSurfer }>({});
   const [readyStates, setReadyStates] = useState<{ [id: string]: boolean }>({});
   const isSeeking = useRef(false); // 무한 루프 방지용 플래그
-  const {stageId} = useParams<{stageId: string}>();
+  const { stageId } = useParams<{ stageId: string }>();
 
   // 상태 변경 추적을 위한 로그
   useEffect(() => {
@@ -82,47 +91,52 @@ const StemSetReviewPage = () => {
   useEffect(() => {
     const fetchPreviousGuideUrl = async () => {
       if (!stageId) return;
-      
+
       try {
         setGuideLoading(true);
-        
+
         // 1. 현재 스테이지 정보 가져오기
         const currentStage = await getStageDetail(stageId);
         if (!currentStage) {
           console.error('Current stage not found');
           return;
         }
-        
+
         const { track, version } = currentStage;
         const trackId = track.id;
         const currentVersion = version;
-        
+
         // 2. 이전 버전이 있는지 확인
         if (currentVersion <= 1) {
           console.log('No previous version available');
           return;
         }
-        
+
         // 3. 이전 버전의 스테이지 정보 가져오기
-        const previousStage = await getStageByTrackIdAndVersion(trackId, currentVersion - 1);
+        const previousStage = await getStageByTrackIdAndVersion(
+          trackId,
+          currentVersion - 1
+        );
         if (!previousStage) {
           console.error('Previous stage not found');
           return;
         }
-        
+
         // 4. 이전 스테이지의 guide_path 확인
         const guidePath = previousStage.guide_path;
         if (!guidePath) {
           console.log('No guide path in previous stage');
           return;
         }
-        
+
         // 5. guide_path를 presigned URL로 변환
-        const response = await streamingService.getGuidePresignedUrl(guidePath, trackId);
+        const response = await streamingService.getGuidePresignedUrl(
+          guidePath,
+          trackId
+        );
         if (response.success && response.data) {
           setGuideAudioUrl(response.data.presignedUrl);
         }
-        
       } catch (error) {
         console.error('Failed to fetch previous guide URL:', error);
       } finally {
@@ -136,63 +150,83 @@ const StemSetReviewPage = () => {
   useEffect(() => {
     const fetchUpstreamsAndStems = async () => {
       try {
-        console.log('🚀 Starting fetchUpstreamsAndStems with stageId:', stageId);
-        
+        console.log(
+          '🚀 Starting fetchUpstreamsAndStems with stageId:',
+          stageId
+        );
+
         // 1. 먼저 stage 정보를 가져와서 trackId 획득
         const stageResponse = await getStageDetail(stageId || '');
         console.log('📊 Stage detail response:', stageResponse);
-        
+
         if (!stageResponse || !stageResponse.track) {
           console.error('Failed to get stage details');
           return;
         }
-        
+
         const currentTrackId = stageResponse.track.id;
         console.log('🎵 Current track ID:', currentTrackId);
-        
+
         // 2. upstream 목록 가져오기
         const upstreamsResponse = await getStageUpstreams(stageId || '');
         console.log('📁 Upstreams response:', upstreamsResponse);
-        
+
         if (!upstreamsResponse.data) {
           console.error('Failed to get upstreams');
           return;
         }
-        
-        console.log('✅ Found upstreams:', upstreamsResponse.data.length, 'items');
+
+        console.log(
+          '✅ Found upstreams:',
+          upstreamsResponse.data.length,
+          'items'
+        );
         console.log('📋 Upstreams data:', upstreamsResponse.data);
         setUpstreams(upstreamsResponse.data);
-        
+
         // 3. 각 upstream에 대해 stem 정보 가져오기
         // const stemPromises = upstreamsResponse.data.map(async (upstream: any) => {
-        const stemPromises = upstreamsResponse.data.map(async (upstream: any, index: number) => {
-          try {
-            console.log(`🔍 Fetching stems for upstream ${index + 1}/${upstreamsResponse.data.length}:`, upstream.id);
-            const stemResponse = await getUpstreamStems(upstream.id, currentTrackId);
-            console.log(`📦 Stem response for upstream ${upstream.id}:`, stemResponse);
-            
-            return {
-              upstreamId: upstream.id,
-              stemData: stemResponse.data || null
-            };
-          } catch (error) {
-            console.error(`Failed to fetch stems for upstream ${upstream.id}:`, error);
-            return {
-              upstreamId: upstream.id,
-              stemData: null
-            };
+        const stemPromises = upstreamsResponse.data.map(
+          async (upstream: any, index: number) => {
+            try {
+              console.log(
+                `🔍 Fetching stems for upstream ${index + 1}/${upstreamsResponse.data.length}:`,
+                upstream.id
+              );
+              const stemResponse = await getUpstreamStems(
+                upstream.id,
+                currentTrackId
+              );
+              console.log(
+                `📦 Stem response for upstream ${upstream.id}:`,
+                stemResponse
+              );
+
+              return {
+                upstreamId: upstream.id,
+                stemData: stemResponse.data || null,
+              };
+            } catch (error) {
+              console.error(
+                `Failed to fetch stems for upstream ${upstream.id}:`,
+                error
+              );
+              return {
+                upstreamId: upstream.id,
+                stemData: null,
+              };
+            }
           }
-        });
-        
+        );
+
         const stemsResults = await Promise.all(stemPromises);
         console.log('🎯 All stems results:', stemsResults);
         setUpstreamStems(stemsResults);
-        
       } catch (error) {
         console.error('Failed to fetch upstreams and stems', error);
       }
     };
-  
+
     // if (stageId) fetchUpstreamsAndStems();
     if (stageId) {
       console.log('🎬 useEffect triggered with stageId:', stageId);
@@ -202,49 +236,52 @@ const StemSetReviewPage = () => {
     }
   }, [stageId]);
 
-  const handleReady = useCallback((ws: WaveSurfer, id: string) => {
-    wavesurferRefs.current[id] = ws;
-    
-    // ready 상태 업데이트
-    setReadyStates(prev => ({ ...prev, [id]: true }));
-    
-    // main 파형이 ready 되었을 때 이벤트 리스너 추가
-    if (id === 'main') {
-      ws.on('audioprocess', (time: number) => {
-        setCurrentTime(time);
-      });
-      
-      ws.on('ready', () => {
-        setDuration(ws.getDuration());
-        // 초기 볼륨 설정
-        ws.setVolume(soloTrack === 'main' ? 1 : 0);
-      });
-      
-      ws.on('play', () => {
-        setIsPlaying(true);
-      });
-      
-      ws.on('pause', () => {
-        setIsPlaying(false);
-      });
-      
-      ws.on('finish', () => {
-        setIsPlaying(false);
-      });
-    }
-    
-    // extra 파형이 ready 되었을 때 볼륨 설정
-    if (id === 'extra') {
-      ws.on('ready', () => {
-        ws.setVolume(soloTrack === 'extra' ? 1 : 0);
-      });
-    }
-  }, [soloTrack]);
+  const handleReady = useCallback(
+    (ws: WaveSurfer, id: string) => {
+      wavesurferRefs.current[id] = ws;
+
+      // ready 상태 업데이트
+      setReadyStates((prev) => ({ ...prev, [id]: true }));
+
+      // main 파형이 ready 되었을 때 이벤트 리스너 추가
+      if (id === 'main') {
+        ws.on('audioprocess', (time: number) => {
+          setCurrentTime(time);
+        });
+
+        ws.on('ready', () => {
+          setDuration(ws.getDuration());
+          // 초기 볼륨 설정
+          ws.setVolume(soloTrack === 'main' ? 1 : 0);
+        });
+
+        ws.on('play', () => {
+          setIsPlaying(true);
+        });
+
+        ws.on('pause', () => {
+          setIsPlaying(false);
+        });
+
+        ws.on('finish', () => {
+          setIsPlaying(false);
+        });
+      }
+
+      // extra 파형이 ready 되었을 때 볼륨 설정
+      if (id === 'extra') {
+        ws.on('ready', () => {
+          ws.setVolume(soloTrack === 'extra' ? 1 : 0);
+        });
+      }
+    },
+    [soloTrack]
+  );
 
   const togglePlay = useCallback(() => {
     const mainPlayer = wavesurferRefs.current['main'];
     const extraPlayer = wavesurferRefs.current['extra'];
-    
+
     if (mainPlayer) {
       if (isPlaying) {
         mainPlayer.pause();
@@ -259,7 +296,7 @@ const StemSetReviewPage = () => {
   const stopPlayback = useCallback(() => {
     const mainPlayer = wavesurferRefs.current['main'];
     const extraPlayer = wavesurferRefs.current['extra'];
-    
+
     if (mainPlayer) {
       mainPlayer.stop();
       if (extraPlayer) extraPlayer.stop();
@@ -269,11 +306,11 @@ const StemSetReviewPage = () => {
 
   const handleSolo = useCallback((trackId: 'main' | 'extra') => {
     setSoloTrack(trackId);
-    
+
     // 볼륨 업데이트
     const mainPlayer = wavesurferRefs.current['main'];
     const extraPlayer = wavesurferRefs.current['extra'];
-    
+
     if (mainPlayer) {
       mainPlayer.setVolume(trackId === 'main' ? 1 : 0);
     }
@@ -282,37 +319,40 @@ const StemSetReviewPage = () => {
     }
   }, []);
 
-  const handleVolumeChange = useCallback((e: React.ChangeEvent<HTMLInputElement>) => {
-    const vol = parseFloat(e.target.value);
-    setVolume(vol);
-    
-    // Solo 트랙에만 볼륨 적용
-    const mainPlayer = wavesurferRefs.current['main'];
-    const extraPlayer = wavesurferRefs.current['extra'];
-    
-    if (soloTrack === 'main' && mainPlayer) {
-      mainPlayer.setVolume(vol);
-    } else if (soloTrack === 'extra' && extraPlayer) {
-      extraPlayer.setVolume(vol);
-    }
-  }, [soloTrack]);
+  const handleVolumeChange = useCallback(
+    (e: React.ChangeEvent<HTMLInputElement>) => {
+      const vol = parseFloat(e.target.value);
+      setVolume(vol);
+
+      // Solo 트랙에만 볼륨 적용
+      const mainPlayer = wavesurferRefs.current['main'];
+      const extraPlayer = wavesurferRefs.current['extra'];
+
+      if (soloTrack === 'main' && mainPlayer) {
+        mainPlayer.setVolume(vol);
+      } else if (soloTrack === 'extra' && extraPlayer) {
+        extraPlayer.setVolume(vol);
+      }
+    },
+    [soloTrack]
+  );
 
   // 댓글 추가 함수
   const handleAddComment = useCallback(async () => {
     if (!commentInput.trim() || !user) return;
-    
+
     const timeString = `${String(Math.floor(currentTime / 60)).padStart(2, '0')}:${String(Math.floor(currentTime % 60)).padStart(2, '0')}`;
-    
+
     try {
       const commentData = {
         comment: commentInput.trim(),
         time: timeString,
         upstream_id: selectedUpstream.id,
-        user_id: user.id
+        user_id: user.id,
       };
-      
+
       const response = await createUpstreamComment(commentData);
-      
+
       // 새 댓글을 로컬 상태에 추가
       const newComment: Comment = {
         id: response.id,
@@ -322,14 +362,14 @@ const StemSetReviewPage = () => {
         timeString: timeString,
         user: {
           id: user.id,
-          username: user.username
-        }
+          username: user.username,
+        },
       };
-      
+
       setComments((prev) => [...prev, newComment]);
       setCommentInput('');
       setShowCommentList(true);
-      
+
       // 마커 생성 (얇은 선)
       const ws = wavesurferRefs.current['main'];
       if (ws) {
@@ -345,7 +385,7 @@ const StemSetReviewPage = () => {
           marker.style.pointerEvents = 'none';
           marker.style.zIndex = '10';
           marker.dataset.commentId = newComment.id;
-          
+
           container.appendChild(marker);
         } catch (error) {
           console.warn('마커 생성 실패:', error);
@@ -361,26 +401,28 @@ const StemSetReviewPage = () => {
     try {
       setCommentsLoading(true);
       const response = await getUpstreamComments(upstreamId);
-      
+
       if (response.data) {
         const formattedComments = response.data.map((comment: any) => {
           // time 문자열을 파싱하여 숫자로 변환 (MM:SS 형식)
           const [minutes, seconds] = comment.time.split(':').map(Number);
           const timeNumber = minutes * 60 + seconds;
-          
+
           return {
             id: comment.id,
             time: comment.time,
             comment: comment.comment,
             timeNumber: timeNumber,
             timeString: comment.time,
-            user: comment.user ? {
-              id: comment.user.id,
-              username: comment.user.username
-            } : undefined
+            user: comment.user
+              ? {
+                  id: comment.user.id,
+                  username: comment.user.username,
+                }
+              : undefined,
           };
         });
-        
+
         setComments(formattedComments);
       }
     } catch (error) {
@@ -395,7 +437,7 @@ const StemSetReviewPage = () => {
   const handleDeleteComment = useCallback(async (commentId: string) => {
     try {
       await deleteUpstreamComment(commentId);
-      setComments(prev => prev.filter(comment => comment.id !== commentId));
+      setComments((prev) => prev.filter((comment) => comment.id !== commentId));
     } catch (error) {
       console.error('댓글 삭제 실패:', error);
     }
@@ -408,43 +450,46 @@ const StemSetReviewPage = () => {
   }, []);
 
   // 댓글 수정 저장
-  const handleSaveComment = useCallback(async (commentId: string) => {
-    if (!editCommentText.trim()) {
-      setEditingComment(null);
-      return;
-    }
+  const handleSaveComment = useCallback(
+    async (commentId: string) => {
+      if (!editCommentText.trim()) {
+        setEditingComment(null);
+        return;
+      }
 
-    try {
-      const comment = comments.find(c => c.id === commentId);
-      if (!comment) return;
+      try {
+        const comment = comments.find((c) => c.id === commentId);
+        if (!comment) return;
 
-      await updateUpstreamComment(commentId, {
-        comment: editCommentText.trim(),
-        time: comment.time
-      });
+        await updateUpstreamComment(commentId, {
+          comment: editCommentText.trim(),
+          time: comment.time,
+        });
 
-      setComments(prev => prev.map(c => 
-        c.id === commentId 
-          ? { ...c, comment: editCommentText.trim() }
-          : c
-      ));
-      
-      setEditingComment(null);
-      setEditCommentText('');
-    } catch (error) {
-      console.error('댓글 수정 실패:', error);
-    }
-  }, [editCommentText, comments]);
+        setComments((prev) =>
+          prev.map((c) =>
+            c.id === commentId ? { ...c, comment: editCommentText.trim() } : c
+          )
+        );
+
+        setEditingComment(null);
+        setEditCommentText('');
+      } catch (error) {
+        console.error('댓글 수정 실패:', error);
+      }
+    },
+    [editCommentText, comments]
+  );
 
   // 댓글 클릭 시 해당 시간으로 이동
   const seekToTime = useCallback((time: number) => {
     const mainPlayer = wavesurferRefs.current['main'];
     const extraPlayer = wavesurferRefs.current['extra'];
-    
+
     if (mainPlayer && mainPlayer.getDuration()) {
       const progress = time / mainPlayer.getDuration();
       mainPlayer.seekTo(progress);
-      
+
       // extra 파형도 동기화
       if (extraPlayer && extraPlayer.getDuration()) {
         extraPlayer.seekTo(progress);
@@ -452,79 +497,94 @@ const StemSetReviewPage = () => {
     }
   }, []);
 
-  const handleSeek = useCallback((time: number, trackId: string) => {
-    // 무한 루프 방지
-    if (isSeeking.current) return;
-    
-    isSeeking.current = true;
-    setCurrentTime(time);
-    
-    // 양방향 동기화: 움직인 트랙이 아닌 다른 트랙을 동기화
-    const mainPlayer = wavesurferRefs.current['main'];
-    const extraPlayer = wavesurferRefs.current['extra'];
-    
-    if (mainPlayer && extraPlayer && readyStates['main'] && readyStates['extra']) {
+  const handleSeek = useCallback(
+    (time: number, trackId: string) => {
+      // 무한 루프 방지
+      if (isSeeking.current) return;
+
+      isSeeking.current = true;
+      setCurrentTime(time);
+
+      // 양방향 동기화: 움직인 트랙이 아닌 다른 트랙을 동기화
+      const mainPlayer = wavesurferRefs.current['main'];
+      const extraPlayer = wavesurferRefs.current['extra'];
+
+      if (
+        mainPlayer &&
+        extraPlayer &&
+        readyStates['main'] &&
+        readyStates['extra']
+      ) {
+        try {
+          const progress = time / mainPlayer.getDuration();
+          if (progress >= 0 && progress <= 1) {
+            // main 트랙에서 seek가 발생하면 extra 트랙을 동기화
+            if (trackId === 'main' && extraPlayer) {
+              extraPlayer.seekTo(progress);
+            }
+            // extra 트랙에서 seek가 발생하면 main 트랙을 동기화
+            else if (trackId === 'extra' && mainPlayer) {
+              mainPlayer.seekTo(progress);
+            }
+          }
+        } catch (error) {
+          // 동기화 실패 시 무시
+        }
+      }
+
+      // 플래그 초기화
+      setTimeout(() => {
+        isSeeking.current = false;
+      }, 100);
+    },
+    [readyStates]
+  );
+
+  const handleAudioFileClick = useCallback(
+    async (upstream: any) => {
       try {
-        const progress = time / mainPlayer.getDuration();
-        if (progress >= 0 && progress <= 1) {
-          // main 트랙에서 seek가 발생하면 extra 트랙을 동기화
-          if (trackId === 'main' && extraPlayer) {
-            extraPlayer.seekTo(progress);
-          }
-          // extra 트랙에서 seek가 발생하면 main 트랙을 동기화
-          else if (trackId === 'extra' && mainPlayer) {
-            mainPlayer.seekTo(progress);
-          }
+        console.log('🎵 Audio file clicked:', upstream);
+
+        // 선택된 upstream 설정
+        setSelectedUpstream(upstream);
+        console.log('✅ Selected upstream set');
+
+        // 해당 upstream의 댓글 로드
+        console.log('💬 Loading comments for upstream:', upstream.id);
+        await loadComments(upstream.id);
+
+        // 스트리밍 최적화된 URL을 가져오기
+        console.log('🌊 Getting streaming URL for upstream:', upstream.id);
+        const response = await streamingService.getUpstreamStems(upstream.id);
+        console.log('🌊 Streaming response:', response);
+
+        if (
+          response.success &&
+          response.data &&
+          response.data.stems.length > 0
+        ) {
+          // 첫 번째 스템의 presigned URL 사용
+          const streamingUrl = response.data.stems[0].presignedUrl;
+          console.log('✅ Using streaming URL:', streamingUrl);
+          setExtraAudio(streamingUrl);
+          setShowExtraWaveform(true);
+        } else {
+          // 스트리밍 실패 시 원래 URL 사용
+          console.warn('⚠️ Streaming URL failed, using original URL');
+          console.log('🔗 Original presigned URL:', upstream.presignedUrl);
+          setExtraAudio(upstream.presignedUrl);
+          setShowExtraWaveform(true);
         }
       } catch (error) {
-        // 동기화 실패 시 무시
-      }
-    }
-    
-    // 플래그 초기화
-    setTimeout(() => {
-      isSeeking.current = false;
-    }, 100);
-  }, [readyStates]);
-
-  const handleAudioFileClick = useCallback(async (upstream: any) => {
-    try {
-      console.log('🎵 Audio file clicked:', upstream);
-      
-      // 선택된 upstream 설정
-      setSelectedUpstream(upstream);
-      console.log('✅ Selected upstream set');
-      
-      // 해당 upstream의 댓글 로드
-      console.log('💬 Loading comments for upstream:', upstream.id);
-      await loadComments(upstream.id);
-      
-      // 스트리밍 최적화된 URL을 가져오기
-      console.log('🌊 Getting streaming URL for upstream:', upstream.id);
-      const response = await streamingService.getUpstreamStems(upstream.id);
-      console.log('🌊 Streaming response:', response);
-      
-      if (response.success && response.data && response.data.stems.length > 0) {
-        // 첫 번째 스템의 presigned URL 사용
-        const streamingUrl = response.data.stems[0].presignedUrl;
-        console.log('✅ Using streaming URL:', streamingUrl);
-        setExtraAudio(streamingUrl);
-        setShowExtraWaveform(true);
-      } else {
-        // 스트리밍 실패 시 원래 URL 사용
-        console.warn('⚠️ Streaming URL failed, using original URL');
-        console.log('🔗 Original presigned URL:', upstream.presignedUrl);
+        console.error('Error loading streaming URL:', error);
+        // 에러 발생 시 원래 URL 사용
+        console.log('🔗 Fallback to original URL:', upstream.presignedUrl);
         setExtraAudio(upstream.presignedUrl);
         setShowExtraWaveform(true);
       }
-    } catch (error) {
-      console.error('Error loading streaming URL:', error);
-      // 에러 발생 시 원래 URL 사용
-      console.log('🔗 Fallback to original URL:', upstream.presignedUrl);
-      setExtraAudio(upstream.presignedUrl);
-      setShowExtraWaveform(true);
-    }
-  }, [loadComments]);
+    },
+    [loadComments]
+  );
 
   // Solo 버튼 핸들러들을 메모이제이션
   const handleMainSolo = useCallback(() => handleSolo('main'), [handleSolo]);
@@ -534,9 +594,15 @@ const StemSetReviewPage = () => {
   useEffect(() => {
     const extraPlayer = wavesurferRefs.current['extra'];
     const mainPlayer = wavesurferRefs.current['main'];
-    
+
     // 재생 중일 때만 audioprocess 이벤트를 통한 동기화 수행
-    if (isPlaying && extraPlayer && mainPlayer && readyStates['extra'] && readyStates['main']) {
+    if (
+      isPlaying &&
+      extraPlayer &&
+      mainPlayer &&
+      readyStates['extra'] &&
+      readyStates['main']
+    ) {
       try {
         const progress = currentTime / mainPlayer.getDuration();
         if (progress >= 0 && progress <= 1) {
@@ -553,7 +619,7 @@ const StemSetReviewPage = () => {
       alert('Stage 또는 Upstream이 선택되지 않았습니다.');
       return;
     }
-  
+
     try {
       await approveDropReviewer(stageId, selectedUpstream.id);
       alert('승인 완료!');
@@ -562,13 +628,13 @@ const StemSetReviewPage = () => {
       alert('승인 중 오류 발생');
     }
   };
-  
+
   const handleReject = async () => {
     if (!stageId || !selectedUpstream) {
       alert('Stage 또는 Upstream이 선택되지 않았습니다.');
       return;
     }
-  
+
     try {
       await rejectDropReviewer(stageId, selectedUpstream.id);
       alert('거절 완료!');
@@ -579,113 +645,118 @@ const StemSetReviewPage = () => {
   };
 
   return (
-    <div className='relative min-h-screen space-y-6 overflow-hidden bg-[#1e1e1e] px-6 py-8 text-white'>
-      {/* Header */}
-      <div className='border-b border-[#595959] bg-[#262626] px-6 py-4'>
-        <div className='flex items-center justify-between'>
-          {/* 로고 */}
-          <div className='flex items-center space-x-4'>
-            <div className='flex items-center space-x-2'>
-              <Logo />
+    <div
+      className='relative min-h-screen space-y-6 overflow-hidden bg-cover bg-center'
+      style={{ backgroundImage: "url('/background.jpg')" }}
+    >
+      <div className='absolute inset-0 bg-black bg-opacity-60'>
+        {/* Header */}
+        <div className='border-b border-[#595959] bg-[#262626] px-6 py-4'>
+          <div className='flex items-center justify-between'>
+            {/* 로고 */}
+            <div className='flex items-center space-x-4'>
+              <div className='flex items-center space-x-2'>
+                <Logo />
+              </div>
+            </div>
+
+            {/* 탭 버튼 */}
+            <div className='flex items-center space-x-4'>
+              <button
+                onClick={handleApprove}
+                className='border-b-2 border-white pb-1 text-gray-300 transition-colors hover:text-white'
+              >
+                APPROVE
+              </button>
+              <button
+                onClick={handleReject}
+                className='border-b-2 border-white pb-1 text-gray-300 transition-colors hover:text-white'
+              >
+                REJECT
+              </button>
+            </div>
+
+            {/* 알림/설정 버튼 가로 정렬 */}
+            <div className='flex items-center gap-4'>
+              <button className='relative text-white transition-colors hover:text-gray-300'>
+                <Bell size={20} />
+                <span className='absolute -right-1 -top-1 flex h-4 w-4 items-center justify-center rounded-full bg-red-500 text-xs text-white'>
+                  1
+                </span>
+              </button>
+              <button className='text-white transition-colors hover:text-gray-300'>
+                <Settings size={20} />
+              </button>
             </div>
           </div>
-
-          {/* 탭 버튼 */}
-          <div className='flex items-center space-x-4'>
-            <button 
-              onClick={handleApprove}
-              className='text-gray-300 transition-colors hover:text-white border-b-2 border-white pb-1'
-            >
-              APPROVE
-            </button>
-            <button 
-              onClick={handleReject}
-              className='text-gray-300 transition-colors hover:text-white border-b-2 border-white pb-1'
-            >
-              REJECT
-            </button>
-          </div>
-
-          {/* 알림/설정 버튼 가로 정렬 */}
-          <div className='flex items-center gap-4'>
-            <button className='relative text-white transition-colors hover:text-gray-300'>
-              <Bell size={20} />
-              <span className='absolute -right-1 -top-1 flex h-4 w-4 items-center justify-center rounded-full bg-red-500 text-xs text-white'>
-                1
-              </span>
-            </button>
-            <button className='text-white transition-colors hover:text-gray-300'>
-              <Settings size={20} />
-            </button>
-          </div>
         </div>
-      </div>
 
-      {/* 🔽 Header 아래로 이동된 버튼들 */}
-      <div className='z-50 flex flex-col gap-2 px-6 pt-4'>
-        <button
-          onClick={() => setShowHistory(!showHistory)}
-          className='self-start rounded bg-[#3a3a3a] px-3 py-1 text-sm hover:bg-[#555]'
-        >
-          Show History
-        </button>
-      </div>
+        {/* 🔽 Header 아래로 이동된 버튼들 */}
+        <div className='z-50 flex flex-col gap-2 px-6 pt-4'>
+          <button
+            onClick={() => setShowHistory(!showHistory)}
+            className='self-start rounded bg-[#3a3a3a] px-3 py-1 text-sm hover:bg-[#555]'
+          >
+            Show History
+          </button>
+        </div>
 
-      <div className='z-50 flex flex-col gap-2 px-6 pt-4'>
-        <button
-          onClick={() => setShowCommentList(!showCommentList)}
-          className='self-start rounded bg-[#3a3a3a] px-3 py-1 text-sm hover:bg-[#555]'
-        >
-          Comments
-        </button>
-      </div>
+        <div className='z-50 flex flex-col gap-2 px-6 pt-4'>
+          <button
+            onClick={() => setShowCommentList(!showCommentList)}
+            className='self-start rounded bg-[#3a3a3a] px-3 py-1 text-sm hover:bg-[#555]'
+          >
+            Comments
+          </button>
+        </div>
 
-      {/* Sidebars*/}
-      {showHistory && (
-        <div className='fixed right-0 top-0 z-40 h-full w-64 bg-[#2a2a2a] px-4 py-6 shadow-lg'>
-          {/* Close Button */}
-          <div className='mb-4 flex items-center justify-between'>
-            <h2 className='text-lg font-bold text-white'>Streaming Audio Files</h2>
-            <button
-              onClick={() => setShowHistory(false)}
-              className='rounded-full p-1 text-gray-300 transition-all duration-200 hover:text-white'
-              style={{ backgroundColor: 'transparent' }}
-              onMouseEnter={(e) =>
-                (e.currentTarget.style.backgroundColor = '#ffffff')
-              }
-              onMouseLeave={(e) =>
-                (e.currentTarget.style.backgroundColor = 'transparent')
-              }
-            >
-              <svg
-                className='h-5 w-5'
-                fill='none'
-                stroke='currentColor'
-                viewBox='0 0 24 24'
+        {/* Sidebars*/}
+        {showHistory && (
+          <div className='fixed right-0 top-0 z-40 h-full w-64 bg-[#2a2a2a] px-4 py-6 shadow-lg'>
+            {/* Close Button */}
+            <div className='mb-4 flex items-center justify-between'>
+              <h2 className='text-lg font-bold text-white'>
+                Streaming Audio Files
+              </h2>
+              <button
+                onClick={() => setShowHistory(false)}
+                className='rounded-full p-1 text-gray-300 transition-all duration-200 hover:text-white'
+                style={{ backgroundColor: 'transparent' }}
+                onMouseEnter={(e) =>
+                  (e.currentTarget.style.backgroundColor = '#ffffff')
+                }
+                onMouseLeave={(e) =>
+                  (e.currentTarget.style.backgroundColor = 'transparent')
+                }
               >
-                <path
-                  strokeLinecap='round'
-                  strokeLinejoin='round'
-                  strokeWidth={2}
-                  d='M6 18L18 6M6 6l12 12'
-                />
-              </svg>
-            </button>
-          </div>
+                <svg
+                  className='h-5 w-5'
+                  fill='none'
+                  stroke='currentColor'
+                  viewBox='0 0 24 24'
+                >
+                  <path
+                    strokeLinecap='round'
+                    strokeLinejoin='round'
+                    strokeWidth={2}
+                    d='M6 18L18 6M6 6l12 12'
+                  />
+                </svg>
+              </button>
+            </div>
 
-          {/* Audio Files List */}
-          <div className='mb-6'>
-            <h3 className='mb-3 text-sm font-semibold text-white'>
-              Available Stem Files
-            </h3>
-            {stemsLoading ? (
-              <div className='flex justify-center py-8'>
-                <div className='animate-spin rounded-full h-8 w-8 border-b-2 border-white'></div>
-              </div>
-            ) : (
-              <div className='max-h-96 space-y-2 overflow-y-auto'>
-                
-                {/* {upstreams.map((upstream, index) => {
+            {/* Audio Files List */}
+            <div className='mb-6'>
+              <h3 className='mb-3 text-sm font-semibold text-white'>
+                Available Stem Files
+              </h3>
+              {stemsLoading ? (
+                <div className='flex justify-center py-8'>
+                  <div className='h-8 w-8 animate-spin rounded-full border-b-2 border-white'></div>
+                </div>
+              ) : (
+                <div className='max-h-96 space-y-2 overflow-y-auto'>
+                  {/* {upstreams.map((upstream, index) => {
                   // 해당 upstream의 stem 정보 찾기
                   const stemInfo = upstreamStems.find(s => s.upstreamId === upstream.id);
                   
@@ -701,9 +772,9 @@ const StemSetReviewPage = () => {
                           Category: {upstream.category} | By: {upstream.uploadedBy?.username}
                         </div>
                       </div> */}
-                      
-                      {/* Stem 정보 표시 */}
-                      {/* {stemInfo?.stemData && (
+
+                  {/* Stem 정보 표시 */}
+                  {/* {stemInfo?.stemData && (
                         <div className='ml-4 space-y-1 rounded bg-[#2a2a2a] p-2 text-xs'>
                           <div className='font-medium text-blue-400'>📁 Stems in this upstream:</div>
                           {stemInfo.stemData.map((item: any, stemIndex: number) => (
@@ -727,332 +798,372 @@ const StemSetReviewPage = () => {
                   );
                 })}  */}
 
-
-                {(() => {
-                  console.log('🎨 Rendering upstreams. Total count:', upstreams.length);
-                  console.log('🎨 Upstreams array:', upstreams);
-                  console.log('🎨 UpstreamStems array:', upstreamStems);
-                  
-                  if (upstreams.length === 0) {
-                    console.log('⚠️ No upstreams to render');
-                    return (
-                      <div className='text-center py-8 text-gray-400'>
-                        No audio files found for this stage
-                      </div>
+                  {(() => {
+                    console.log(
+                      '🎨 Rendering upstreams. Total count:',
+                      upstreams.length
                     );
-                  }
-                  
-                  return upstreams.map((upstream, index) => {
-                    console.log(`🎨 Rendering upstream ${index + 1}:`, upstream);
-                    
-                    // 해당 upstream의 stem 정보 찾기
-                    const stemInfo = upstreamStems.find(s => s.upstreamId === upstream.id);
-                    console.log(`🎨 Stem info for upstream ${upstream.id}:`, stemInfo);
-                    
-                    return (
-                      <div key={index} className='space-y-2'>
-                        <div
-                          onClick={() => handleAudioFileClick(upstream)}
-                          className='cursor-pointer rounded bg-[#3a3a3a] p-3 text-sm text-white transition-colors hover:bg-[#4a4a4a]'
-                        >
-                          <div className='font-medium'>{upstream.fileName || 'Unnamed File'}</div>
-                          <div className='text-xs text-gray-400'>{upstream.description || 'No description'}</div>
-                          <div className='text-xs text-gray-500 mt-1'>
-                            Category: {upstream.category || 'Unknown'} | By: {upstream.uploadedBy?.username || 'Unknown'}
-                          </div>
+                    console.log('🎨 Upstreams array:', upstreams);
+                    console.log('🎨 UpstreamStems array:', upstreamStems);
+
+                    if (upstreams.length === 0) {
+                      console.log('⚠️ No upstreams to render');
+                      return (
+                        <div className='py-8 text-center text-gray-400'>
+                          No audio files found for this stage
                         </div>
-                        
-                        {/* Stem 정보 표시 */}
-                        {stemInfo?.stemData && (
-                          <div className='ml-4 space-y-1 rounded bg-[#2a2a2a] p-2 text-xs'>
-                            <div className='font-medium text-blue-400'>📁 Stems in this upstream:</div>
-                            {stemInfo.stemData.map((item: any, stemIndex: number) => (
-                              <div key={stemIndex} className='flex items-center justify-between'>
-                                <span className='text-white'>
-                                  {item.category?.name || 'Unknown Category'} 
-                                  <span className={`ml-2 px-2 py-1 rounded text-xs ${
-                                    item.type === 'new' ? 'bg-green-600' :
-                                    item.type === 'modify' ? 'bg-yellow-600' :
-                                    'bg-gray-600'
-                                  }`}>
-                                    {item.type || 'unknown'}
-                                  </span>
-                                </span>
-                                <span className='text-gray-400'>{item.stem?.file_name || 'Unknown file'}</span>
+                      );
+                    }
+
+                    return upstreams.map((upstream, index) => {
+                      console.log(
+                        `🎨 Rendering upstream ${index + 1}:`,
+                        upstream
+                      );
+
+                      // 해당 upstream의 stem 정보 찾기
+                      const stemInfo = upstreamStems.find(
+                        (s) => s.upstreamId === upstream.id
+                      );
+                      console.log(
+                        `🎨 Stem info for upstream ${upstream.id}:`,
+                        stemInfo
+                      );
+
+                      return (
+                        <div key={index} className='space-y-2'>
+                          <div
+                            onClick={() => handleAudioFileClick(upstream)}
+                            className='cursor-pointer rounded bg-[#3a3a3a] p-3 text-sm text-white transition-colors hover:bg-[#4a4a4a]'
+                          >
+                            <div className='font-medium'>
+                              {upstream.fileName || 'Unnamed File'}
+                            </div>
+                            <div className='text-xs text-gray-400'>
+                              {upstream.description || 'No description'}
+                            </div>
+                            <div className='mt-1 text-xs text-gray-500'>
+                              Category: {upstream.category || 'Unknown'} | By:{' '}
+                              {upstream.uploadedBy?.username || 'Unknown'}
+                            </div>
+                          </div>
+
+                          {/* Stem 정보 표시 */}
+                          {stemInfo?.stemData && (
+                            <div className='ml-4 space-y-1 rounded bg-[#2a2a2a] p-2 text-xs'>
+                              <div className='font-medium text-blue-400'>
+                                📁 Stems in this upstream:
                               </div>
-                            ))}
+                              {stemInfo.stemData.map(
+                                (item: any, stemIndex: number) => (
+                                  <div
+                                    key={stemIndex}
+                                    className='flex items-center justify-between'
+                                  >
+                                    <span className='text-white'>
+                                      {item.category?.name ||
+                                        'Unknown Category'}
+                                      <span
+                                        className={`ml-2 rounded px-2 py-1 text-xs ${
+                                          item.type === 'new'
+                                            ? 'bg-green-600'
+                                            : item.type === 'modify'
+                                              ? 'bg-yellow-600'
+                                              : 'bg-gray-600'
+                                        }`}
+                                      >
+                                        {item.type || 'unknown'}
+                                      </span>
+                                    </span>
+                                    <span className='text-gray-400'>
+                                      {item.stem?.file_name || 'Unknown file'}
+                                    </span>
+                                  </div>
+                                )
+                              )}
+                            </div>
+                          )}
+                        </div>
+                      );
+                    });
+                  })()}
+                </div>
+              )}
+            </div>
+          </div>
+        )}
+
+        {showCommentList && (
+          <div className='fixed right-0 top-0 z-40 h-full w-64 bg-[#2a2a2a] px-4 py-6 shadow-lg'>
+            {/* Close Button */}
+            <div className='mb-4 flex items-center justify-between'>
+              <h2 className='text-lg font-bold text-white'>Comments</h2>
+              <button
+                onClick={() => setShowCommentList(false)}
+                className='rounded-full p-1 text-gray-300 transition-all duration-200 hover:text-white'
+                style={{ backgroundColor: 'transparent' }}
+                onMouseEnter={(e) =>
+                  (e.currentTarget.style.backgroundColor = '#ffffff')
+                }
+                onMouseLeave={(e) =>
+                  (e.currentTarget.style.backgroundColor = 'transparent')
+                }
+              >
+                <svg
+                  className='h-5 w-5'
+                  fill='none'
+                  stroke='currentColor'
+                  viewBox='0 0 24 24'
+                >
+                  <path
+                    strokeLinecap='round'
+                    strokeLinejoin='round'
+                    strokeWidth={2}
+                    d='M6 18L18 6M6 6l12 12'
+                  />
+                </svg>
+              </button>
+            </div>
+
+            {/* Selected Upstream Info */}
+            {selectedUpstream && (
+              <div className='mb-4 rounded bg-[#3a3a3a] p-3'>
+                <div className='text-sm font-medium text-white'>
+                  {selectedUpstream.fileName}
+                </div>
+                <div className='text-xs text-gray-400'>
+                  {selectedUpstream.description}
+                </div>
+                <div className='mt-1 text-xs text-blue-400'>
+                  by {selectedUpstream.uploadedBy?.username}
+                </div>
+              </div>
+            )}
+
+            {!selectedUpstream && (
+              <div className='mb-4 rounded bg-[#4a4a4a] p-3 text-center'>
+                <div className='text-sm text-gray-300'>
+                  Select an audio file to view comments
+                </div>
+              </div>
+            )}
+
+            {/* Comments List */}
+            {commentsLoading ? (
+              <div className='flex justify-center py-8'>
+                <div className='h-6 w-6 animate-spin rounded-full border-b-2 border-white'></div>
+              </div>
+            ) : (
+              <ul className='space-y-2 text-sm text-white'>
+                {comments.map((comment) => (
+                  <li
+                    key={comment.id}
+                    className='rounded p-2 hover:bg-[#3a3a3a]'
+                  >
+                    <div className='flex items-center justify-between'>
+                      <div
+                        className='flex flex-1 cursor-pointer items-center space-x-2'
+                        onClick={() => seekToTime(comment.timeNumber)}
+                      >
+                        <span className='font-mono text-blue-400'>
+                          {comment.timeString}
+                        </span>
+                        <span>🗨️</span>
+                      </div>
+                      {user && comment.user?.id === user.id && (
+                        <div className='flex items-center space-x-1'>
+                          <button
+                            onClick={() => handleEditComment(comment)}
+                            className='p-1 text-gray-400 hover:text-white'
+                          >
+                            <Edit2 size={12} />
+                          </button>
+                          <button
+                            onClick={() => handleDeleteComment(comment.id)}
+                            className='p-1 text-gray-400 hover:text-red-400'
+                          >
+                            <Trash2 size={12} />
+                          </button>
+                        </div>
+                      )}
+                    </div>
+                    {editingComment === comment.id ? (
+                      <div className='ml-6 mt-2'>
+                        <input
+                          type='text'
+                          value={editCommentText}
+                          onChange={(e) => setEditCommentText(e.target.value)}
+                          className='w-full rounded bg-[#1a1a1a] px-2 py-1 text-xs text-white'
+                          onKeyPress={(e) => {
+                            if (e.key === 'Enter') {
+                              handleSaveComment(comment.id);
+                            }
+                          }}
+                          onBlur={() => handleSaveComment(comment.id)}
+                          autoFocus
+                        />
+                      </div>
+                    ) : (
+                      <div className='ml-6 text-gray-300'>
+                        {comment.comment}
+                        {comment.user && (
+                          <div className='mt-1 text-xs text-gray-500'>
+                            by {comment.user.username}
                           </div>
                         )}
                       </div>
-                    );
-                  });
-                })()}
-            </div>
+                    )}
+                  </li>
+                ))}
+              </ul>
             )}
           </div>
-        </div>
-      )}
+        )}
 
-      {showCommentList && (
-        <div className='fixed right-0 top-0 z-40 h-full w-64 bg-[#2a2a2a] px-4 py-6 shadow-lg'>
-          {/* Close Button */}
-          <div className='mb-4 flex items-center justify-between'>
-            <h2 className='text-lg font-bold text-white'>Comments</h2>
-            <button
-              onClick={() => setShowCommentList(false)}
-              className='rounded-full p-1 text-gray-300 transition-all duration-200 hover:text-white'
-              style={{ backgroundColor: 'transparent' }}
-              onMouseEnter={(e) =>
-                (e.currentTarget.style.backgroundColor = '#ffffff')
-              }
-              onMouseLeave={(e) =>
-                (e.currentTarget.style.backgroundColor = 'transparent')
-              }
-            >
-              <svg
-                className='h-5 w-5'
-                fill='none'
-                stroke='currentColor'
-                viewBox='0 0 24 24'
-              >
-                <path
-                  strokeLinecap='round'
-                  strokeLinejoin='round'
-                  strokeWidth={2}
-                  d='M6 18L18 6M6 6l12 12'
-                />
-              </svg>
-            </button>
-          </div>
-          
-          {/* Selected Upstream Info */}
-          {selectedUpstream && (
-            <div className='mb-4 p-3 bg-[#3a3a3a] rounded'>
-              <div className='text-sm font-medium text-white'>{selectedUpstream.fileName}</div>
-              <div className='text-xs text-gray-400'>{selectedUpstream.description}</div>
-              <div className='text-xs text-blue-400 mt-1'>
-                by {selectedUpstream.uploadedBy?.username}
-              </div>
-            </div>
-          )}
-
-          {!selectedUpstream && (
-            <div className='mb-4 p-3 bg-[#4a4a4a] rounded text-center'>
-              <div className='text-sm text-gray-300'>
-                Select an audio file to view comments
-              </div>
-            </div>
-          )}
-
-          {/* Comments List */}
-          {commentsLoading ? (
-            <div className='flex justify-center py-8'>
-              <div className='animate-spin rounded-full h-6 w-6 border-b-2 border-white'></div>
+        {/* Waveform */}
+        <div className='space-y-6'>
+          {guideLoading ? (
+            <div className='flex items-center justify-center py-8'>
+              <div className='mr-3 h-8 w-8 animate-spin rounded-full border-b-2 border-white'></div>
+              <span className='text-white'>Loading previous guide...</span>
             </div>
           ) : (
-          <ul className='space-y-2 text-sm text-white'>
-            {comments.map((comment) => (
-              <li 
-                key={comment.id}
-                className='hover:bg-[#3a3a3a] p-2 rounded'
-              >
-                <div className='flex items-center justify-between'>
-                  <div 
-                    className='flex items-center space-x-2 cursor-pointer flex-1'
-                    onClick={() => seekToTime(comment.timeNumber)}
-                  >
-                    <span className='text-blue-400 font-mono'>{comment.timeString}</span>
-                    <span>🗨️</span>
-                  </div>
-                  {user && comment.user?.id === user.id && (
-                    <div className='flex items-center space-x-1'>
-                      <button
-                        onClick={() => handleEditComment(comment)}
-                        className='text-gray-400 hover:text-white p-1'
-                      >
-                        <Edit2 size={12} />
-                      </button>
-                      <button
-                        onClick={() => handleDeleteComment(comment.id)}
-                        className='text-gray-400 hover:text-red-400 p-1'
-                      >
-                        <Trash2 size={12} />
-                      </button>
-                    </div>
-                  )}
-                </div>
-                {editingComment === comment.id ? (
-                  <div className='ml-6 mt-2'>
-                    <input
-                      type='text'
-                      value={editCommentText}
-                      onChange={(e) => setEditCommentText(e.target.value)}
-                      className='w-full bg-[#1a1a1a] text-white px-2 py-1 rounded text-xs'
-                      onKeyPress={(e) => {
-                        if (e.key === 'Enter') {
-                          handleSaveComment(comment.id);
-                        }
-                      }}
-                      onBlur={() => handleSaveComment(comment.id)}
-                      autoFocus
-                    />
-                  </div>
-                ) : (
-                  <div className='text-gray-300 ml-6'>
-                    {comment.comment}
-                    {comment.user && (
-                      <div className='text-xs text-gray-500 mt-1'>
-                        by {comment.user.username}
-                      </div>
-                    )}
-                  </div>
-                )}
-              </li>
-            ))}
-          </ul>
+            <Wave
+              onReady={handleReady}
+              audioUrl={guideAudioUrl || '/audio/track_ex.wav'}
+              waveColor='#f87171'
+              id='main'
+              isPlaying={isPlaying}
+              currentTime={currentTime}
+              onSolo={handleMainSolo}
+              isSolo={soloTrack === 'main'}
+              onSeek={handleSeek}
+            />
+          )}
+
+          {showExtraWaveform && extraAudio && (
+            <Wave
+              onReady={handleReady}
+              audioUrl={extraAudio}
+              waveColor='#60a5fa'
+              id='extra'
+              isPlaying={isPlaying}
+              currentTime={currentTime}
+              onSolo={handleExtraSolo}
+              isSolo={soloTrack === 'extra'}
+              onSeek={handleSeek}
+            />
           )}
         </div>
-      )}
 
-      {/* Waveform */}
-      <div className='space-y-6'>
-        {guideLoading ? (
-          <div className='flex justify-center items-center py-8'>
-            <div className='animate-spin rounded-full h-8 w-8 border-b-2 border-white mr-3'></div>
-            <span className='text-white'>Loading previous guide...</span>
-          </div>
-        ) : (
-          <Wave
-            onReady={handleReady}
-            audioUrl={guideAudioUrl || '/audio/track_ex.wav'}
-            waveColor='#f87171'
-            id='main'
-            isPlaying={isPlaying}
-            currentTime={currentTime}
-            onSolo={handleMainSolo}
-            isSolo={soloTrack === 'main'}
-            onSeek={handleSeek}
-          />
-        )}
-
-        {showExtraWaveform && extraAudio && (
-          <Wave
-            onReady={handleReady}
-            audioUrl={extraAudio}
-            waveColor='#60a5fa'
-            id='extra'
-            isPlaying={isPlaying}
-            currentTime={currentTime}
-            onSolo={handleExtraSolo}
-            isSolo={soloTrack === 'extra'}
-            onSeek={handleSeek}
-          />
-        )}
-      </div>
-
-      {/* Control Bar */}
-      <div className='flex items-center rounded bg-[#2b2b2b] px-6 py-3 text-sm shadow'>
-        <button
-          onClick={stopPlayback}
-          className='ml-6 text-white hover:text-gray-300'
-        >
-          <Pause size={20} />
-        </button>
-        <button
-          onClick={togglePlay}
-          className='ml-3 text-white hover:text-gray-300'
-        >
-          {isPlaying ? <Pause size={20} /> : <Play size={20} />}
-        </button>
-        <button className='ml-2 text-white hover:text-gray-300'>
-          <svg viewBox='0 0 16 16' height='16'>
-            <use xlinkHref='#repeatall' />
-          </svg>
-        </button>
-        <div className='ml-4 flex items-center'>
-          <span className='material-icons mr-2 text-white'>
-            <Volume size={20} />
-          </span>
-          <input
-            type='range'
-            min='0'
-            max='1'
-            step='0.01'
-            value={volume}
-            onChange={handleVolumeChange}
-            className='w-24 accent-blue-500'
-          />
-        </div>
-        <div className='ml-5 text-white'>
-          <span>
-            {Math.floor(currentTime / 60)}:
-            {String(Math.floor(currentTime % 60)).padStart(2, '0')} /{' '}
-            {Math.floor(duration / 60)}:
-            {String(Math.floor(duration % 60)).padStart(2, '0')}
-          </span>
-        </div>
-        <div className='ml-auto mr-5'>
-          <button className='rounded bg-[#3a3a3a] px-3 py-1 text-sm hover:bg-[#4a4a4a]'>
-            1x
-          </button>
-        </div>
-        <button className='material-icons mr-3 text-white hover:text-gray-300'>
-          <ZoomIn size={20} />
-        </button>
-        <button className='material-icons mr-5 text-white hover:text-gray-300'>
-          <ZoomOut size={20} />
-        </button>
-      </div>
-
-      {/* Comment Input */}
-      <div className='flex justify-center'>
-        <div className='flex w-full max-w-3xl items-center gap-3 rounded-md bg-[#2c2c2c] px-4 py-3 shadow'>
-          <span className='rounded bg-gray-700 px-2 py-1 text-sm'>
-            {String(Math.floor(currentTime / 60)).padStart(2, '0')}:
-            {String(Math.floor(currentTime % 60)).padStart(2, '0')}
-          </span>
-          <input
-            type='checkbox'
-            checked
-            className='accent-green-500'
-            readOnly
-          />
-          <span className='rounded bg-gray-600 px-2 py-1 text-xs text-white'>
-            장
-          </span>
-          <input
-            type='text'
-            placeholder={selectedUpstream ? 'Leave your comment...' : 'Select an audio file to comment'}
-            className='flex-1 bg-transparent text-white placeholder-gray-400 outline-none'
-            value={commentInput}
-            onChange={(e) => setCommentInput(e.target.value)}
-            disabled={!selectedUpstream}
-            onKeyPress={(e) => {
-              if (e.key === 'Enter' && selectedUpstream) {
-                handleAddComment();
-              }
-            }}
-          />
+        {/* Control Bar */}
+        <div className='flex items-center rounded bg-[#2b2b2b] px-6 py-3 text-sm shadow'>
           <button
-            className={`${
-              selectedUpstream && commentInput.trim() 
-                ? 'text-blue-400 hover:text-blue-300' 
-                : 'text-gray-600 cursor-not-allowed'
-            }`}
-            onClick={handleAddComment}
-            disabled={!selectedUpstream || !commentInput.trim()}
+            onClick={stopPlayback}
+            className='ml-6 text-white hover:text-gray-300'
           >
-            ▶️
+            <Pause size={20} />
+          </button>
+          <button
+            onClick={togglePlay}
+            className='ml-3 text-white hover:text-gray-300'
+          >
+            {isPlaying ? <Pause size={20} /> : <Play size={20} />}
+          </button>
+          <button className='ml-2 text-white hover:text-gray-300'>
+            <svg viewBox='0 0 16 16' height='16'>
+              <use xlinkHref='#repeatall' />
+            </svg>
+          </button>
+          <div className='ml-4 flex items-center'>
+            <span className='material-icons mr-2 text-white'>
+              <Volume size={20} />
+            </span>
+            <input
+              type='range'
+              min='0'
+              max='1'
+              step='0.01'
+              value={volume}
+              onChange={handleVolumeChange}
+              className='w-24 accent-blue-500'
+            />
+          </div>
+          <div className='ml-5 text-white'>
+            <span>
+              {Math.floor(currentTime / 60)}:
+              {String(Math.floor(currentTime % 60)).padStart(2, '0')} /{' '}
+              {Math.floor(duration / 60)}:
+              {String(Math.floor(duration % 60)).padStart(2, '0')}
+            </span>
+          </div>
+          <div className='ml-auto mr-5'>
+            <button className='rounded bg-[#3a3a3a] px-3 py-1 text-sm hover:bg-[#4a4a4a]'>
+              1x
+            </button>
+          </div>
+          <button className='material-icons mr-3 text-white hover:text-gray-300'>
+            <ZoomIn size={20} />
+          </button>
+          <button className='material-icons mr-5 text-white hover:text-gray-300'>
+            <ZoomOut size={20} />
           </button>
         </div>
-        {selectedUpstream && (
-          <div className='mt-2 text-center text-sm text-gray-400'>
-            Commenting on: {selectedUpstream.fileName}
+
+        {/* Comment Input */}
+        <div className='flex justify-center'>
+          <div className='flex w-full max-w-3xl items-center gap-3 rounded-md bg-[#2c2c2c] px-4 py-3 shadow'>
+            <span className='rounded bg-gray-700 px-2 py-1 text-sm'>
+              {String(Math.floor(currentTime / 60)).padStart(2, '0')}:
+              {String(Math.floor(currentTime % 60)).padStart(2, '0')}
+            </span>
+            <input
+              type='checkbox'
+              checked
+              className='accent-green-500'
+              readOnly
+            />
+            <span className='rounded bg-gray-600 px-2 py-1 text-xs text-white'>
+              장
+            </span>
+            <input
+              type='text'
+              placeholder={
+                selectedUpstream
+                  ? 'Leave your comment...'
+                  : 'Select an audio file to comment'
+              }
+              className='flex-1 bg-transparent text-white placeholder-gray-400 outline-none'
+              value={commentInput}
+              onChange={(e) => setCommentInput(e.target.value)}
+              disabled={!selectedUpstream}
+              onKeyPress={(e) => {
+                if (e.key === 'Enter' && selectedUpstream) {
+                  handleAddComment();
+                }
+              }}
+            />
+            <button
+              className={`${
+                selectedUpstream && commentInput.trim()
+                  ? 'text-blue-400 hover:text-blue-300'
+                  : 'cursor-not-allowed text-gray-600'
+              }`}
+              onClick={handleAddComment}
+              disabled={!selectedUpstream || !commentInput.trim()}
+            >
+              ▶️
+            </button>
           </div>
-        )}
+          {selectedUpstream && (
+            <div className='mt-2 text-center text-sm text-gray-400'>
+              Commenting on: {selectedUpstream.fileName}
+            </div>
+          )}
+        </div>
       </div>
     </div>
   );
 };
 
-export default StemSetReviewPage;                 
+export default StemSetReviewPage;

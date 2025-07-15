@@ -659,7 +659,7 @@ const UploadModal: React.FC<UploadModalProps> = ({
       onClick={handleCloseModal}
     >
       <div
-        className="bg-gray-800 rounded-xl w-full max-w-7xl max-h-[90vh] flex flex-col shadow-2xl"
+        className="bg-gray-800 rounded-xl w-full max-w-7xl max-h-[95vh] flex flex-col shadow-2xl"
         onClick={(e) => e.stopPropagation()}
       >
         {/* Header */}
