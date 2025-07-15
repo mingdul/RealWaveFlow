@@ -127,7 +127,9 @@ const TrackPage: React.FC<TrackPageProps> = () => {
       setStemsLoading(true);
       const response = await streamingService.getMasterStemStreams(trackId, version);
       if (response.data) {
+        console.log('Loaded stems by version:', version);
         setStems(response.data.stems);
+        setSelectedStageVersion(version); 
       } else {
         console.error('Failed to load stems:', response.message);
         setStems([]);
