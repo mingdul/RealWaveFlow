@@ -150,7 +150,7 @@ export class UpstreamService {
         const category = this.categoryRepository.create({
             name : new_dto.categoryName,
             track : {id : trackId},
-            instrument : new_dto.instument, 
+            instrument : new_dto.instrument, 
         });
         await this.categoryRepository.save(category);
 
