@@ -93,6 +93,24 @@ class StemJobService {
   }
 
   /**
+   * dup check
+   */
+  async dupCheck(data: StemJobCreateRequest): Promise<ApiResponse<any>> {
+    console.log('[DEBUG] StemJobService - Calling dup check with data:', data);
+    
+    try {
+      const response = await apiClient.post<ApiResponse<any>>('/stem-job/dup-check', data);
+      console.log('[DEBUG] StemJobService - dup check response:', response.data);
+      return response.data;
+    } catch (error: any) {
+      console.error('[ERROR] StemJobService - dup check failed:', error);
+      throw new Error(error.response?.data?.message || 'Failed to dup check');
+    }
+  }
+
+
+
+  /**
    * Request mixing initialization
    */
   async requestMixingInit(data: RequestMixingInitRequest): Promise<ApiResponse<any>> {
