@@ -511,6 +511,7 @@ export interface CreateUpstreamDto {
   description?: string;
   stage_id: string;
   user_id: string;
+  category_id: string;
 }
 
 // version-stem
