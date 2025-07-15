@@ -214,7 +214,7 @@ const TrackPage: React.FC<TrackPageProps> = () => {
           onRollBack={handleRollBack}
         />
 
-        {/* 현재 활성 스테이지 정보 표시 */}
+        {/* 현재 활성 스테이지 정보 표시
         {(() => {
           const activeStage = getActiveStage();
           if (!activeStage) return null;
@@ -231,7 +231,7 @@ const TrackPage: React.FC<TrackPageProps> = () => {
               <div className="text-gray-500 text-xs">STATUS: {activeStage.status}</div>
             </div>
           );
-        })()}
+        })()} */}
 
         <StageHistory
           stages={stages}
