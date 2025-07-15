@@ -324,18 +324,21 @@ useEffect(() => {
         {renderUserAvatars()}
       </div>
 
-      {/* Stem Player */}
-       {(
-        <div className="mt-6">
-          <StemPlayer 
-            stems={stems} 
-            guideUrl={guideUrl}
-            stageId={stageId}
-          />
-        </div>
+      
+
+      {/* Hidden Audio Element for Guide Playback */}
+      {guideUrl && (
+        <audio
+          ref={guideAudioRef}
+          src={guideUrl}
+          onEnded={() => setIsPlaying(false)}
+          onError={(e) => {
+            console.error('Audio playback error:', e);
+            setIsPlaying(false);
+            setGuideUrl(undefined);
+          }}
+        />
       )}
-
-
 
       {/* Invite Modal */}
       {showInviteModal && (
