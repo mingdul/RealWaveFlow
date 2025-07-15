@@ -84,7 +84,6 @@ const StagePage: React.FC = () => {
 
   interface StemSetCardProps {
     upstream: Upstream;
-    index: number;
     isPlaying: boolean;
     seek: number;
     onPlayToggle: () => void;
@@ -93,7 +92,7 @@ const StagePage: React.FC = () => {
   }
 
   const StemSetCard: React.FC<StemSetCardProps> = ({
-    upstream, index, isPlaying, seek, onPlayToggle, onSeek, onDetail
+    upstream, isPlaying, seek, onPlayToggle, onSeek, onDetail
   }) => {
     const [isHovered, setIsHovered] = useState(false);
 
@@ -119,12 +118,12 @@ const StagePage: React.FC = () => {
 
         <img
           src={tapeImg}
-          alt={`Stem Set ${index}`}
+          alt={`Stem Set ${upstream.id}`}
           className={`absolute inset-0 w-full h-full object-contain scale-110`} 
         />
 
         <div className="absolute top-[67px] left-0 w-full text-center text-xl font-bold text-black drop-shadow z-20">
-          {upstream.title || `AWSOME MIX #${index + 1}`}
+          {upstream.title || `AWSOME MIX #${upstream.id}`}
         </div>
 
         <div
@@ -295,7 +294,6 @@ const StagePage: React.FC = () => {
               <StemSetCard
                 key={upstream.id}
                 upstream={upstream}
-                index={idx}
                 isPlaying={playingIndex === idx}
                 seek={seekValues[idx]}
                 onPlayToggle={() => handlePlayToggle(idx)}

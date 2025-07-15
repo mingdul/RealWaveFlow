@@ -1,6 +1,6 @@
 // services/upstreamService.ts
 import apiClient from '../lib/api';
-import { CreateUpstreamDto, Upstream } from '../types/api';
+import { CreateUpstreamDto } from '../types/api';
 
 // 업스트림 생성
 export const createUpstream = async (upstreamData: CreateUpstreamDto) => {

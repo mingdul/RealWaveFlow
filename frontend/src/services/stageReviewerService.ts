@@ -1,5 +1,5 @@
 import apiClient from '../lib/api';
-import { CreateStageReviewerDto, StageReviewer } from '../types/api';
+import { CreateStageReviewerDto } from '../types/api';
 
 // 스테이지 리뷰어 생성
 export const createStageReviewer = async (reviewerData: CreateStageReviewerDto) => {
