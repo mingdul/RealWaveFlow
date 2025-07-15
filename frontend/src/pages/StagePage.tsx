@@ -1,9 +1,11 @@
 import React, { useState, useEffect } from 'react';
+import { useParams } from 'react-router-dom';
 import { Upload, Bell, Settings } from 'lucide-react';
 import Logo from '../components/Logo';
 import UploadModal from '../components/UploadModal';
-import trackService from '../services/trackService';
-import { Track } from '../types/api';
+// import trackService from '../services/trackService';
+import { getStageDetail } from '../services/stageService';
+import { Track, Stage } from '../types/api';
 import tapeActive from '../assets/activeTape.png';
 import tapeApproved from '../assets/approveTape.png';
 import tapeRejected from '../assets/rejectedTape.png';
@@ -29,22 +31,34 @@ const StagePage: React.FC = () => {
   ];
 
   const [isUploadModalOpen, setUploadModalOpen] = useState(false);
-  const trackId = "mock-track-123";
+  const { stageId } = useParams<{ stageId: string }>();
   const [track, setTrack] = useState<Track | null>(null);
+  const [stage, setStage] = useState<Stage | null>(null);
+  const [loading, setLoading] = useState(true);
 
   useEffect(() => {
-    if (trackId) {
-      trackService.getTrackById(trackId)
-        .then(response => {
-          if (response.success) {
-            setTrack(response.data || null);
-          } else {
-            console.error("Failed to fetch track details");
-          }
-        })
-        .catch(error => console.error("Error fetching track details:", error));
-    }
-  }, [trackId]);
+    const loadStageData = async () => {
+      if (!stageId) return;
+      
+      try {
+        setLoading(true);
+        // Stage 정보 가져오기
+        const stageData = await getStageDetail(stageId);
+        setStage(stageData);
+
+        // Stage가 속한 Track 정보 가져오기
+        if (stageData && stageData.track) {
+          setTrack(stageData.track);
+        }
+      } catch (error) {
+        console.error("Error fetching stage or track details:", error);
+      } finally {
+        setLoading(false);
+      }
+    };
+
+    loadStageData();
+  }, [stageId]);
 
   const handleUploadComplete = () => { };
 
@@ -163,6 +177,24 @@ const StagePage: React.FC = () => {
     alert(`Detail for AWSOME MIX #${idx + 1}`);
   };
 
+  if (loading) {
+    return (
+      <div className="bg-[#2a2a2a] min-h-screen flex justify-center items-center">
+        <div className="animate-spin rounded-full h-12 w-12 border-b-2 border-white"></div>
+      </div>
+    );
+  }
+
+  if (!stage) {
+    return (
+      <div className="bg-[#2a2a2a] min-h-screen flex justify-center items-center">
+        <div className="text-center py-16">
+          <h1 className="text-2xl font-bold text-gray-300">Stage not found</h1>
+        </div>
+      </div>
+    );
+  }
+
   return (
     <div className="min-h-screen bg-black">
       <header className='flex items-center justify-between px-8 py-6'>
@@ -184,9 +216,9 @@ const StagePage: React.FC = () => {
 
       <main className='px-8 pb-8'>
         <div className='mb-8'>
-          <h2 className='mb-4 text-3xl font-bold text-white'>OPEN Stage - 5</h2>
+          <h2 className='mb-4 text-3xl font-bold text-white'>{stage.title} - V{stage.version}</h2>
           <div className='mb-6 rounded-lg bg-gray-700 p-4'>
-            <p className='text-white'>스테이지 업데이트 쌓는 메시지</p>
+            <p className='text-white'>{stage.description}</p>
           </div>
         </div>
 
@@ -229,11 +261,11 @@ const StagePage: React.FC = () => {
         </div>
       </main>
 
-      {trackId && (
+      {stage.track && (
         <UploadModal
           isOpen={isUploadModalOpen}
           onClose={() => setUploadModalOpen(false)}
-          projectId={trackId}
+          projectId={stage.track.id}
           projectName={track ? track.name : "Loading..."}
           onComplete={handleUploadComplete}
         />

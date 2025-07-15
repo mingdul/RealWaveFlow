@@ -37,7 +37,7 @@ const App = () => {
               <Route path="/dashboard" element={<DashboardPage />} />
               <Route path="/track/:trackId" element={<TrackPage />} />
               <Route path="*" element={<Notfound />} />
-              <Route path="/stage" element={<StagePage />} />
+              <Route path="/stage/:stageId" element={<StagePage />} />
               <Route path="/review" element={<StemSetReviewPage />} />
               {/* <Route path="/master" element={<MasterPage />} />
               <Route path="/commit" element={<CommitPage />} />

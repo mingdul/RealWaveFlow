@@ -55,6 +55,8 @@ apiClient.interceptors.response.use(
 
 // API 응답 타입 정의
 export interface ApiResponse<T = any> {
+  length: number;
+  find(arg0: (stage: any) => boolean): import("../types/api").Stage | PromiseLike<import("../types/api").Stage | null> | null;
   success: boolean;
   message?: string;
   data?: T;
