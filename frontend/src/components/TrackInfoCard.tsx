@@ -14,7 +14,7 @@ interface TrackInfoCardProps {
   onRollBack?: () => void;
   stemsLoading?: boolean;
   versionNumber?: string;
-  stageId?: string; // Optional stageId for guide playback
+  stageId?: string;
 }
 
 const TrackInfoCard: React.FC<TrackInfoCardProps> = ({
@@ -112,7 +112,7 @@ const handleSendInvites = async () => {
   try {
     // 실제 API 호출
     const result = await inviteService.sendTrackInvites(track.id, emailList);
-    
+    console.log(stageId);
     if (result.success) {
       setInviteSuccess(`${result.sent_count}개의 초대가 성공적으로 발송되었습니다.`);
       
@@ -287,7 +287,7 @@ const handleCloseInviteModal = () => {
       {/* Stem Player */}
       {showPlayer && stems.length > 0 && (
         <div className="mt-6">
-          <StemPlayer stems={stems} stageId={stageId} />
+          <StemPlayer stems={stems} />
         </div>
       )}
 
