@@ -20,7 +20,7 @@ export const getStageUpstreams = async (stageId: string) => {
     if (!response.data.success) {
       throw new Error(response.data.message);
     }
-    return response.data.upstreams;
+    return response.data.upstreams || [];
   } catch (error) {
     console.error('Failed to get stage upstreams:', error);
     return [];
