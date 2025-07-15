@@ -4,7 +4,7 @@ import { Button, StemPlayer } from './';
 import { Track } from '../types/api';
 import { StemStreamingInfo } from '../services/streamingService';
 import PresignedImage from './PresignedImage';
-import inviteService from '../services/inviteService';
+//import inviteService from '../services/inviteService';
 
 interface TrackInfoCardProps {
   track: Track;
@@ -26,7 +26,7 @@ const TrackInfoCard: React.FC<TrackInfoCardProps> = ({
 }) => {
   const [showPlayer, setShowPlayer] = useState(false);
   const [showInviteModal, setShowInviteModal] = useState(false);
-  const [inviteEmails, setInviteEmails] = useState('');
+  //const [inviteEmails, setInviteEmails] = useState('');
   const [inviteLoading, setInviteLoading] = useState(false);
   const [inviteError, setInviteError] = useState('');
   const [inviteSuccess, setInviteSuccess] = useState('');
@@ -152,7 +152,7 @@ const handleCloseInviteModal = () => {
 
   const onAddCollaborator = () => {
     setShowInviteModal(true);
-    setInviteEmails('');
+    //setInviteEmails('');
     setInviteError('');
     setInviteSuccess('');
   };
