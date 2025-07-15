@@ -3,7 +3,7 @@ import apiClient from '../lib/api';
 import { CreateUpstreamDto } from '../types/api';
 
 // 업스트림 생성
-export const createUpstream = async (upstreamData: CreateUpstreamDto | any) => {
+export const createUpstream = async (upstreamData: CreateUpstreamDto) => {
   try {
     const response = await apiClient.post('/upstream/create', upstreamData);
     return response.data;
@@ -44,7 +44,7 @@ export const getUpstreamDetail = async (upstreamId: string) => {
 // 새로운 함수: 백엔드의 stem API 호출
 export const getUpstreamStems = async (upstreamId: string, trackId: string) => {
   return await apiClient.get(`/stem/upstream/${upstreamId}/track/${trackId}`);
-};
+}; 
 
 export default {
   createUpstream,
