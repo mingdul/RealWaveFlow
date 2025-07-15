@@ -89,26 +89,35 @@ const StemSetReviewPage = () => {
   // stageId 결정 로직 (쿼리 파라미터 우선, 없으면 upstream API 사용)
   useEffect(() => {
     const determineStageId = async () => {
+      console.log('🚀 [determineStageId] Starting stage ID determination...');
+      console.log('🔍 [determineStageId] paramUpstreamId:', paramUpstreamId);
+      console.log('🔍 [determineStageId] searchParams:', Object.fromEntries(searchParams.entries()));
+      
       // 1. 먼저 쿼리 파라미터에서 stageId 확인
       const stageIdFromQuery = searchParams.get('stageId');
+      console.log('🔍 [determineStageId] stageIdFromQuery:', stageIdFromQuery);
+      
       if (stageIdFromQuery) {
-        console.log('✅ Found stageId in query params:', stageIdFromQuery);
+        console.log('✅ [determineStageId] Found stageId in query params:', stageIdFromQuery);
         setStageId(stageIdFromQuery);
         
         // stageId가 있으므로 getStageUpstreams를 사용해서 모든 upstream 목록을 가져오고
         // 그 중에서 paramUpstreamId와 일치하는 것을 찾아서 selectedUpstream 설정
         if (paramUpstreamId) {
           try {
+            console.log('🔍 [determineStageId] Looking for upstream in stage upstreams...');
             const upstreamsResponse = await getStageUpstreams(stageIdFromQuery);
+            console.log('📁 [determineStageId] Stage upstreams response:', upstreamsResponse);
             const targetUpstream = upstreamsResponse.find((upstream: any) => upstream.id === paramUpstreamId);
             if (targetUpstream) {
-              console.log('✅ Found target upstream in stage upstreams:', targetUpstream);
+              console.log('✅ [determineStageId] Found target upstream in stage upstreams:', targetUpstream);
               setSelectedUpstream(targetUpstream);
             } else {
-              console.warn('⚠️ Target upstream not found in stage upstreams');
+              console.warn('⚠️ [determineStageId] Target upstream not found in stage upstreams');
+              console.log('📋 [determineStageId] Available upstreams:', upstreamsResponse.map((u: any) => ({id: u.id, fileName: u.fileName})));
             }
           } catch (error) {
-            console.error('❌ Error fetching stage upstreams:', error);
+            console.error('❌ [determineStageId] Error fetching stage upstreams:', error);
           }
         }
         return;
@@ -117,23 +126,26 @@ const StemSetReviewPage = () => {
       // 2. 쿼리 파라미터에 stageId가 없으면 기존 방식 사용 (upstream API를 통해 stageId 추출)
       if (paramUpstreamId) {
         try {
-          console.log('🔍 Found upstreamId in URL params, fetching upstream details:', paramUpstreamId);
+          console.log('🔍 [determineStageId] Found upstreamId in URL params, fetching upstream details:', paramUpstreamId);
           // upstream 정보를 가져와서 stageId 추출
           const upstreamData = await getUpstreamDetail(paramUpstreamId);
+          console.log('📦 [determineStageId] Upstream data response:', upstreamData);
           const extractedStageId =
             upstreamData.stage?.id || upstreamData.stage_id;
-          console.log('✅ Extracted stageId from upstream:', extractedStageId);
+          console.log('✅ [determineStageId] Extracted stageId from upstream:', extractedStageId);
           setStageId(extractedStageId);
 
           // 선택된 upstream 설정
+          console.log('✅ [determineStageId] Setting selected upstream:', upstreamData);
           setSelectedUpstream(upstreamData);
         } catch (error) {
-          console.error('❌ Error fetching upstream details:', error);
+          console.error('❌ [determineStageId] Error fetching upstream details:', error);
+          console.error('❌ [determineStageId] Error details:', (error as any)?.message);
         }
         return;
       }
 
-      console.log('⚠️ No stageId or upstreamId found');
+      console.log('⚠️ [determineStageId] No stageId or upstreamId found');
     };
 
     determineStageId();
@@ -158,49 +170,75 @@ const StemSetReviewPage = () => {
         setGuideLoadAttempted(true); // 로드 시도 표시
 
         // 1. 현재 스테이지 정보 가져오기
-        const currentStage = await getStageDetail(stageId);
-        if (!currentStage) {
-          console.error('Current stage not found');
+        console.log('🔍 [fetchPreviousGuideUrl] Starting with stageId:', stageId);
+        const currentStageResponse = await getStageDetail(stageId);
+        console.log('📦 [fetchPreviousGuideUrl] Raw API response:', currentStageResponse);
+        console.log('📦 [fetchPreviousGuideUrl] Response type:', typeof currentStageResponse);
+        console.log('📦 [fetchPreviousGuideUrl] Response data:', currentStageResponse?.data);
+        
+        if (!currentStageResponse || !currentStageResponse.data) {
+          console.error('❌ [fetchPreviousGuideUrl] Current stage not found - Response:', currentStageResponse);
           return;
         }
 
-        const { track, version } = currentStage;
+        const { track, version } = currentStageResponse.data;
+        console.log('🎵 [fetchPreviousGuideUrl] Extracted track:', track);
+        console.log('🔢 [fetchPreviousGuideUrl] Extracted version:', version);
         const trackId = track.id;
         const currentVersion = version;
+        console.log('🆔 [fetchPreviousGuideUrl] Final trackId:', trackId);
+        console.log('🔢 [fetchPreviousGuideUrl] Final currentVersion:', currentVersion);
 
         // 2. 이전 버전이 있는지 확인
         if (currentVersion <= 1) {
-          console.log('No previous version available, using fallback audio');
+          console.log('⚠️ [fetchPreviousGuideUrl] No previous version available (currentVersion <= 1), using fallback audio');
           setGuideAudioUrl('/audio/track_ex.wav');
           return;
         }
 
         // 3. 이전 버전의 스테이지 정보 가져오기
+        const targetVersion = currentVersion - 1;
+        console.log('🔍 [fetchPreviousGuideUrl] Looking for previous stage - trackId:', trackId, 'version:', targetVersion);
         const previousStage = await getStageByTrackIdAndVersion(
           trackId,
-          currentVersion - 1
+          targetVersion
         );
+        console.log('📦 [fetchPreviousGuideUrl] Previous stage response:', previousStage);
+
+        if (!previousStage || !previousStage.id) {
+          console.log('⚠️ [fetchPreviousGuideUrl] Previous stage not found, using fallback audio - Response:', previousStage);
+          setGuideAudioUrl('/audio/track_ex.wav');
+          return;
+        }
 
         const prevStageId = previousStage.id;
+        console.log('🆔 [fetchPreviousGuideUrl] Previous stage ID:', prevStageId);
 
         // 5. guide_path를 presigned URL로 변환
+        console.log('🌐 [fetchPreviousGuideUrl] Requesting presigned URL for prevStageId:', prevStageId);
         const response =
           await streamingService.getGuidePresignedUrlByStageId(prevStageId);
+        console.log('📡 [fetchPreviousGuideUrl] Streaming service response:', response);
+        console.log('📡 [fetchPreviousGuideUrl] Response success:', response?.success);
+        console.log('📡 [fetchPreviousGuideUrl] Response data:', response?.data);
+        
         if (response.success && response.data) {
           console.log(
-            '✅ Guide URL loaded successfully:',
+            '✅ [fetchPreviousGuideUrl] Guide URL loaded successfully:',
             response.data.presignedUrl
           );
           setGuideAudioUrl(response.data.presignedUrl);
         } else {
-          console.log('⚠️ Guide URL not found, using fallback');
+          console.log('⚠️ [fetchPreviousGuideUrl] Guide URL not found, using fallback - Response:', response);
           setGuideAudioUrl('/audio/track_ex.wav');
         }
       } catch (error) {
-        console.error('Failed to fetch previous guide URL:', error);
-        console.log('🔄 Using fallback due to error');
+        console.error('❌ [fetchPreviousGuideUrl] Failed to fetch previous guide URL:', error);
+        console.error('❌ [fetchPreviousGuideUrl] Error details:', (error as any)?.message, (error as any)?.stack);
+        console.log('🔄 [fetchPreviousGuideUrl] Using fallback due to error');
         setGuideAudioUrl('/audio/track_ex.wav');
       } finally {
+        console.log('🏁 [fetchPreviousGuideUrl] Finished, setting guideLoading to false');
         setGuideLoading(false);
       }
     };
@@ -217,32 +255,43 @@ const StemSetReviewPage = () => {
         );
 
         // 1. 먼저 stage 정보를 가져와서 trackId 획득
+        console.log('🔍 [fetchUpstreamsAndStems] Starting with stageId:', stageId);
         const stageResponse = await getStageDetail(stageId || '');
-        console.log('📊 Stage detail response:', stageResponse);
+        console.log('📊 [fetchUpstreamsAndStems] Stage detail response:', stageResponse);
+        console.log('📊 [fetchUpstreamsAndStems] Response data structure:', stageResponse?.data);
+        console.log('📊 [fetchUpstreamsAndStems] Track info:', stageResponse?.data?.track);
 
-        if (!stageResponse || !stageResponse.track) {
-          console.error('Failed to get stage details');
+        if (!stageResponse || !stageResponse.data || !stageResponse.data.track) {
+          console.error('❌ [fetchUpstreamsAndStems] Failed to get stage details - Response:', stageResponse);
+          console.error('❌ [fetchUpstreamsAndStems] Missing data:', {
+            hasResponse: !!stageResponse,
+            hasData: !!stageResponse?.data,
+            hasTrack: !!stageResponse?.data?.track
+          });
           return;
         }
 
-        const currentTrackId = stageResponse.track.id;
-        console.log('🎵 Current track ID:', currentTrackId);
+        const currentTrackId = stageResponse.data.track.id;
+        console.log('🎵 [fetchUpstreamsAndStems] Current track ID:', currentTrackId);
 
         // 2. upstream 목록 가져오기
+        console.log('🔍 [fetchUpstreamsAndStems] Getting upstreams for stageId:', stageId);
         const upstreamsResponse = await getStageUpstreams(stageId || '');
-        console.log('📁 Upstreams response:', upstreamsResponse);
+        console.log('📁 [fetchUpstreamsAndStems] Upstreams response:', upstreamsResponse);
+        console.log('📁 [fetchUpstreamsAndStems] Upstreams response type:', typeof upstreamsResponse);
+        console.log('📁 [fetchUpstreamsAndStems] Upstreams response.data:', upstreamsResponse?.data);
 
         if (!upstreamsResponse.data) {
-          console.error('Failed to get upstreams');
+          console.error('❌ [fetchUpstreamsAndStems] Failed to get upstreams - Response:', upstreamsResponse);
           return;
         }
 
         console.log(
-          '✅ Found upstreams:',
+          '✅ [fetchUpstreamsAndStems] Found upstreams:',
           upstreamsResponse.data.length,
           'items'
         );
-        console.log('📋 Upstreams data:', upstreamsResponse.data);
+        console.log('📋 [fetchUpstreamsAndStems] Upstreams data:', upstreamsResponse.data);
         setUpstreams(upstreamsResponse.data);
 
         // 3. 각 upstream에 대해 stem 정보 가져오기
@@ -280,11 +329,15 @@ const StemSetReviewPage = () => {
           }
         );
 
+        console.log('⏳ [fetchUpstreamsAndStems] Waiting for all stem promises to resolve...');
         const stemsResults = await Promise.all(stemPromises);
-        console.log('🎯 All stems results:', stemsResults);
+        console.log('🎯 [fetchUpstreamsAndStems] All stems results:', stemsResults);
+        console.log('🎯 [fetchUpstreamsAndStems] Stems results count:', stemsResults.length);
         setUpstreamStems(stemsResults);
+        console.log('✅ [fetchUpstreamsAndStems] Successfully completed fetching upstreams and stems');
       } catch (error) {
-        console.error('Failed to fetch upstreams and stems', error);
+        console.error('❌ [fetchUpstreamsAndStems] Failed to fetch upstreams and stems:', error);
+        console.error('❌ [fetchUpstreamsAndStems] Error details:', (error as any)?.message, (error as any)?.stack);
       }
     };
 
