@@ -182,14 +182,12 @@ const DashboardPageV2 = () => {
           onClick={handleNewProject}
           className="bg-neutral-800 rounded-2xl overflow-hidden shadow-lg hover:shadow-xl transition-all duration-300 cursor-pointer group"
         >
-          <div className="aspect-square bg-gradient-to-br from-purple-600 to-blue-600 flex items-center justify-center relative">
-            <div className="bg-white rounded-full p-6 group-hover:bg-gray-100 transition-colors">
-              <Plus size={48} className="text-neutral-800" />
-            </div>
+          <div className="bg-white rounded-full p-6 mb-4 group-hover:bg-gray-100 transition-colors">
+            <Plus size={48} className="text-neutral-800" />
           </div>
+          <h3 className="text-white text-xl font-semibold">New Track</h3>
           <div className="p-4">
-            <h3 className="text-white text-lg font-semibold mb-1">New Track</h3>
-            <p className="text-gray-400 text-sm">Start a new Track</p>
+            <h3 className="text-white text-lg font-semibold mb-1">Start a new Track</h3>
           </div>
         </div>
       );
@@ -260,6 +258,10 @@ const DashboardPageV2 = () => {
               )}
             </div>
           </div>
+        </div>
+        <div className="p-4">
+          <h3 className="text-white text-lg font-semibold mb-1 truncate">{track.title}</h3>
+          <p className="text-gray-400 text-sm truncate">{track.updated_date || 'Genre not specified'}</p>
         </div>
       </div>
     );
