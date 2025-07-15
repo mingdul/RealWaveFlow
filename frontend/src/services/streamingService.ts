@@ -69,7 +69,12 @@ class StreamingService {
 async getGuidePresignedUrlByStageId(stageId: string): Promise<StreamingResponse<{ presignedUrl: string; urlExpiresAt: string }>> {
   try {
     const response = await api.get(`/streaming/stage/${stageId}/guide`);
-    return response.data;
+    
+    // 백엔드가 직접 데이터 객체를 반환하므로 success wrapper로 감싸서 반환
+    return {
+      success: true,
+      data: response.data,
+    };
   } catch (error: any) {
     console.error('Error fetching guide streaming URL by stageId:', error);
     return {
