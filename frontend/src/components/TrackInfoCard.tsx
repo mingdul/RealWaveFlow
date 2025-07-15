@@ -36,6 +36,11 @@ const TrackInfoCard: React.FC<TrackInfoCardProps> = ({
     }
   };
 
+  const onAddCollaborator = () => {
+    console.log('Add collaborator');
+    
+  }
+
   return (
     <div className="mb-12">
       <div className="flex gap-8 mb-6">
@@ -113,10 +118,12 @@ const TrackInfoCard: React.FC<TrackInfoCardProps> = ({
           <div className="w-10 h-10 bg-gray-500 rounded-full flex items-center justify-center">
             <span className="text-white text-sm">A</span>
           </div>
-          <div className="w-10 h-10 bg-gray-600 rounded-full flex items-center justify-center">
+          <div className="w-10 h-10 bg-gray-600 rounded-full flex items-center justify-center" onClick={onAddCollaborator}>
             <Plus size={16} className="text-white" />
           </div>
         </div>
+
+
       </div>
 
       {/* Stem Player */}
