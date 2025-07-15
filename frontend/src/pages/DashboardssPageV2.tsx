@@ -180,15 +180,12 @@ const DashboardPageV2 = () => {
       return (
         <div 
           onClick={handleNewProject}
-          className="bg-neutral-800 rounded-2xl overflow-hidden shadow-lg hover:shadow-xl transition-all duration-300 cursor-pointer group"
+          className="aspect-square bg-neutral-800 rounded-none overflow-hidden shadow-lg hover:shadow-xl transition-all duration-300 cursor-pointer group flex flex-col items-center justify-center"
         >
-          <div className="bg-white rounded-full p-6 mb-4 group-hover:bg-gray-100 transition-colors">
+          <div className="bg-white rounded-none p-6 group-hover:bg-gray-100 transition-colors">
             <Plus size={48} className="text-neutral-800" />
           </div>
-          <h3 className="text-white text-xl font-semibold">New Track</h3>
-          <div className="p-4">
-            <h3 className="text-white text-lg font-semibold mb-1">Start a new Track</h3>
-          </div>
+          <h3 className="text-white text-xl font-semibold mt-4">New Track</h3>
         </div>
       );
     }
@@ -211,7 +208,7 @@ const DashboardPageV2 = () => {
             trackId={track.id}
             imageUrl={track.image_url}
             alt={track.title}
-            className="absolute inset-0 w-full h-full object-cover"
+            className="absolute inset-0 w-full h-full object-cover border-none"
           />
           
           {/* 호버 시 나타나는 정보 오버레이 */}
@@ -262,6 +259,7 @@ const DashboardPageV2 = () => {
         </div>
         <div className="p-4">
           <h3 className="text-white text-lg font-semibold mb-1 truncate">{track.title}</h3>
+          <p className="text-gray-400 text-sm truncate"> Updated {new Date(track.updated_date).toLocaleDateString('en-US')}</p>
         </div>
       </div>
     );
@@ -439,7 +437,7 @@ const DashboardPageV2 = () => {
         ) : tracks.length === 0 ? (
           <EmptyState />
         ) : (
-          <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 xl:grid-cols-4 2xl:grid-cols-5 gap-6">
+          <div className="grid grid-cols-1 sm:grid-cols-2 md:grid-cols-2 lg:grid-cols-3 xl:grid-cols-4 gap-6">
             {filter === 'owned' && <ProjectCard isNewProject />}
             {tracks.map((track) => (
               <ProjectCard key={track.id} track={track} />
