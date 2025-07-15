@@ -11,6 +11,7 @@ interface StemListModalProps {
   versionNumber: string;
   loading?: boolean;
   onRollBack?: () => void;
+  stageId?: string; // 가이드 재생을 위한 스테이지 ID
 }
 
 const StemListModal: React.FC<StemListModalProps> = ({
@@ -19,7 +20,8 @@ const StemListModal: React.FC<StemListModalProps> = ({
   stems,
   versionNumber,
   loading = false,
-  onRollBack
+  onRollBack,
+  stageId
 }) => {
   const [showRollbackConfirm, setShowRollbackConfirm] = useState(false);
 
@@ -71,7 +73,7 @@ const StemListModal: React.FC<StemListModalProps> = ({
               </p>
             </div>
           ) : (
-            <StemPlayer stems={stems} />
+            <StemPlayer stems={stems} stageId={stageId} />
           )}
         </div>
 

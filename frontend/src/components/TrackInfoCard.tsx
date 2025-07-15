@@ -2,7 +2,7 @@ import React, { useState } from 'react';
 import { Play, Plus, Pause, X } from 'lucide-react';
 import { Button, StemPlayer } from './';
 import { Track } from '../types/api';
-import { StemStreamingInfo } from '../services/streamingService';
+import streamingService, { StemStreamingInfo } from '../services/streamingService';
 import PresignedImage from './PresignedImage';
 import inviteService from '../services/inviteService';
 
@@ -147,9 +147,18 @@ const handleCloseInviteModal = () => {
 };
 
 
-  const handlePlayClick = () => {
+  const handlePlayClick = async () => {
+
     if (stems.length > 0) {
-      setShowPlayer(!showPlayer);
+      // setShowPlayer(!showPlayer);
+      const response = await streamingService.getGuidePresignedUrlByStageId(stageId || '');
+      console.log('Guide API response:', response);
+      console.log('Response success:', response.success);
+      console.log('Response data:', response.data);
+      if (response.success && response.data) {
+        setGuideUrl(response.data.presignedUrl);
+      }
+      
     } else if (onPlay) {
       onPlay();
     }
@@ -389,3 +398,7 @@ const handleCloseInviteModal = () => {
 };
 
 export default TrackInfoCard;
+
+function setGuideUrl(presignedUrl: string) {
+  throw new Error('Function not implemented.');
+}
