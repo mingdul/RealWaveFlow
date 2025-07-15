@@ -162,7 +162,7 @@ const StemSetReviewPage = () => {
 
   // 이전 버전의 가이드 스템 URL 가져오기
   useEffect(() => {
-    const fetchPreviousGuideUrl = async () => {
+    const fetchGuideUrl = async () => {
       if (!stageId) return;
 
       try {
@@ -182,68 +182,34 @@ const StemSetReviewPage = () => {
         }
 
         const { track, version } = currentStageResponse.data;
-        console.log('🎵 [fetchPreviousGuideUrl] Extracted track:', track);
-        console.log('🔢 [fetchPreviousGuideUrl] Extracted version:', version);
         const trackId = track.id;
-        const currentVersion = version;
-        console.log('🆔 [fetchPreviousGuideUrl] Final trackId:', trackId);
-        console.log('🔢 [fetchPreviousGuideUrl] Final currentVersion:', currentVersion);
 
-        // 2. 이전 버전이 있는지 확인
-        if (currentVersion <= 1) {
-          console.log('⚠️ [fetchPreviousGuideUrl] No previous version available (currentVersion <= 1), using fallback audio');
-          setGuideAudioUrl('/audio/track_ex.wav');
-          return;
-        }
 
         // 3. 이전 버전의 스테이지 정보 가져오기
-        const targetVersion = currentVersion - 1;
-        console.log('🔍 [fetchPreviousGuideUrl] Looking for previous stage - trackId:', trackId, 'version:', targetVersion);
-        const previousStage = await getStageByTrackIdAndVersion(
+
+        const stage = await getStageByTrackIdAndVersion(
           trackId,
-          targetVersion
+          version
         );
-        console.log('📦 [fetchPreviousGuideUrl] Previous stage response:', previousStage);
-
-        if (!previousStage || !previousStage.id) {
-          console.log('⚠️ [fetchPreviousGuideUrl] Previous stage not found, using fallback audio - Response:', previousStage);
-          setGuideAudioUrl('/audio/track_ex.wav');
-          return;
-        }
-
-        const prevStageId = previousStage.id;
-        console.log('🆔 [fetchPreviousGuideUrl] Previous stage ID:', prevStageId);
 
         // 5. guide_path를 presigned URL로 변환
-        console.log('🌐 [fetchPreviousGuideUrl] Requesting presigned URL for prevStageId:', prevStageId);
         const response =
-          await streamingService.getGuidePresignedUrlByStageId(prevStageId);
-        console.log('📡 [fetchPreviousGuideUrl] Streaming service response:', response);
-        console.log('📡 [fetchPreviousGuideUrl] Response success:', response?.success);
-        console.log('📡 [fetchPreviousGuideUrl] Response data:', response?.data);
+          await streamingService.getGuidePresignedUrlByStageId(stage.id);
+        
         
         if (response.success && response.data) {
-          console.log(
-            '✅ [fetchPreviousGuideUrl] Guide URL loaded successfully:',
-            response.data.presignedUrl
-          );
           setGuideAudioUrl(response.data.presignedUrl);
         } else {
-          console.log('⚠️ [fetchPreviousGuideUrl] Guide URL not found, using fallback - Response:', response);
           setGuideAudioUrl('/audio/track_ex.wav');
         }
       } catch (error) {
-        console.error('❌ [fetchPreviousGuideUrl] Failed to fetch previous guide URL:', error);
-        console.error('❌ [fetchPreviousGuideUrl] Error details:', (error as any)?.message, (error as any)?.stack);
-        console.log('🔄 [fetchPreviousGuideUrl] Using fallback due to error');
         setGuideAudioUrl('/audio/track_ex.wav');
       } finally {
-        console.log('🏁 [fetchPreviousGuideUrl] Finished, setting guideLoading to false');
         setGuideLoading(false);
       }
     };
 
-    fetchPreviousGuideUrl();
+    fetchGuideUrl();
   }, [stageId]);
 
   useEffect(() => {
@@ -279,37 +245,28 @@ const StemSetReviewPage = () => {
         const upstreamsResponse = await getStageUpstreams(stageId || '');
         console.log('📁 [fetchUpstreamsAndStems] Upstreams response:', upstreamsResponse);
         console.log('📁 [fetchUpstreamsAndStems] Upstreams response type:', typeof upstreamsResponse);
-        console.log('📁 [fetchUpstreamsAndStems] Upstreams response.data:', upstreamsResponse?.data);
+        console.log('📁 [fetchUpstreamsAndStems] Upstreams is array:', Array.isArray(upstreamsResponse));
 
-        if (!upstreamsResponse.data) {
+        if (!upstreamsResponse || !Array.isArray(upstreamsResponse) || upstreamsResponse.length === 0) {
           console.error('❌ [fetchUpstreamsAndStems] Failed to get upstreams - Response:', upstreamsResponse);
           return;
         }
 
         console.log(
           '✅ [fetchUpstreamsAndStems] Found upstreams:',
-          upstreamsResponse.data.length,
+          upstreamsResponse.length,
           'items'
         );
-        console.log('📋 [fetchUpstreamsAndStems] Upstreams data:', upstreamsResponse.data);
-        setUpstreams(upstreamsResponse.data);
+        console.log('📋 [fetchUpstreamsAndStems] Upstreams data:', upstreamsResponse);
+        setUpstreams(upstreamsResponse);
 
         // 3. 각 upstream에 대해 stem 정보 가져오기
-        // const stemPromises = upstreamsResponse.data.map(async (upstream: any) => {
-        const stemPromises = upstreamsResponse.data.map(
-          async (upstream: any, index: number) => {
+        const stemPromises = upstreamsResponse.map(
+          async (upstream: any, ) => {
             try {
-              console.log(
-                `🔍 Fetching stems for upstream ${index + 1}/${upstreamsResponse.data.length}:`,
-                upstream.id
-              );
               const stemResponse = await getUpstreamStems(
                 upstream.id,
                 currentTrackId
-              );
-              console.log(
-                `📦 Stem response for upstream ${upstream.id}:`,
-                stemResponse
               );
 
               return {
@@ -317,10 +274,6 @@ const StemSetReviewPage = () => {
                 stemData: stemResponse.data || null,
               };
             } catch (error) {
-              console.error(
-                `Failed to fetch stems for upstream ${upstream.id}:`,
-                error
-              );
               return {
                 upstreamId: upstream.id,
                 stemData: null,
@@ -329,15 +282,10 @@ const StemSetReviewPage = () => {
           }
         );
 
-        console.log('⏳ [fetchUpstreamsAndStems] Waiting for all stem promises to resolve...');
         const stemsResults = await Promise.all(stemPromises);
-        console.log('🎯 [fetchUpstreamsAndStems] All stems results:', stemsResults);
-        console.log('🎯 [fetchUpstreamsAndStems] Stems results count:', stemsResults.length);
         setUpstreamStems(stemsResults);
-        console.log('✅ [fetchUpstreamsAndStems] Successfully completed fetching upstreams and stems');
       } catch (error) {
         console.error('❌ [fetchUpstreamsAndStems] Failed to fetch upstreams and stems:', error);
-        console.error('❌ [fetchUpstreamsAndStems] Error details:', (error as any)?.message, (error as any)?.stack);
       }
     };
 
@@ -1141,7 +1089,7 @@ const StemSetReviewPage = () => {
           {guideLoading ? (
             <div className='flex items-center justify-center py-8'>
               <div className='mr-3 h-8 w-8 animate-spin rounded-full border-b-2 border-white'></div>
-              <span className='text-white'>Loading previous guide...</span>
+              <span className='text-white'>Loading guide...</span>
             </div>
           ) : guideLoadAttempted && guideAudioUrl ? (
             <Wave
