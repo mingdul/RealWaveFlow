@@ -61,7 +61,6 @@ const StemSetReviewPage = () => {
   const [upstreamStems, setUpstreamStems] = useState<any[]>([]);
   const [guideAudioUrl, setGuideAudioUrl] = useState<string>('');
   const [guideLoading, setGuideLoading] = useState(false);
-  const [trackId, setTrackId] = useState<string>('');
 
   const wavesurferRefs = useRef<{ [id: string]: WaveSurfer }>({});
   const [readyStates, setReadyStates] = useState<{ [id: string]: boolean }>({});
@@ -134,7 +133,6 @@ const StemSetReviewPage = () => {
         }
         
         const currentTrackId = stageResponse.track.id;
-        setTrackId(currentTrackId);
         
         // 2. upstream 목록 가져오기
         const upstreamsResponse = await getStageUpstreams(stageId || '');
