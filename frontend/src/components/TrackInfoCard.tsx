@@ -22,6 +22,7 @@ const TrackInfoCard: React.FC<TrackInfoCardProps> = ({
   onRollBack,
   stemsLoading = false
 }) => {
+  console.log('TrackInfoCard track:', track);
   const [showPlayer, setShowPlayer] = useState(false);
 
   const handlePlayClick = () => {

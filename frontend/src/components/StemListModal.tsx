@@ -18,6 +18,8 @@ const StemListModal: React.FC<StemListModalProps> = ({
   versionNumber,
   loading = false
 }) => {
+  console.log('StemListModal stems:', stems);
+  console.log('StemListModal versionNumber:', versionNumber);
   if (!isOpen) return null;
 
   return (
@@ -29,7 +31,16 @@ const StemListModal: React.FC<StemListModalProps> = ({
             <h2 className="text-2xl font-bold text-[#D9D9D9] mb-2">
               Version {versionNumber}
             </h2>
-            <p className="text-[#BFBFBF] text-sm">Stem Collection</p>
+            <h3 className="text-[#BFBFBF] text-sm">
+              Description
+            </h3>
+            <p>
+              
+            </p>
+            
+            <p className="text-[#BFBFBF] text-sm">
+              Stem Collection
+            </p>
           </div>
           <Button
             variant="ghost"
