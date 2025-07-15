@@ -1,4 +1,4 @@
-import { Body, Controller, Get, Param, Post } from '@nestjs/common';
+import { Body, Controller, Delete, Get, Param, Post } from '@nestjs/common';
 import { ApiTags, ApiOperation, ApiResponse, ApiParam, ApiBody } from '@nestjs/swagger';
 import { StageService } from './stage.service';
 import { CreateStageDto } from './dto/createStage.dto';
@@ -44,5 +44,16 @@ export class StageController {
   @ApiResponse({ status: 404, description: '스테이지를 찾을 수 없음' })
   async getStageByTrackIdAndVersion(@Param('track_id') track_id: string, @Param('version') version: number) {
     return this.stageService.getStageByTrackIdAndVersion(track_id, version);
+  }
+
+
+  @Delete('/back-to-previous-stage/:track_id/:version')
+  @ApiOperation({ summary: '이전 스테이지로 롤백', description: '특정 트랙의 이전 스테이지로 롤백합니다.' })
+  @ApiParam({ name: 'track_id', description: '트랙 ID' })
+  @ApiParam({ name: 'version', description: '버전' })
+  @ApiResponse({ status: 200, description: '롤백 성공' })
+  @ApiResponse({ status: 404, description: '스테이지를 찾을 수 없음' })
+  async backToPreviousStage(@Param('track_id') track_id: string, @Param('version') version: number) {
+    return this.stageService.getBackToPreviousStage(track_id, version);
   }
 }
