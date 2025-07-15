@@ -53,7 +53,10 @@ export class VersionStem {
     @JoinColumn({ name: 'user_id' })
     user : User;
 
-    @ManyToOne(() => Track, (track) => track.version_stems)
+    @ManyToOne(() => Track, (track) => track.version_stems, {
+        cascade: true,
+        onDelete: 'CASCADE',
+    })
     @JoinColumn({ name: 'track_id' })
     track : Track;
 

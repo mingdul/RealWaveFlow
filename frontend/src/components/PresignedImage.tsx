@@ -71,7 +71,7 @@ const PresignedImage: React.FC<Props> = ({
   if (!imageUrl && !isError) {
     return (
       <div
-        className={`w-full h-full bg-neutral-800 rounded-lg ${className}`}
+        className={`w-full h-full bg-neutral-800 ${className}`}
         style={style}
       />
     );

@@ -4,7 +4,6 @@ import { Button, StemPlayer } from './';
 import { Track } from '../types/api';
 import { StemStreamingInfo } from '../services/streamingService';
 import PresignedImage from './PresignedImage';
-import ConfirmModal from './ConfirmModal';
 import inviteService from '../services/inviteService';
 
 interface TrackInfoCardProps {
@@ -23,11 +22,9 @@ const TrackInfoCard: React.FC<TrackInfoCardProps> = ({
   onPlay,
   onShowAllStems,
   versionNumber,
-  onRollBack,
   stemsLoading = false
 }) => {
   const [showPlayer, setShowPlayer] = useState(false);
-  const [showRollbackConfirm, setShowRollbackConfirm] = useState(false);
   const [showInviteModal, setShowInviteModal] = useState(false);
   const [inviteEmails, setInviteEmails] = useState('');
   const [inviteLoading, setInviteLoading] = useState(false);
@@ -39,6 +36,12 @@ const TrackInfoCard: React.FC<TrackInfoCardProps> = ({
       setShowPlayer(!showPlayer);
     } else if (onPlay) {
       onPlay();
+    }
+  };
+
+  const handleShowAllStems = () => {
+    if (onShowAllStems) {
+      onShowAllStems();
     }
   };
 
@@ -168,27 +171,27 @@ const TrackInfoCard: React.FC<TrackInfoCardProps> = ({
         {/* Track Details */}
         <div className="flex-1">
           <h2 className="text-4xl font-bold text-white mb-2">{track.title}</h2>
-          <p className="text-gray-400 text-lg mb-4">{track.created_date}</p>
-          <div className="flex gap-6 mb-4">
-            <span className="text-gray-400">{track.genre}</span>
-            <span className="text-gray-400">{track.bpm}</span>
-            <span className="text-gray-400">{track.key_signature}</span>
+          <p className="text-gray-400 text-lg mb-4">Created: {track.created_date}</p>
+          <div className="flex gap-2 mb-4 flex-wrap">
+            <span className="px-3 py-1 bg-gray-100 text-sm text-gray-600 rounded-full">#{track.genre}</span>
+            <span className="px-3 py-1 bg-gray-100 text-sm text-gray-600 rounded-full">#{track.bpm}</span>
+            <span className="px-3 py-1 bg-gray-100 text-sm text-gray-600 rounded-full">#{track.key_signature}</span>
           </div>
 
           <div className="mb-6">
-            <h3 className="text-lg font-semibold text-white mb-2">{track.owner_id.username}</h3>
-            <p className="text-gray-300 leading-relaxed">{track.description}</p>
+            <h3 className="text-lg font-semibold text-white mb-2">Owner: {track.owner_id.username}</h3>
+            <p className="text-gray-300 leading-relaxed">Description: {track.description}</p>
           </div>
 
           <div className="mb-6">
-            <span className="text-gray-400">Version: {versionNumber}</span>
+            <h4 className="text-gray-400">Version: {versionNumber}</h4>
           </div>
 
           <div className="flex gap-4 mb-6">
             <Button 
               variant="primary" 
               size="lg" 
-              className="flex items-center gap-2 bg-purple-600 hover:bg-purple-700"
+              className="rounded-full flex items-center gap-2 bg-purple-600 hover:bg-purple-700"
               onClick={handlePlayClick}
               disabled={stemsLoading}
             >
@@ -203,21 +206,12 @@ const TrackInfoCard: React.FC<TrackInfoCardProps> = ({
             <Button 
               variant="outline" 
               size="lg"
-              className="flex items-center gap-2 bg-[#202426] hover:bg-[#373A3D] text-white"
-              onClick={onShowAllStems}
+              className="rounded-full flex items-center gap-2 bg-[#202426] hover:bg-[#373A3D] text-white"
+              onClick={handleShowAllStems}
             >
               View All Stems
             </Button>
           </div>
-
-          <Button 
-            variant="secondary" 
-            size="sm" 
-            className="bg-red-600 hover:bg-red-700"
-            onClick={() => setShowRollbackConfirm(true)}
-          >
-            Roll Back
-          </Button>
         </div>
 
         {/* User Avatars */}
@@ -231,19 +225,7 @@ const TrackInfoCard: React.FC<TrackInfoCardProps> = ({
         </div>
       )}
 
-      {/*  Confirm Modal */}
-      <ConfirmModal
-        isOpen={showRollbackConfirm}
-        title="Are you sure you want to roll back?"
-        description="All stages created after the selected version will be permanently deleted. This action cannot be undone."
-        confirmText="Confirm Rollback"
-        cancelText="Cancel"
-        onConfirm={() => {
-          setShowRollbackConfirm(false);
-          if (onRollBack) onRollBack();
-        }}
-        onCancel={() => setShowRollbackConfirm(false)}
-      />
+
 
       {/* Invite Modal */}
       {showInviteModal && (

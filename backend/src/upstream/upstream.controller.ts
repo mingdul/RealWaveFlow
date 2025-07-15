@@ -2,6 +2,7 @@ import { Body, Controller, Get, Param, Post, Query } from '@nestjs/common';
 import { ApiTags, ApiOperation, ApiResponse, ApiBody } from '@nestjs/swagger';
 import { UpstreamService } from './upstream.service';
 import { CreateUpstreamDto } from './dto/createUpstream.dto';
+import { StemSetCreateDto } from './dto/stemSetCreate.dto';
 
 @ApiTags('upstream')
 @Controller('upstream')
@@ -13,8 +14,8 @@ export class UpstreamController {
   @ApiBody({ type: CreateUpstreamDto })
   @ApiResponse({ status: 201, description: '업스트림 생성 성공' })
   @ApiResponse({ status: 400, description: '입력값 유효성 검사 실패' })
-  async createUpstream(@Body() createUpstreamDto: CreateUpstreamDto) {
-    return this.upstreamService.createUpstream(createUpstreamDto);
+  async createUpstream(@Body() stemSetCreateDto : StemSetCreateDto) {
+    return this.upstreamService.createUpstreamWithStems(stemSetCreateDto);
   }
 
 

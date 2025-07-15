@@ -17,6 +17,9 @@ export class StemJob {
     @Column({ type: 'varchar', default: null})
     instrument : string;
 
+    @Column({ type: 'varchar', default: null})
+    jobtype : string;
+
     @Column({ type: 'varchar' , default: null})
     key : string;
 

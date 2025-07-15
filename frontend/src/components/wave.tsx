@@ -156,7 +156,7 @@ const Wave = ({
         disabled={!isReady}
         className={`px-4 py-2 rounded transition-all ${
           isSolo 
-            ? 'bg-yellow-500 text-black' 
+            ? 'bg-purple-500 text-black' 
             : 'bg-gray-700 text-white hover:bg-gray-600'
         } ${!isReady ? 'opacity-50 cursor-not-allowed' : ''}`}
       >
