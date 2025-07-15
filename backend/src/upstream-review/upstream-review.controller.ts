@@ -2,9 +2,12 @@ import { Body, Controller, Param, Post, Put, Req } from '@nestjs/common';
 import { ApiTags, ApiOperation, ApiResponse, ApiBody } from '@nestjs/swagger';
 import { UpstreamReviewService } from './upstream-review.service';
 import { CreateUpstreamReviewDto } from './dto/createUpstreamReview.dto'; 
+import { AuthGuard } from '@nestjs/passport';
+import { UseGuards } from '@nestjs/common';
 
 @ApiTags('upstream-review')
 @Controller('upstream-review')
+@UseGuards(AuthGuard('jwt'))
 export class UpstreamReviewController {
   constructor(private readonly upstreamReviewService: UpstreamReviewService) {}
 
