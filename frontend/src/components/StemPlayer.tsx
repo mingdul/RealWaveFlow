@@ -31,6 +31,8 @@ const StemPlayer: React.FC<StemPlayerProps> = ({ stems, className = '', stageId}
   const [guideLoading, setGuideLoading] = useState(false);
   const guideAudioRef = useRef<HTMLAudioElement>(null);
 
+  // Refs for accessing AudioPlayer components
+  const stemRefs = useRef<Record<string, HTMLAudioElement | null>>({});
 
   // 스템 상태 초기화
   useEffect(() => {
@@ -46,6 +48,59 @@ const StemPlayer: React.FC<StemPlayerProps> = ({ stems, className = '', stageId}
     });
     setStemStates(initialStates);
   }, [stems]);
+
+  // 가이드 오디오 시간 업데이트 핸들러
+  useEffect(() => {
+    const guideAudio = guideAudioRef.current;
+    if (!guideAudio) return;
+
+    const handleTimeUpdate = () => {
+      if (isPlaying) {
+        setCurrentTime(guideAudio.currentTime);
+      }
+    };
+
+    const handleLoadedMetadata = () => {
+      console.log('Guide audio duration:', guideAudio.duration);
+    };
+
+    const handleEnded = () => {
+      setIsPlaying(false);
+      setGuideUrl(null);
+      setCurrentTime(0);
+    };
+
+    const handleError = (e: Event) => {
+      console.error('Guide audio playback error:', e);
+      setIsPlaying(false);
+      setGuideUrl(null);
+    };
+
+    guideAudio.addEventListener('timeupdate', handleTimeUpdate);
+    guideAudio.addEventListener('loadedmetadata', handleLoadedMetadata);
+    guideAudio.addEventListener('ended', handleEnded);
+    guideAudio.addEventListener('error', handleError);
+
+    return () => {
+      guideAudio.removeEventListener('timeupdate', handleTimeUpdate);
+      guideAudio.removeEventListener('loadedmetadata', handleLoadedMetadata);
+      guideAudio.removeEventListener('ended', handleEnded);
+      guideAudio.removeEventListener('error', handleError);
+    };
+  }, [guideUrl, isPlaying]);
+
+  // currentTime 변경 시 모든 스템들 동기화
+  useEffect(() => {
+    // 마스터가 재생 중이 아닐 때만 동기화 (재생 중에는 가이드가 시간을 주도)
+    if (!isPlaying) {
+      stems.forEach(stem => {
+        const stemAudio = stemRefs.current[stem.id];
+        if (stemAudio && Math.abs(stemAudio.currentTime - currentTime) > 0.1) {
+          stemAudio.currentTime = currentTime;
+        }
+      });
+    }
+  }, [currentTime, stems, isPlaying]);
 
   // 마스터 재생/일시정지
   const handleMasterPlayPause = async () => {
@@ -91,13 +146,43 @@ const StemPlayer: React.FC<StemPlayerProps> = ({ stems, className = '', stageId}
           setGuideLoading(false);
         }
       }
+
+      // 마스터 재생 시 모든 스템들을 현재 시간으로 동기화
+      // setTimeout을 사용하여 가이드 오디오 로드 완료 후 동기화
+      const syncStemsWithCurrentTime = () => {
+        stems.forEach(stem => {
+          const stemAudio = stemRefs.current[stem.id];
+          if (stemAudio) {
+            stemAudio.currentTime = currentTime;
+          }
+        });
+      };
+
+      // 가이드가 있는 경우 가이드 오디오 로드 후 동기화
+      if (stageId && guideAudioRef.current) {
+        const handleCanPlay = () => {
+          syncStemsWithCurrentTime();
+          guideAudioRef.current?.removeEventListener('canplay', handleCanPlay);
+        };
+        guideAudioRef.current.addEventListener('canplay', handleCanPlay);
+        
+        // 이미 로드되어 있는 경우를 위한 fallback
+        if (guideAudioRef.current.readyState >= 3) {
+          syncStemsWithCurrentTime();
+        }
+      } else {
+        // 가이드가 없는 경우 즉시 동기화
+        syncStemsWithCurrentTime();
+      }
     } else {
       // Stop guide playback when pausing
       if (guideAudioRef.current) {
         guideAudioRef.current.pause();
-        guideAudioRef.current.currentTime = 0;
       }
-      setGuideUrl(null);
+      if (!stageId) {
+        setGuideUrl(null);
+        setCurrentTime(0);
+      }
     }
   
     setIsPlaying(willPlay);
@@ -107,6 +192,22 @@ const StemPlayer: React.FC<StemPlayerProps> = ({ stems, className = '', stageId}
   const handleMasterStop = () => {
     setIsPlaying(false);
     setCurrentTime(0);
+    
+    // Reset guide audio
+    if (guideAudioRef.current) {
+      guideAudioRef.current.pause();
+      guideAudioRef.current.currentTime = 0;
+    }
+    
+    // Reset all stem audio
+    stems.forEach(stem => {
+      const stemAudio = stemRefs.current[stem.id];
+      if (stemAudio) {
+        stemAudio.currentTime = 0;
+      }
+    });
+    
+    setGuideUrl(null);
   };
 
   // 마스터 볼륨 변경
@@ -173,7 +274,7 @@ const StemPlayer: React.FC<StemPlayerProps> = ({ stems, className = '', stageId}
     }));
   };
 
-  // 시간 업데이트
+  // 시간 업데이트 - 개별 스템이 재생 중일 때만 마스터 시간 업데이트
   const handleTimeUpdate = (stemId: string, time: number) => {
     setStemStates(prev => ({
       ...prev,
@@ -182,6 +283,11 @@ const StemPlayer: React.FC<StemPlayerProps> = ({ stems, className = '', stageId}
         currentTime: time
       }
     }));
+
+    // 해당 스템이 재생 중일 때만 마스터 시간 업데이트
+    if (stemStates[stemId]?.isPlaying && !isPlaying) {
+      setCurrentTime(time);
+    }
   };
 
   // 시간 표시 포맷
@@ -194,34 +300,46 @@ const StemPlayer: React.FC<StemPlayerProps> = ({ stems, className = '', stageId}
   // 최대 재생 시간 계산
   const maxDuration = Math.max(...Object.values(stemStates).map(state => state.duration || 0));
 
-  // 프로그레스 바 클릭 핸들러
+  // 프로그레스 바 클릭 핸들러 - 실제 오디오 시간 변경
   const handleProgressBarClick = (e: React.MouseEvent<HTMLDivElement>) => {
     const rect = e.currentTarget.getBoundingClientRect();
     const clickX = e.clientX - rect.left;
     const barWidth = rect.width;
     const newTime = (clickX / barWidth) * maxDuration;
+    
     setCurrentTime(newTime);
+
+    // 가이드 오디오 시간 변경
+    if (guideAudioRef.current && guideUrl) {
+      guideAudioRef.current.currentTime = newTime;
+    }
+
+    // 모든 스템 오디오 시간 변경
+    stems.forEach(stem => {
+      const stemAudio = stemRefs.current[stem.id];
+      if (stemAudio) {
+        stemAudio.currentTime = newTime;
+      }
+    });
   };
 
-  // Handle guide audio playback
+  // Handle guide audio playback and volume
   useEffect(() => {
     const guideAudio = guideAudioRef.current;
-    if (!guideAudio || !guideUrl) return;
+    if (!guideAudio) return;
 
-    if (isPlaying) {
-      guideAudio.play().catch(console.error);
-    } else {
-      guideAudio.pause();
-    }
-  }, [isPlaying, guideUrl]);
+    // Set volume
+    guideAudio.volume = masterMuted ? 0 : masterVolume;
 
-  // Handle guide audio volume
-  useEffect(() => {
-    const guideAudio = guideAudioRef.current;
-    if (guideAudio) {
-      guideAudio.volume = masterMuted ? 0 : masterVolume;
+    // Handle playback
+    if (guideUrl) {
+      if (isPlaying) {
+        guideAudio.play().catch(console.error);
+      } else {
+        guideAudio.pause();
+      }
     }
-  }, [masterVolume, masterMuted]);
+  }, [isPlaying, guideUrl, masterVolume, masterMuted]);
 
   if (stems.length === 0) {
     return (
@@ -310,21 +428,32 @@ const StemPlayer: React.FC<StemPlayerProps> = ({ stems, className = '', stageId}
         <h3 className="text-lg font-semibold text-white mb-3">스템 트랙</h3>
         {stems.map((stem) => (
           <AudioPlayer
-          key={stem.id}
-          src={stem.presignedUrl}
-          fileName={stem.fileName}
-          isPlaying={stemStates[stem.id]?.isPlaying || false}
-          onPlayPause={() => handleStemPlayPause(stem.id)}
-          currentTime={stemStates[stem.id]?.currentTime || 0}
-          volume={(stemStates[stem.id]?.volume || 1) * masterVolume}
-          onVolumeChange={(volume) => handleStemVolumeChange(stem.id, volume)}
-          muted={stemStates[stem.id]?.muted || masterMuted}
-          onMuteToggle={() => handleStemMuteToggle(stem.id)}
-          onTimeUpdate={(time) => handleTimeUpdate(stem.id, time)}
-          onLoadedMetadata={(duration) => handleStemLoadedMetadata(stem.id, duration)}
-          showProgressBar={stemStates[stem.id]?.isPlaying || false}
-          className="bg-gray-800"
-        />
+            key={stem.id}
+            src={stem.presignedUrl}
+            fileName={stem.fileName}
+            isPlaying={stemStates[stem.id]?.isPlaying || false}
+            onPlayPause={() => handleStemPlayPause(stem.id)}
+            currentTime={stemStates[stem.id]?.currentTime || 0}
+            volume={(stemStates[stem.id]?.volume || 1) * masterVolume}
+            onVolumeChange={(volume) => handleStemVolumeChange(stem.id, volume)}
+            muted={stemStates[stem.id]?.muted || masterMuted}
+            onMuteToggle={() => handleStemMuteToggle(stem.id)}
+            onTimeUpdate={(time) => handleTimeUpdate(stem.id, time)}
+            onLoadedMetadata={(duration) => handleStemLoadedMetadata(stem.id, duration)}
+            showProgressBar={stemStates[stem.id]?.isPlaying || false}
+            className="bg-gray-800"
+            onAudioReady={(audio) => {
+              // audio element를 stemRefs에 저장
+              stemRefs.current[stem.id] = audio;
+            }}
+            onProgressBarClick={(newTime) => {
+              // 개별 스템의 프로그레스 바 클릭 시 해당 스템만 시간 변경
+              const stemAudio = stemRefs.current[stem.id];
+              if (stemAudio) {
+                stemAudio.currentTime = newTime;
+              }
+            }}
+          />
         ))}
       </div>
 

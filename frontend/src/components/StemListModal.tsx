@@ -50,10 +50,9 @@ const StemListModal: React.FC<StemListModalProps> = ({
             </p>
           </div>
           <Button
-            variant="ghost"
             size="sm"
             onClick={onClose}
-            className="text-[#BFBFBF] hover:text-white hover:bg-[#595959] p-2"
+            className="text-white p-2"
           >
             <X size={24} />
           </Button>
