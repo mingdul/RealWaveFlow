@@ -5,9 +5,9 @@ services:
     container_name: waveflow-postgres-local
     restart: unless-stopped
     environment:
-      POSTGRES_DB: waveflow_local
-      POSTGRES_USER: waveflow_user
-      POSTGRES_PASSWORD: local_password
+      POSTGRES_DB: postgres
+      POSTGRES_USER: postgres
+      POSTGRES_PASSWORD: 1234
     ports:
       - "5432:5432"
     volumes:

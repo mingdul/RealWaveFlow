@@ -156,7 +156,7 @@ const StemListPanel: React.FC<{
       <table className="w-full">
         <thead>
           <tr className="border-b border-gray-700">
-            <th className="text-left py-4 px-4 text-gray-400 font-medium">Previous Stems</th>
+            <th className="text-left py-4 px-4 text-gray-400 font-medium">Current Stems</th>
             <th className="text-left py-4 px-4 text-gray-400 font-medium">Upload New Version</th>
           </tr>
         </thead>
@@ -166,7 +166,7 @@ const StemListPanel: React.FC<{
             
             return (
               <tr key={stem.id} className="border-b border-gray-700">
-                {/* Previous Stem Info */}
+                {/* Current Stem Info */}
                 <td className="py-4 px-4">
                   <div className="flex items-center space-x-3">
                     <button
