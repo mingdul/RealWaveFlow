@@ -72,11 +72,17 @@ const StemPlayer: React.FC<StemPlayerProps> = ({ stems, className = '', stageId 
           setGuideLoading(true);
           const response = await streamingService.getStageGuide(stageId);
           
+          console.log('Guide API response:', response);
+          console.log('Response success:', response.success);
+          console.log('Response data:', response.data);
+          
           if (response.success && response.data) {
             setGuideUrl(response.data.presignedUrl);
             console.log('Guide file loaded:', response.data.fileName);
           } else {
-            console.error('Failed to fetch guide:', response.message);
+            console.error('Failed to fetch guide - success:', response.success);
+            console.error('Failed to fetch guide - message:', response.message);
+            console.error('Failed to fetch guide - full response:', response);
           }
         } catch (error) {
           console.error('Error fetching guide:', error);
