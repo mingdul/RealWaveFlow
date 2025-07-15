@@ -287,6 +287,7 @@ const TrackPage: React.FC<TrackPageProps> = () => {
             versionNumber={selectedStageVersion.toString()}
             onShowAllStems={handleShowAllStems}
             onRollBack={handleRollBack}
+            stageId={getActiveStage()?.id}
           />
 
           {/* 현재 활성 스테이지 정보 표시

@@ -178,6 +178,25 @@ class StreamingService {
       };
     }
   }
+
+  // 스테이지 가이드 파일 스트리밍 URL 조회
+  async getStageGuide(stageId: string): Promise<StreamingResponse<{
+    guidePath: string;
+    presignedUrl: string;
+    urlExpiresAt: string;
+    fileName: string;
+  }>> {
+    try {
+      const response = await api.get(`/streaming/stage/${stageId}/guide`);
+      return response.data;
+    } catch (error: any) {
+      console.error('Error fetching stage guide:', error);
+      return {
+        success: false,
+        message: error.response?.data?.message || 'Failed to fetch stage guide',
+      };
+    }
+  }
 }
 
 export default new StreamingService();
