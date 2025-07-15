@@ -73,6 +73,7 @@ const StemSetReviewPage = () => {
   const [upstreamStems, setUpstreamStems] = useState<any[]>([]);
   const [guideAudioUrl, setGuideAudioUrl] = useState<string>('');
   const [guideLoading, setGuideLoading] = useState(false);
+  const [guideLoadAttempted, setGuideLoadAttempted] = useState(false); // 가이드 로드 시도 여부 추가
 
   const wavesurferRefs = useRef<{ [id: string]: WaveSurfer }>({});
   const [readyStates, setReadyStates] = useState<{ [id: string]: boolean }>({});
@@ -95,6 +96,7 @@ const StemSetReviewPage = () => {
 
       try {
         setGuideLoading(true);
+        setGuideLoadAttempted(true); // 로드 시도 표시
 
         // 1. 현재 스테이지 정보 가져오기
         const currentStage = await getStageDetail(stageId);
@@ -109,7 +111,8 @@ const StemSetReviewPage = () => {
 
         // 2. 이전 버전이 있는지 확인
         if (currentVersion <= 1) {
-          console.log('No previous version available');
+          console.log('No previous version available, using fallback audio');
+          setGuideAudioUrl('/audio/track_ex.wav');
           return;
         }
 
@@ -118,28 +121,24 @@ const StemSetReviewPage = () => {
           trackId,
           currentVersion - 1
         );
-        if (!previousStage) {
-          console.error('Previous stage not found');
-          return;
-        }
 
-        // 4. 이전 스테이지의 guide_path 확인
-        const guidePath = previousStage.guide_path;
-        if (!guidePath) {
-          console.log('No guide path in previous stage');
-          return;
-        }
+        const prevStageId = previousStage.id;
 
         // 5. guide_path를 presigned URL로 변환
-        const response = await streamingService.getGuidePresignedUrl(
-          guidePath,
-          trackId
+        const response = await streamingService.getGuidePresignedUrlByStageId(
+          prevStageId
         );
         if (response.success && response.data) {
+          console.log('✅ Guide URL loaded successfully:', response.data.presignedUrl);
           setGuideAudioUrl(response.data.presignedUrl);
+        } else {
+          console.log('⚠️ Guide URL not found, using fallback');
+          setGuideAudioUrl('/audio/track_ex.wav');
         }
       } catch (error) {
         console.error('Failed to fetch previous guide URL:', error);
+        console.log('🔄 Using fallback due to error');
+        setGuideAudioUrl('/audio/track_ex.wav');
       } finally {
         setGuideLoading(false);
       }
@@ -1030,10 +1029,10 @@ const StemSetReviewPage = () => {
               <div className='mr-3 h-8 w-8 animate-spin rounded-full border-b-2 border-white'></div>
               <span className='text-white'>Loading previous guide...</span>
             </div>
-          ) : (
+          ) : guideLoadAttempted && guideAudioUrl ? (
             <Wave
               onReady={handleReady}
-              audioUrl={guideAudioUrl || '/audio/track_ex.wav'}
+              audioUrl={guideAudioUrl}
               waveColor='#f87171'
               id='main'
               isPlaying={isPlaying}
@@ -1042,6 +1041,10 @@ const StemSetReviewPage = () => {
               isSolo={soloTrack === 'main'}
               onSeek={handleSeek}
             />
+          ) : (
+            <div className='flex items-center justify-center py-8'>
+              <span className='text-white text-sm'>No guide audio available for this stage</span>
+            </div>
           )}
 
           {showExtraWaveform && extraAudio && (
