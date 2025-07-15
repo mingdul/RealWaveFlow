@@ -60,7 +60,7 @@ const StagePage: React.FC = () => {
 
         // 리뷰어 목록 가져오기
         const reviewersResponse = await getStageReviewers(stageId);
-        setReviewers(reviewersResponse);
+        setReviewers(reviewersResponse || []);
 
       } catch (error) {
         console.error("Error fetching stage data:", error);
@@ -296,12 +296,12 @@ const StagePage: React.FC = () => {
           <div className='flex items-center gap-3'>
             <span className='text-gray-300'>REVIEWER :</span>
             <div className='flex -space-x-2'>
-              {reviewers.map((reviewer) => (
+              {(reviewers || []).map((reviewer) => (
                 <div key={reviewer.id} className='h-8 w-8 rounded-full border-2 border-white bg-gray-400 flex items-center justify-center text-xs text-white'>
                   {reviewer.user?.username?.charAt(0) || 'U'}
                 </div>
               ))}
-              {reviewers.length === 0 && (
+              {(!reviewers || reviewers.length === 0) && (
                 <>
                   <div className='h-8 w-8 rounded-full border-2 border-white bg-gray-400'></div>
                   <div className='h-8 w-8 rounded-full border-2 border-white bg-gray-400'></div>
