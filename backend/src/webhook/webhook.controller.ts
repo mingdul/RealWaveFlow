@@ -301,19 +301,28 @@ export class WebhookController {
                 if(data.upstreamId != null){
                     // upstreamId가 있으면 upstream의 guide_path 업데이트
                     await this.upstreamService.updateUpstreamGuidePath(data.upstreamId, data.mixed_file_path);
+                    return {
+                        status: 'success',
+                        message: '믹싱 UPSTREAM 완료 처리 성공',
+                        stageId: data.upstreamId,
+                        guideId: guide.id,
+                        mixedFilePath: data.mixed_file_path
+                    };
                 }
-                // 기존 stage의 guide_path도 업데이트 (하위 호환성)
-                await this.stageService.updateGuidePath(data.stageId, data.mixed_file_path);
+                else{
+                    // 기존 stage의 guide_path도 업데이트 (하위 호환성)
+                    await this.stageService.updateGuidePath(data.stageId, data.mixed_file_path);
 
-                this.logger.log(`믹싱 완료 처리 성공: ${data.stageId} -> Guide: ${guide.id}`);
+                    this.logger.log(`믹싱 완료 처리 성공: ${data.stageId} -> Guide: ${guide.id}`);
 
-                return {
-                    status: 'success',
-                    message: '믹싱 완료 처리 성공',
-                    stageId: data.stageId,
-                    guideId: guide.id,
-                    mixedFilePath: data.mixed_file_path
-                };
+                    return {
+                        status: 'success',
+                        message: '믹싱 완료 처리 성공',
+                        stageId: data.stageId,
+                        guideId: guide.id,
+                        mixedFilePath: data.mixed_file_path
+                    };
+                }
             } else {
                 this.logger.error(`믹싱 완료 실패: ${data.stageId}`);
                 return {

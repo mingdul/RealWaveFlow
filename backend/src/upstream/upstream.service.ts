@@ -150,6 +150,7 @@ export class UpstreamService {
         const category = this.categoryRepository.create({
             name : new_dto.categoryName,
             track : {id : trackId},
+            instrument : new_dto.instument, 
         });
         await this.categoryRepository.save(category);
 
@@ -175,6 +176,7 @@ export class UpstreamService {
             const category = await this.categoryService.getCategoryByStemId(oldStem);
             // oldstem의 category id를 newStem에 넣어준다.
             await this.stemJobService.updateJobWithCategoryId(newStem, category.id);
+            await this.stemJobService.updateJobWithUpstreamId(newStem, upstream_id);
             await this.stemJobService.convertJobToStemNoVersion(newStem, user_id);
             await this.stemJobService.deleteJob(newStem);
         }
