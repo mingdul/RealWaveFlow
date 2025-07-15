@@ -106,15 +106,15 @@ const StemSetReviewPage = () => {
         if (paramUpstreamId) {
           try {
             console.log('🔍 [determineStageId] Looking for upstream in stage upstreams...');
-            const upstreams = await getStageUpstreams(stageIdFromQuery);
-            console.log('📁 [determineStageId] Stage upstreams response:', upstreams);
-            const targetUpstream = upstreams.find((upstream: any) => upstream.id === paramUpstreamId);
+            const upstreamsResponse = await getStageUpstreams(stageIdFromQuery);
+            console.log('📁 [determineStageId] Stage upstreams response:', upstreamsResponse);
+            const targetUpstream = upstreamsResponse.find((upstream: any) => upstream.id === paramUpstreamId);
             if (targetUpstream) {
               console.log('✅ [determineStageId] Found target upstream in stage upstreams:', targetUpstream);
               setSelectedUpstream(targetUpstream);
             } else {
               console.warn('⚠️ [determineStageId] Target upstream not found in stage upstreams');
-              console.log('📋 [determineStageId] Available upstreams:', upstreams.map((u: any) => ({id: u.id, fileName: u.fileName})));
+              console.log('📋 [determineStageId] Available upstreams:', upstreamsResponse.map((u: any) => ({id: u.id, fileName: u.fileName})));
             }
           } catch (error) {
             console.error('❌ [determineStageId] Error fetching stage upstreams:', error);
@@ -279,28 +279,28 @@ const StemSetReviewPage = () => {
         const upstreamsResponse = await getStageUpstreams(stageId || '');
         console.log('📁 [fetchUpstreamsAndStems] Upstreams response:', upstreamsResponse);
         console.log('📁 [fetchUpstreamsAndStems] Upstreams response type:', typeof upstreamsResponse);
-        console.log('📁 [fetchUpstreamsAndStems] Upstreams is array:', Array.isArray(upstreamsResponse));
+        console.log('📁 [fetchUpstreamsAndStems] Upstreams response.data:', upstreamsResponse?.data);
 
-        if (!upstreamsResponse || !Array.isArray(upstreamsResponse)) {
+        if (!upstreamsResponse.data) {
           console.error('❌ [fetchUpstreamsAndStems] Failed to get upstreams - Response:', upstreamsResponse);
           return;
         }
 
         console.log(
           '✅ [fetchUpstreamsAndStems] Found upstreams:',
-          upstreamsResponse.length,
+          upstreamsResponse.data.length,
           'items'
         );
-        console.log('📋 [fetchUpstreamsAndStems] Upstreams data:', upstreamsResponse);
-        setUpstreams(upstreamsResponse);
+        console.log('📋 [fetchUpstreamsAndStems] Upstreams data:', upstreamsResponse.data);
+        setUpstreams(upstreamsResponse.data);
 
         // 3. 각 upstream에 대해 stem 정보 가져오기
-        // const stemPromises = upstreamsResponse.map(async (upstream: any) => {
-        const stemPromises = upstreamsResponse.map(
+        // const stemPromises = upstreamsResponse.data.map(async (upstream: any) => {
+        const stemPromises = upstreamsResponse.data.map(
           async (upstream: any, index: number) => {
             try {
               console.log(
-                `🔍 Fetching stems for upstream ${index + 1}/${upstreamsResponse.length}:`,
+                `🔍 Fetching stems for upstream ${index + 1}/${upstreamsResponse.data.length}:`,
                 upstream.id
               );
               const stemResponse = await getUpstreamStems(
