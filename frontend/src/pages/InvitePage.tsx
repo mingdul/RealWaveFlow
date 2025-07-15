@@ -35,7 +35,7 @@ const InvitePage: React.FC<InvitePageProps> = () => {
 
   const validateInviteToken = async () => {
     try {
-      const response = await apiClient.get(`/invite/validate/${token}`, {
+      const response = await apiClient.get(`/invite/${token}`, {
         withCredentials: true,
       });
 
