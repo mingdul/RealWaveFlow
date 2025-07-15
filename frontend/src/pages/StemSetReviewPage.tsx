@@ -2,7 +2,9 @@ import { useEffect, useRef, useState, useCallback } from 'react';
 import WaveSurfer from 'wavesurfer.js';
 import Wave from '../components/wave';
 import Logo from '../components/Logo';  
-import streamingService, { StemStreamingInfo } from '../services/streamingService';
+import { getStageUpstreams } from '../services/upstreamService';
+import streamingService from '../services/streamingService';
+import { useParams } from 'react-router-dom';
 import {
   Bell,
   Settings,
@@ -34,46 +36,29 @@ const StemSetReviewPage = () => {
   const [comments, setComments] = useState<Comment[]>([]);
   const [extraAudio, setExtraAudio] = useState<string>('');
   const [showExtraWaveform, setShowExtraWaveform] = useState(false);
-  const [streamingStems, setStreamingStems] = useState<StemStreamingInfo[]>([]);
-  const [stemsLoading, setStemsLoading] = useState(false);
+  const [stemsLoading] = useState(false);
+  const [upstreams, setUpstreams] = useState<any[]>([]);
 
   const wavesurferRefs = useRef<{ [id: string]: WaveSurfer }>({});
   const [readyStates, setReadyStates] = useState<{ [id: string]: boolean }>({});
   const isSeeking = useRef(false); // 무한 루프 방지용 플래그
+  const {stageId} = useParams<{stageId: string}>();
 
-  // 스트리밍 데이터 로드
+
   useEffect(() => {
-    const loadStreamingData = async () => {
-      setStemsLoading(true);
+    const fetchUpstreams = async () => {
       try {
-        // TODO: 실제 트랙 ID를 사용해야 함
-      const response = await streamingService.getTrackStems('2f4c036f-239a-4af9-b728-e21eba7e1a78');
-        if (response.success && response.data) {
-          setStreamingStems(response.data.stems);
-        } else {
-          console.error('Failed to load streaming data:', response.message);
-          setStreamingStems([]);
+        const response = await getStageUpstreams(stageId || '');  // 👈 여기!
+        if (response.data) {
+          setUpstreams(response.data);
         }
       } catch (error) {
-        console.error('Failed to load streaming data:', error);
-        setStreamingStems([]);
-      } finally {
-        setStemsLoading(false);
+        console.error('Failed to fetch stage upstreams', error);
       }
     };
-
-    loadStreamingData();
-  }, []);
-
-  // Legacy audioFiles를 스트리밍 데이터로 변환
-  const audioFiles = streamingStems.map((stem) => ({
-    name: stem.fileName,
-    path: stem.presignedUrl,
-    description: stem.description || `${stem.category} - ${stem.tag}`,
-    category: stem.category,
-    uploadedBy: stem.uploadedBy.username,
-    uploadedAt: stem.uploadedAt
-  }));
+  
+    if (stageId) fetchUpstreams();
+  }, [stageId]);
 
   const handleReady = useCallback((ws: WaveSurfer, id: string) => {
     wavesurferRefs.current[id] = ws;
@@ -262,9 +247,28 @@ const StemSetReviewPage = () => {
     }, 100);
   }, [readyStates]);
 
-  const handleAudioFileClick = useCallback((audioPath: string) => {
-    setExtraAudio(audioPath);
-    setShowExtraWaveform(true);
+  const handleAudioFileClick = useCallback(async (upstream: any) => {
+    try {
+      // 스트리밍 최적화된 URL을 가져오기
+      const response = await streamingService.getUpstreamStems(upstream.id);
+      
+      if (response.success && response.data && response.data.stems.length > 0) {
+        // 첫 번째 스템의 presigned URL 사용
+        const streamingUrl = response.data.stems[0].presignedUrl;
+        setExtraAudio(streamingUrl);
+        setShowExtraWaveform(true);
+      } else {
+        // 스트리밍 실패 시 원래 URL 사용
+        console.warn('Streaming URL failed, using original URL');
+        setExtraAudio(upstream.presignedUrl);
+        setShowExtraWaveform(true);
+      }
+    } catch (error) {
+      console.error('Error loading streaming URL:', error);
+      // 에러 발생 시 원래 URL 사용
+      setExtraAudio(upstream.presignedUrl);
+      setShowExtraWaveform(true);
+    }
   }, []);
 
   // Solo 버튼 핸들러들을 메모이제이션
@@ -389,22 +393,20 @@ const StemSetReviewPage = () => {
               </div>
             ) : (
               <div className='max-h-96 space-y-2 overflow-y-auto'>
-                {audioFiles.map((file, index) => (
-                  <div
-                    key={index}
-                    onClick={() => handleAudioFileClick(file.path)}
-                    className='cursor-pointer rounded bg-[#3a3a3a] p-3 text-sm text-white transition-colors hover:bg-[#4a4a4a]'
-                  >
-                    <div className='font-medium'>{file.name}</div>
-                    <div className='text-xs text-gray-400'>
-                      {file.description}
-                    </div>
-                    <div className='text-xs text-gray-500 mt-1'>
-                      Category: {file.category} | By: {file.uploadedBy}
-                    </div>
+                {upstreams.map((upstream, index) => (
+                <div
+                  key={index}
+                  onClick={() => handleAudioFileClick(upstream)}
+                  className='cursor-pointer rounded bg-[#3a3a3a] p-3 text-sm text-white transition-colors hover:bg-[#4a4a4a]'
+                >
+                  <div className='font-medium'>{upstream.fileName}</div>
+                  <div className='text-xs text-gray-400'>{upstream.description}</div>
+                  <div className='text-xs text-gray-500 mt-1'>
+                    Category: {upstream.category} | By: {upstream.uploadedBy?.username}
                   </div>
-                ))}
-              </div>
+                </div>
+              ))}
+            </div>
             )}
           </div>
         </div>
