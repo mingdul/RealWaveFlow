@@ -1,16 +1,28 @@
-import React, { useState } from 'react';
-import { useNavigate } from 'react-router-dom';
+import React, { useState, useEffect } from 'react';
+import { useNavigate, useLocation } from 'react-router-dom';
 import { useAuth } from '../contexts/AuthContext';
 import { useToast } from '../contexts/ToastContext';
 import { AuthFormWrapper, Input, Button, AuthSocialButtons } from '../components';
+import apiClient from '../lib/api';
 
 const SignUpPage: React.FC = () => {
   const [email, setEmail] = useState('');
   const [username, setUsername] = useState('');
   const [password, setPassword] = useState('');
   const navigate = useNavigate();
+  const location = useLocation();
   const { register, isLoading, error, clearError } = useAuth();
   const { showSuccess, showError } = useToast();
+
+  // 초대 토큰이 있는 경우 이메일 자동 설정
+  useEffect(() => {
+    const inviteToken = location.state?.inviteToken;
+    const inviteEmail = location.state?.email;
+    
+    if (inviteEmail && inviteToken) {
+      setEmail(inviteEmail);
+    }
+  }, [location.state]);
 
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
@@ -19,6 +31,27 @@ const SignUpPage: React.FC = () => {
     try {
       await register({ email, username, password });
       showSuccess('sign up success');
+      
+      // 초대 토큰이 있는 경우 회원가입 완료 후 초대 처리
+      const inviteToken = location.state?.inviteToken;
+      if (inviteToken) {
+        try {
+          const response = await apiClient.post('/invite/complete-signup', {
+            token: inviteToken
+          }, {
+            withCredentials: true,
+          });
+          
+          if (response.data.success) {
+            showSuccess('회원가입이 완료되었습니다. 트랙에 참여되었습니다.');
+            navigate(`/track/${response.data.track_id}`);
+            return;
+          }
+        } catch (error) {
+          console.error('초대 처리 실패:', error);
+        }
+      }
+      
       navigate('/login');
     } catch (error: any) {
       showError(error.message || 'sign up failed.');

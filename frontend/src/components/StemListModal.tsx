@@ -1,7 +1,8 @@
-import React from 'react';
+import React, { useState } from 'react';
 import { X } from 'lucide-react';
 import { Button, StemPlayer } from './';
 import { StemStreamingInfo } from '../services/streamingService';
+import ConfirmModal from './ConfirmModal';
 
 interface StemListModalProps {
   isOpen: boolean;
@@ -9,6 +10,7 @@ interface StemListModalProps {
   stems: StemStreamingInfo[];
   versionNumber: string;
   loading?: boolean;
+  onRollBack?: () => void;
 }
 
 const StemListModal: React.FC<StemListModalProps> = ({
@@ -16,8 +18,11 @@ const StemListModal: React.FC<StemListModalProps> = ({
   onClose,
   stems,
   versionNumber,
-  loading = false
+  loading = false,
+  onRollBack
 }) => {
+  const [showRollbackConfirm, setShowRollbackConfirm] = useState(false);
+
   console.log('StemListModal stems:', stems);
   console.log('StemListModal versionNumber:', versionNumber);
   if (!isOpen) return null;
@@ -70,16 +75,34 @@ const StemListModal: React.FC<StemListModalProps> = ({
           )}
         </div>
 
-        {/* Footer */}
-        <div className="flex justify-end pt-6 border-t border-[#595959] mt-8">
-          <Button
-            variant="outline"
-            onClick={onClose}
-            className="text-[#BFBFBF] border-[#595959] hover:bg-[#595959] hover:text-white"
-          >
-            닫기
-          </Button>
-        </div>
+        {/* Roll Back Button */}
+        {onRollBack && (
+          <div className="mt-6 pt-6 border-t border-[#595959] flex justify-end">
+            <Button 
+              variant="secondary" 
+              size="sm" 
+              className="bg-red-600 hover:bg-red-700"
+              onClick={() => setShowRollbackConfirm(true)}
+            >
+              Roll Back
+            </Button>
+          </div>
+        )}
+
+        {/* Rollback Confirm Modal */}
+        <ConfirmModal
+          isOpen={showRollbackConfirm}
+          title="Are you sure you want to roll back?"
+          description="All stages created after the selected version will be permanently deleted. This action cannot be undone."
+          confirmText="Confirm Rollback"
+          cancelText="Cancel"
+          onConfirm={() => {
+            setShowRollbackConfirm(false);
+            onClose(); // Close the stem list modal first
+            if (onRollBack) onRollBack();
+          }}
+          onCancel={() => setShowRollbackConfirm(false)}
+        />
       </div>
     </div>
   );

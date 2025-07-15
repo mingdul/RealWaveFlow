@@ -137,6 +137,50 @@ export class InviteController {
   }
 
   /**
+   * 초대 토큰 검증
+   * 
+   * 초대 토큰의 유효성을 검사하고 초대 정보를 반환합니다.
+   * 프론트엔드에서 초대 링크 접속 시 호출하는 API입니다.
+   * 
+   * @param token - 초대 토큰 (URL 파라미터)
+   * 
+   * @returns 초대 검증 결과
+   * - success: 성공 여부
+   * - data: 초대 정보 (성공 시)
+   *   - track_name: 트랙 이름
+   *   - inviter_name: 초대자 이름
+   *   - email: 초대받은 이메일
+   *   - expires_at: 만료 시간
+   *   - status: 초대 상태
+   * 
+   * 인증: 불필요 (토큰 기반 접근)
+   * 
+   * 사용 예시:
+   * GET /invite/validate/abc123-def456-ghi789
+   * 
+   * 응답 예시:
+   * {
+   *   "success": true,
+   *   "data": {
+   *     "track_name": "My Awesome Track",
+   *     "inviter_name": "John Doe",
+   *     "email": "user@example.com",
+   *     "expires_at": "2024-01-15T10:00:00Z",
+   *     "status": "pending"
+   *   }
+   * }
+   */
+  @Get('validate/:token')
+  @ApiOperation({ summary: '초대 토큰 검증', description: '초대 토큰의 유효성을 검사합니다.' })
+  @ApiParam({ name: 'token', description: '초대 토큰' })
+  @ApiResponse({ status: 200, description: '초대 토큰 검증 성공' })
+  @ApiResponse({ status: 404, description: '초대를 찾을 수 없음' })
+  @ApiResponse({ status: 410, description: '초대가 만료됨' })
+  async validateInviteToken(@Param('token') token: string) {
+    return await this.inviteService.validateInviteToken(token);
+  }
+
+  /**
    * 초대 수락 페이지 데이터 조회
    * 
    * 사용자가 초대 링크를 클릭했을 때 표시할 초대 정보를 조회합니다.

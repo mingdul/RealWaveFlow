@@ -61,6 +61,21 @@ export class CategoryService {
     return `This action updates a #${id} category`;
   }
 
+  async getCategoryByStemId(stemId: string): Promise<Category> {
+    // VersionStem을 통해 category를 조회
+    const versionStem = await this.categoryRepository
+      .createQueryBuilder('category')
+      .innerJoin('category.version_stems', 'version_stem')
+      .where('version_stem.id = :stemId', { stemId })
+      .getOne();
+
+    if (!versionStem) {
+      throw new NotFoundException(`Category not found for stem ID: ${stemId}`);
+    }
+
+    return versionStem;
+  }
+
   remove(id: number) {
     return `This action removes a #${id} category`;
   }

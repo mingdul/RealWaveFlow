@@ -118,6 +118,33 @@ export class StemJobController {
     }
   }
 
+  @Post('dup-check')
+  @ApiOperation({ summary: 'upstream에 stem 파일 올릴시 중복 체크', description: 'upstream에 stem파일을 업로드 할시에 중복을 체크하는 메세지생성' })
+  @ApiBody({ type: CreateStemJobDto })
+  @ApiResponse({ status: 201, description: '스템 작업 생성 성공' })
+  @ApiResponse({ status: 400, description: '입력값 유효성 검사 실패' })
+  @ApiResponse({ status: 401, description: '인증되지 않은 사용자' })
+  
+  async dupCheck(@Body() createStemJobDto: CreateStemJobDto, @Request() req) {
+    try {
+      const job = await this.stemJobService.dubjob(createStemJobDto, req.user.id);
+      
+      return {
+        success: true,
+        message: 'Stem job created successfully',
+        job,
+      };
+    } catch (error) {
+      this.logger.error('스템 작업 생성 실패:', error);
+      return {
+        success: false,
+        message: 'Failed to create stem job',
+        error: error.message,
+      };
+    }
+  }
+
+
   @Get('/track/:track_id')
   @ApiOperation({ summary: '트랙별 스템 작업 조회', description: '특정 트랙의 모든 스템 작업을 조회합니다.' })
   @ApiParam({ name: 'track_id', description: '트랙 ID' })

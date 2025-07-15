@@ -77,7 +77,7 @@ export const getLatestStage = async (trackId: string) => {
 
 export const getBackToPreviousStage = async (trackId: string, version: number) => {
   try { 
-    const response = await apiClient.get(`/stage/back-to-previous-stage/${trackId}/${version}`);
+    const response = await apiClient.delete(`/stage/back-to-previous-stage/${trackId}/${version}`);
     if(!response.data.success){
       throw new Error(response.data.message);
     }
