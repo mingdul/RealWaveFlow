@@ -3,6 +3,7 @@ import WaveSurfer from 'wavesurfer.js';
 import Wave from '../components/wave';
 import Logo from '../components/Logo';  
 import { getStageUpstreams } from '../services/upstreamService';
+import { getStageDetail, getStageByTrackIdAndVersion } from '../services/stageService';
 import streamingService from '../services/streamingService';
 import { useParams } from 'react-router-dom';
 import {
@@ -38,12 +39,68 @@ const StemSetReviewPage = () => {
   const [showExtraWaveform, setShowExtraWaveform] = useState(false);
   const [stemsLoading] = useState(false);
   const [upstreams, setUpstreams] = useState<any[]>([]);
+  const [guideAudioUrl, setGuideAudioUrl] = useState<string>('');
+  const [guideLoading, setGuideLoading] = useState(false);
 
   const wavesurferRefs = useRef<{ [id: string]: WaveSurfer }>({});
   const [readyStates, setReadyStates] = useState<{ [id: string]: boolean }>({});
   const isSeeking = useRef(false); // 무한 루프 방지용 플래그
   const {stageId} = useParams<{stageId: string}>();
 
+  // 이전 버전의 가이드 스템 URL 가져오기
+  useEffect(() => {
+    const fetchPreviousGuideUrl = async () => {
+      if (!stageId) return;
+      
+      try {
+        setGuideLoading(true);
+        
+        // 1. 현재 스테이지 정보 가져오기
+        const currentStage = await getStageDetail(stageId);
+        if (!currentStage) {
+          console.error('Current stage not found');
+          return;
+        }
+        
+        const { track, version } = currentStage;
+        const trackId = track.id;
+        const currentVersion = version;
+        
+        // 2. 이전 버전이 있는지 확인
+        if (currentVersion <= 1) {
+          console.log('No previous version available');
+          return;
+        }
+        
+        // 3. 이전 버전의 스테이지 정보 가져오기
+        const previousStage = await getStageByTrackIdAndVersion(trackId, currentVersion - 1);
+        if (!previousStage) {
+          console.error('Previous stage not found');
+          return;
+        }
+        
+        // 4. 이전 스테이지의 guide_path 확인
+        const guidePath = previousStage.guide_path;
+        if (!guidePath) {
+          console.log('No guide path in previous stage');
+          return;
+        }
+        
+        // 5. guide_path를 presigned URL로 변환
+        const response = await streamingService.getGuidePresignedUrl(guidePath, trackId);
+        if (response.success && response.data) {
+          setGuideAudioUrl(response.data.presignedUrl);
+        }
+        
+      } catch (error) {
+        console.error('Failed to fetch previous guide URL:', error);
+      } finally {
+        setGuideLoading(false);
+      }
+    };
+
+    fetchPreviousGuideUrl();
+  }, [stageId]);
 
   useEffect(() => {
     const fetchUpstreams = async () => {
@@ -463,17 +520,24 @@ const StemSetReviewPage = () => {
 
       {/* Waveform */}
       <div className='space-y-6'>
-        <Wave
-          onReady={handleReady}
-          audioUrl='/audio/track_ex.wav'
-          waveColor='#f87171'
-          id='main'
-          isPlaying={isPlaying}
-          currentTime={currentTime}
-          onSolo={handleMainSolo}
-          isSolo={soloTrack === 'main'}
-          onSeek={handleSeek}
-        />
+        {guideLoading ? (
+          <div className='flex justify-center items-center py-8'>
+            <div className='animate-spin rounded-full h-8 w-8 border-b-2 border-white mr-3'></div>
+            <span className='text-white'>Loading previous guide...</span>
+          </div>
+        ) : (
+          <Wave
+            onReady={handleReady}
+            audioUrl={guideAudioUrl || '/audio/track_ex.wav'}
+            waveColor='#f87171'
+            id='main'
+            isPlaying={isPlaying}
+            currentTime={currentTime}
+            onSolo={handleMainSolo}
+            isSolo={soloTrack === 'main'}
+            onSeek={handleSeek}
+          />
+        )}
 
         {showExtraWaveform && extraAudio && (
           <Wave
