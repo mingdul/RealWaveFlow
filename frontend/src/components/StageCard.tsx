@@ -29,8 +29,9 @@ const StageCard: React.FC<StageCardProps> = ({ stage, isSelected, onClick, index
     }
   };
 
-  const formatDate = (dateString: string) => {
-    return new Date(dateString).toLocaleDateString('ko-KR', { 
+  const formatDate = (date: Date | string) => {
+    const dateObj = typeof date === 'string' ? new Date(date) : date;
+    return dateObj.toLocaleDateString('ko-KR', { 
       year: '2-digit', 
       month: '2-digit', 
       day: '2-digit' 
