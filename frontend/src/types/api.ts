@@ -49,12 +49,12 @@ export interface CreateTrackDto {
 }
 
 export interface TrackCollaborator {
-  id: number;
-  track_id: number;
-  user_id: string;
+  id: string;
+  track_id: string;
+  user_id: User;
   role: 'owner' | 'collaborator' | 'viewer';
   permissions: string;
-  user?: User;
+  status: string;
 }
 
 // 브랜치 관련 타입

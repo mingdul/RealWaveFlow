@@ -1,4 +1,6 @@
-import { IsArray, IsOptional, IsString, IsUUID } from 'class-validator';
+import { IsArray, IsOptional, IsString, IsUUID, IsNotEmpty, ValidateNested } from 'class-validator';
+import { ApiProperty } from '@nestjs/swagger';
+import { Type } from 'class-transformer';
 
 /**
  * 배치 스트리밍 요청 DTO
@@ -111,4 +113,50 @@ export interface StreamingResponse<T = any> {
   message?: string;              // 오류 메시지 (실패 시)
   data?: T;                      // 응답 데이터 (성공 시)
   urlExpiresAt?: string;         // URL 만료 시간 (선택사항)
+}
+
+/**
+ * Guide Path 스트리밍 요청 DTO
+ */
+export class GuidePathStreamingDto {
+  @ApiProperty({ description: 'Guide 파일 경로', example: 'guides/track-123/stage-456/mixed.wav' })
+  @IsString()
+  @IsNotEmpty()
+  guidePath: string;
+
+  @ApiProperty({ description: '트랙 ID (권한 검증용)', example: 'uuid-track-id' })
+  @IsString()
+  @IsNotEmpty()
+  trackId: string;
+}
+
+/**
+ * Guide Path 배치 스트리밍 요청 DTO
+ */
+export class BatchGuidePathStreamingDto {
+  @ApiProperty({ 
+    description: 'Guide Path 정보 배열',
+    type: [GuidePathStreamingDto]
+  })
+  @IsArray()
+  @ValidateNested({ each: true })
+  @Type(() => GuidePathStreamingDto)
+  guidePaths: GuidePathStreamingDto[];
+}
+
+/**
+ * Guide Path 스트리밍 응답 DTO
+ */
+export class GuidePathStreamingResponse {
+  @ApiProperty({ description: 'Guide 파일 경로' })
+  guidePath: string;
+
+  @ApiProperty({ description: 'Presigned URL' })
+  presignedUrl: string;
+
+  @ApiProperty({ description: 'URL 만료 시간' })
+  urlExpiresAt: string;
+
+  @ApiProperty({ description: '파일명 (경로에서 추출)' })
+  fileName: string;
 }

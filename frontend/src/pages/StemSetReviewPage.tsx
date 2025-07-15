@@ -5,13 +5,14 @@ import Logo from '../components/Logo';
 import {
   getStageUpstreams,
   getUpstreamStems,
+  getUpstreamDetail,
 } from '../services/upstreamService';
 import {
   getStageDetail,
   getStageByTrackIdAndVersion,
 } from '../services/stageService';
 import streamingService from '../services/streamingService';
-import { useParams } from 'react-router-dom';
+import { useParams, useSearchParams } from 'react-router-dom';
 import { useAuth } from '../contexts/AuthContext';
 import {
   approveDropReviewer,
@@ -34,7 +35,7 @@ import {
   ZoomOut,
   Trash2,
   Edit2,
-  Square
+  Square,
 } from 'lucide-react';
 
 // Comment interface updated to match backend response
@@ -73,11 +74,49 @@ const StemSetReviewPage = () => {
   const [upstreamStems, setUpstreamStems] = useState<any[]>([]);
   const [guideAudioUrl, setGuideAudioUrl] = useState<string>('');
   const [guideLoading, setGuideLoading] = useState(false);
+  const [guideLoadAttempted, setGuideLoadAttempted] = useState(false); // 가이드 로드 시도 여부 추가
 
   const wavesurferRefs = useRef<{ [id: string]: WaveSurfer }>({});
   const [readyStates, setReadyStates] = useState<{ [id: string]: boolean }>({});
   const isSeeking = useRef(false); // 무한 루프 방지용 플래그
-  const { stageId } = useParams<{ stageId: string }>();
+  const { stageId: paramStageId } = useParams<{ stageId: string }>();
+  const [searchParams] = useSearchParams();
+  const [stageId, setStageId] = useState<string | null>(null);
+
+  // stageId 결정 로직 (URL 파라미터 또는 upstreamId로부터)
+  useEffect(() => {
+    const determineStageId = async () => {
+      // URL 파라미터에 stageId가 있으면 직접 사용
+      if (paramStageId) {
+        console.log('🎯 Using stageId from URL params:', paramStageId);
+        setStageId(paramStageId);
+        return;
+      }
+
+      // 쿼리 파라미터에 upstreamId가 있으면 upstream 정보를 통해 stageId 추출
+      const upstreamId = searchParams.get('upstreamId');
+      if (upstreamId) {
+        try {
+          console.log('🔍 Found upstreamId in query params:', upstreamId);
+          // upstream 정보를 가져와서 stageId 추출
+          const upstreamData = await getUpstreamDetail(upstreamId);
+          const extractedStageId =
+            upstreamData.stage?.id || upstreamData.stage_id;
+          console.log('✅ Extracted stageId from upstream:', extractedStageId);
+          setStageId(extractedStageId);
+
+          // 선택된 upstream 설정 (나중에 사용할 수 있도록)
+          setSelectedUpstream(upstreamData);
+        } catch (error) {
+          console.error('❌ Error fetching upstream details:', error);
+        }
+      } else {
+        console.log('⚠️ No stageId or upstreamId found in URL');
+      }
+    };
+
+    determineStageId();
+  }, [paramStageId, searchParams]);
 
   // 상태 변경 추적을 위한 로그
   useEffect(() => {
@@ -95,6 +134,7 @@ const StemSetReviewPage = () => {
 
       try {
         setGuideLoading(true);
+        setGuideLoadAttempted(true); // 로드 시도 표시
 
         // 1. 현재 스테이지 정보 가져오기
         const currentStage = await getStageDetail(stageId);
@@ -109,7 +149,8 @@ const StemSetReviewPage = () => {
 
         // 2. 이전 버전이 있는지 확인
         if (currentVersion <= 1) {
-          console.log('No previous version available');
+          console.log('No previous version available, using fallback audio');
+          setGuideAudioUrl('/audio/track_ex.wav');
           return;
         }
 
@@ -118,28 +159,26 @@ const StemSetReviewPage = () => {
           trackId,
           currentVersion - 1
         );
-        if (!previousStage) {
-          console.error('Previous stage not found');
-          return;
-        }
 
-        // 4. 이전 스테이지의 guide_path 확인
-        const guidePath = previousStage.guide_path;
-        if (!guidePath) {
-          console.log('No guide path in previous stage');
-          return;
-        }
+        const prevStageId = previousStage.id;
 
         // 5. guide_path를 presigned URL로 변환
-        const response = await streamingService.getGuidePresignedUrl(
-          guidePath,
-          trackId
-        );
+        const response =
+          await streamingService.getGuidePresignedUrlByStageId(prevStageId);
         if (response.success && response.data) {
+          console.log(
+            '✅ Guide URL loaded successfully:',
+            response.data.presignedUrl
+          );
           setGuideAudioUrl(response.data.presignedUrl);
+        } else {
+          console.log('⚠️ Guide URL not found, using fallback');
+          setGuideAudioUrl('/audio/track_ex.wav');
         }
       } catch (error) {
         console.error('Failed to fetch previous guide URL:', error);
+        console.log('🔄 Using fallback due to error');
+        setGuideAudioUrl('/audio/track_ex.wav');
       } finally {
         setGuideLoading(false);
       }
@@ -616,6 +655,9 @@ const StemSetReviewPage = () => {
   }, [currentTime, readyStates, isPlaying]);
 
   const handleApprove = async () => {
+    console.log('🔍 Stage ID:', stageId);
+    console.log('🔍 Selected Upstream:', selectedUpstream);
+
     if (!stageId || !selectedUpstream) {
       alert('Stage 또는 Upstream이 선택되지 않았습니다.');
       return;
@@ -693,7 +735,7 @@ const StemSetReviewPage = () => {
         </div>
 
         {/* 🔽 Header 아래로 이동된 버튼들 */}
-        <div className="flex justify-end space-x-4 mt-4">
+        <div className='mt-4 flex justify-end space-x-4'>
           <button
             onClick={() => setShowHistory(!showHistory)}
             className='self-start rounded bg-[#3a3a3a] px-3 py-1 text-sm hover:bg-[#555]'
@@ -1026,10 +1068,10 @@ const StemSetReviewPage = () => {
               <div className='mr-3 h-8 w-8 animate-spin rounded-full border-b-2 border-white'></div>
               <span className='text-white'>Loading previous guide...</span>
             </div>
-          ) : (
+          ) : guideLoadAttempted && guideAudioUrl ? (
             <Wave
               onReady={handleReady}
-              audioUrl={guideAudioUrl || '/audio/track_ex.wav'}
+              audioUrl={guideAudioUrl}
               waveColor='#f87171'
               id='main'
               isPlaying={isPlaying}
@@ -1038,6 +1080,12 @@ const StemSetReviewPage = () => {
               isSolo={soloTrack === 'main'}
               onSeek={handleSeek}
             />
+          ) : (
+            <div className='flex items-center justify-center py-8'>
+              <span className='text-sm text-white'>
+                No guide audio available for this stage
+              </span>
+            </div>
           )}
 
           {showExtraWaveform && extraAudio && (

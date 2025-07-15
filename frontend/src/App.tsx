@@ -41,7 +41,8 @@ const App = () => {
               <Route path="/track/:trackId" element={<TrackPage />} />
               <Route path="/invite/:token" element={<InvitePage />} />
               <Route path="/stage/:stageId" element={<StagePage />} />
-              <Route path="/review" element={<StemSetReviewPage />} />
+              {/* <Route path="/review" element={<StemSetReviewPage />} /> */}
+              <Route path="/review/:stageId" element={<StemSetReviewPage />} />
               <Route path="*" element={<Notfound />} />
               {/* <Route path="/master" element={<MasterPage />} />
               <Route path="/commit" element={<CommitPage />} />

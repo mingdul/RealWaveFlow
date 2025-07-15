@@ -224,6 +224,11 @@ const TrackPage: React.FC<TrackPageProps> = () => {
     return activeStage;
   };
 
+  // 선택된 버전에 해당하는 스테이지 가져오기
+  const getSelectedStage = () => {
+    return stages.find((stage) => stage.version === selectedStageVersion);
+  };
+
   // 버전 1 여부 확인
   const isVersion1 = () => {
     const activeStage = getActiveStage();
@@ -287,6 +292,7 @@ const TrackPage: React.FC<TrackPageProps> = () => {
             versionNumber={selectedStageVersion.toString()}
             onShowAllStems={handleShowAllStems}
             onRollBack={handleRollBack}
+            stageId={getSelectedStage()?.id}
           />
 
           {/* 현재 활성 스테이지 정보 표시
@@ -330,6 +336,7 @@ const TrackPage: React.FC<TrackPageProps> = () => {
           versionNumber={selectedStageVersion.toString()}
           loading={stemsLoading}
           onRollBack={handleRollBack}
+          stageId={getSelectedStage()?.id}
         />
       </div>
     </div>
