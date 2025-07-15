@@ -5,6 +5,7 @@ import StepProgress from './StepProgress';
 import s3UploadService from '../services/s3UploadService';
 import stemJobService from '../services/stemJobService';
 import { useToast } from '../contexts/ToastContext';
+import { getRandomDefaultImageUrl } from '../utils/imageUtils';
 
 interface CreateTrackModalProps {
   onClose: () => void;
@@ -85,6 +86,10 @@ const CreateTrackModal: React.FC<CreateTrackModalProps> = ({ onClose, onSubmit }
           showError(`이미지 업로드 실패: ${error.message}`);
           return;
         }
+      } else {
+        // 이미지를 업로드하지 않은 경우 기본 이미지 랜덤 선택
+        imageKey = getRandomDefaultImageUrl();
+        console.log('[DEBUG] CreateTrackModal - Using default image:', imageKey);
       }
 
       // 2. stem-job/init-start API 호출

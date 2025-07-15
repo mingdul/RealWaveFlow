@@ -209,6 +209,7 @@ const DashboardPageV2 = () => {
           {/* 실제 이미지 */}
           <PresignedImage
             trackId={track.id}
+            imageUrl={track.image_url}
             alt={track.title}
             className="absolute inset-0 w-full h-full object-cover"
           />

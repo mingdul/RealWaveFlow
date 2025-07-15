@@ -61,6 +61,7 @@ const ProjectCard: React.FC<ProjectCardProps> = ({
         <Headphones size={64} className="text-white opacity-60" />
         <PresignedImage
           trackId={track.id}
+          imageUrl={track.image_url}
           alt={track.title}
           className="absolute inset-0 w-full h-full object-cover"
         />
