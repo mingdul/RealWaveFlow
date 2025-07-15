@@ -52,3 +52,16 @@ export const getLatestStage = async (trackId: string) => {
       return null;
     }
   }; 
+
+export const getBackToPreviousStage = async (trackId: string, version: number) => {
+  try { 
+    const response = await apiClient.get(`/stage/back-to-previous-stage/${trackId}/${version}`);
+    if(!response.data.success){
+      throw new Error(response.data.message);
+    }
+    return response.data.message;
+  } catch (error: any) {
+    console.error('Failed to get back to previous stage:', error);
+    return error.response?.data?.message || 'Failed to get back to previous stage';
+  }
+};

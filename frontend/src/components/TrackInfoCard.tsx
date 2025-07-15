@@ -4,6 +4,7 @@ import { Button, StemPlayer } from './';
 import { Track } from '../types/api';
 import { StemStreamingInfo } from '../services/streamingService';
 import PresignedImage from './PresignedImage';
+import ConfirmModal from './ConfirmModal';
 
 interface TrackInfoCardProps {
   track: Track;
@@ -22,8 +23,8 @@ const TrackInfoCard: React.FC<TrackInfoCardProps> = ({
   onRollBack,
   stemsLoading = false
 }) => {
-  console.log('TrackInfoCard track:', track);
   const [showPlayer, setShowPlayer] = useState(false);
+  const [showRollbackConfirm, setShowRollbackConfirm] = useState(false);
 
   const handlePlayClick = () => {
     if (stems.length > 0) {
@@ -44,9 +45,9 @@ const TrackInfoCard: React.FC<TrackInfoCardProps> = ({
             className="w-80 h-80 rounded-lg shadow-lg object-cover"
           />
         </div>
+
         {/* Track Details */}
         <div className="flex-1">
-          {/* Track Info */}
           <h2 className="text-4xl font-bold text-white mb-2">{track.title}</h2>
           <p className="text-gray-400 text-lg mb-4">{track.created_date}</p>
           <div className="flex gap-6 mb-4">
@@ -54,7 +55,7 @@ const TrackInfoCard: React.FC<TrackInfoCardProps> = ({
             <span className="text-gray-400">{track.bpm}</span>
             <span className="text-gray-400">{track.key_signature}</span>
           </div>
-          
+
           <div className="mb-6">
             <h3 className="text-lg font-semibold text-white mb-2">{track.owner_id.username}</h3>
             <p className="text-gray-300 leading-relaxed">{track.description}</p>
@@ -81,7 +82,7 @@ const TrackInfoCard: React.FC<TrackInfoCardProps> = ({
               size="lg"
               onClick={onShowAllStems}
             >
-              모든 스템보기
+              View All Stems
             </Button>
           </div>
 
@@ -89,9 +90,9 @@ const TrackInfoCard: React.FC<TrackInfoCardProps> = ({
             variant="secondary" 
             size="sm" 
             className="bg-purple-600 hover:bg-purple-700"
-            onClick={onRollBack}
+            onClick={() => setShowRollbackConfirm(true)}
           >
-            roll back
+            Roll Back
           </Button>
         </div>
 
@@ -118,8 +119,22 @@ const TrackInfoCard: React.FC<TrackInfoCardProps> = ({
           <StemPlayer stems={stems} />
         </div>
       )}
+
+      {/*  Confirm Modal */}
+      <ConfirmModal
+        isOpen={showRollbackConfirm}
+        title="Are you sure you want to roll back?"
+        description="All stages created after the selected version will be permanently deleted. This action cannot be undone."
+        confirmText="Confirm Rollback"
+        cancelText="Cancel"
+        onConfirm={() => {
+          setShowRollbackConfirm(false);
+          if (onRollBack) onRollBack();
+        }}
+        onCancel={() => setShowRollbackConfirm(false)}
+      />
     </div>
   );
 };
 
-export default TrackInfoCard; 
+export default TrackInfoCard;
