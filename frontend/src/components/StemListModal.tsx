@@ -32,7 +32,7 @@ const StemListModal: React.FC<StemListModalProps> = ({
               Version {versionNumber}
             </h2>
             <h3 className="text-[#BFBFBF] text-sm">
-              Description
+              upstreams message
             </h3>
             <p>
               
