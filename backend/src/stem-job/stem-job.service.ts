@@ -227,6 +227,7 @@ export class StemJobService {
             uploaded_at: new Date(),
             user: { id: userId }
         });
+        console.log(`${job.upstream_id}`)
 
         return  await this.stemRepository.save(stem);
     }
