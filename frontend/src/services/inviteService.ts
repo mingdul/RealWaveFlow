@@ -16,6 +16,24 @@ class InviteService {
 
     return response.data.invite ;
   }
+
+  async sendTrackInvites(trackId: string, emails: string[]) {
+    const response = await apiClient.post(
+      `/invite/track/${trackId}`,
+      {
+        emails
+      },
+      {
+        withCredentials: true,
+      }
+    );
+
+    if (!response.data.success) {
+      throw new Error(response.data.message);
+    }
+
+    return response.data;
+  }
 }
 
 export default new InviteService();

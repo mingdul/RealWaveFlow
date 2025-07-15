@@ -347,6 +347,54 @@ export class InviteController {
   }
 
   /**
+   * 트랙별 초대 발송
+   * 
+   * 특정 트랙에 대한 협업자 초대를 발송하는 API입니다.
+   * 프론트엔드에서 트랙 페이지에서 직접 호출하는 용도입니다.
+   * 
+   * @param trackId - 트랙 ID (URL 파라미터)
+   * @param body - 초대 데이터
+   * @param body.emails - 초대할 이메일 목록
+   * @param req - HTTP 요청 객체 (JWT 토큰 포함)
+   * 
+   * @returns 초대 발송 결과
+   * - success: 성공 여부
+   * - sent_count: 성공적으로 발송된 이메일 수
+   * - failed_emails: 실패한 이메일 목록
+   * 
+   * 인증: JWT 토큰 필요 (트랙 소유자만)
+   * 
+   * 사용 예시:
+   * POST /invite/track/123e4567-e89b-12d3-a456-426614174000
+   * {
+   *   "emails": ["user1@example.com", "user2@example.com"]
+   * }
+   */
+  @Post('track/:trackId')
+  @UseGuards(AuthGuard('jwt'))
+  @ApiOperation({ summary: '트랙별 초대 발송', description: '특정 트랙에 대한 협업자 초대를 발송합니다.' })
+  @ApiParam({ name: 'trackId', description: '트랙 ID' })
+  @ApiBody({ schema: { type: 'object', properties: { emails: { type: 'array', items: { type: 'string' } } } } })
+  @ApiResponse({ status: 200, description: '초대 발송 성공' })
+  @ApiResponse({ status: 401, description: '인증되지 않은 사용자' })
+  @ApiResponse({ status: 403, description: '권한 없음' })
+  @ApiResponse({ status: 404, description: '트랙을 찾을 수 없음' })
+  async sendTrackInvites(
+    @Param('trackId') trackId: string,
+    @Body() body: { emails: string[] },
+    @Req() req: any
+  ) {
+    const inviterId = req.user.id;
+    const sendInviteDto = {
+      trackId,
+      emails: body.emails,
+      expiresInDays: 7
+    };
+    
+    return this.inviteService.sendInvites(sendInviteDto, inviterId);
+  }
+
+  /**
    * 공개 초대 링크 생성 (기존 시스템)
    * 
    * 기존 시스템과의 호환성을 위해 유지되는 API입니다.
