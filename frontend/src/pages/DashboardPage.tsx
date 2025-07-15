@@ -11,6 +11,7 @@ import { Track } from '../types/api';
 import Logo from '../components/Logo';
 import InitProjectModal from '../components/InitProjectModal';
 import CreateTrackModal from '../components/CreateTrackModal';
+import PresignedImage from '../components/PresignedImage';
 
 const DashboardPage = () => {
   const navigate = useNavigate();
@@ -199,8 +200,13 @@ const DashboardPage = () => {
         onClick={() => handleTrackClick(track.id)}
         className="bg-neutral-800 rounded-xl overflow-hidden shadow-lg hover:shadow-xl hover:scale-105 transition-all duration-300 cursor-pointer relative group"
       >
-        <div className="aspect-video bg-gradient-to-br from-purple-600 to-blue-600 flex items-center justify-center">
+        <div className="aspect-video bg-gradient-to-br from-purple-600 to-blue-600 flex items-center justify-center relative">
           <Headphones size={64} className="text-white opacity-60" />
+          <PresignedImage
+            trackId={track.id}
+            alt={track.title}
+            className="absolute inset-0 w-full h-full object-cover"
+          />
         </div>
         
         {/* 편집/삭제 버튼 */}

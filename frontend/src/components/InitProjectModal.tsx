@@ -208,7 +208,7 @@ const FileSelectionAndUploadStep: React.FC<{
                     <div className="grid grid-cols-1 md:grid-cols-3 gap-3 text-sm">
                       <div>
                         <label className="block text-gray-400 text-xs mb-2">Instrument</label>
-                        <div className="grid grid-cols-4 gap-1">
+                        <div className="grid grid-cols-8 gap-1">
                           {tagOptions.map(tag => {
                             const Icon = tag.icon;
                             return (
