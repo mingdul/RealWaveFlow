@@ -217,7 +217,7 @@ const DashboardPageV2 = () => {
     return (
       <div
         onClick={() => handleTrackClick(track.id)}
-        className='group cursor-pointer overflow-hidden rounded-2xl shadow-lg transition-all duration-300 hover:shadow-xl'
+        className='group cursor-pointer overflow-hidden  shadow-lg transition-all duration-300 hover:shadow-xl'
       >
         <div className='relative flex aspect-square items-center justify-center overflow-hidden bg-gradient-to-br from-purple-600 to-blue-600'>
           {/* 기본 이미지 */}
