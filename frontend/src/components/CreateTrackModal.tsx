@@ -5,6 +5,7 @@ import StepProgress from './StepProgress';
 import s3UploadService from '../services/s3UploadService';
 import stemJobService from '../services/stemJobService';
 import { useToast } from '../contexts/ToastContext';
+import { getRandomDefaultImageUrl } from '../utils/imageUtils';
 
 interface CreateTrackModalProps {
   onClose: () => void;
@@ -28,6 +29,13 @@ const CreateTrackModal: React.FC<CreateTrackModalProps> = ({ onClose, onSubmit }
   const [imageUploadProgress, setImageUploadProgress] = useState(0);
 
   const steps = ['Create Track', 'Upload Files'];
+  // Dropdown option lists
+  const genresList: string[] = ['Hip-hop', 'Pop', 'R&B', 'Rock', 'Jazz', 'Classical', 'Electronic', 'Country', 'Reggae', 'Other'];
+  const keySignatureList: string[] = [
+    'C Major', 'C Minor', 'C# Major', 'C# Minor', 'D Major', 'D Minor', 'D# Major', 'D# Minor',
+    'E Major', 'E Minor', 'F Major', 'F Minor', 'F# Major', 'F# Minor', 'G Major', 'G Minor',
+    'G# Major', 'G# Minor', 'A Major', 'A Minor', 'A# Major', 'A# Minor', 'B Major', 'B Minor'
+  ];
 
   const handleImageUpload = (e: React.ChangeEvent<HTMLInputElement>) => {
     const file = e.target.files?.[0];
@@ -78,6 +86,10 @@ const CreateTrackModal: React.FC<CreateTrackModalProps> = ({ onClose, onSubmit }
           showError(`이미지 업로드 실패: ${error.message}`);
           return;
         }
+      } else {
+        // 이미지를 업로드하지 않은 경우 기본 이미지 랜덤 선택
+        imageKey = getRandomDefaultImageUrl();
+        console.log('[DEBUG] CreateTrackModal - Using default image:', imageKey);
       }
 
       // 2. stem-job/init-start API 호출
@@ -147,7 +159,7 @@ const CreateTrackModal: React.FC<CreateTrackModalProps> = ({ onClose, onSubmit }
         <div className="flex-1 overflow-hidden p-6">
           <StepProgress currentStep={1} steps={steps} />
           
-                      <div className="max-h-[60vh] overflow-y-auto">
+                      <div className="max-h-[60vh] overflow-y-auto pb-32">
             <div className="grid grid-cols-1 lg:grid-cols-2 gap-8">
               {/* Left Column - Track Info */}
               <div className="space-y-6">
@@ -181,13 +193,16 @@ const CreateTrackModal: React.FC<CreateTrackModalProps> = ({ onClose, onSubmit }
                     <div className="grid grid-cols-2 gap-4">
                       <div>
                         <label className="block text-gray-300 text-sm mb-2">Genre</label>
-                        <input
-                          type="text"
+                        <select
                           value={formData.genre}
                           onChange={(e) => setFormData({ ...formData, genre: e.target.value })}
                           className="w-full bg-gray-700 text-white rounded-lg px-4 py-3 border border-gray-600 focus:outline-none focus:ring-2 focus:ring-purple-500 focus:border-transparent transition-all"
-                          placeholder="e.g. Hip-hop, Pop"
-                        />
+                        >
+                          <option value="">Select genre</option>
+                          {genresList.map((g) => (
+                            <option key={g} value={g}>{g}</option>
+                          ))}
+                        </select>
                       </div>
                       <div>
                         <label className="block text-gray-300 text-sm mb-2">BPM</label>
@@ -202,13 +217,16 @@ const CreateTrackModal: React.FC<CreateTrackModalProps> = ({ onClose, onSubmit }
                     </div>
                     <div>
                       <label className="block text-gray-300 text-sm mb-2">Key Signature</label>
-                      <input
-                        type="text"
+                      <select
                         value={formData.key_signature}
                         onChange={(e) => setFormData({ ...formData, key_signature: e.target.value })}
                         className="w-full bg-gray-700 text-white rounded-lg px-4 py-3 border border-gray-600 focus:outline-none focus:ring-2 focus:ring-purple-500 focus:border-transparent transition-all"
-                        placeholder="e.g. C major, A minor"
-                      />
+                      >
+                        <option value="">Select key signature</option>
+                        {keySignatureList.map((k) => (
+                          <option key={k} value={k}>{k}</option>
+                        ))}
+                      </select>
                     </div>
                   </div>
                 </div>

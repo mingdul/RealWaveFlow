@@ -198,7 +198,7 @@ const DashboardPageV2 = () => {
     return (
       <div 
         onClick={() => handleTrackClick(track.id)}
-        className="bg-neutral-800 rounded-2xl overflow-hidden shadow-lg hover:shadow-xl transition-all duration-300 cursor-pointer group"
+        className="rounded-2xl overflow-hidden shadow-lg hover:shadow-xl transition-all duration-300 cursor-pointer group"
       >
         <div className="aspect-square bg-gradient-to-br from-purple-600 to-blue-600 flex items-center justify-center relative overflow-hidden">
           {/* 기본 이미지 */}
@@ -209,6 +209,7 @@ const DashboardPageV2 = () => {
           {/* 실제 이미지 */}
           <PresignedImage
             trackId={track.id}
+            imageUrl={track.image_url}
             alt={track.title}
             className="absolute inset-0 w-full h-full object-cover"
           />
@@ -261,7 +262,6 @@ const DashboardPageV2 = () => {
         </div>
         <div className="p-4">
           <h3 className="text-white text-lg font-semibold mb-1 truncate">{track.title}</h3>
-          <p className="text-gray-400 text-sm truncate">{track.updated_date || 'Genre not specified'}</p>
         </div>
       </div>
     );
@@ -420,15 +420,14 @@ const DashboardPageV2 = () => {
             variant={filter === 'owned' ? 'primary' : 'secondary'}
             className="flex items-center space-x-2"
           >
-            <span>My Tracks</span>
+            <span>OWNED</span>
           </Button>
           <Button 
             onClick={() => setFilter('collaborated')}
             variant={filter === 'collaborated' ? 'primary' : 'secondary'}
             className="flex items-center space-x-2"
           >
-            <Users size={16} />
-            <span>Collaborative Tracks</span>
+            <span>COLLABORATED</span>
           </Button>
         </div>
 
