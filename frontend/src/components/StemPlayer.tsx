@@ -89,18 +89,7 @@ const StemPlayer: React.FC<StemPlayerProps> = ({ stems, className = '', stageId}
     };
   }, [guideUrl, isPlaying]);
 
-  // currentTime 변경 시 모든 스템들 동기화
-  useEffect(() => {
-    // 마스터가 재생 중이 아닐 때만 동기화 (재생 중에는 가이드가 시간을 주도)
-    if (!isPlaying) {
-      stems.forEach(stem => {
-        const stemAudio = stemRefs.current[stem.id];
-        if (stemAudio && Math.abs(stemAudio.currentTime - currentTime) > 0.1) {
-          stemAudio.currentTime = currentTime;
-        }
-      });
-    }
-  }, [currentTime, stems, isPlaying]);
+
 
   // 마스터 재생/일시정지
   const handleMasterPlayPause = async () => {
@@ -147,33 +136,7 @@ const StemPlayer: React.FC<StemPlayerProps> = ({ stems, className = '', stageId}
         }
       }
 
-      // 마스터 재생 시 모든 스템들을 현재 시간으로 동기화
-      // setTimeout을 사용하여 가이드 오디오 로드 완료 후 동기화
-      const syncStemsWithCurrentTime = () => {
-        stems.forEach(stem => {
-          const stemAudio = stemRefs.current[stem.id];
-          if (stemAudio) {
-            stemAudio.currentTime = currentTime;
-          }
-        });
-      };
 
-      // 가이드가 있는 경우 가이드 오디오 로드 후 동기화
-      if (stageId && guideAudioRef.current) {
-        const handleCanPlay = () => {
-          syncStemsWithCurrentTime();
-          guideAudioRef.current?.removeEventListener('canplay', handleCanPlay);
-        };
-        guideAudioRef.current.addEventListener('canplay', handleCanPlay);
-        
-        // 이미 로드되어 있는 경우를 위한 fallback
-        if (guideAudioRef.current.readyState >= 3) {
-          syncStemsWithCurrentTime();
-        }
-      } else {
-        // 가이드가 없는 경우 즉시 동기화
-        syncStemsWithCurrentTime();
-      }
     } else {
       // Stop guide playback when pausing
       if (guideAudioRef.current) {
@@ -188,24 +151,16 @@ const StemPlayer: React.FC<StemPlayerProps> = ({ stems, className = '', stageId}
     setIsPlaying(willPlay);
   };
 
-  // 마스터 정지
+  // 마스터 정지 - 가이드만 정지
   const handleMasterStop = () => {
     setIsPlaying(false);
     setCurrentTime(0);
     
-    // Reset guide audio
+    // Reset guide audio only
     if (guideAudioRef.current) {
       guideAudioRef.current.pause();
       guideAudioRef.current.currentTime = 0;
     }
-    
-    // Reset all stem audio
-    stems.forEach(stem => {
-      const stemAudio = stemRefs.current[stem.id];
-      if (stemAudio) {
-        stemAudio.currentTime = 0;
-      }
-    });
     
     setGuideUrl(null);
   };
@@ -274,7 +229,7 @@ const StemPlayer: React.FC<StemPlayerProps> = ({ stems, className = '', stageId}
     }));
   };
 
-  // 시간 업데이트 - 개별 스템이 재생 중일 때만 마스터 시간 업데이트
+  // 시간 업데이트 - 스템들은 독립적으로 시간 관리
   const handleTimeUpdate = (stemId: string, time: number) => {
     setStemStates(prev => ({
       ...prev,
@@ -283,11 +238,6 @@ const StemPlayer: React.FC<StemPlayerProps> = ({ stems, className = '', stageId}
         currentTime: time
       }
     }));
-
-    // 해당 스템이 재생 중일 때만 마스터 시간 업데이트
-    if (stemStates[stemId]?.isPlaying && !isPlaying) {
-      setCurrentTime(time);
-    }
   };
 
   // 시간 표시 포맷
@@ -300,7 +250,7 @@ const StemPlayer: React.FC<StemPlayerProps> = ({ stems, className = '', stageId}
   // 최대 재생 시간 계산
   const maxDuration = Math.max(...Object.values(stemStates).map(state => state.duration || 0));
 
-  // 프로그레스 바 클릭 핸들러 - 실제 오디오 시간 변경
+  // 프로그레스 바 클릭 핸들러 - 가이드 오디오만 제어
   const handleProgressBarClick = (e: React.MouseEvent<HTMLDivElement>) => {
     const rect = e.currentTarget.getBoundingClientRect();
     const clickX = e.clientX - rect.left;
@@ -309,18 +259,10 @@ const StemPlayer: React.FC<StemPlayerProps> = ({ stems, className = '', stageId}
     
     setCurrentTime(newTime);
 
-    // 가이드 오디오 시간 변경
+    // 가이드 오디오 시간 변경만
     if (guideAudioRef.current && guideUrl) {
       guideAudioRef.current.currentTime = newTime;
     }
-
-    // 모든 스템 오디오 시간 변경
-    stems.forEach(stem => {
-      const stemAudio = stemRefs.current[stem.id];
-      if (stemAudio) {
-        stemAudio.currentTime = newTime;
-      }
-    });
   };
 
   // Handle guide audio playback and volume
