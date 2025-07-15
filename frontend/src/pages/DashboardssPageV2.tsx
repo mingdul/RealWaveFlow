@@ -366,7 +366,7 @@ const DashboardPageV2 = () => {
       style={{ backgroundImage: "url('/background.jpg')" }}
     >
       {/* 어두운 오버레이 */}
-      <div className='absolute inset-0 bg-black bg-opacity-60'>
+      <div className='absolute inset-0 bg-black bg-opacity-80'>
         {/* Header */}
         <header className='flex flex-shrink-0 items-center justify-between border-b border-gray-800 p-6'>
           {/* <div className="flex items-center space-x-3">
