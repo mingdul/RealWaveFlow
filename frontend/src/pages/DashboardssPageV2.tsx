@@ -67,6 +67,8 @@ const DashboardPageV2 = () => {
       setIsLoading(true);
       setError(null);
 
+      console.log('[DEBUG] Loading tracks with filter:', filter);
+
       let result;
       if (filter === 'owned') {
         result = await trackService.getUserTracks();
@@ -77,6 +79,7 @@ const DashboardPageV2 = () => {
 
       // 백엔드 응답 구조: { success: true, data: { tracks: Track[] } }
       if (result && result.success && result.data && result.data.tracks) {
+        console.log('[DEBUG] Setting tracks:', result.data.tracks);
         setTracks(result.data.tracks);
       } else {
         console.error('[DEBUG] Unexpected response structure:', result);

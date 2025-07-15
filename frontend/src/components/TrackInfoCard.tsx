@@ -192,13 +192,13 @@ const handleCloseInviteModal = () => {
       });
     }
     
-    // 협업자들 추가
+    // 협업자들 추가 (accepted 상태인 것만)
     if (track.collaborators) {
       track.collaborators.forEach(collaborator => {
-        if (collaborator.user) {
+        if (collaborator.user_id && collaborator.status === 'accepted') {
           users.push({
-            id: collaborator.user.id,
-            username: collaborator.user.username,
+            id: collaborator.user_id.id,
+            username: collaborator.user_id.username,
             isOwner: false
           });
         }

@@ -107,6 +107,8 @@ export class EmailService {
       // HTML 이메일 템플릿 생성
       const emailHtml = this.generateInviteEmailTemplate({
         ...inviteData,
+        trackName: inviteData.trackName,
+        inviterName: inviteData.inviterName,
         inviteUrl,
         expiresAtFormatted
       });
