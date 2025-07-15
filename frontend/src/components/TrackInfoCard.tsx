@@ -48,6 +48,7 @@ const TrackInfoCard: React.FC<TrackInfoCardProps> = ({
         <div className="flex-shrink-0">
           <PresignedImage
             trackId={track.id}
+            imageUrl={track.image_url}
             alt={track.title}
             className="w-80 h-80 rounded-lg shadow-lg object-cover"
           />
