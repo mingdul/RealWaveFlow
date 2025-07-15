@@ -8,7 +8,10 @@ export class StageReviewer {
     @PrimaryGeneratedColumn('uuid')
     id : string;
 
-    @ManyToOne(() => Stage, (stage) => stage.stage_reviewers)
+    @ManyToOne(() => Stage, (stage) => stage.stage_reviewers, {
+        cascade: true,
+        onDelete: 'CASCADE',
+    })
     @JoinColumn({ name: 'stage_id' })
     stage : Stage;
 

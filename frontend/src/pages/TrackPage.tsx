@@ -9,7 +9,7 @@ import {
   StageHistory 
 } from '../components';
 import { useAuth } from '../contexts/AuthContext';
-import { getTrackStages, createStage} from '../services/stageService';
+import { getTrackStages, createStage, getBackToPreviousStage} from '../services/stageService';
 import streamingService, { StemStreamingInfo } from '../services/streamingService';
 import trackService from '../services/trackService';
 interface TrackPageProps {}
@@ -114,9 +114,15 @@ const TrackPage: React.FC<TrackPageProps> = () => {
     setIsStemListModalOpen(true);
   };
 
-  const handleRollBack = () => {
-    // TODO: 롤백 로직 구현
+  const handleRollBack = async () => {
     console.log('Rolling back track:', track?.id);
+    if(!trackId) return;
+    const response = await getBackToPreviousStage(trackId, selectedStageVersion);
+    if(response.success){
+      await loadStemsByVersion(selectedStageVersion);
+    }else{
+      console.error('Failed to get back to previous stage:', response);
+      }
   };
 
 
