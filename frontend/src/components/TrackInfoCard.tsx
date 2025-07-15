@@ -1,10 +1,9 @@
 import React, { useState } from 'react';
 import { Play, Plus, Pause, X } from 'lucide-react';
-import { Button, StemPlayer } from './';
+import { Button, StemPlayer, StemListModal } from './';
 import { Track } from '../types/api';
 import { StemStreamingInfo } from '../services/streamingService';
 import PresignedImage from './PresignedImage';
-import ConfirmModal from './ConfirmModal';
 import inviteService from '../services/inviteService';
 
 interface TrackInfoCardProps {
@@ -27,7 +26,7 @@ const TrackInfoCard: React.FC<TrackInfoCardProps> = ({
   stemsLoading = false
 }) => {
   const [showPlayer, setShowPlayer] = useState(false);
-  const [showRollbackConfirm, setShowRollbackConfirm] = useState(false);
+  const [showStemListModal, setShowStemListModal] = useState(false);
   const [showInviteModal, setShowInviteModal] = useState(false);
   const [inviteEmails, setInviteEmails] = useState('');
   const [inviteLoading, setInviteLoading] = useState(false);
@@ -39,6 +38,13 @@ const TrackInfoCard: React.FC<TrackInfoCardProps> = ({
       setShowPlayer(!showPlayer);
     } else if (onPlay) {
       onPlay();
+    }
+  };
+
+  const handleShowAllStems = () => {
+    setShowStemListModal(true);
+    if (onShowAllStems) {
+      onShowAllStems();
     }
   };
 
@@ -168,7 +174,6 @@ const TrackInfoCard: React.FC<TrackInfoCardProps> = ({
         {/* Track Details */}
         <div className="flex-1">
           <h2 className="text-4xl font-bold text-white mb-2">{track.title}</h2>
-          <p className="text-gray-400 text-lg mb-4">{track.created_date}</p>
           <div className="flex gap-6 mb-4">
             <span className="text-gray-400">{track.genre}</span>
             <span className="text-gray-400">{track.bpm}</span>
@@ -188,7 +193,7 @@ const TrackInfoCard: React.FC<TrackInfoCardProps> = ({
             <Button 
               variant="primary" 
               size="lg" 
-              className="flex items-center gap-2 bg-purple-600 hover:bg-purple-700"
+              className="rounded-full flex items-center gap-2 bg-purple-600 hover:bg-purple-700"
               onClick={handlePlayClick}
               disabled={stemsLoading}
             >
@@ -203,21 +208,12 @@ const TrackInfoCard: React.FC<TrackInfoCardProps> = ({
             <Button 
               variant="outline" 
               size="lg"
-              className="flex items-center gap-2 bg-[#202426] hover:bg-[#373A3D] text-white"
-              onClick={onShowAllStems}
+              className="rounded-full flex items-center gap-2 bg-[#202426] hover:bg-[#373A3D] text-white"
+              onClick={handleShowAllStems}
             >
               View All Stems
             </Button>
           </div>
-
-          <Button 
-            variant="secondary" 
-            size="sm" 
-            className="bg-red-600 hover:bg-red-700"
-            onClick={() => setShowRollbackConfirm(true)}
-          >
-            Roll Back
-          </Button>
         </div>
 
         {/* User Avatars */}
@@ -231,18 +227,14 @@ const TrackInfoCard: React.FC<TrackInfoCardProps> = ({
         </div>
       )}
 
-      {/*  Confirm Modal */}
-      <ConfirmModal
-        isOpen={showRollbackConfirm}
-        title="Are you sure you want to roll back?"
-        description="All stages created after the selected version will be permanently deleted. This action cannot be undone."
-        confirmText="Confirm Rollback"
-        cancelText="Cancel"
-        onConfirm={() => {
-          setShowRollbackConfirm(false);
-          if (onRollBack) onRollBack();
-        }}
-        onCancel={() => setShowRollbackConfirm(false)}
+      {/* Stem List Modal */}
+      <StemListModal
+        isOpen={showStemListModal}
+        onClose={() => setShowStemListModal(false)}
+        stems={stems}
+        versionNumber={versionNumber || '1.0'}
+        loading={stemsLoading}
+        onRollBack={onRollBack}
       />
 
       {/* Invite Modal */}

@@ -45,12 +45,12 @@ const StageCard: React.FC<StageCardProps> = ({ stage, isSelected, onClick, index
       onClick={handleClick}
     >
       <div className="text-white text-lg font-bold mb-2">
-        V{stage.version}
+        Ver.{stage.version}
       </div>
-      <div className="text-gray-300 text-sm mb-2">
+      <div className="text-white text-sm mb-2">
         {stage.title}
       </div>
-      <div className="text-gray-400 text-xs mb-2 line-clamp-2">
+      <div className="text-white text-xs mb-2 line-clamp-2">
         {stage.description}
       </div>
       <div className="text-gray-500 text-xs">
