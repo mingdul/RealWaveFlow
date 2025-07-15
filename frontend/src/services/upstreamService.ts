@@ -16,7 +16,7 @@ export const createUpstream = async (upstreamData: CreateUpstreamDto) => {
 // 스테이지별 업스트림 목록 조회
 export const getStageUpstreams = async (stageId: string) => {
   try {
-    const response = await apiClient.get(`/upstream/stage/${stageId}`);
+    const response = await apiClient.get(`/upstream/get-stage-upstreams/${stageId}`);
     if (!response.data.success) {
       throw new Error(response.data.message);
     }
