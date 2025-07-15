@@ -90,6 +90,22 @@ export class StageService {
         };
     }
 
+    async getStageByTrackIdAndVersion(track_id: string, version: number) {
+        const stage = await this.stageRepository.findOne({
+            where: { track: { id: track_id }, version: version },
+            relations: ['track', 'user'],
+        });
+        
+        if (!stage) {
+            throw new NotFoundException('Stage not found');
+        }
+        return {
+            success: true,
+            message: 'Stage fetched successfully',
+            data: stage,
+        };
+    }
+
     async updateGuidePath(stageId: string, guidePath: string): Promise<Stage> {
         const stage = await this.stageRepository.findOne({
             where: { id: stageId }
