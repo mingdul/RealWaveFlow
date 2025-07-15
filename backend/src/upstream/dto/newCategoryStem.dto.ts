@@ -11,5 +11,5 @@ export class NewCategoryStemDto {
 
     @IsString()
     @IsNotEmpty()
-    instument : string
+    instrument : string
 }

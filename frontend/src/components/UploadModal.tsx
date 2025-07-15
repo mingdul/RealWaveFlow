@@ -705,10 +705,12 @@ const UploadModal: React.FC<UploadModalProps> = ({
               bpm: file.bpm || '',
               stage_id: stageId || '',
               track_id: projectId,
-              instrument: file.tag,
+              instrument: file.tag || 'OTHER',
             };
 
-            console.log('[DEBUG] Creating stem job for:', file.name, stemJobRequest);
+            console.log('[DEBUG] Creating stem job for:', file.name);
+            console.log('[DEBUG] Stem job request data:', stemJobRequest);
+            console.log('[DEBUG] File instrument tag:', file.tag);
             const stemJobResult = await stemJobService.dupCheck(stemJobRequest);
             console.log('[DEBUG] Stem job created:', stemJobResult);
 
@@ -732,21 +734,23 @@ const UploadModal: React.FC<UploadModalProps> = ({
                   const upstreamData = {
                     upstream: {
                       title: `Stem Set ${new Date().toLocaleString()}`,
-                      description: state.description || `Uploaded stem: ${file.name}`,
+                      description: state.description || `Uploaded stem: ${file.name} (${file.tag || 'OTHER'})`,
                       stage_id: stageId || '',
                       user_id: user?.id || '',
                     },
                     stem_set: [],
                     new_category_stem: [{
                       categoryName: file.tag || 'OTHER',
-                      newStemId: stemJobId
+                      newStemId: stemJobId,
+                      instrument: file.tag || 'OTHER'                      
                     }]
                   };
 
                   console.log('[DEBUG] Creating upstream immediately for new stem:', upstreamData);
+                  console.log('[DEBUG] Instrument info - tag:', file.tag, 'categoryName:', file.tag || 'OTHER');
                   const response = await createUpstream(upstreamData);
                   if (response.success) {
-                    console.log('[DEBUG] Upstream created successfully for new stem');
+                    console.log('[DEBUG] Upstream created successfully for new stem with instrument:', file.tag || 'OTHER');
                   } else {
                     console.error('[ERROR] Failed to create upstream for new stem');
                   }
@@ -808,7 +812,16 @@ const UploadModal: React.FC<UploadModalProps> = ({
           });
           console.log('[DEBUG] Added to stem_set:', { oldStem: file.matchedStemId, newStem: file.stemId });
         }
+        else {
+          stemSet.push({
+            oldStem: file.matchedStemId,
+            });
+          }
       });
+
+
+
+
 
       if (stemSet.length === 0) {
         showSuccess('All uploads completed successfully!');
