@@ -34,4 +34,15 @@ export class StageController {
   async getStage(@Param('stage_id') stage_id: string) {
     return this.stageService.getStage(stage_id);
   }
+
+
+  @Get('/track/:track_id/version/:version')
+  @ApiOperation({ summary: '트랙 ID와 버전에 해당하는 스테이지 조회', description: '트랙 ID와 버전에 해당하는 스테이지를 조회합니다.' })
+  @ApiParam({ name: 'track_id', description: '트랙 ID' })
+  @ApiParam({ name: 'version', description: '버전' })
+  @ApiResponse({ status: 200, description: '스테이지 조회 성공' })
+  @ApiResponse({ status: 404, description: '스테이지를 찾을 수 없음' })
+  async getStageByTrackIdAndVersion(@Param('track_id') track_id: string, @Param('version') version: number) {
+    return this.stageService.getStageByTrackIdAndVersion(track_id, version);
+  }
 }
