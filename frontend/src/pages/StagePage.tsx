@@ -257,8 +257,8 @@ const StagePage: React.FC = () => {
   };
   
   const handleDetail = (upstream: Upstream) => {
-    // Review Page로 이동
-    navigate(`/review/${upstream.id}`);
+    // Review Page로 이동 (stageId를 쿼리 파라미터로 함께 전달)
+    navigate(`/review/${upstream.id}?stageId=${stageId}`);
   };
 
   // 스테이지가 닫혀있는지 확인

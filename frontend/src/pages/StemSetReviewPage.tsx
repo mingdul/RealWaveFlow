@@ -86,13 +86,38 @@ const StemSetReviewPage = () => {
   const [searchParams] = useSearchParams();
   const [stageId, setStageId] = useState<string | null>(null);
 
-  // stageId 결정 로직 (URL 파라미터 또는 upstreamId로부터)
+  // stageId 결정 로직 (쿼리 파라미터 우선, 없으면 upstream API 사용)
   useEffect(() => {
     const determineStageId = async () => {
-      // URL 파라미터에 upstreamId가 있으면 upstream 정보를 통해 stageId 추출
+      // 1. 먼저 쿼리 파라미터에서 stageId 확인
+      const stageIdFromQuery = searchParams.get('stageId');
+      if (stageIdFromQuery) {
+        console.log('✅ Found stageId in query params:', stageIdFromQuery);
+        setStageId(stageIdFromQuery);
+        
+        // stageId가 있으므로 getStageUpstreams를 사용해서 모든 upstream 목록을 가져오고
+        // 그 중에서 paramUpstreamId와 일치하는 것을 찾아서 selectedUpstream 설정
+        if (paramUpstreamId) {
+          try {
+            const upstreamsResponse = await getStageUpstreams(stageIdFromQuery);
+            const targetUpstream = upstreamsResponse.find((upstream: any) => upstream.id === paramUpstreamId);
+            if (targetUpstream) {
+              console.log('✅ Found target upstream in stage upstreams:', targetUpstream);
+              setSelectedUpstream(targetUpstream);
+            } else {
+              console.warn('⚠️ Target upstream not found in stage upstreams');
+            }
+          } catch (error) {
+            console.error('❌ Error fetching stage upstreams:', error);
+          }
+        }
+        return;
+      }
+
+      // 2. 쿼리 파라미터에 stageId가 없으면 기존 방식 사용 (upstream API를 통해 stageId 추출)
       if (paramUpstreamId) {
         try {
-          console.log('🔍 Found upstreamId in URL params:', paramUpstreamId);
+          console.log('🔍 Found upstreamId in URL params, fetching upstream details:', paramUpstreamId);
           // upstream 정보를 가져와서 stageId 추출
           const upstreamData = await getUpstreamDetail(paramUpstreamId);
           const extractedStageId =
@@ -100,7 +125,7 @@ const StemSetReviewPage = () => {
           console.log('✅ Extracted stageId from upstream:', extractedStageId);
           setStageId(extractedStageId);
 
-          // 선택된 upstream 설정 (나중에 사용할 수 있도록)
+          // 선택된 upstream 설정
           setSelectedUpstream(upstreamData);
         } catch (error) {
           console.error('❌ Error fetching upstream details:', error);
@@ -108,26 +133,7 @@ const StemSetReviewPage = () => {
         return;
       }
 
-      // 쿼리 파라미터에 upstreamId가 있으면 upstream 정보를 통해 stageId 추출 (fallback)
-      const upstreamId = searchParams.get('upstreamId');
-      if (upstreamId) {
-        try {
-          console.log('🔍 Found upstreamId in query params:', upstreamId);
-          // upstream 정보를 가져와서 stageId 추출
-          const upstreamData = await getUpstreamDetail(upstreamId);
-          const extractedStageId =
-            upstreamData.stage?.id || upstreamData.stage_id;
-          console.log('✅ Extracted stageId from upstream:', extractedStageId);
-          setStageId(extractedStageId);
-
-          // 선택된 upstream 설정 (나중에 사용할 수 있도록)
-          setSelectedUpstream(upstreamData);
-        } catch (error) {
-          console.error('❌ Error fetching upstream details:', error);
-        }
-      } else {
-        console.log('⚠️ No upstreamId found in URL');
-      }
+      console.log('⚠️ No stageId or upstreamId found');
     };
 
     determineStageId();
