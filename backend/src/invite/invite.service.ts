@@ -361,6 +361,61 @@ export class InviteService {
     }
 
     /**
+     * 초대 토큰 검증
+     * 
+     * 초대 토큰의 유효성을 검사하고 초대 정보를 반환합니다.
+     * 프론트엔드에서 초대 링크 접속 시 호출하는 메서드입니다.
+     * 
+     * @param token - 초대 토큰
+     * @returns 초대 검증 결과
+     * - success: 성공 여부
+     * - data: 초대 정보 (성공 시)
+     *   - track_name: 트랙 이름
+     *   - inviter_name: 초대자 이름
+     *   - email: 초대받은 이메일
+     *   - expires_at: 만료 시간
+     *   - status: 초대 상태
+     * 
+     * 에러 처리:
+     * - 초대를 찾을 수 없는 경우 (404)
+     * - 초대가 만료된 경우 (410)
+     * - 기타 오류 (500)
+     */
+    async validateInviteToken(token: string): Promise<{
+        success: boolean;
+        data: {
+            track_name: string;
+            inviter_name: string;
+            email: string;
+            expires_at: Date;
+            status: string;
+        };
+    }> {
+        try {
+            const inviteTarget = await this.getInviteByTargetToken(token);
+            
+            return {
+                success: true,
+                data: {
+                    track_name: inviteTarget.invite_batch.track.title,
+                    inviter_name: inviteTarget.invite_batch.inviter.username,
+                    email: inviteTarget.email,
+                    expires_at: inviteTarget.invite_batch.expires_at,
+                    status: inviteTarget.status
+                }
+            };
+        } catch (error) {
+            if (error instanceof NotFoundException) {
+                throw new NotFoundException('초대 링크를 찾을 수 없습니다.');
+            } else if (error instanceof BadRequestException) {
+                throw new BadRequestException('초대 링크가 만료되었습니다.');
+            } else {
+                throw error;
+            }
+        }
+    }
+
+    /**
      * 초대 수락 처리
      * 
      * 사용자가 초대를 수락했을 때의 처리 로직입니다.
