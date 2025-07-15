@@ -616,6 +616,10 @@ const StemSetReviewPage = () => {
   }, [currentTime, readyStates, isPlaying]);
 
   const handleApprove = async () => {
+
+    console.log('🔍 Stage ID:', stageId);
+    console.log('🔍 Selected Upstream:', selectedUpstream);
+    
     if (!stageId || !selectedUpstream) {
       alert('Stage 또는 Upstream이 선택되지 않았습니다.');
       return;
