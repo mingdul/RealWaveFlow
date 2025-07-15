@@ -453,22 +453,28 @@ const DashboardPageV2 = () => {
           </div>
 
           {/* Filter Buttons */}
-          <div className='mb-8 flex space-x-4'>
+          <div className="flex flex-row gap-4 justify-between">
+          <div className="flex gap-4">
+            <p className="text-white text-2xl">TRACKS</p>
+          </div>
+          {/* Filter Buttons */}
+          <div className="flex space-x-4 mb-8">
             <Button
               onClick={() => setFilter('owned')}
               variant={filter === 'owned' ? 'primary' : 'secondary'}
-              className='flex items-center space-x-2'
+              className="flex items-center space-x-2"
             >
               <span>OWNED</span>
             </Button>
             <Button
               onClick={() => setFilter('collaborated')}
               variant={filter === 'collaborated' ? 'primary' : 'secondary'}
-              className='flex items-center space-x-2'
+              className="flex items-center space-x-2"
             >
               <span>COLLABORATED</span>
             </Button>
           </div>
+        </div>
 
           {/* Content */}
           {isLoading ? (
