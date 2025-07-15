@@ -38,102 +38,103 @@ const TrackInfoCard: React.FC<TrackInfoCardProps> = ({
 
   const onAddCollaborator = () => {
     console.log('Add collaborator');
+    
   }
 
   return (
-    <div className="text-center">
-      {/* Top Action Buttons */}
-      <div className="flex justify-between items-center mb-12">
-        <Button 
-          variant="primary" 
-          size="lg"
-          className="bg-white text-black hover:bg-gray-200 font-semibold px-8 py-3 rounded-lg"
-          onClick={onShowAllStems}
-        >
-          ALL STEM
-        </Button>
-        
-        <Button 
-          variant="secondary" 
-          size="lg" 
-          className="bg-white text-black hover:bg-gray-200 font-semibold px-8 py-3 rounded-lg"
-          onClick={() => setShowRollbackConfirm(true)}
-        >
-          ROLL BACK
-        </Button>
-      </div>
-
-      {/* Album Cover - Large and Centered */}
-      <div className="mb-8">
-        <PresignedImage
-          trackId={track.id}
-          imageUrl={track.image_url}
-          alt={track.title}
-          className="w-80 h-80 mx-auto rounded-lg shadow-2xl object-cover"
-        />
-      </div>
-
-      {/* Track Title */}
-      <h1 className="text-6xl font-bold text-white mb-4">{track.title}</h1>
-      
-      {/* Artist Info */}
-      <div className="flex items-center justify-center gap-2 mb-8">
-        <div className="w-8 h-8 bg-white rounded-full"></div>
-        <span className="text-white text-lg font-medium">{track.owner_id.username}</span>
-        <span className="text-gray-400">•</span>
-        <span className="text-gray-400">{track.created_date}</span>
-        <span className="text-gray-400">•</span>
-        <span className="text-gray-400">{versionNumber}분 44초</span>
-      </div>
-
-      {/* Large Play Button */}
-      <div className="mb-12">
-        <button 
-          className="w-20 h-20 bg-green-500 hover:bg-green-600 rounded-full flex items-center justify-center transition-all duration-200 hover:scale-105 mx-auto"
-          onClick={handlePlayClick}
-          disabled={stemsLoading}
-        >
-          {stemsLoading ? (
-            <div className="w-8 h-8 border-2 border-white border-t-transparent rounded-full animate-spin" />
-          ) : showPlayer ? (
-            <Pause size={32} className="text-white ml-1" />
-          ) : (
-            <Play size={32} className="text-white ml-1" />
-          )}
-        </button>
-      </div>
-
-      {/* Track Details - Minimized */}
-      <div className="text-center text-gray-400 text-sm mb-8">
-        <span className="mx-4">{track.genre}</span>
-        <span className="mx-4">{track.bpm} BPM</span>
-        <span className="mx-4">{track.key_signature}</span>
-      </div>
-
-      {/* Collaborators */}
-      <div className="flex justify-center items-center gap-2 mb-8">
-        <div className="w-10 h-10 bg-gray-500 rounded-full flex items-center justify-center">
-          <span className="text-white text-sm">S</span>
+    <div className="mb-12">
+      <div className="flex gap-8 mb-6">
+        {/* Album Cover */}
+        <div className="flex-shrink-0">
+          <PresignedImage
+            trackId={track.id}
+            imageUrl={track.image_url}
+            alt={track.title}
+            className="w-80 h-80 rounded-lg shadow-lg object-cover"
+          />
         </div>
-        <div className="w-10 h-10 bg-gray-500 rounded-full flex items-center justify-center">
-          <span className="text-white text-sm">M</span>
+
+        {/* Track Details */}
+        <div className="flex-1">
+          <h2 className="text-4xl font-bold text-white mb-2">{track.title}</h2>
+          <p className="text-gray-400 text-lg mb-4">{track.created_date}</p>
+          <div className="flex gap-6 mb-4">
+            <span className="text-gray-400">{track.genre}</span>
+            <span className="text-gray-400">{track.bpm}</span>
+            <span className="text-gray-400">{track.key_signature}</span>
+          </div>
+
+          <div className="mb-6">
+            <h3 className="text-lg font-semibold text-white mb-2">{track.owner_id.username}</h3>
+            <p className="text-gray-300 leading-relaxed">{track.description}</p>
+          </div>
+
+          <div className="mb-6">
+            <span className="text-gray-400">Version: {versionNumber}</span>
+          </div>
+
+          <div className="flex gap-4 mb-6">
+            <Button 
+              variant="primary" 
+              size="lg" 
+              className="flex items-center gap-2"
+              onClick={handlePlayClick}
+              disabled={stemsLoading}
+            >
+              {stemsLoading ? (
+                <div className="w-5 h-5 border-2 border-white border-t-transparent rounded-full animate-spin" />
+              ) : showPlayer ? (
+                <Pause size={20} />
+              ) : (
+                <Play size={20} />
+              )}
+            </Button>
+            <Button 
+              variant="outline" 
+              size="lg"
+              onClick={onShowAllStems}
+            >
+              View All Stems
+            </Button>
+          </div>
+
+          <Button 
+            variant="secondary" 
+            size="sm" 
+            className="bg-purple-600 hover:bg-purple-700"
+            onClick={() => setShowRollbackConfirm(true)}
+          >
+            Roll Back
+          </Button>
         </div>
-        <div className="w-10 h-10 bg-gray-500 rounded-full flex items-center justify-center">
-          <span className="text-white text-sm">A</span>
+
+        {/* User Avatars */}
+        <div className="flex-shrink-0 flex items-start gap-2">
+          <div className="w-10 h-10 bg-gray-500 rounded-full flex items-center justify-center">
+            <span className="text-white text-sm">S</span>
+          </div>
+          <div className="w-10 h-10 bg-gray-500 rounded-full flex items-center justify-center">
+            <span className="text-white text-sm">M</span>
+          </div>
+          <div className="w-10 h-10 bg-gray-500 rounded-full flex items-center justify-center">
+            <span className="text-white text-sm">A</span>
+          </div>
+          <div className="w-10 h-10 bg-gray-600 rounded-full flex items-center justify-center" onClick={onAddCollaborator}>
+            <Plus size={16} className="text-white" />
+          </div>
         </div>
-        <div className="w-10 h-10 bg-gray-600 rounded-full flex items-center justify-center cursor-pointer hover:bg-gray-500" onClick={onAddCollaborator}>
-          <Plus size={16} className="text-white" />
-        </div>
+
+
       </div>
 
       {/* Stem Player */}
       {showPlayer && stems.length > 0 && (
-        <div className="mt-8">
+        <div className="mt-6">
           <StemPlayer stems={stems} />
         </div>
       )}
 
-      {/* Confirm Modal */}
+      {/*  Confirm Modal */}
       <ConfirmModal
         isOpen={showRollbackConfirm}
         title="Are you sure you want to roll back?"
