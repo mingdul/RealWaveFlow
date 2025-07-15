@@ -2,10 +2,17 @@ import { useEffect, useRef, useState, useCallback } from 'react';
 import WaveSurfer from 'wavesurfer.js';
 import Wave from '../components/wave';
 import Logo from '../components/Logo';  
-import { getStageUpstreams } from '../services/upstreamService';
+import { getStageUpstreams, getUpstreamStems } from '../services/upstreamService';
 import { getStageDetail, getStageByTrackIdAndVersion } from '../services/stageService';
 import streamingService from '../services/streamingService';
 import { useParams } from 'react-router-dom';
+import { useAuth } from '../contexts/AuthContext';
+import {
+  createUpstreamComment,
+  getUpstreamComments,
+  deleteUpstreamComment,
+  updateUpstreamComment
+} from '../services/upstreamCommentService';
 import {
   Bell,
   Settings,
@@ -14,17 +21,25 @@ import {
   Volume,
   ZoomIn,
   ZoomOut,
+  Trash2,
+  Edit2,
 } from 'lucide-react';
 
-// Comment interface
+// Comment interface updated to match backend response
 interface Comment {
   id: string;
-  time: number;
-  text: string;
-  timeString: string;
+  time: string;
+  comment: string;
+  timeNumber: number; // for seek functionality
+  timeString: string; // formatted time display
+  user?: {
+    id: string;
+    username: string;
+  };
 }
 
 const StemSetReviewPage = () => {
+  const { user } = useAuth();
   // const wavesurferRef = useRef<any>(null);
   const [volume, setVolume] = useState(1);
   const [currentTime, setCurrentTime] = useState(0);
@@ -35,12 +50,18 @@ const StemSetReviewPage = () => {
   const [showCommentList, setShowCommentList] = useState(false);
   const [commentInput, setCommentInput] = useState('');
   const [comments, setComments] = useState<Comment[]>([]);
+  const [selectedUpstream, setSelectedUpstream] = useState<any>(null);
+  const [commentsLoading, setCommentsLoading] = useState(false);
+  const [editingComment, setEditingComment] = useState<string | null>(null);
+  const [editCommentText, setEditCommentText] = useState('');
   const [extraAudio, setExtraAudio] = useState<string>('');
   const [showExtraWaveform, setShowExtraWaveform] = useState(false);
   const [stemsLoading] = useState(false);
   const [upstreams, setUpstreams] = useState<any[]>([]);
+  const [upstreamStems, setUpstreamStems] = useState<any[]>([]);
   const [guideAudioUrl, setGuideAudioUrl] = useState<string>('');
   const [guideLoading, setGuideLoading] = useState(false);
+  const [trackId, setTrackId] = useState<string>('');
 
   const wavesurferRefs = useRef<{ [id: string]: WaveSurfer }>({});
   const [readyStates, setReadyStates] = useState<{ [id: string]: boolean }>({});
@@ -103,18 +124,53 @@ const StemSetReviewPage = () => {
   }, [stageId]);
 
   useEffect(() => {
-    const fetchUpstreams = async () => {
+    const fetchUpstreamsAndStems = async () => {
       try {
-        const response = await getStageUpstreams(stageId || '');  // 👈 여기!
-        if (response.data) {
-          setUpstreams(response.data);
+        // 1. 먼저 stage 정보를 가져와서 trackId 획득
+        const stageResponse = await getStageDetail(stageId || '');
+        if (!stageResponse || !stageResponse.track) {
+          console.error('Failed to get stage details');
+          return;
         }
+        
+        const currentTrackId = stageResponse.track.id;
+        setTrackId(currentTrackId);
+        
+        // 2. upstream 목록 가져오기
+        const upstreamsResponse = await getStageUpstreams(stageId || '');
+        if (!upstreamsResponse.data) {
+          console.error('Failed to get upstreams');
+          return;
+        }
+        
+        setUpstreams(upstreamsResponse.data);
+        
+        // 3. 각 upstream에 대해 stem 정보 가져오기
+        const stemPromises = upstreamsResponse.data.map(async (upstream: any) => {
+          try {
+            const stemResponse = await getUpstreamStems(upstream.id, currentTrackId);
+            return {
+              upstreamId: upstream.id,
+              stemData: stemResponse.data || null
+            };
+          } catch (error) {
+            console.error(`Failed to fetch stems for upstream ${upstream.id}:`, error);
+            return {
+              upstreamId: upstream.id,
+              stemData: null
+            };
+          }
+        });
+        
+        const stemsResults = await Promise.all(stemPromises);
+        setUpstreamStems(stemsResults);
+        
       } catch (error) {
-        console.error('Failed to fetch stage upstreams', error);
+        console.error('Failed to fetch upstreams and stems', error);
       }
     };
   
-    if (stageId) fetchUpstreams();
+    if (stageId) fetchUpstreamsAndStems();
   }, [stageId]);
 
   const handleReady = useCallback((ws: WaveSurfer, id: string) => {
@@ -213,45 +269,143 @@ const StemSetReviewPage = () => {
   }, [soloTrack]);
 
   // 댓글 추가 함수
-  const handleAddComment = useCallback(() => {
-    if (!commentInput.trim()) return;
+  const handleAddComment = useCallback(async () => {
+    if (!commentInput.trim() || !selectedUpstream || !user) return;
     
     const timeString = `${String(Math.floor(currentTime / 60)).padStart(2, '0')}:${String(Math.floor(currentTime % 60)).padStart(2, '0')}`;
-    const newComment: Comment = {
-      id: Date.now().toString(),
-      time: currentTime,
-      text: commentInput.trim(),
-      timeString: timeString
-    };
     
-    setComments((prev) => [...prev, newComment]);
-    setCommentInput('');
-    setShowCommentList(true);
-    
-    // 마커 생성 (얇은 선)
-    const ws = wavesurferRefs.current['main'];
-    if (ws) {
-      // WaveSurfer에 마커 추가 (regions 플러그인 사용)
-      try {
-        // 마커를 위한 얇은 region 생성
-        const container = ws.getWrapper();
-        const marker = document.createElement('div');
-        marker.style.position = 'absolute';
-        marker.style.left = `${(currentTime / duration) * 100}%`;
-        marker.style.top = '0';
-        marker.style.width = '2px';
-        marker.style.height = '100%';
-        marker.style.backgroundColor = 'rgba(255, 255, 255, 0.8)';
-        marker.style.pointerEvents = 'none';
-        marker.style.zIndex = '10';
-        marker.dataset.commentId = newComment.id;
-        
-        container.appendChild(marker);
-      } catch (error) {
-        console.warn('마커 생성 실패:', error);
+    try {
+      const commentData = {
+        comment: commentInput.trim(),
+        time: timeString,
+        upstream_id: selectedUpstream.id,
+        user_id: user.id
+      };
+      
+      const response = await createUpstreamComment(commentData);
+      
+      // 새 댓글을 로컬 상태에 추가
+      const newComment: Comment = {
+        id: response.id,
+        time: timeString,
+        comment: commentInput.trim(),
+        timeNumber: currentTime,
+        timeString: timeString,
+        user: {
+          id: user.id,
+          username: user.username
+        }
+      };
+      
+      setComments((prev) => [...prev, newComment]);
+      setCommentInput('');
+      setShowCommentList(true);
+      
+      // 마커 생성 (얇은 선)
+      const ws = wavesurferRefs.current['main'];
+      if (ws) {
+        try {
+          const container = ws.getWrapper();
+          const marker = document.createElement('div');
+          marker.style.position = 'absolute';
+          marker.style.left = `${(currentTime / duration) * 100}%`;
+          marker.style.top = '0';
+          marker.style.width = '2px';
+          marker.style.height = '100%';
+          marker.style.backgroundColor = 'rgba(255, 255, 255, 0.8)';
+          marker.style.pointerEvents = 'none';
+          marker.style.zIndex = '10';
+          marker.dataset.commentId = newComment.id;
+          
+          container.appendChild(marker);
+        } catch (error) {
+          console.warn('마커 생성 실패:', error);
+        }
       }
+    } catch (error) {
+      console.error('댓글 추가 실패:', error);
     }
-  }, [commentInput, currentTime, duration]);
+  }, [commentInput, currentTime, duration, selectedUpstream, user]);
+
+  // 댓글 로드 함수
+  const loadComments = useCallback(async (upstreamId: string) => {
+    try {
+      setCommentsLoading(true);
+      const response = await getUpstreamComments(upstreamId);
+      
+      if (response.data) {
+        const formattedComments = response.data.map((comment: any) => {
+          // time 문자열을 파싱하여 숫자로 변환 (MM:SS 형식)
+          const [minutes, seconds] = comment.time.split(':').map(Number);
+          const timeNumber = minutes * 60 + seconds;
+          
+          return {
+            id: comment.id,
+            time: comment.time,
+            comment: comment.comment,
+            timeNumber: timeNumber,
+            timeString: comment.time,
+            user: comment.user ? {
+              id: comment.user.id,
+              username: comment.user.username
+            } : undefined
+          };
+        });
+        
+        setComments(formattedComments);
+      }
+    } catch (error) {
+      console.error('댓글 로드 실패:', error);
+      setComments([]);
+    } finally {
+      setCommentsLoading(false);
+    }
+  }, []);
+
+  // 댓글 삭제 함수
+  const handleDeleteComment = useCallback(async (commentId: string) => {
+    try {
+      await deleteUpstreamComment(commentId);
+      setComments(prev => prev.filter(comment => comment.id !== commentId));
+    } catch (error) {
+      console.error('댓글 삭제 실패:', error);
+    }
+  }, []);
+
+  // 댓글 수정 시작
+  const handleEditComment = useCallback((comment: Comment) => {
+    setEditingComment(comment.id);
+    setEditCommentText(comment.comment);
+  }, []);
+
+  // 댓글 수정 저장
+  const handleSaveComment = useCallback(async (commentId: string) => {
+    if (!editCommentText.trim()) {
+      setEditingComment(null);
+      return;
+    }
+
+    try {
+      const comment = comments.find(c => c.id === commentId);
+      if (!comment) return;
+
+      await updateUpstreamComment(commentId, {
+        comment: editCommentText.trim(),
+        time: comment.time
+      });
+
+      setComments(prev => prev.map(c => 
+        c.id === commentId 
+          ? { ...c, comment: editCommentText.trim() }
+          : c
+      ));
+      
+      setEditingComment(null);
+      setEditCommentText('');
+    } catch (error) {
+      console.error('댓글 수정 실패:', error);
+    }
+  }, [editCommentText, comments]);
 
   // 댓글 클릭 시 해당 시간으로 이동
   const seekToTime = useCallback((time: number) => {
@@ -306,6 +460,12 @@ const StemSetReviewPage = () => {
 
   const handleAudioFileClick = useCallback(async (upstream: any) => {
     try {
+      // 선택된 upstream 설정
+      setSelectedUpstream(upstream);
+      
+      // 해당 upstream의 댓글 로드
+      await loadComments(upstream.id);
+      
       // 스트리밍 최적화된 URL을 가져오기
       const response = await streamingService.getUpstreamStems(upstream.id);
       
@@ -326,7 +486,7 @@ const StemSetReviewPage = () => {
       setExtraAudio(upstream.presignedUrl);
       setShowExtraWaveform(true);
     }
-  }, []);
+  }, [loadComments]);
 
   // Solo 버튼 핸들러들을 메모이제이션
   const handleMainSolo = useCallback(() => handleSolo('main'), [handleSolo]);
@@ -450,19 +610,47 @@ const StemSetReviewPage = () => {
               </div>
             ) : (
               <div className='max-h-96 space-y-2 overflow-y-auto'>
-                {upstreams.map((upstream, index) => (
-                <div
-                  key={index}
-                  onClick={() => handleAudioFileClick(upstream)}
-                  className='cursor-pointer rounded bg-[#3a3a3a] p-3 text-sm text-white transition-colors hover:bg-[#4a4a4a]'
-                >
-                  <div className='font-medium'>{upstream.fileName}</div>
-                  <div className='text-xs text-gray-400'>{upstream.description}</div>
-                  <div className='text-xs text-gray-500 mt-1'>
-                    Category: {upstream.category} | By: {upstream.uploadedBy?.username}
-                  </div>
-                </div>
-              ))}
+                {upstreams.map((upstream, index) => {
+                  // 해당 upstream의 stem 정보 찾기
+                  const stemInfo = upstreamStems.find(s => s.upstreamId === upstream.id);
+                  
+                  return (
+                    <div key={index} className='space-y-2'>
+                      <div
+                        onClick={() => handleAudioFileClick(upstream)}
+                        className='cursor-pointer rounded bg-[#3a3a3a] p-3 text-sm text-white transition-colors hover:bg-[#4a4a4a]'
+                      >
+                        <div className='font-medium'>{upstream.fileName}</div>
+                        <div className='text-xs text-gray-400'>{upstream.description}</div>
+                        <div className='text-xs text-gray-500 mt-1'>
+                          Category: {upstream.category} | By: {upstream.uploadedBy?.username}
+                        </div>
+                      </div>
+                      
+                      {/* Stem 정보 표시 */}
+                      {stemInfo?.stemData && (
+                        <div className='ml-4 space-y-1 rounded bg-[#2a2a2a] p-2 text-xs'>
+                          <div className='font-medium text-blue-400'>📁 Stems in this upstream:</div>
+                          {stemInfo.stemData.map((item: any, stemIndex: number) => (
+                            <div key={stemIndex} className='flex items-center justify-between'>
+                              <span className='text-white'>
+                                {item.category.name} 
+                                <span className={`ml-2 px-2 py-1 rounded text-xs ${
+                                  item.type === 'new' ? 'bg-green-600' :
+                                  item.type === 'modify' ? 'bg-yellow-600' :
+                                  'bg-gray-600'
+                                }`}>
+                                  {item.type}
+                                </span>
+                              </span>
+                              <span className='text-gray-400'>{item.stem.file_name}</span>
+                            </div>
+                          ))}
+                        </div>
+                      )}
+                    </div>
+                  );
+                })}
             </div>
             )}
           </div>
@@ -500,21 +688,93 @@ const StemSetReviewPage = () => {
               </svg>
             </button>
           </div>
+          
+          {/* Selected Upstream Info */}
+          {selectedUpstream && (
+            <div className='mb-4 p-3 bg-[#3a3a3a] rounded'>
+              <div className='text-sm font-medium text-white'>{selectedUpstream.fileName}</div>
+              <div className='text-xs text-gray-400'>{selectedUpstream.description}</div>
+              <div className='text-xs text-blue-400 mt-1'>
+                by {selectedUpstream.uploadedBy?.username}
+              </div>
+            </div>
+          )}
+
+          {!selectedUpstream && (
+            <div className='mb-4 p-3 bg-[#4a4a4a] rounded text-center'>
+              <div className='text-sm text-gray-300'>
+                Select an audio file to view comments
+              </div>
+            </div>
+          )}
+
+          {/* Comments List */}
+          {commentsLoading ? (
+            <div className='flex justify-center py-8'>
+              <div className='animate-spin rounded-full h-6 w-6 border-b-2 border-white'></div>
+            </div>
+          ) : (
           <ul className='space-y-2 text-sm text-white'>
             {comments.map((comment) => (
               <li 
                 key={comment.id}
-                className='cursor-pointer hover:bg-[#3a3a3a] p-2 rounded'
-                onClick={() => seekToTime(comment.time)}
+                className='hover:bg-[#3a3a3a] p-2 rounded'
               >
-                <div className='flex items-center space-x-2'>
-                  <span className='text-blue-400 font-mono'>{comment.timeString}</span>
-                  <span>🗨️</span>
+                <div className='flex items-center justify-between'>
+                  <div 
+                    className='flex items-center space-x-2 cursor-pointer flex-1'
+                    onClick={() => seekToTime(comment.timeNumber)}
+                  >
+                    <span className='text-blue-400 font-mono'>{comment.timeString}</span>
+                    <span>🗨️</span>
+                  </div>
+                  {user && comment.user?.id === user.id && (
+                    <div className='flex items-center space-x-1'>
+                      <button
+                        onClick={() => handleEditComment(comment)}
+                        className='text-gray-400 hover:text-white p-1'
+                      >
+                        <Edit2 size={12} />
+                      </button>
+                      <button
+                        onClick={() => handleDeleteComment(comment.id)}
+                        className='text-gray-400 hover:text-red-400 p-1'
+                      >
+                        <Trash2 size={12} />
+                      </button>
+                    </div>
+                  )}
                 </div>
-                <div className='text-gray-300 ml-6'>{comment.text}</div>
+                {editingComment === comment.id ? (
+                  <div className='ml-6 mt-2'>
+                    <input
+                      type='text'
+                      value={editCommentText}
+                      onChange={(e) => setEditCommentText(e.target.value)}
+                      className='w-full bg-[#1a1a1a] text-white px-2 py-1 rounded text-xs'
+                      onKeyPress={(e) => {
+                        if (e.key === 'Enter') {
+                          handleSaveComment(comment.id);
+                        }
+                      }}
+                      onBlur={() => handleSaveComment(comment.id)}
+                      autoFocus
+                    />
+                  </div>
+                ) : (
+                  <div className='text-gray-300 ml-6'>
+                    {comment.comment}
+                    {comment.user && (
+                      <div className='text-xs text-gray-500 mt-1'>
+                        by {comment.user.username}
+                      </div>
+                    )}
+                  </div>
+                )}
               </li>
             ))}
           </ul>
+          )}
         </div>
       )}
 
@@ -626,18 +886,34 @@ const StemSetReviewPage = () => {
           </span>
           <input
             type='text'
-            placeholder='Leave your comment...'
+            placeholder={selectedUpstream ? 'Leave your comment...' : 'Select an audio file to comment'}
             className='flex-1 bg-transparent text-white placeholder-gray-400 outline-none'
             value={commentInput}
             onChange={(e) => setCommentInput(e.target.value)}
+            disabled={!selectedUpstream}
+            onKeyPress={(e) => {
+              if (e.key === 'Enter' && selectedUpstream) {
+                handleAddComment();
+              }
+            }}
           />
           <button
-            className='text-gray-400 hover:text-white'
+            className={`${
+              selectedUpstream && commentInput.trim() 
+                ? 'text-blue-400 hover:text-blue-300' 
+                : 'text-gray-600 cursor-not-allowed'
+            }`}
             onClick={handleAddComment}
+            disabled={!selectedUpstream || !commentInput.trim()}
           >
             ▶️
           </button>
         </div>
+        {selectedUpstream && (
+          <div className='mt-2 text-center text-sm text-gray-400'>
+            Commenting on: {selectedUpstream.fileName}
+          </div>
+        )}
       </div>
     </div>
   );
