@@ -29,7 +29,6 @@ export class UpstreamReviewController {
     return this.upstreamReviewService.approveDropReviewer(stageId, upstreamId, req.user.id);
   }
 
-
   @Put('reject-drop-reviewer/:stageId/:upstreamId/')
   @ApiOperation({ summary: '업스트림 리뷰 거절', description: '업스트림 리뷰를 거절합니다.' })
   @ApiResponse({ status: 200, description: '업스트림 리뷰 거절 성공' })
