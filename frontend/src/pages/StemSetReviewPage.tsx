@@ -208,10 +208,10 @@ const StemSetReviewPage = () => {
   useEffect(() => {
     const fetchUpstreamsAndStems = async () => {
       try {
-        if (!stageId || !selectedUpstream) return;
+        if (!paramStageId || !paramUpstreamId) return;
     
         setStemsLoading(true);
-        const stageResponse = await getStageDetail(stageId);
+        const stageResponse = await getStageDetail(paramStageId);
         console.log('🔍 [fetchUpstreamsAndStems] Stage response:', stageResponse);
         
         if (!stageResponse?.data?.track) {
@@ -243,13 +243,13 @@ const StemSetReviewPage = () => {
     };
     
 
-    if (stageId && selectedUpstream) {
-      console.log('🎬 useEffect triggered with stageId:', stageId, 'selectedUpstream:', selectedUpstream.id);
+    if (paramStageId && paramUpstreamId) {
+      console.log('🎬 useEffect triggered with stageId:', paramStageId, 'selectedUpstream:', paramUpstreamId);
       fetchUpstreamsAndStems();
     } else {
       console.log('⚠️ No stageId or selectedUpstream provided');
     }
-  }, [stageId, selectedUpstream]);
+  }, [paramStageId, paramUpstreamId]);
 
   const handleReady = useCallback(
     (ws: WaveSurfer, id: string) => {
@@ -452,14 +452,14 @@ const StemSetReviewPage = () => {
 
   // 페이지 로딩 시점에 댓글 로드
   useEffect(() => {
-    console.log('🔍🔍 selectedUpstream:', selectedUpstream);
+    console.log('🔍🔍 selectedUpstream:', paramUpstreamId);
     
-    if (selectedUpstream?.id) {
-      console.log('💬 [useEffect] Loading comments for upstream:', selectedUpstream.id);
-      loadComments(selectedUpstream.id);
+    if (paramUpstreamId) {
+      console.log('💬 [useEffect] Loading comments for upstream:', paramUpstreamId);
+      loadComments(paramUpstreamId);
     }
   
-  }, [selectedUpstream, loadComments]);
+  }, [paramUpstreamId, loadComments]);
   
 
   // 댓글 삭제 함수
