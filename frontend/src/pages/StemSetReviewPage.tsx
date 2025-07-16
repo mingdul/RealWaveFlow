@@ -269,11 +269,16 @@ const StemSetReviewPage = () => {
                 currentTrackId
               );
 
+              console.log('🔧 [stemPromise] Stem response for upstream', upstream.id, ':', stemResponse);
+              console.log('🔧 [stemPromise] Stem response.data:', stemResponse.data);
+              console.log('🔧 [stemPromise] Actual stem data:', stemResponse.data?.data);
+
               return {
                 upstreamId: upstream.id,
-                stemData: stemResponse.data || null,
+                stemData: stemResponse.data?.success ? stemResponse.data.data : null,
               };
             } catch (error) {
+              console.error('🔧 [stemPromise] Error getting stems for upstream', upstream.id, ':', error);
               return {
                 upstreamId: upstream.id,
                 stemData: null,
