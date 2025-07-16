@@ -807,14 +807,21 @@ const StemSetReviewPage = () => {
               console.log('🔍 [Show History] Button clicked. Current state:', { 
                 showHistory, 
                 upstreamStems: upstreamStems.length,
+                upstreamStemsData: upstreamStems,
                 stageId,
-                selectedUpstream 
+                selectedUpstream,
+                stemsLoading
               });
+              console.log('🔍 [Show History] UpstreamStems detailed:', upstreamStems);
               setShowHistory(!showHistory);
             }}
-            className='self-start rounded bg-[#3a3a3a] px-3 py-1 text-sm hover:bg-[#555]'
+            className={`self-start rounded px-3 py-1 text-sm transition-colors ${
+              showHistory 
+                ? 'bg-blue-600 text-white hover:bg-blue-700' 
+                : 'bg-[#3a3a3a] text-white hover:bg-[#555]'
+            } ${upstreamStems.length === 0 ? 'opacity-50' : ''}`}
           >
-            Show History
+            Show History {upstreamStems.length > 0 && `(${upstreamStems.length})`}
           </button>
 
           <button
@@ -915,106 +922,131 @@ const StemSetReviewPage = () => {
                 })}  */}
 
                   {(() => {
-                    console.log(
-                      '🎨 [Render] Rendering upstreams. Total count:',
-                      upstreamStems.length
-                    );
-                    console.log('🎨 [Render] UpstreamStems array:', upstreamStems);
-                    console.log('🎨 [Render] showHistory state:', showHistory);
+                    console.log('🎨 [Render] === RENDER START ===');
+                    console.log('🎨 [Render] showHistory:', showHistory);
+                    console.log('🎨 [Render] stemsLoading:', stemsLoading);
+                    console.log('🎨 [Render] upstreamStems.length:', upstreamStems.length);
+                    console.log('🎨 [Render] upstreamStems:', upstreamStems);
                     console.log('🎨 [Render] stageId:', stageId);
+                    console.log('🎨 [Render] selectedUpstream:', selectedUpstream);
+
+                    if (stemsLoading) {
+                      console.log('🎨 [Render] Showing loading state');
+                      return (
+                        <div className='py-8 text-center text-gray-400'>
+                          <div className='h-8 w-8 animate-spin rounded-full border-b-2 border-white mx-auto mb-2'></div>
+                          <span>Loading stems...</span>
+                        </div>
+                      );
+                    }
 
                     if (upstreamStems.length === 0) {
                       console.log('⚠️ [Render] No upstreams to render');
                       return (
                         <div className='py-8 text-center text-gray-400'>
-                          {stemsLoading ? 'Loading stems...' : 'No stems found for this upstream'}
+                          <div className="text-center space-y-2">
+                            <div>No stems found for this upstream</div>
+                            <div className="text-xs">
+                              Debug: stageId={stageId}, selectedUpstream={selectedUpstream?.id}
+                            </div>
+                          </div>
                         </div>
                       );
                     }
 
-                    // 업스트림과 개별 스템들을 모두 렌더링
-                    const allItems: any[] = [];
+                    // 개별 스템들만 렌더링 (폴더 형태가 아닌 평면적으로)
+                    const allStems: any[] = [];
                     
                     upstreamStems.forEach((stemItem, upstreamIndex) => {
-                      // 메인 업스트림 정보 추가
-                      allItems.push({
-                        type: 'upstream',
-                        data: stemItem,
-                        key: `upstream-${upstreamIndex}`
-                      });
-                      
-                      // 개별 스템들 추가
+                      // 개별 스템들만 추가 (타입별 정렬: new -> modify -> unchanged)
                       if (stemItem?.stemData && Array.isArray(stemItem.stemData)) {
-                        stemItem.stemData.forEach((stem: any, stemIndex: number) => {
-                          allItems.push({
-                            type: 'stem',
+                        const sortedStems = [...stemItem.stemData].sort((a, b) => {
+                          const typeOrder = { 'new': 0, 'modify': 1, 'unchanged': 2 };
+                          return (typeOrder[a.type as keyof typeof typeOrder] || 3) - 
+                                 (typeOrder[b.type as keyof typeof typeOrder] || 3);
+                        });
+                        
+                        sortedStems.forEach((stem: any, stemIndex: number) => {
+                          allStems.push({
                             data: stem,
                             upstream: stemItem,
-                            key: `stem-${upstreamIndex}-${stemIndex}`
+                            key: `stem-${upstreamIndex}-${stemIndex}`,
+                            sortOrder: stem.type === 'new' ? 0 : stem.type === 'modify' ? 1 : 2
                           });
                         });
                       }
                     });
 
-                    return allItems.map((item, _index) => {
-                      if (item.type === 'upstream') {
-                        const stemItem = item.data;
-                        return (
-                          <div key={item.key} className='space-y-2'>
-                            <div
-                              onClick={() => handleAudioFileClick(stemItem)}
-                              className='cursor-pointer rounded bg-[#3a3a3a] p-3 text-sm text-white transition-colors hover:bg-[#4a4a4a]'
-                            >
-                              <div className='font-medium'>
-                                📁 {stemItem?.title || 'Unnamed File'}
+                    return allStems.map((item, _index) => {
+                      // 개별 스템 렌더링
+                      const stemData = item.data;
+                      const upstream = item.upstream;
+                      
+                      // 타입별 스타일 정의
+                      const getTypeStyle = (type: string) => {
+                        switch (type) {
+                          case 'new':
+                            return {
+                              icon: '✨',
+                              bgColor: 'bg-green-900/30',
+                              borderColor: 'border-l-4 border-green-500',
+                              badgeColor: 'bg-green-600 text-white',
+                              hoverColor: 'hover:bg-green-900/50'
+                            };
+                          case 'modify':
+                            return {
+                              icon: '🔄',
+                              bgColor: 'bg-yellow-900/30',
+                              borderColor: 'border-l-4 border-yellow-500',
+                              badgeColor: 'bg-yellow-600 text-white',
+                              hoverColor: 'hover:bg-yellow-900/50'
+                            };
+                          case 'unchanged':
+                            return {
+                              icon: '📄',
+                              bgColor: 'bg-gray-800/30',
+                              borderColor: 'border-l-4 border-gray-500',
+                              badgeColor: 'bg-gray-600 text-white',
+                              hoverColor: 'hover:bg-gray-800/50'
+                            };
+                          default:
+                            return {
+                              icon: '❓',
+                              bgColor: 'bg-gray-800/30',
+                              borderColor: 'border-l-4 border-gray-500',
+                              badgeColor: 'bg-gray-600 text-white',
+                              hoverColor: 'hover:bg-gray-800/50'
+                            };
+                        }
+                      };
+                      
+                      const typeStyle = getTypeStyle(stemData.type);
+                      
+                      return (
+                        <div key={item.key} className='space-y-2'>
+                          <div
+                            onClick={() => handleIndividualStemClick(stemData, upstream)}
+                            className={`cursor-pointer rounded p-3 text-sm text-white transition-all duration-200 ${typeStyle.bgColor} ${typeStyle.borderColor} ${typeStyle.hoverColor}`}
+                          >
+                            <div className='flex items-center justify-between'>
+                              <div className='font-medium flex items-center gap-2'>
+                                <span className="text-lg">{typeStyle.icon}</span>
+                                <span>{stemData.category?.name || 'Unknown Category'}</span>
                               </div>
-                              <div className='text-xs text-gray-400'>
-                                {stemItem?.description || 'No description'}
-                              </div>
-                              <div className='mt-1 text-xs text-gray-500'>
-                                Category: {stemItem?.category || 'Unknown'} | By:{' '}
-                                {stemItem?.user?.username || 'Unknown'}
-                              </div>
+                              <span className={`rounded px-2 py-1 text-xs font-medium ${typeStyle.badgeColor}`}>
+                                {stemData.type?.toUpperCase() || 'UNKNOWN'}
+                              </span>
+                            </div>
+                            <div className='text-xs text-gray-300 mt-2'>
+                              📁 {stemData.stem?.file_name || 'Unknown file'}
+                            </div>
+                            <div className='text-xs text-gray-400 mt-1'>
+                              🎼 Instrument: {stemData.category?.instrument || 'Unknown'} | 
+                              👤 By: {stemData.stem?.user?.username || upstream?.user?.username || 'Unknown'}
                             </div>
                           </div>
-                        );
-                      } else {
-                        // 개별 스템 렌더링
-                        const stemData = item.data;
-                        const upstream = item.upstream;
-                        
-                        return (
-                          <div key={item.key} className='ml-4 space-y-2'>
-                            <div
-                              onClick={() => handleIndividualStemClick(stemData, upstream)}
-                              className='cursor-pointer rounded bg-[#2a2a2a] p-3 text-sm text-white transition-colors hover:bg-[#3a3a3a] border-l-4 border-blue-500'
-                            >
-                              <div className='flex items-center justify-between'>
-                                <div className='font-medium'>
-                                  🎵 {stemData.category?.name || 'Unknown Category'}
-                                </div>
-                                <span
-                                  className={`rounded px-2 py-1 text-xs ${stemData.type === 'new'
-                                    ? 'bg-green-600'
-                                    : stemData.type === 'modify'
-                                      ? 'bg-yellow-600'
-                                      : 'bg-gray-600'
-                                    }`}
-                                >
-                                  {stemData.type || 'unknown'}
-                                </span>
-                              </div>
-                              <div className='text-xs text-gray-400 mt-1'>
-                                {stemData.stem?.file_name || 'Unknown file'}
-                              </div>
-                              <div className='text-xs text-gray-500 mt-1'>
-                                Instrument: {stemData.category?.instrument || 'Unknown'} | 
-                                By: {stemData.stem?.user?.username || upstream?.user?.username || 'Unknown'}
-                              </div>
-                            </div>
-                          </div>
-                        );
-                      }
+                        </div>
+                      );
                     });
                   })()}
                 </div>
