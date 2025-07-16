@@ -251,6 +251,8 @@ const StemSetReviewPage = () => {
     }
   }, [paramStageId, paramUpstreamId]);
 
+
+
   const handleReady = useCallback(
     (ws: WaveSurfer, id: string) => {
       wavesurferRefs.current[id] = ws;
