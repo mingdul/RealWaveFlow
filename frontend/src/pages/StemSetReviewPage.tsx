@@ -773,7 +773,7 @@ const StemSetReviewPage = () => {
             {/* 로고 */}
             <div className='flex items-center space-x-4'>
               <div className='flex items-center space-x-2'>
-                <Button size="sm" className="p-2 bg-black text-white" onClick={() => navigate(`/stage/${stageId}`)}>
+                <Button size="sm" className="p-2 bg-black text-white" onClick={() => navigate(`/stage/${paramStageId}`)}>
                   <ChevronLeft size={20} />
                 </Button>
                 <Logo />

@@ -159,7 +159,7 @@ const OpenStageModal: React.FC<OpenStageModalProps> = ({
           ) : (
             <div className="text-center py-6 bg-[#595959]/10 rounded-lg border border-[#595959]/30">
               <Users size={32} className="text-[#BFBFBF] mx-auto mb-2" />
-              <p className="text-[#BFBFBF] text-sm">리뷰어가 아직 추가되지 않았습니다</p>
+              <p className="text-[#BFBFBF] text-sm">no reviewers</p>
             </div>
           )}
         </div>
