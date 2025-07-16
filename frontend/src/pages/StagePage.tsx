@@ -100,7 +100,9 @@ const StagePage: React.FC = () => {
   }) => {
     const [isHovered, setIsHovered] = useState(false);
 
-    const status = upstream.status as 'ACTIVE' | 'REJECTED' | 'APPROVED';
+    const status = upstream.status?.toUpperCase() as 'ACTIVE' | 'REJECTED' | 'APPROVED';
+    
+    console.log('[DEBUG] Upstream status:', upstream.status, 'Normalized:', status);
     
     const statusColor = status === 'ACTIVE'
       ? 'bg-[#05d182] text-black'
