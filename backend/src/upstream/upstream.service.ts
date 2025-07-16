@@ -302,5 +302,22 @@ export class UpstreamService {
             guide_path: upstream.guide_path
         };
     }
+
+    async getUpstreamByUpstreamId(upstream_id: string) {
+        const upstream = await this.upstreamRepository.findOne({
+            where: { id: upstream_id },
+            relations: ['stage', 'user'],
+        });
+
+        if (!upstream) {
+            throw new NotFoundException(`Upstream not found: ${upstream_id}`);
+        }
+
+        return {
+            success: true,
+            message: 'Upstream fetched successfully',
+            stems: upstream.stems
+        };
+    }
     
 }
