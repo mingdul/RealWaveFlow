@@ -252,7 +252,8 @@ export class GuideService {
             relations: [
                 'stems', 
                 'stems.category',
-                'stems.track'
+                'stems.upstream',
+                'stems.user'
             ]
         });
 
