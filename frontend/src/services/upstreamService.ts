@@ -46,6 +46,10 @@ export const getUpstreamStems = async (upstreamId: string, trackId: string) => {
   return await apiClient.get(`/stem/upstream/${upstreamId}/track/${trackId}`);
 }; 
 
+export const getUpstreamByUpstreamId = async (upstreamId: string) => {
+  return await apiClient.get(`/upstream/get-upstreams-stems/${upstreamId}`);
+};
+
 export default {
   createUpstream,
   getStageUpstreams,

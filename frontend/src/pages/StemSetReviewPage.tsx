@@ -3,15 +3,14 @@ import WaveSurfer from 'wavesurfer.js';
 import Wave from '../components/wave';
 import Logo from '../components/Logo';
 import {
-  getStageUpstreams,
   getUpstreamStems,
-  getUpstreamDetail,
+  getUpstreamByUpstreamId,
 } from '../services/upstreamService';
 import {
   getStageDetail,
 } from '../services/stageService';
 import streamingService from '../services/streamingService';
-import { useParams, useSearchParams } from 'react-router-dom';
+import { useParams } from 'react-router-dom';
 import { useAuth } from '../contexts/AuthContext';
 import Button from '../components/Button';
 import {
@@ -80,77 +79,29 @@ const StemSetReviewPage = () => {
   const wavesurferRefs = useRef<{ [id: string]: WaveSurfer }>({});
   const [readyStates, setReadyStates] = useState<{ [id: string]: boolean }>({});
   const isSeeking = useRef(false); // 무한 루프 방지용 플래그
-  const { upstreamId: paramUpstreamId, stageId: paramStageId } = useParams<{ upstreamId: string, stageId: string }>();
-  const [searchParams] = useSearchParams();
-  const [stageId, setStageId] = useState<string | null>(null);
+  const {upstreamId, stageId} = useParams();
+
 
   // stageId 결정 로직 (쿼리 파라미터 우선, 없으면 upstream API 사용)
   useEffect(() => {
     const determineStageId = async () => {
       console.log('🚀 [determineStageId] Starting stage ID determination...');
-      console.log('🔍 [determineStageId] paramUpstreamId:', paramUpstreamId);
-      console.log('🔍 [determineStageId] searchParams:', Object.fromEntries(searchParams.entries()));
-      
-      // 1. 먼저 쿼리 파라미터에서 stageId 확인
-      const stageIdFromQuery = searchParams.get('stageId');
-      console.log('🔍 [determineStageId] stageIdFromQuery:', stageIdFromQuery);
-      
-      if (stageIdFromQuery) {
-        console.log('✅ [determineStageId] Found stageId in query params:', stageIdFromQuery);
-        setStageId(stageIdFromQuery);
-        
-        // stageId가 있으므로 getStageUpstreams를 사용해서 모든 upstream 목록을 가져오고
-        // 그 중에서 paramUpstreamId와 일치하는 것을 찾아서 selectedUpstream 설정
-        if (paramUpstreamId) {
-          try {
-            console.log('🔍 [determineStageId] Looking for upstream in stage upstreams...');
-            const upstreamsResponse = await getStageUpstreams(stageIdFromQuery);
-            console.log('📁 [determineStageId] Stage upstreams response:', upstreamsResponse);
-            console.log('📁 [determineStageId] Stage upstreams count:', upstreamsResponse?.length || 0);
-            console.log('📁 [determineStageId] Looking for paramUpstreamId:', paramUpstreamId);
-            
-            const targetUpstream = upstreamsResponse.find((upstream: any) => upstream.id === paramUpstreamId);
-            if (targetUpstream) {
-              console.log('✅ [determineStageId] Found target upstream in stage upstreams:', targetUpstream);
-              setSelectedUpstream(targetUpstream);
-            } else {
-              console.warn('⚠️ [determineStageId] Target upstream not found in stage upstreams');
-              console.log('📋 [determineStageId] Available upstreams:', upstreamsResponse.map((u: any) => ({id: u.id, title: u.title, fileName: u.fileName})));
-            }
-          } catch (error) {
-            console.error('❌ [determineStageId] Error fetching stage upstreams:', error);
-          }
+      console.log('🔍 [determineStageId] paramUpstreamId:', upstreamId);
+      if(!upstreamId) return;
+      try{
+        const upstreamsResponse = await getUpstreamByUpstreamId(upstreamId);
+
+        if(upstreamsResponse.data){
+          setSelectedUpstream(upstreamsResponse.data.upstream);
         }
-        return;
+      } catch (error) {
+        console.error('❌ [determineStageId] Error fetching upstream details:', error);
       }
-
-      // 2. 쿼리 파라미터에 stageId가 없으면 기존 방식 사용 (upstream API를 통해 stageId 추출)
-      if (paramUpstreamId) {
-        try {
-          console.log('🔍 [determineStageId] Found upstreamId in URL params, fetching upstream details:', paramUpstreamId);
-          // upstream 정보를 가져와서 stageId 추출
-          const upstreamData = await getUpstreamDetail(paramUpstreamId);
-          console.log('📦 [determineStageId] Upstream data response:', upstreamData);
-          const extractedStageId =
-            upstreamData.stage?.id || upstreamData.stage_id;
-          console.log('✅ [determineStageId] Extracted stageId from upstream:', extractedStageId);
-          setStageId(extractedStageId);
-
-          // 선택된 upstream 설정
-          console.log('✅ [determineStageId] Setting selected upstream:', upstreamData);
-          setSelectedUpstream(upstreamData);
-        } catch (error) {
-          console.error('❌ [determineStageId] Error fetching upstream details:', error);
-          console.error('❌ [determineStageId] Error details:', (error as any)?.message);
-        }
-        return;
-      }
-
-      console.log('⚠️ [determineStageId] No stageId or upstreamId found');
-    };
-
+      
+    }
     determineStageId();
-  }, [paramUpstreamId, searchParams]);
+  }, [upstreamId]);
+
 
   // 상태 변경 추적을 위한 로그
 
@@ -187,7 +138,7 @@ const StemSetReviewPage = () => {
 
 
         // 5. guide_path를 presigned URL로 변환
-        const response = await streamingService.getGuidePresignedUrlbyUpstream(paramUpstreamId as string);
+        const response = await streamingService.getGuidePresignedUrlbyUpstream(upstreamId as string);
         console.log('📦 [fetchPreviousGuideUrl] Guide response:', response);
         
         if (response.success && response.data) {
@@ -208,10 +159,10 @@ const StemSetReviewPage = () => {
   useEffect(() => {
     const fetchUpstreamsAndStems = async () => {
       try {
-        if (!paramStageId || !paramUpstreamId) return;
+        if (!stageId || !upstreamId) return;
     
         setStemsLoading(true);
-        const stageResponse = await getStageDetail(paramStageId);
+        const stageResponse = await getStageDetail(stageId);
         console.log('🔍 [fetchUpstreamsAndStems] Stage response:', stageResponse);
         
         if (!stageResponse?.data?.track) {
@@ -243,13 +194,13 @@ const StemSetReviewPage = () => {
     };
     
 
-    if (paramStageId && paramUpstreamId) {
-      console.log('🎬 useEffect triggered with stageId:', paramStageId, 'selectedUpstream:', paramUpstreamId);
+    if (stageId && upstreamId) {
+      console.log('🎬 useEffect triggered with stageId:', stageId, 'selectedUpstream:', upstreamId);
       fetchUpstreamsAndStems();
     } else {
       console.log('⚠️ No stageId or selectedUpstream provided');
     }
-  }, [paramStageId, paramUpstreamId]);
+  }, [stageId, upstreamId]);
 
   const handleReady = useCallback(
     (ws: WaveSurfer, id: string) => {
@@ -452,14 +403,14 @@ const StemSetReviewPage = () => {
 
   // 페이지 로딩 시점에 댓글 로드
   useEffect(() => {
-    console.log('🔍🔍 selectedUpstream:', paramUpstreamId);
+    console.log('🔍🔍 selectedUpstream:', upstreamId);
     
-    if (paramUpstreamId) {
-      console.log('💬 [useEffect] Loading comments for upstream:', paramUpstreamId);
-      loadComments(paramUpstreamId);
+    if (upstreamId) {
+      console.log('💬 [useEffect] Loading comments for upstream:', upstreamId);
+      loadComments(upstreamId);
     }
   
-  }, [paramUpstreamId, loadComments]);
+  }, [upstreamId, loadComments]);
   
 
   // 댓글 삭제 함수
@@ -674,17 +625,17 @@ const StemSetReviewPage = () => {
   }, [currentTime, readyStates, isPlaying]);
 
   const handleApprove = async () => {
-    console.log('🔍 Stage ID:', paramStageId);
-    console.log('🔍 Selected Upstream:', paramUpstreamId);
+    console.log('🔍 Stage ID:', stageId);
+    console.log('🔍 Selected Upstream:', upstreamId);
 
    
-    if (!paramStageId || !paramUpstreamId) {
+    if (!stageId || !upstreamId) {
       alert('Stage 또는 Upstream이 선택되지 않았습니다.');
       return;
     }
 
     try {
-      await approveDropReviewer(paramStageId, paramUpstreamId);
+      await approveDropReviewer(stageId, upstreamId);
       alert('승인 완료!');
     } catch (error) {
       console.error('승인 실패:', error);
@@ -693,13 +644,13 @@ const StemSetReviewPage = () => {
   };
 
   const handleReject = async () => {
-    if (!paramStageId || !paramUpstreamId) {
+    if (!stageId || !upstreamId) {
       alert('Stage 또는 Upstream이 선택되지 않았습니다.');
       return;
     }
 
     try {
-      await rejectDropReviewer(paramStageId, paramUpstreamId);
+      await rejectDropReviewer(stageId, upstreamId);
       alert('거절 완료!');
     } catch (error) {
       console.error('거절 실패:', error);
