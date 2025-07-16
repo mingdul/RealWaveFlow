@@ -79,13 +79,15 @@ const StemSetReviewPage = () => {
   const wavesurferRefs = useRef<{ [id: string]: WaveSurfer }>({});
   const [readyStates, setReadyStates] = useState<{ [id: string]: boolean }>({});
   const isSeeking = useRef(false); // 무한 루프 방지용 플래그
-  const { upstreamId, stageId } = useParams<{ upstreamId: string, stageId: string }>();
+  const { upstreamId, stageId: urlStageId } = useParams<{ upstreamId: string, stageId: string }>();
+  const [stageId, setStageId] = useState<string | undefined>(urlStageId);
 
 
   // stageId 결정 로직 (쿼리 파라미터 우선, 없으면 upstream API 사용)
   useEffect(() => {
     const determineStageId = async () => {
-              if (upstreamId) {
+      // URL에서 stageId가 없는 경우에만 upstream에서 추출
+      if (upstreamId && !urlStageId) {
           try {
             console.log('🔍 [determineStageId] Found upstreamId in URL params, fetching upstream details:', upstreamId);
             // upstream 정보를 가져와서 stageId 추출
@@ -100,6 +102,7 @@ const StemSetReviewPage = () => {
               if (upstreamData.data.upstream.stage) {
                 const extractedStageId = upstreamData.data.upstream.stage.id;
                 console.log('✅ [determineStageId] Extracted stageId from upstream:', extractedStageId);
+                setStageId(extractedStageId); // stageId state 업데이트
               } else {
                 console.warn('⚠️ [determineStageId] No stage information in upstream');
               }
@@ -107,22 +110,9 @@ const StemSetReviewPage = () => {
               // 선택된 upstream 설정
               console.log('✅ [determineStageId] Setting selected upstream:', upstreamData.data.upstream);
               setSelectedUpstream(upstreamData.data.upstream);
-            } else if (upstreamData?.data?.upstream) {
-              // 백엔드 응답 구조 변경에 따른 대안 처리
-              console.log('📦 [determineStageId] Upstream object (direct):', upstreamData.data.upstream);
-              console.log('📦 [determineStageId] Upstream keys:', Object.keys(upstreamData.data.upstream));
               
-              // stage 정보가 있는지 확인
-              if (upstreamData.data.upstream.stage) {
-                const extractedStageId = upstreamData.data.upstream.stage.id;
-                console.log('✅ [determineStageId] Extracted stageId from upstream:', extractedStageId);
-              } else {
-                console.warn('⚠️ [determineStageId] No stage information in upstream');
-              }
+              // stageId가 설정되었으므로 즉시 스템 데이터 로드 (함수 정의 후에 호출)
 
-              // 선택된 upstream 설정
-              console.log('✅ [determineStageId] Setting selected upstream:', upstreamData.data.upstream);
-              setSelectedUpstream(upstreamData.data.upstream);
             } else {
               console.error('❌ [determineStageId] No upstream data found in response');
             }
@@ -137,7 +127,7 @@ const StemSetReviewPage = () => {
     };
 
     determineStageId();
-  }, [upstreamId]);
+  }, [upstreamId, urlStageId]);
 
   // 상태 변경 추적을 위한 로그
 
@@ -186,56 +176,54 @@ const StemSetReviewPage = () => {
     fetchGuideUrl();
   }, [stageId]);
 
-  useEffect(() => {
-        const fetchUpstreamsAndStems = async () => {
-      try {
-        if (!stageId || !selectedUpstream) {
-          console.log('⚠️ [fetchUpstreamsAndStems] Missing stageId or selectedUpstream:', { stageId, selectedUpstream });
-          return;
-        }
+  // 스템 데이터 로드 함수 분리
+  const loadStemsData = async (stageId: string, upstream: any) => {
+    try {
+      console.log('🎯 [loadStemsData] Loading stems for stageId:', stageId, 'upstream:', upstream.id);
+      setStemsLoading(true);
       
-        setStemsLoading(true);
-        const stageResponse = await getStageDetail(stageId);
-        
-        if (!stageResponse || !stageResponse.data) {
-          console.error('❌ [fetchUpstreamsAndStems] track 정보가 없습니다:', stageResponse);
-          return;
-        }
+      const stageResponse = await getStageDetail(stageId);
       
-        const currentTrackId = stageResponse.data.track.id;
-        console.log('🔍 currentTrackId:', currentTrackId);
-        console.log('🔍 selectedUpstream:', selectedUpstream);
-        
-        // ✅ 단일 upstream에 대해서만 처리
-        console.log('🎯 단일 upstream에 대해 getUpstreamStems 호출:', selectedUpstream.id);
-        const stemResponse = await getUpstreamStems(selectedUpstream.id, currentTrackId);
-        console.log('📦 [fetchUpstreamsAndStems] Stem response:', stemResponse);
-        
-        if(!stemResponse || !stemResponse.data){
-          console.log('❌ [fetchUpstreamsAndStems] stem 정보가 없습니다:', stemResponse);
-        }
-        
-        const stemsResult = [
-          {
-            ...selectedUpstream,
-            upstreamId: selectedUpstream.id,
-            stemData: stemResponse?.data || null,
-          },
-        ];
-        console.log('✅ [fetchUpstreamsAndStems] Stems result:', stemsResult);
-        setUpstreamStems(stemsResult);
-      } catch (error) {
-        console.error('❌ [fetchUpstreamsAndStems] 오류:', error);
-        alert('스템 정보를 불러오는 중 오류가 발생했습니다.');
-      } finally {
-        setStemsLoading(false);
+      if (!stageResponse || !stageResponse.data) {
+        console.error('❌ [loadStemsData] track 정보가 없습니다:', stageResponse);
+        return;
       }
-    };
     
+      const currentTrackId = stageResponse.data.track.id;
+      console.log('🔍 currentTrackId:', currentTrackId);
+      console.log('🔍 upstream:', upstream);
+      
+      // ✅ 단일 upstream에 대해서만 처리
+      console.log('🎯 단일 upstream에 대해 getUpstreamStems 호출:', upstream.id);
+      const stemResponse = await getUpstreamStems(upstream.id, currentTrackId);
+      console.log('📦 [loadStemsData] Stem response:', stemResponse);
+      
+      if(!stemResponse || !stemResponse.data){
+        console.log('❌ [loadStemsData] stem 정보가 없습니다:', stemResponse);
+      }
+      
+      const stemsResult = [
+        {
+          ...upstream,
+          upstreamId: upstream.id,
+          stemData: stemResponse?.data || null,
+        },
+      ];
+      console.log('✅ [loadStemsData] Stems result:', stemsResult);
+      setUpstreamStems(stemsResult);
+    } catch (error) {
+      console.error('❌ [loadStemsData] 오류:', error);
+      alert('스템 정보를 불러오는 중 오류가 발생했습니다.');
+    } finally {
+      setStemsLoading(false);
+    }
+  };
 
+  useEffect(() => {
+    // stageId와 selectedUpstream이 모두 설정되면 스템 데이터 로드
     if (stageId && selectedUpstream) {
       console.log('🎬 useEffect triggered with stageId:', stageId, 'selectedUpstream:', selectedUpstream.id);
-      fetchUpstreamsAndStems();
+      loadStemsData(stageId, selectedUpstream);
     } else {
       console.log('⚠️ No stageId or selectedUpstream provided');
     }
