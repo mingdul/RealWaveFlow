@@ -106,13 +106,16 @@ const StemSetReviewPage = () => {
             console.log('🔍 [determineStageId] Looking for upstream in stage upstreams...');
             const upstreamsResponse = await getStageUpstreams(stageIdFromQuery);
             console.log('📁 [determineStageId] Stage upstreams response:', upstreamsResponse);
+            console.log('📁 [determineStageId] Stage upstreams count:', upstreamsResponse?.length || 0);
+            console.log('📁 [determineStageId] Looking for paramUpstreamId:', paramUpstreamId);
+            
             const targetUpstream = upstreamsResponse.find((upstream: any) => upstream.id === paramUpstreamId);
             if (targetUpstream) {
               console.log('✅ [determineStageId] Found target upstream in stage upstreams:', targetUpstream);
               setSelectedUpstream(targetUpstream);
             } else {
               console.warn('⚠️ [determineStageId] Target upstream not found in stage upstreams');
-              console.log('📋 [determineStageId] Available upstreams:', upstreamsResponse.map((u: any) => ({id: u.id, fileName: u.fileName})));
+              console.log('📋 [determineStageId] Available upstreams:', upstreamsResponse.map((u: any) => ({id: u.id, title: u.title, fileName: u.fileName})));
             }
           } catch (error) {
             console.error('❌ [determineStageId] Error fetching stage upstreams:', error);
@@ -153,7 +156,12 @@ const StemSetReviewPage = () => {
 
 
   useEffect(() => {
-    console.log('📊 UpstreamStems state updated:', upstreamStems);
+    console.log('📊 [State] UpstreamStems state updated. Length:', upstreamStems.length);
+    console.log('📊 [State] UpstreamStems data:', upstreamStems);
+    if (upstreamStems.length > 0) {
+      console.log('📊 [State] First upstream sample:', upstreamStems[0]);
+      console.log('📊 [State] First upstream keys:', Object.keys(upstreamStems[0]));
+    }
   }, [upstreamStems]);
 
   // 이전 버전의 가이드 스템 URL 가져오기
@@ -200,42 +208,75 @@ const StemSetReviewPage = () => {
   useEffect(() => {
     const fetchUpstreamsAndStems = async (upstreamId: string) => {
       try {
-        if (!stageId) return;
+        console.log('🔍 [fetchUpstreamsAndStems] Starting with:', { stageId, upstreamId, selectedUpstream });
+        
+        if (!stageId) {
+          console.log('⚠️ [fetchUpstreamsAndStems] No stageId, returning early');
+          return;
+        }
     
+        console.log('🔍 [fetchUpstreamsAndStems] Getting stage detail for:', stageId);
         const stageResponse = await getStageDetail(stageId);
+        console.log('🔍 [fetchUpstreamsAndStems] Stage response:', stageResponse);
+        
         if (!stageResponse?.data?.track) {
-          console.error('❌ track 정보가 없습니다');
+          console.error('❌ [fetchUpstreamsAndStems] track 정보가 없습니다:', stageResponse);
           return;
         }
     
         const currentTrackId = stageResponse.data.track.id;
-        console.log('🔍 currentTrackId:', currentTrackId);
-        console.log('🔍🔍🔍 selectedUpstream:', selectedUpstream);
-        if (selectedUpstream) {
-          // ✅ 단일 upstream에 대해서만 처리
-          console.log('🎯 단일 upstream에 대해 getUpstreamStems 호출:', selectedUpstream.id);
-          const stemResponse = await getUpstreamStems(selectedUpstream.id, currentTrackId);
-    
-          const stemsResult = [
-            {
-              upstreamId: upstreamId,
-              stemData: stemResponse.data || null,
-            },
-          ];
-          setUpstreamStems(stemsResult);
-        } 
+        console.log('🔍 [fetchUpstreamsAndStems] currentTrackId:', currentTrackId);
+        console.log('🔍🔍🔍 [fetchUpstreamsAndStems] selectedUpstream:', selectedUpstream);
+        
+        // Show History를 위해 모든 stage upstreams를 가져오기
+        console.log('🔍 [fetchUpstreamsAndStems] Getting all stage upstreams for Show History');
+        const allUpstreamsResponse = await getStageUpstreams(stageId);
+        console.log('🔍 [fetchUpstreamsAndStems] All upstreams response:', allUpstreamsResponse);
+        
+        if (allUpstreamsResponse && allUpstreamsResponse.length > 0) {
+          console.log('🔍 [fetchUpstreamsAndStems] Processing', allUpstreamsResponse.length, 'upstreams');
+          
+          // 각 upstream에 대해 stem 정보 가져오기
+          const stemsPromises = allUpstreamsResponse.map(async (upstream: any) => {
+            try {
+              console.log('🔍 [fetchUpstreamsAndStems] Getting stems for upstream:', upstream.id);
+              const stemResponse = await getUpstreamStems(upstream.id, currentTrackId);
+              console.log('🔍 [fetchUpstreamsAndStems] Stem response for', upstream.id, ':', stemResponse);
+              
+              return {
+                ...upstream, // upstream 전체 데이터 포함
+                upstreamId: upstream.id,
+                stemData: stemResponse.data || null,
+              };
+            } catch (error) {
+              console.error('❌ [fetchUpstreamsAndStems] Error getting stems for upstream', upstream.id, ':', error);
+              return {
+                ...upstream,
+                upstreamId: upstream.id,
+                stemData: null,
+              };
+            }
+          });
+          
+          const stemsResults = await Promise.all(stemsPromises);
+          console.log('🔍 [fetchUpstreamsAndStems] Final stems results:', stemsResults);
+          setUpstreamStems(stemsResults);
+        } else {
+          console.log('⚠️ [fetchUpstreamsAndStems] No upstreams found in stage');
+          setUpstreamStems([]);
+        }
       } catch (error) {
         console.error('❌ [fetchUpstreamsAndStems] 오류:', error);
+        setUpstreamStems([]);
       }
     };
     
 
-    // if (stageId) fetchUpstreamsAndStems();
     if (stageId) {
-      console.log('🎬 useEffect triggered with stageId:', stageId);
+      console.log('🎬 [fetchUpstreamsAndStems] useEffect triggered with stageId:', stageId);
       fetchUpstreamsAndStems(paramUpstreamId || '');
     } else {
-      console.log('⚠️ No stageId provided');
+      console.log('⚠️ [fetchUpstreamsAndStems] No stageId provided');
     }
   }, [stageId]);
 
@@ -555,14 +596,16 @@ const StemSetReviewPage = () => {
   const handleAudioFileClick = useCallback(
     async (upstream: any) => {
       try {
-        console.log('🎵 Audio file clicked:', upstream);
+        console.log('🎵 [handleAudioFileClick] Audio file clicked:', upstream);
+        console.log('🎵 [handleAudioFileClick] Upstream keys:', Object.keys(upstream));
+        console.log('🎵 [handleAudioFileClick] Upstream ID:', upstream.id);
 
         // 선택된 upstream 설정
         setSelectedUpstream(upstream);
-        console.log('✅ Selected upstream set');
+        console.log('✅ [handleAudioFileClick] Selected upstream set');
 
         // 해당 upstream의 댓글 로드
-        console.log('💬 Loading comments for upstream:', upstream.id);
+        console.log('💬 [handleAudioFileClick] Loading comments for upstream:', upstream.id);
         await loadComments(upstream.id);
 
         // 스트리밍 최적화된 URL을 가져오기
@@ -741,7 +784,15 @@ const StemSetReviewPage = () => {
         {/* 🔽 Header 아래로 이동된 버튼들 */}
         <div className='mt-4 flex justify-end space-x-4'>
           <button
-            onClick={() => setShowHistory(!showHistory)}
+            onClick={() => {
+              console.log('🔍 [Show History] Button clicked. Current state:', { 
+                showHistory, 
+                upstreamStems: upstreamStems.length,
+                stageId,
+                selectedUpstream 
+              });
+              setShowHistory(!showHistory);
+            }}
             className='self-start rounded bg-[#3a3a3a] px-3 py-1 text-sm hover:bg-[#555]'
           >
             Show History
@@ -845,14 +896,15 @@ const StemSetReviewPage = () => {
 
                   {(() => {
                     console.log(
-                      '🎨 Rendering upstreams. Total count:',
+                      '🎨 [Render] Rendering upstreams. Total count:',
                       upstreamStems.length
                     );
-                    console.log('🎨 Upstreams array:', upstreamStems);
-                    console.log('🎨 UpstreamStems array:', upstreamStems);
+                    console.log('🎨 [Render] UpstreamStems array:', upstreamStems);
+                    console.log('🎨 [Render] showHistory state:', showHistory);
+                    console.log('🎨 [Render] stageId:', stageId);
 
                     if (upstreamStems.length === 0) {
-                      console.log('⚠️ No upstreams to render');
+                      console.log('⚠️ [Render] No upstreams to render');
                       return (
                         <div className='py-8 text-center text-gray-400'>
                           No audio files found for this stage
@@ -862,8 +914,12 @@ const StemSetReviewPage = () => {
 
                     return upstreamStems.map((upstream, index) => {
                       console.log(
-                        `🎨 Rendering upstream ${index + 1}:`,
+                        `🎨 [Render] Rendering upstream ${index + 1}:`,
                         upstream
+                      );
+                      console.log(
+                        `🎨 [Render] Upstream keys:`,
+                        Object.keys(upstream)
                       );
 
                       // 해당 upstream의 stem 정보 찾기
@@ -871,7 +927,7 @@ const StemSetReviewPage = () => {
                         (s) => s.upstreamId === upstream.id
                       );
                       console.log(
-                        `🎨 Stem info for upstream ${upstream.id}:`,
+                        `🎨 [Render] Stem info for upstream ${upstream.id}:`,
                         stemInfo
                       );
 
@@ -882,14 +938,14 @@ const StemSetReviewPage = () => {
                             className='cursor-pointer rounded bg-[#3a3a3a] p-3 text-sm text-white transition-colors hover:bg-[#4a4a4a]'
                           >
                             <div className='font-medium'>
-                              {upstream.title || 'Unnamed File'}
+                              {upstream.title || upstream.fileName || 'Unnamed File'}
                             </div>
                             <div className='text-xs text-gray-400'>
                               {upstream.description || 'No description'}
                             </div>
                             <div className='mt-1 text-xs text-gray-500'>
                               Category: {upstream.category || 'Unknown'} | By:{' '}
-                              {upstream.user?.username || 'Unknown'}
+                              {upstream.user?.username || upstream.uploadedBy?.username || 'Unknown'}
                             </div>
                           </div>
 
@@ -1201,7 +1257,7 @@ const StemSetReviewPage = () => {
               onClick={handleAddComment}
               disabled={!selectedUpstream || !commentInput.trim()}
             >
-              ▶️
+              <Play size={20} />
             </button>
           </div>
           {selectedUpstream && (
