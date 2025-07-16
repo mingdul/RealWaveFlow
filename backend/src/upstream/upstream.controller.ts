@@ -33,4 +33,12 @@ export class UpstreamController {
   async getUpstreamGuidePath(@Param('upstream_id') upstream_id: string) {
     return this.upstreamService.getUpstreamGuidePath(upstream_id);
   }
+
+  @Get('get-upstreams-stems/:upstream_id')
+  @ApiOperation({ summary: '스테이지의 업스트림 스템 조회', description: '스테이지의 업스트림 스템을 조회합니다.' })
+  @ApiResponse({ status: 200, description: '업스트림 조회 성공' })
+  @ApiResponse({ status: 404, description: '업스트림 없음' })
+  async getUpstreamByUpstreamId(@Param('upstream_id') upstream_id: string) {
+    return this.upstreamService.getUpstreamByUpstreamId(upstream_id);
+  }
 }
