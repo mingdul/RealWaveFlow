@@ -3,6 +3,7 @@ import { Play, Pause, Square, Volume2, VolumeX } from 'lucide-react';
 import AudioPlayer from './AudioPlayer';
 import { StemStreamingInfo } from '../services/streamingService';
 import streamingService from '../services/streamingService';
+import { getStageDetail } from '../services/stageService';
 
 interface StemPlayerProps {
   stems: StemStreamingInfo[];
@@ -31,13 +32,69 @@ const StemPlayer: React.FC<StemPlayerProps> = ({ stems, className = '', stageId}
   const [guideLoading, setGuideLoading] = useState(false);
   const guideAudioRef = useRef<HTMLAudioElement>(null);
 
+  // Stage-based stems loading
+  const [stageStems, setStageStems] = useState<StemStreamingInfo[]>([]);
+  const [stemsLoading, setStemsLoading] = useState(false);
+  const [stageInfo, setStageInfo] = useState<any>(null);
+
   // Refs for accessing AudioPlayer components
   const stemRefs = useRef<Record<string, HTMLAudioElement | null>>({});
+
+  // Determine which stems to use (stage-based or prop-based)
+  const activeStemsData = stageId && stageStems.length > 0 ? stageStems : stems;
+
+  // Load stems based on stageId
+  useEffect(() => {
+    const loadStemsByStageId = async () => {
+      if (!stageId) {
+        setStageStems([]);
+        setStageInfo(null);
+        return;
+      }
+
+      try {
+        setStemsLoading(true);
+        console.log('[DEBUG] Loading stems for stageId:', stageId);
+
+        // Get stage information
+        const stageResponse = await getStageDetail(stageId);
+        if (!stageResponse.success) {
+          console.error('Failed to get stage detail:', stageResponse.message);
+          return;
+        }
+
+        const stage = stageResponse.data;
+        setStageInfo(stage);
+        console.log('[DEBUG] Stage info:', stage);
+
+        // Load stems using track ID and version from stage
+        const stemResponse = await streamingService.getMasterStemStreams(
+          stage.track.id,
+          stage.version
+        );
+
+        if (stemResponse.success && stemResponse.data) {
+          setStageStems(stemResponse.data.stems);
+          console.log('[DEBUG] Loaded stage stems:', stemResponse.data.stems);
+        } else {
+          console.error('Failed to load stage stems:', stemResponse.message);
+          setStageStems([]);
+        }
+      } catch (error) {
+        console.error('Error loading stems by stage ID:', error);
+        setStageStems([]);
+      } finally {
+        setStemsLoading(false);
+      }
+    };
+
+    loadStemsByStageId();
+  }, [stageId]);
 
   // 스템 상태 초기화
   useEffect(() => {
     const initialStates: Record<string, StemState> = {};
-    stems.forEach(stem => {
+    activeStemsData.forEach(stem => {
       initialStates[stem.id] = {
         volume: 1,
         muted: false,
@@ -47,7 +104,7 @@ const StemPlayer: React.FC<StemPlayerProps> = ({ stems, className = '', stageId}
       };
     });
     setStemStates(initialStates);
-  }, [stems]);
+  }, [activeStemsData]);
 
   // 가이드 오디오 시간 업데이트 핸들러
   useEffect(() => {
@@ -283,11 +340,27 @@ const StemPlayer: React.FC<StemPlayerProps> = ({ stems, className = '', stageId}
     }
   }, [isPlaying, guideUrl, masterVolume, masterMuted]);
 
-  if (stems.length === 0) {
+  if (stemsLoading) {
+    return (
+      <div className={`p-6 bg-gray-900 rounded-lg ${className}`}>
+        <div className="text-center text-gray-400">
+          <div className="flex items-center justify-center py-8">
+            <div className="w-8 h-8 border-2 border-purple-600 border-t-transparent rounded-full animate-spin mr-3"></div>
+            <p>스템 파일을 로딩 중입니다...</p>
+          </div>
+        </div>
+      </div>
+    );
+  }
+
+  if (activeStemsData.length === 0) {
     return (
       <div className={`p-6 bg-gray-900 rounded-lg ${className}`}>
         <div className="text-center text-gray-400">
           <p>스템 파일이 없습니다.</p>
+          {stageId && stageInfo && (
+            <p className="text-sm mt-2">스테이지 V{stageInfo.version}에는 스템이 없습니다.</p>
+          )}
         </div>
       </div>
     );
@@ -295,10 +368,30 @@ const StemPlayer: React.FC<StemPlayerProps> = ({ stems, className = '', stageId}
 
   return (
     <div className={`p-6 bg-gray-900 rounded-lg ${className}`}>
+      {/* 스테이지 정보 헤더 */}
+      {/* {stageId && stageInfo && (
+        <div className="mb-4 p-3 bg-purple-900/20 border border-purple-500/30 rounded-lg">
+          <div className="flex items-center justify-between">
+            <div>
+              <h4 className="text-purple-400 font-semibold">
+                {stageInfo.title} (V{stageInfo.version})
+              </h4>
+              <p className="text-gray-300 text-sm">{stageInfo.description}</p>
+            </div>
+            <div className="text-xs text-gray-400">
+              <p>스테이지 ID: {stageId}</p>
+              <p>총 {activeStemsData.length}개 스템</p>
+            </div>
+          </div>
+        </div>
+      )} */}
+
       {/* 마스터 컨트롤 */}
       <div className="mb-6 p-4 bg-gray-800 rounded-lg">
         <div className="flex items-center justify-between mb-4">
-          <h3 className="text-lg font-semibold text-white">마스터 컨트롤</h3>
+          <h3 className="text-lg font-semibold text-white">
+            {stageId && stageInfo ? `스테이지 컨트롤 (V${stageInfo.version})` : '마스터 컨트롤'}
+          </h3>
           <div className="flex items-center gap-2">
             <button
               onClick={handleMasterMuteToggle}
@@ -346,7 +439,8 @@ const StemPlayer: React.FC<StemPlayerProps> = ({ stems, className = '', stageId}
           </div>
           {stageId && (
             <div className="text-xs text-purple-400 ml-2">
-              {guideLoading ? '가이드 로딩 중...' : '가이드 재생'}
+              {guideLoading ? '가이드 로딩 중...' : 
+               guideUrl ? '가이드 재생 가능' : '가이드 없음'}
             </div>
           )}
         </div>
@@ -367,8 +461,10 @@ const StemPlayer: React.FC<StemPlayerProps> = ({ stems, className = '', stageId}
 
       {/* 스템 리스트 */}
       <div className="space-y-3">
-        <h3 className="text-lg font-semibold text-white mb-3">스템 트랙</h3>
-        {stems.map((stem) => (
+        <h3 className="text-lg font-semibold text-white mb-3">
+          {stageId && stageInfo ? `스템 트랙 (V${stageInfo.version})` : '스템 트랙'}
+        </h3>
+        {activeStemsData.map((stem) => (
           <AudioPlayer
             key={stem.id}
             src={stem.presignedUrl}

@@ -155,11 +155,6 @@ const StemSetReviewPage = () => {
   // 상태 변경 추적을 위한 로그
 
 
-  // stageId 상태 변경 추적
-  useEffect(() => {
-    console.log('🔍 [State] stageId changed:', stageId);
-  }, [stageId]);
-
   useEffect(() => {
     console.log('📊 [State] UpstreamStems state updated. Length:', upstreamStems.length);
     console.log('📊 [State] UpstreamStems data:', upstreamStems);
@@ -630,10 +625,6 @@ const StemSetReviewPage = () => {
         setSelectedUpstream(upstream);
         console.log('✅ [handleAudioFileClick] Selected upstream set');
 
-        // 해당 upstream의 댓글 로드
-        console.log('💬 [handleAudioFileClick] Loading comments for upstream:', upstream.id);
-        await loadComments(upstream.id);
-
         // 스트리밍 최적화된 URL을 가져오기
         console.log('🌊 Getting streaming URL for upstream:', upstream.id);
         const response = await streamingService.getUpstreamStems(upstream.id);
@@ -694,7 +685,7 @@ const StemSetReviewPage = () => {
         }
       }
     },
-    [loadComments]
+    []
   );
 
   // Solo 버튼 핸들러들을 메모이제이션
@@ -816,16 +807,8 @@ const StemSetReviewPage = () => {
                 showHistory, 
                 upstreamStems: upstreamStems.length,
                 stageId,
-                selectedUpstream: selectedUpstream?.id,
-                paramUpstreamId 
+                selectedUpstream 
               });
-              
-              // 만약 upstreamStems가 비어있고 stageId가 있다면 강제로 다시 로드
-              if (upstreamStems.length === 0 && stageId) {
-                console.log('🔄 [Show History] Force reloading upstreams data...');
-                fetchAllUpstreams();
-              }
-              
               setShowHistory(!showHistory);
             }}
             className='self-start rounded bg-[#3a3a3a] px-3 py-1 text-sm hover:bg-[#555]'
@@ -849,42 +832,31 @@ const StemSetReviewPage = () => {
               <h2 className='text-lg font-bold text-white'>
                 Streaming Audio Files
               </h2>
-              <div className='flex items-center space-x-2'>
-                <button
-                  onClick={() => {
-                    console.log('🔄 [Refresh] Manual refresh triggered');
-                    fetchAllUpstreams();
-                  }}
-                  className='rounded bg-blue-600 px-2 py-1 text-xs text-white hover:bg-blue-700'
+              <button
+                onClick={() => setShowHistory(false)}
+                className='rounded-full p-1 text-gray-300 transition-all duration-200 hover:text-white'
+                style={{ backgroundColor: 'transparent' }}
+                onMouseEnter={(e) =>
+                  (e.currentTarget.style.backgroundColor = '#ffffff')
+                }
+                onMouseLeave={(e) =>
+                  (e.currentTarget.style.backgroundColor = 'transparent')
+                }
+              >
+                <svg
+                  className='h-5 w-5'
+                  fill='none'
+                  stroke='currentColor'
+                  viewBox='0 0 24 24'
                 >
-                  Refresh
-                </button>
-                <button
-                  onClick={() => setShowHistory(false)}
-                  className='rounded-full p-1 text-gray-300 transition-all duration-200 hover:text-white'
-                  style={{ backgroundColor: 'transparent' }}
-                  onMouseEnter={(e) =>
-                    (e.currentTarget.style.backgroundColor = '#ffffff')
-                  }
-                  onMouseLeave={(e) =>
-                    (e.currentTarget.style.backgroundColor = 'transparent')
-                  }
-                >
-                  <svg
-                    className='h-5 w-5'
-                    fill='none'
-                    stroke='currentColor'
-                    viewBox='0 0 24 24'
-                  >
-                    <path
-                      strokeLinecap='round'
-                      strokeLinejoin='round'
-                      strokeWidth={2}
-                      d='M6 18L18 6M6 6l12 12'
-                    />
-                  </svg>
-                </button>
-              </div>
+                  <path
+                    strokeLinecap='round'
+                    strokeLinejoin='round'
+                    strokeWidth={2}
+                    d='M6 18L18 6M6 6l12 12'
+                  />
+                </svg>
+              </button>
             </div>
 
             {/* Audio Files List */}
