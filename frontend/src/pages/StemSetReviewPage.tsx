@@ -578,79 +578,7 @@ const StemSetReviewPage = () => {
     [readyStates]
   );
 
-  const handleAudioFileClick = useCallback(
-    async (upstream: any) => {
-      try {
-        console.log('🎵 [handleAudioFileClick] Audio file clicked:', upstream);
-        console.log('🎵 [handleAudioFileClick] Upstream keys:', Object.keys(upstream));
-        console.log('🎵 [handleAudioFileClick] Upstream ID:', upstream.id);
 
-        // 선택된 upstream 설정
-        setSelectedUpstream(upstream);
-        console.log('✅ [handleAudioFileClick] Selected upstream set');
-
-        // 스트리밍 최적화된 URL을 가져오기
-        console.log('🌊 Getting streaming URL for upstream:', upstream.id);
-        const response = await streamingService.getUpstreamStems(upstream.id);
-        console.log('🌊 Streaming response:', response);
-
-        // 타입 가드를 사용한 응답 처리
-        if ('success' in response && response.success === false) {
-          // 실패 응답 처리
-          console.warn('⚠️ Streaming API failed:', response.message);
-        } else if ('stems' in response && response.stems && Array.isArray(response.stems) && response.stems.length > 0) {
-          // 성공 응답 처리
-          const streamingUrl = response.stems[0].presignedUrl;
-          console.log('✅ Using streaming URL:', streamingUrl);
-          setExtraAudio(streamingUrl);
-          setShowExtraWaveform(true);
-          return; // 성공했으므로 함수 종료
-        }
-
-        // 스트리밍에 스템이 없거나 실패한 경우 - guide_path가 있으면 guide URL 사용
-        console.warn('⚠️ No stems found, trying guide_path fallback');
-        if (upstream.guide_path) {
-          console.log('🔗 Using guide_path as fallback:', upstream.guide_path);
-          try {
-            const guideResponse = await streamingService.getUpstreamGuideStreamingUrl(upstream.id);
-            if (guideResponse && guideResponse.success && guideResponse.data?.presignedUrl) {
-              setExtraAudio(guideResponse.data.presignedUrl);
-              setShowExtraWaveform(true);
-            } else {
-              console.warn('⚠️ No guide URL available');
-              alert('No audio file available for this upstream');
-            }
-          } catch (guideError) {
-            console.error('Error getting guide URL:', guideError);
-            alert('No audio file available for this upstream');
-          }
-        } else {
-          console.warn('⚠️ No guide_path available');
-          alert('No audio file available for this upstream');
-        }
-      } catch (error) {
-        console.error('Error loading streaming URL:', error);
-        // 에러 발생 시에도 guide_path 시도
-        if (upstream.guide_path) {
-          try {
-            const guideResponse = await streamingService.getUpstreamGuideStreamingUrl(upstream.id);
-            if (guideResponse && guideResponse.success && guideResponse.data?.presignedUrl) {
-              setExtraAudio(guideResponse.data.presignedUrl);
-              setShowExtraWaveform(true);
-            } else {
-              alert('No audio file available for this upstream');
-            }
-          } catch (guideError) {
-            console.error('Error getting guide URL as fallback:', guideError);
-            alert('No audio file available for this upstream');
-          }
-        } else {
-          alert('No audio file available for this upstream');
-        }
-      }
-    },
-    []
-  );
 
   // Solo 버튼 핸들러들을 메모이제이션
   const handleMainSolo = useCallback(() => handleSolo('main'), [handleSolo]);
