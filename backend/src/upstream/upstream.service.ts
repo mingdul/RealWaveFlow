@@ -316,6 +316,7 @@ export class UpstreamService {
         return {
             success: true,
             message: 'Upstream fetched successfully',
+            upstream: upstream,
             stems: upstream.stems
         };
     }

@@ -107,6 +107,22 @@ const StemSetReviewPage = () => {
               // 선택된 upstream 설정
               console.log('✅ [determineStageId] Setting selected upstream:', upstreamData.data.upstream);
               setSelectedUpstream(upstreamData.data.upstream);
+            } else if (upstreamData?.data?.upstream) {
+              // 백엔드 응답 구조 변경에 따른 대안 처리
+              console.log('📦 [determineStageId] Upstream object (direct):', upstreamData.data.upstream);
+              console.log('📦 [determineStageId] Upstream keys:', Object.keys(upstreamData.data.upstream));
+              
+              // stage 정보가 있는지 확인
+              if (upstreamData.data.upstream.stage) {
+                const extractedStageId = upstreamData.data.upstream.stage.id;
+                console.log('✅ [determineStageId] Extracted stageId from upstream:', extractedStageId);
+              } else {
+                console.warn('⚠️ [determineStageId] No stage information in upstream');
+              }
+
+              // 선택된 upstream 설정
+              console.log('✅ [determineStageId] Setting selected upstream:', upstreamData.data.upstream);
+              setSelectedUpstream(upstreamData.data.upstream);
             } else {
               console.error('❌ [determineStageId] No upstream data found in response');
             }
