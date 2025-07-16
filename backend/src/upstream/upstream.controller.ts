@@ -18,12 +18,19 @@ export class UpstreamController {
     return this.upstreamService.createUpstreamWithStems(stemSetCreateDto);
   }
 
-
   @Get('get-stage-upstreams/:stage_id')
   @ApiOperation({ summary: '스테이지의 업스트림 조회', description: '스테이지의 업스트림을 조회합니다.' })
   @ApiResponse({ status: 200, description: '업스트림 조회 성공' })
   @ApiResponse({ status: 404, description: '업스트림 없음' })
   async getStageUpstreams(@Param('stage_id') stage_id: string) {
     return this.upstreamService.getStageUpstreams(stage_id);
+  }
+
+  @Get('get-upstreams-guidepath/:upstream_id')
+  @ApiOperation({ summary: '스테이지의 업스트림 가이드 path 조회', description: '스테이지의 업스트림 guide path를를 조회합니다.' })
+  @ApiResponse({ status: 200, description: '업스트림 조회 성공' })
+  @ApiResponse({ status: 404, description: '업스트림 없음' })
+  async getUpstreamGuidePath(@Param('upstream_id') upstream_id: string) {
+    return this.upstreamService.getUpstreamGuidePath(upstream_id);
   }
 }
