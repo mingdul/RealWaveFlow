@@ -9,7 +9,6 @@ import {
 } from '../services/upstreamService';
 import {
   getStageDetail,
-  getStageByTrackIdAndVersion,
 } from '../services/stageService';
 import streamingService from '../services/streamingService';
 import { useParams, useSearchParams } from 'react-router-dom';
@@ -73,7 +72,6 @@ const StemSetReviewPage = () => {
   const [extraAudio, setExtraAudio] = useState<string>('');
   const [showExtraWaveform, setShowExtraWaveform] = useState(false);
   const [stemsLoading] = useState(false);
-  const [upstreams, setUpstreams] = useState<any[]>([]);
   const [upstreamStems, setUpstreamStems] = useState<any[]>([]);
   const [guideAudioUrl, setGuideAudioUrl] = useState<string>('');
   const [guideLoading, setGuideLoading] = useState(false);
@@ -152,9 +150,7 @@ const StemSetReviewPage = () => {
   }, [paramUpstreamId, searchParams]);
 
   // 상태 변경 추적을 위한 로그
-  useEffect(() => {
-    console.log('📊 Upstreams state updated:', upstreams);
-  }, [upstreams]);
+
 
   useEffect(() => {
     console.log('📊 UpstreamStems state updated:', upstreamStems);
@@ -181,16 +177,6 @@ const StemSetReviewPage = () => {
           return;
         }
 
-        const { track, version } = currentStageResponse.data;
-        const trackId = track.id;
-
-
-        // 3. 이전 버전의 스테이지 정보 가져오기
-
-        // const stage = await getStageByTrackIdAndVersion(
-        //   trackId,
-        //   version
-        // );
 
         // 5. guide_path를 presigned URL로 변환
         const response = await streamingService.getGuidePresignedUrlbyUpstream(paramUpstreamId as string);
@@ -860,12 +846,12 @@ const StemSetReviewPage = () => {
                   {(() => {
                     console.log(
                       '🎨 Rendering upstreams. Total count:',
-                      upstreams.length
+                      upstreamStems.length
                     );
-                    console.log('🎨 Upstreams array:', upstreams);
+                    console.log('🎨 Upstreams array:', upstreamStems);
                     console.log('🎨 UpstreamStems array:', upstreamStems);
 
-                    if (upstreams.length === 0) {
+                    if (upstreamStems.length === 0) {
                       console.log('⚠️ No upstreams to render');
                       return (
                         <div className='py-8 text-center text-gray-400'>
@@ -874,7 +860,7 @@ const StemSetReviewPage = () => {
                       );
                     }
 
-                    return upstreams.map((upstream, index) => {
+                    return upstreamStems.map((upstream, index) => {
                       console.log(
                         `🎨 Rendering upstream ${index + 1}:`,
                         upstream
