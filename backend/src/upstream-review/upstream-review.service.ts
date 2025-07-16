@@ -87,11 +87,11 @@ export class UpstreamReviewService {
         const hasPending = allReviews.some(r => r.status === 'pending');
 
         if (allApproved) {
-            await this.upstreamRepository.update({ id: upstreamId }, { status: 'approved' });
+            await this.upstreamRepository.update({ id: upstreamId }, { status: 'APPROVED' });
             await this.finalizeUpstream(upstreamId);
         } else if (!hasPending && hasRejected) {
             // pending 없이 rejected가 있다면
-            await this.upstreamRepository.update({ id: upstreamId }, { status: 'rejected' });
+            await this.upstreamRepository.update({ id: upstreamId }, { status: 'REJECTED' });
         }
 
         return {
@@ -118,7 +118,7 @@ export class UpstreamReviewService {
           // 2. stage.guide_path 업데이트
           await this.stageRepository.update(
             { id: stage.id },
-            { guide_path: upstream.guide_path }
+            { guide_path: upstream.guide_path , status: 'approve' }
           );
       
 
