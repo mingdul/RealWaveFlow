@@ -40,7 +40,11 @@ export class UpstreamCommentService {
         });
 
         if (upstreamComments.length === 0) {
-            throw new NotFoundException('No upstream comments found');
+            return {
+                success: true,
+                message: 'No upstream comments found',
+                upstreamComments: [],
+            };
         }
         return {
             success: true,
