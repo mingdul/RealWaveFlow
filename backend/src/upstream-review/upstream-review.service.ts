@@ -151,6 +151,7 @@ export class UpstreamReviewService {
             category       : stem.category,
             stage          : stage,
             track          : stage.track,
+            uploaded_at    : new Date(),
           });
         }
       }
