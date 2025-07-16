@@ -728,36 +728,8 @@ const UploadModal: React.FC<UploadModalProps> = ({
                 }
               }});
 
-              // 새로운 카테고리 스템인 경우 바로 업스트림 생성
-              if (!file.matchedStemId) {
-                try {
-                  const upstreamData = {
-                    upstream: {
-                      title: `Stem Set ${new Date().toLocaleString()}`,
-                      description: state.description || `Uploaded stem: ${file.name} (${file.tag || 'OTHER'})`,
-                      stage_id: stageId || '',
-                      user_id: user?.id || '',
-                    },
-                    stem_set: [],
-                    new_category_stem: [{
-                      categoryName: file.tag || 'OTHER',
-                      newStemId: stemJobId,
-                      instrument: file.tag?.toLowerCase() || 'other'
-                    }]
-                  };
-
-                  console.log('[DEBUG] Creating upstream immediately for new stem:', upstreamData);
-                  console.log('[DEBUG] Instrument info - tag:', file.tag, 'categoryName:', file.tag || 'OTHER');
-                  const response = await createUpstream(upstreamData);
-                  if (response.success) {
-                    console.log('[DEBUG] Upstream created successfully for new stem with instrument:', file.tag || 'OTHER');
-                  } else {
-                    console.error('[ERROR] Failed to create upstream for new stem');
-                  }
-                } catch (error) {
-                  console.error('[ERROR] Error creating upstream for new stem:', error);
-                }
-              }
+              // 새로운 카테고리 스템은 업로드만 하고, Complete 시점에 upstream 생성
+              console.log('[DEBUG] New category stem uploaded, will create upstream on Complete:', file.name);
             } else {
               throw new Error('Failed to create stem job');
             }
@@ -782,11 +754,13 @@ const UploadModal: React.FC<UploadModalProps> = ({
     }
   }, [state.uploadedFiles, projectId, user, showError, showSuccess]);
 
-  const handleComplete = async () => {
-    const completedFiles = state.uploadedFiles.filter(f => f.isComplete && f.matchedStemId);
+    const handleComplete = async () => {
+    const completedReplacementFiles = state.uploadedFiles.filter(f => f.isComplete && f.matchedStemId);
+    const completedNewCategoryFiles = state.uploadedFiles.filter(f => f.isComplete && !f.matchedStemId);
+    const allCompletedFiles = state.uploadedFiles.filter(f => f.isComplete);
     
-    // 기존 스템이 없고 완료된 교체 파일도 없는 경우
-    if (completedFiles.length === 0 && state.existingStems.length === 0) {
+    // 완료된 파일이 없는 경우
+    if (allCompletedFiles.length === 0) {
       showSuccess('All uploads completed successfully!');
       onComplete();
       onClose();
@@ -801,13 +775,15 @@ const UploadModal: React.FC<UploadModalProps> = ({
     try {
       // 모든 기존 스템을 stem_set에 포함 (교체된 것과 안된 것 모두)
       const stemSet: any[] = [];
+      const newCategoryStems: any[] = [];
 
       console.log('[DEBUG] Processing all existing stems:', state.existingStems);
-      console.log('[DEBUG] Processing completed files for replacement:', completedFiles);
+      console.log('[DEBUG] Processing completed replacement files:', completedReplacementFiles);
+      console.log('[DEBUG] Processing completed new category files:', completedNewCategoryFiles);
 
-      // 모든 기존 스템에 대해 처리
+      // 모든 기존 스템에 대해 처리 (기존 스템이 있는 경우만)
       state.existingStems.forEach(existingStem => {
-        const replacementFile = completedFiles.find(file => file.matchedStemId === existingStem.id);
+        const replacementFile = completedReplacementFiles.find(file => file.matchedStemId === existingStem.id);
         
         if (replacementFile && replacementFile.stemId) {
           // 교체된 경우: oldStem과 newStem 모두 포함
@@ -825,10 +801,27 @@ const UploadModal: React.FC<UploadModalProps> = ({
         }
       });
 
-             console.log('[DEBUG] Final stem_set with all stems:', stemSet);
+      // 새로운 카테고리 스템 처리
+      completedNewCategoryFiles.forEach(file => {
+        if (file.stemId) {
+          newCategoryStems.push({
+            categoryName: file.tag || 'OTHER',
+            newStemId: file.stemId,
+            instrument: file.tag?.toLowerCase() || 'other'
+          });
+          console.log('[DEBUG] Added new category stem:', { 
+            categoryName: file.tag || 'OTHER', 
+            newStemId: file.stemId,
+            instrument: file.tag?.toLowerCase() || 'other'
+          });
+        }
+      });
 
-      // 기존 스템은 있지만 교체 파일이 없는 경우에도 upstream 생성
-      if (stemSet.length === 0) {
+      console.log('[DEBUG] Final stem_set:', stemSet);
+      console.log('[DEBUG] Final new_category_stem:', newCategoryStems);
+
+      // 처리할 스템이 없는 경우
+      if (stemSet.length === 0 && newCategoryStems.length === 0) {
         showSuccess('All uploads completed successfully!');
         onComplete();
         onClose();
@@ -836,19 +829,20 @@ const UploadModal: React.FC<UploadModalProps> = ({
       }
 
       // 업스트림 생성 (모든 스템 포함)
-      const replacementCount = completedFiles.length;
+      const replacementCount = completedReplacementFiles.length;
+      const newStemCount = completedNewCategoryFiles.length;
       const upstreamData = {
         upstream: {
           title: `Stem Set ${new Date().toLocaleString()}`,
-          description: state.description || `Updated stem set with ${replacementCount} replacement(s)`,
+          description: state.description || `Updated stem set: ${replacementCount} replacement(s), ${newStemCount} new stem(s)`,
           stage_id: stageId,
           user_id: user?.id || '',
         },
         stem_set: stemSet,
-        new_category_stem: []
+        new_category_stem: newCategoryStems
       };
 
-      console.log('[DEBUG] Creating upstream with all stems:', upstreamData);
+      console.log('[DEBUG] Creating upstream with all stems and new categories:', upstreamData);
 
       const response = await createUpstream(upstreamData);
       if (response.success) {
@@ -859,8 +853,8 @@ const UploadModal: React.FC<UploadModalProps> = ({
         showError('Failed to create stem set update');
       }
     } catch (error) {
-      console.error('Error creating upstream for replacements:', error);
-      showError('Failed to create stem replacements');
+      console.error('Error creating upstream:', error);
+      showError('Failed to create stem set');
     }
   };
 
