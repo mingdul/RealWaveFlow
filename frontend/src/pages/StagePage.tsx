@@ -8,6 +8,7 @@ import { getStageDetail } from '../services/stageService';
 import { getStageUpstreams } from '../services/upstreamService';
 import { getStageReviewers } from '../services/stageReviewerService';
 import streamingService from '../services/streamingService';
+import { approveDropReviewer, rejectDropReviewer } from '../services/upstreamReviewService';
 import { Track, Stage, Upstream, StageReviewer } from '../types/api';
 import tapeActive from '../assets/activeTape.png';
 import tapeApproved from '../assets/approveTape.png';
@@ -90,10 +91,12 @@ const StagePage: React.FC = () => {
     onPlayToggle: () => void;
     onSeek: (value: number) => void;
     onDetail: () => void;
+    onApprove: () => void;
+    onReject: () => void;
   }
 
   const StemSetCard: React.FC<StemSetCardProps> = ({
-    upstream, isPlaying, seek, onPlayToggle, onSeek, onDetail
+    upstream, isPlaying, seek, onPlayToggle, onSeek, onDetail, onApprove, onReject
   }) => {
     const [isHovered, setIsHovered] = useState(false);
 
@@ -190,6 +193,22 @@ const StagePage: React.FC = () => {
             >
               Detail
             </button>
+            {status === 'ACTIVE' && (
+              <div className="flex gap-2">
+                <button
+                  onClick={(e) => { e.stopPropagation(); onApprove(); }}
+                  className="px-3 py-1 rounded-full bg-green-600 text-white text-xs font-semibold shadow hover:bg-green-700 border border-white"
+                >
+                  Approve
+                </button>
+                <button
+                  onClick={(e) => { e.stopPropagation(); onReject(); }}
+                  className="px-3 py-1 rounded-full bg-red-600 text-white text-xs font-semibold shadow hover:bg-red-700 border border-white"
+                >
+                  Reject
+                </button>
+              </div>
+            )}
           </div>
         </div>
       </div>
@@ -259,6 +278,46 @@ const StagePage: React.FC = () => {
   const handleDetail = (upstream: Upstream) => {
     // Review Page로 이동 (stageId를 쿼리 파라미터로 함께 전달)
     navigate(`/review/${upstream.id}?stageId=${stageId}`);
+  };
+
+  const handleApprove = async (upstream: Upstream) => {
+    try {
+      if (!stageId) {
+        console.error('Stage ID is required');
+        return;
+      }
+      
+      const response = await approveDropReviewer(stageId, upstream.id);
+      if (response.success) {
+        console.log('Upstream approved successfully');
+        // upstreams 목록 새로고침
+        handleUploadComplete();
+      } else {
+        console.error('Failed to approve upstream:', response.message);
+      }
+    } catch (error) {
+      console.error('Error approving upstream:', error);
+    }
+  };
+
+  const handleReject = async (upstream: Upstream) => {
+    try {
+      if (!stageId) {
+        console.error('Stage ID is required');
+        return;
+      }
+      
+      const response = await rejectDropReviewer(stageId, upstream.id);
+      if (response.success) {
+        console.log('Upstream rejected successfully');
+        // upstreams 목록 새로고침
+        handleUploadComplete();
+      } else {
+        console.error('Failed to reject upstream:', response.message);
+      }
+    } catch (error) {
+      console.error('Error rejecting upstream:', error);
+    }
   };
 
   // 스테이지가 닫혀있는지 확인
@@ -384,6 +443,8 @@ const StagePage: React.FC = () => {
                 onPlayToggle={() => handlePlayToggle(idx, upstream)}
                 onSeek={value => handleSeek(idx, value)}
                 onDetail={() => handleDetail(upstream)}
+                onApprove={() => handleApprove(upstream)}
+                onReject={() => handleReject(upstream)}
               />
             ))
           )}
