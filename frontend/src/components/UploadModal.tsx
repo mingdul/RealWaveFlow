@@ -1,4 +1,4 @@
-import React, { useReducer, useEffect, useState} from 'react';
+import React, { useReducer, useEffect} from 'react';
 // import { useState } from 'react';
 import { Check, X, FileAudio, Upload,  Play, Plus, Music, Drum, Mic, Zap, Guitar, Volume2, Users, MoreHorizontal } from 'lucide-react';
 // import {Plus, ArrowRight} from 'lucide-react';
@@ -613,35 +613,6 @@ const UploadModal: React.FC<UploadModalProps> = ({
     description: ''
   });
 
-  const [delayedCompleteEnabled, setDelayedCompleteEnabled] = useState(false);
-  const [isProcessingDelay, setIsProcessingDelay] = useState(false);
-
-  // 업로드 완료 후 3초 딜레이 후 Complete 버튼 활성화
-  useEffect(() => {
-    const completedFiles = state.uploadedFiles.filter(f => f.isComplete);
-    const hasCompletedFiles = completedFiles.length > 0;
-    const isStillUploading = state.isUploading;
-
-    if (hasCompletedFiles && !isStillUploading && !delayedCompleteEnabled && !isProcessingDelay) {
-      console.log('[DEBUG] Upload completed, starting 3-second processing delay');
-      setIsProcessingDelay(true);
-      
-      const timer = setTimeout(() => {
-        setIsProcessingDelay(false);
-        setDelayedCompleteEnabled(true);
-        console.log('[DEBUG] Complete button activated after processing delay');
-      }, 3000);
-
-      return () => clearTimeout(timer);
-    }
-
-    // 업로드 중이거나 파일이 없으면 상태 초기화
-    if (isStillUploading || !hasCompletedFiles) {
-      setDelayedCompleteEnabled(false);
-      setIsProcessingDelay(false);
-    }
-  }, [state.uploadedFiles, state.isUploading, delayedCompleteEnabled, isProcessingDelay]);
-
   // Load existing stems
   useEffect(() => {
     if (isOpen && projectId && stageId) {
@@ -1025,19 +996,12 @@ const UploadModal: React.FC<UploadModalProps> = ({
             
             <button
               onClick={handleComplete}
-              disabled={!state.uploadedFiles.some(f => f.isComplete) || state.isUploading || !delayedCompleteEnabled}
-              className={`flex items-center justify-center px-6 py-2 bg-green-600 text-white rounded-lg hover:bg-green-700 transition-colors font-medium ${
-                !state.uploadedFiles.some(f => f.isComplete) || state.isUploading || !delayedCompleteEnabled ? 'opacity-50 cursor-not-allowed' : ''
+              disabled={!state.uploadedFiles.some(f => f.isComplete) || state.isUploading}
+              className={`px-6 py-2 bg-green-600 text-white rounded-lg hover:bg-green-700 transition-colors font-medium ${
+                !state.uploadedFiles.some(f => f.isComplete) || state.isUploading ? 'opacity-50 cursor-not-allowed' : ''
               }`}
             >
-              {isProcessingDelay ? (
-                <>
-                  <div className="animate-spin rounded-full h-4 w-4 border-b-2 border-white mr-2"></div>
-                  Processing...
-                </>
-              ) : (
-                'Complete'
-              )}
+              Complete
             </button>
           </div>
         </div>
