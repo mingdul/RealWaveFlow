@@ -496,7 +496,9 @@ const StemSetReviewPage = () => {
   }, []);
 
   useEffect(() => {
+    console.log('🔍 selectedUpstream:', selectedUpstream);
     if (selectedUpstream?.id) {
+      console.log('🔍 loadComments:', selectedUpstream.id);
       loadComments(selectedUpstream.id);
     }
   }, [selectedUpstream, loadComments]);
