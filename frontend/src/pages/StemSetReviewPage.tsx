@@ -634,29 +634,59 @@ const StemSetReviewPage = () => {
         const response = await streamingService.getUpstreamStems(upstream.id);
         console.log('🌊 Streaming response:', response);
 
-        if (
-          response.success &&
-          response.data &&
-          response.data.stems.length > 0
-        ) {
-          // 첫 번째 스템의 presigned URL 사용
-          const streamingUrl = response.data.stems[0].presignedUrl;
+        // 타입 가드를 사용한 응답 처리
+        if ('success' in response && response.success === false) {
+          // 실패 응답 처리
+          console.warn('⚠️ Streaming API failed:', response.message);
+        } else if ('stems' in response && response.stems && Array.isArray(response.stems) && response.stems.length > 0) {
+          // 성공 응답 처리
+          const streamingUrl = response.stems[0].presignedUrl;
           console.log('✅ Using streaming URL:', streamingUrl);
           setExtraAudio(streamingUrl);
           setShowExtraWaveform(true);
+          return; // 성공했으므로 함수 종료
+        }
+
+        // 스트리밍에 스템이 없거나 실패한 경우 - guide_path가 있으면 guide URL 사용
+        console.warn('⚠️ No stems found, trying guide_path fallback');
+        if (upstream.guide_path) {
+          console.log('🔗 Using guide_path as fallback:', upstream.guide_path);
+          try {
+            const guideResponse = await streamingService.getUpstreamGuideStreamingUrl(upstream.id);
+            if (guideResponse && guideResponse.success && guideResponse.data?.presignedUrl) {
+              setExtraAudio(guideResponse.data.presignedUrl);
+              setShowExtraWaveform(true);
+            } else {
+              console.warn('⚠️ No guide URL available');
+              alert('No audio file available for this upstream');
+            }
+          } catch (guideError) {
+            console.error('Error getting guide URL:', guideError);
+            alert('No audio file available for this upstream');
+          }
         } else {
-          // 스트리밍 실패 시 원래 URL 사용
-          console.warn('⚠️ Streaming URL failed, using original URL');
-          console.log('🔗 Original presigned URL:', upstream.presignedUrl);
-          setExtraAudio(upstream.presignedUrl);
-          setShowExtraWaveform(true);
+          console.warn('⚠️ No guide_path available');
+          alert('No audio file available for this upstream');
         }
       } catch (error) {
         console.error('Error loading streaming URL:', error);
-        // 에러 발생 시 원래 URL 사용
-        console.log('🔗 Fallback to original URL:', upstream.presignedUrl);
-        setExtraAudio(upstream.presignedUrl);
-        setShowExtraWaveform(true);
+        // 에러 발생 시에도 guide_path 시도
+        if (upstream.guide_path) {
+          try {
+            const guideResponse = await streamingService.getUpstreamGuideStreamingUrl(upstream.id);
+            if (guideResponse && guideResponse.success && guideResponse.data?.presignedUrl) {
+              setExtraAudio(guideResponse.data.presignedUrl);
+              setShowExtraWaveform(true);
+            } else {
+              alert('No audio file available for this upstream');
+            }
+          } catch (guideError) {
+            console.error('Error getting guide URL as fallback:', guideError);
+            alert('No audio file available for this upstream');
+          }
+        } else {
+          alert('No audio file available for this upstream');
+        }
       }
     },
     [loadComments]
@@ -916,14 +946,14 @@ const StemSetReviewPage = () => {
                             className='cursor-pointer rounded bg-[#3a3a3a] p-3 text-sm text-white transition-colors hover:bg-[#4a4a4a]'
                           >
                             <div className='font-medium'>
-                              {upstream.fileName || 'Unnamed File'}
+                              {upstream.title || 'Unnamed File'}
                             </div>
                             <div className='text-xs text-gray-400'>
                               {upstream.description || 'No description'}
                             </div>
                             <div className='mt-1 text-xs text-gray-500'>
                               Category: {upstream.category || 'Unknown'} | By:{' '}
-                              {upstream.uploadedBy?.username || 'Unknown'}
+                              {upstream.user?.username || 'Unknown'}
                             </div>
                           </div>
 
@@ -1007,13 +1037,13 @@ const StemSetReviewPage = () => {
             {selectedUpstream && (
               <div className='mb-4 rounded bg-[#3a3a3a] p-3'>
                 <div className='text-sm font-medium text-white'>
-                  {selectedUpstream.fileName}
+                  {selectedUpstream.title}
                 </div>
                 <div className='text-xs text-gray-400'>
                   {selectedUpstream.description}
                 </div>
                 <div className='mt-1 text-xs text-blue-400'>
-                  by {selectedUpstream.uploadedBy?.username}
+                  by {selectedUpstream.user?.username}
                 </div>
               </div>
             )}
@@ -1240,7 +1270,7 @@ const StemSetReviewPage = () => {
           </div>
           {selectedUpstream && (
             <div className='mt-2 text-center text-sm text-gray-400'>
-              Commenting on: {selectedUpstream.fileName}
+              Commenting on: {selectedUpstream.title}
             </div>
           )}
         </div>
