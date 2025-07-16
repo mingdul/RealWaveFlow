@@ -67,72 +67,53 @@ export class GuideService {
             guide = await this.guideRepository.save(newGuide);
         }
 
-        // stem_paths로 VersionStem들 찾아서 연결
-        await this.linkVersionStemsToGuide(guide, stem_paths);
+        // stem_paths로 Stem들만 찾아서 연결
+        await this.linkStemsToGuide(guide, stem_paths);
 
         this.logger.log(`Guide 생성/업데이트 완료: ${guide.id} (Stage: ${stageId})`);
         return guide;
     }
 
-    private async linkVersionStemsToGuide(guide: Guide, stemPaths: string[]): Promise<void> {
+    private async linkStemsToGuide(guide: Guide, stemPaths: string[]): Promise<void> {
         // 기존 관계를 가져와서 수정
         const guideWithRelations = await this.guideRepository.findOne({
             where: { id: guide.id },
-            relations: ['version_stems', 'stems']
+            relations: ['stems']
         });
 
         if (!guideWithRelations) {
             throw new NotFoundException(`Guide not found: ${guide.id}`);
         }
 
-        // 새로 추가할 VersionStem들 찾기
-        const newVersionStems: VersionStem[] = [];
+        // 새로 추가할 Stem들 찾기
         const newStems: Stem[] = [];
 
         for (const stemPath of stemPaths) {
-            // 먼저 VersionStem에서 찾기
-            const versionStem = await this.versionStemRepository.findOne({
+            // Stem에서 찾기
+            const stem = await this.stemRepository.findOne({
                 where: { file_path: stemPath }
             });
 
-            if (versionStem) {
+            if (stem) {
                 // 이미 연결되어 있지 않은 경우에만 추가
-                const isAlreadyLinked = guideWithRelations.version_stems.some(vs => vs.id === versionStem.id);
+                const isAlreadyLinked = guideWithRelations.stems.some(s => s.id === stem.id);
                 if (!isAlreadyLinked) {
-                    newVersionStems.push(versionStem);
-                    this.logger.log(`VersionStem 연결 예정: ${versionStem.id} -> Guide: ${guide.id}`);
+                    newStems.push(stem);
+                    this.logger.log(`Stem 연결 예정: ${stem.id} -> Guide: ${guide.id}`);
                 }
             } else {
-                // VersionStem에 없으면 Stem에서 찾기
-                const stem = await this.stemRepository.findOne({
-                    where: { file_path: stemPath }
-                });
-
-                if (stem) {
-                    // 이미 연결되어 있지 않은 경우에만 추가
-                    const isAlreadyLinked = guideWithRelations.stems.some(s => s.id === stem.id);
-                    if (!isAlreadyLinked) {
-                        newStems.push(stem);
-                        this.logger.log(`Stem 연결 예정: ${stem.id} -> Guide: ${guide.id}`);
-                    }
-                } else {
-                    this.logger.warn(`Stem 또는 VersionStem을 찾을 수 없음: ${stemPath}`);
-                }
+                this.logger.warn(`Stem을 찾을 수 없음: ${stemPath}`);
             }
         }
 
         // ManyToMany 관계 업데이트
-        if (newVersionStems.length > 0) {
-            guideWithRelations.version_stems = [...guideWithRelations.version_stems, ...newVersionStems];
-        }
-
         if (newStems.length > 0) {
             guideWithRelations.stems = [...guideWithRelations.stems, ...newStems];
         }
 
         // 저장
         await this.guideRepository.save(guideWithRelations);
-        this.logger.log(`Guide 관계 업데이트 완료: ${newVersionStems.length}개 VersionStem, ${newStems.length}개 Stem 추가`);
+        this.logger.log(`Guide 관계 업데이트 완료: ${newStems.length}개 Stem 추가`);
     }
 
     async addStemsToGuide(guideId: string, stemIds: string[]): Promise<Guide> {
@@ -239,5 +220,48 @@ export class GuideService {
             where: { stage: { id: stageId } },
             relations: ['stage', 'track', 'stems', 'version_stems']
         });
+    }
+
+    async getStemsByTrackAndVersion(trackId: string, version: number): Promise<Stem[]> {
+        this.logger.log(`Getting stems for track ${trackId} version ${version}`);
+
+        // 1. 해당 track의 version을 가진 stage 찾기
+        const stage = await this.stageRepository.findOne({
+            where: { 
+                track: { id: trackId },
+                version: version
+            },
+            relations: ['track', 'guide']
+        });
+
+        if (!stage) {
+            throw new NotFoundException(`Stage not found for track ${trackId} with version ${version}`);
+        }
+
+        this.logger.log(`Found stage: ${stage.id} for track ${trackId} version ${version}`);
+
+        // 2. 해당 stage의 guide가 없으면 빈 배열 반환
+        if (!stage.guide) {
+            this.logger.log(`No guide found for stage ${stage.id}`);
+            return [];
+        }
+
+        // 3. Guide의 stems 조회
+        const guide = await this.guideRepository.findOne({
+            where: { id: stage.guide.id },
+            relations: [
+                'stems', 
+                'stems.category',
+                'stems.track'
+            ]
+        });
+
+        if (!guide) {
+            throw new NotFoundException(`Guide not found for stage ${stage.id}`);
+        }
+
+        this.logger.log(`Found ${guide.stems.length} stems in guide ${guide.id}`);
+
+        return guide.stems;
     }
 } 

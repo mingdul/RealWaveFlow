@@ -621,8 +621,9 @@ const UploadModal: React.FC<UploadModalProps> = ({
       // projectId is the track_id, and we need to get stage info to get version
       const trackId = projectId;
       const version = stageVersion ? stageVersion - 1 : 1; // stage.version - 1
+      //
       
-      versionstemService.getLatestStemsPerCategoryByTrack(trackId, version)
+      versionstemService.getLatestStem(trackId, version)
         .then(response => {
           if (response && Array.isArray(response)) {
             // 백엔드 응답을 MasterStem 형태로 변환
