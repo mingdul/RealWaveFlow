@@ -550,7 +550,7 @@ const StemSetReviewPage = () => {
         if (upstream.guide_path) {
           console.log('🔗 Using guide_path as fallback:', upstream.guide_path);
           try {
-            const guideResponse = await streamingService.getUpstreamGuideStreamingUrl(id);
+            const guideResponse = await streamingService.getUpstreamGuideStreamingUrl(upstream.id);
             if (guideResponse && guideResponse.success && guideResponse.data?.presignedUrl) {
               setExtraAudio(guideResponse.data.presignedUrl);
               setShowExtraWaveform(true);
@@ -571,8 +571,7 @@ const StemSetReviewPage = () => {
         // 에러 발생 시에도 guide_path 시도
         if (upstream.guide_path) {
           try {
-            const id = upstream.id || upstream.upstreamId;
-            const guideResponse = await streamingService.getUpstreamGuideStreamingUrl(id);
+            const guideResponse = await streamingService.getUpstreamGuideStreamingUrl(upstream.id);
             if (guideResponse && guideResponse.success && guideResponse.data?.presignedUrl) {
               setExtraAudio(guideResponse.data.presignedUrl);
               setShowExtraWaveform(true);
