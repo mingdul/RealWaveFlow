@@ -84,6 +84,25 @@ async getGuidePresignedUrlByStageId(stageId: string): Promise<StreamingResponse<
   }
 }
 
+  async getGuidePresignedUrlbyUpstream(upstreamId: string): Promise<StreamingResponse<{ presignedUrl: string; urlExpiresAt: string }>> {
+    try {
+      const response = await api.get(`/streaming/upstream/${upstreamId}/guide`);
+
+      // 백엔드가 직접 데이터 객체를 반환하므로 success wrapper로 감싸서 반환
+      return {
+        success: true,
+        data: response.data,
+      };
+    } catch (error: any) {
+      console.error('Error fetching guide streaming URL by upstreamId:', error);
+      return {
+        success: false,
+        message: error.response?.data?.message || 'Failed to fetch guide streaming URL',
+      };
+    }
+  }
+
+
   // 특정 버전의 마스터 스템 파일들 스트리밍 URL 조회
   async getMasterStemStreams(trackId: string, version: number): Promise<StreamingResponse<TrackStemsResponse>> {
     try {
