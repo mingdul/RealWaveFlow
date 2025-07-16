@@ -395,7 +395,7 @@ const StagePage: React.FC = () => {
           isOpen={isUploadModalOpen}
           onClose={() => setUploadModalOpen(false)}
           projectId={stage.track.id}
-          projectName={track ? track.title : "Loading..."}
+          projectName={track ? track.title : ""}
           stageId={stageId}
           stageVersion={stage.version}
           onComplete={handleUploadComplete} 
