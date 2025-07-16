@@ -213,91 +213,42 @@ const StemSetReviewPage = () => {
   }, [stageId]);
 
   useEffect(() => {
-    const fetchUpstreamsAndStems = async () => {
+    const fetchUpstreamsAndStems = async (upstreamId: string) => {
       try {
-        console.log(
-          '🚀 Starting fetchUpstreamsAndStems with stageId:',
-          stageId
-        );
-
-        // 1. 먼저 stage 정보를 가져와서 trackId 획득
-        console.log('🔍 [fetchUpstreamsAndStems] Starting with stageId:', stageId);
-        const stageResponse = await getStageDetail(stageId || '');
-        console.log('📊 [fetchUpstreamsAndStems] Stage detail response:', stageResponse);
-        console.log('📊 [fetchUpstreamsAndStems] Response data structure:', stageResponse?.data);
-        console.log('📊 [fetchUpstreamsAndStems] Track info:', stageResponse?.data?.track);
-
-        if (!stageResponse || !stageResponse.data || !stageResponse.data.track) {
-          console.error('❌ [fetchUpstreamsAndStems] Failed to get stage details - Response:', stageResponse);
-          console.error('❌ [fetchUpstreamsAndStems] Missing data:', {
-            hasResponse: !!stageResponse,
-            hasData: !!stageResponse?.data,
-            hasTrack: !!stageResponse?.data?.track
-          });
+        if (!stageId) return;
+    
+        const stageResponse = await getStageDetail(stageId);
+        if (!stageResponse?.data?.track) {
+          console.error('❌ track 정보가 없습니다');
           return;
         }
-
+    
         const currentTrackId = stageResponse.data.track.id;
-        console.log('🎵 [fetchUpstreamsAndStems] Current track ID:', currentTrackId);
-
-        // 2. upstream 목록 가져오기
-        console.log('🔍 [fetchUpstreamsAndStems] Getting upstreams for stageId:', stageId);
-        const upstreamsResponse = await getStageUpstreams(stageId || '');
-        console.log('📁 [fetchUpstreamsAndStems] Upstreams response:', upstreamsResponse);
-        console.log('📁 [fetchUpstreamsAndStems] Upstreams response type:', typeof upstreamsResponse);
-        console.log('📁 [fetchUpstreamsAndStems] Upstreams is array:', Array.isArray(upstreamsResponse));
-
-        if (!upstreamsResponse || !Array.isArray(upstreamsResponse) || upstreamsResponse.length === 0) {
-          console.error('❌ [fetchUpstreamsAndStems] Failed to get upstreams - Response:', upstreamsResponse);
-          return;
-        }
-
-        console.log(
-          '✅ [fetchUpstreamsAndStems] Found upstreams:',
-          upstreamsResponse.length,
-          'items'
-        );
-        console.log('📋 [fetchUpstreamsAndStems] Upstreams data:', upstreamsResponse);
-        setUpstreams(upstreamsResponse);
-
-        // 3. 각 upstream에 대해 stem 정보 가져오기
-        const stemPromises = upstreamsResponse.map(
-          async (upstream: any, ) => {
-            try {
-              const stemResponse = await getUpstreamStems(
-                upstream.id,
-                currentTrackId
-              );
-
-              console.log('🔧 [stemPromise] Stem response for upstream', upstream.id, ':', stemResponse);
-              console.log('🔧 [stemPromise] Stem response.data:', stemResponse.data);
-              console.log('🔧 [stemPromise] Actual stem data:', stemResponse.data?.data);
-
-              return {
-                upstreamId: upstream.id,
-                stemData: stemResponse.data?.success ? stemResponse.data.data : null,
-              };
-            } catch (error) {
-              console.error('🔧 [stemPromise] Error getting stems for upstream', upstream.id, ':', error);
-              return {
-                upstreamId: upstream.id,
-                stemData: null,
-              };
-            }
-          }
-        );
-
-        const stemsResults = await Promise.all(stemPromises);
-        setUpstreamStems(stemsResults);
+        console.log('🔍 currentTrackId:', currentTrackId);
+        console.log('🔍🔍🔍 selectedUpstream:', selectedUpstream);
+        if (selectedUpstream) {
+          // ✅ 단일 upstream에 대해서만 처리
+          console.log('🎯 단일 upstream에 대해 getUpstreamStems 호출:', selectedUpstream.id);
+          const stemResponse = await getUpstreamStems(selectedUpstream.id, currentTrackId);
+    
+          const stemsResult = [
+            {
+              upstreamId: upstreamId,
+              stemData: stemResponse.data || null,
+            },
+          ];
+          setUpstreamStems(stemsResult);
+        } 
       } catch (error) {
-        console.error('❌ [fetchUpstreamsAndStems] Failed to fetch upstreams and stems:', error);
+        console.error('❌ [fetchUpstreamsAndStems] 오류:', error);
       }
     };
+    
 
     // if (stageId) fetchUpstreamsAndStems();
     if (stageId) {
       console.log('🎬 useEffect triggered with stageId:', stageId);
-      fetchUpstreamsAndStems();
+      fetchUpstreamsAndStems(paramUpstreamId || '');
     } else {
       console.log('⚠️ No stageId provided');
     }
@@ -465,6 +416,7 @@ const StemSetReviewPage = () => {
 
   // 댓글 로드 함수
   const loadComments = useCallback(async (upstreamId: string) => {
+    console.log('🔍🔍🔍🔍 loadComments:', upstreamId);
     try {
       setCommentsLoading(true);
       const response = await getUpstreamComments(upstreamId);
@@ -501,12 +453,11 @@ const StemSetReviewPage = () => {
   }, []);
 
   useEffect(() => {
-    console.log('🔍 selectedUpstream:', selectedUpstream);
-    if (selectedUpstream?.id) {
-      console.log('🔍 loadComments:', selectedUpstream.id);
-      loadComments(selectedUpstream.id);
-    }
-  }, [selectedUpstream, loadComments]);
+    console.log('🔍🔍 selectedUpstream:', paramUpstreamId);
+    
+    loadComments(paramUpstreamId || '');
+  
+  }, [paramUpstreamId, loadComments]);
   
 
   // 댓글 삭제 함수
