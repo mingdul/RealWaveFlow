@@ -65,13 +65,12 @@ export class StemService {
           this.versionStemRepository.findOne({
             where: {
               category: { id: category.id },
-              stage: { track: { id: trackId } },
             },
             order: {
               version: 'DESC',
               uploaded_at: 'DESC',
             },
-            relations: ['category', 'stage', 'stage.track', 'user'],
+            relations: ['category', 'stage', 'user'],
           }),
         );
         const versionStems = await Promise.all(versionStemPromises);
