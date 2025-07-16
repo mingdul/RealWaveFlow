@@ -187,15 +187,14 @@ const StemSetReviewPage = () => {
 
         // 3. 이전 버전의 스테이지 정보 가져오기
 
-        const stage = await getStageByTrackIdAndVersion(
-          trackId,
-          version
-        );
+        // const stage = await getStageByTrackIdAndVersion(
+        //   trackId,
+        //   version
+        // );
 
         // 5. guide_path를 presigned URL로 변환
-        const response =
-          await streamingService.getGuidePresignedUrlByStageId(stage.id);
-        
+        const response = await streamingService.getGuidePresignedUrlbyUpstream(paramUpstreamId as string);
+        console.log('📦 [fetchPreviousGuideUrl] Guide response:', response);
         
         if (response.success && response.data) {
           setGuideAudioUrl(response.data.presignedUrl);
