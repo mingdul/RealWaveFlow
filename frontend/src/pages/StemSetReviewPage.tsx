@@ -3,14 +3,15 @@ import WaveSurfer from 'wavesurfer.js';
 import Wave from '../components/wave';
 import Logo from '../components/Logo';
 import {
+  getStageUpstreams,
   getUpstreamStems,
-  getUpstreamByUpstreamId,
+  getUpstreamDetail,
 } from '../services/upstreamService';
 import {
   getStageDetail,
 } from '../services/stageService';
 import streamingService from '../services/streamingService';
-import { useParams } from 'react-router-dom';
+import { useParams, useSearchParams } from 'react-router-dom';
 import { useAuth } from '../contexts/AuthContext';
 import Button from '../components/Button';
 import {
@@ -79,37 +80,80 @@ const StemSetReviewPage = () => {
   const wavesurferRefs = useRef<{ [id: string]: WaveSurfer }>({});
   const [readyStates, setReadyStates] = useState<{ [id: string]: boolean }>({});
   const isSeeking = useRef(false); // 무한 루프 방지용 플래그
-  const {upstreamId, stageId} = useParams();
-
+  const { upstreamId: paramUpstreamId, stageId: paramStageId } = useParams<{ upstreamId: string, stageId: string }>();
+  const [searchParams] = useSearchParams();
+  const [stageId, setStageId] = useState<string | null>(null);
 
   // stageId 결정 로직 (쿼리 파라미터 우선, 없으면 upstream API 사용)
   useEffect(() => {
     const determineStageId = async () => {
       console.log('🚀 [determineStageId] Starting stage ID determination...');
-      console.log('🔍 [determineStageId] paramUpstreamId:', upstreamId);
-      if(!upstreamId) return;
-      try{
-        const upstreamsResponse = await getUpstreamByUpstreamId(upstreamId);
-
-        if(upstreamsResponse.data){
-          setSelectedUpstream(upstreamsResponse.data.upstream);
-        }
-      } catch (error) {
-        console.error('❌ [determineStageId] Error fetching upstream details:', error);
-      }
+      console.log('🔍 [determineStageId] paramUpstreamId:', paramUpstreamId);
+      console.log('🔍 [determineStageId] searchParams:', Object.fromEntries(searchParams.entries()));
       
-    }
-    determineStageId();
-  }, [upstreamId]);
+      // 1. 먼저 쿼리 파라미터에서 stageId 확인
+      const stageIdFromQuery = searchParams.get('stageId');
+      console.log('🔍 [determineStageId] stageIdFromQuery:', stageIdFromQuery);
+      
+      if (stageIdFromQuery) {
+        console.log('✅ [determineStageId] Found stageId in query params:', stageIdFromQuery);
+        setStageId(stageIdFromQuery);
+        
+        // stageId가 있으므로 getStageUpstreams를 사용해서 모든 upstream 목록을 가져오고
+        // 그 중에서 paramUpstreamId와 일치하는 것을 찾아서 selectedUpstream 설정
+        if (paramUpstreamId) {
+          try {
+            console.log('🔍 [determineStageId] Looking for upstream in stage upstreams...');
+            const upstreamsResponse = await getStageUpstreams(stageIdFromQuery);
+            console.log('📁 [determineStageId] Stage upstreams response:', upstreamsResponse);
+            console.log('📁 [determineStageId] Stage upstreams count:', upstreamsResponse?.length || 0);
+            console.log('📁 [determineStageId] Looking for paramUpstreamId:', paramUpstreamId);
+            
+            const targetUpstream = upstreamsResponse.find((upstream: any) => upstream.id === paramUpstreamId);
+            if (targetUpstream) {
+              console.log('✅ [determineStageId] Found target upstream in stage upstreams:', targetUpstream);
+              setSelectedUpstream(targetUpstream);
+            } else {
+              console.warn('⚠️ [determineStageId] Target upstream not found in stage upstreams');
+              console.log('📋 [determineStageId] Available upstreams:', upstreamsResponse.map((u: any) => ({id: u.id, title: u.title, fileName: u.fileName})));
+            }
+          } catch (error) {
+            console.error('❌ [determineStageId] Error fetching stage upstreams:', error);
+          }
+        }
+        return;
+      }
 
+      // 2. 쿼리 파라미터에 stageId가 없으면 기존 방식 사용 (upstream API를 통해 stageId 추출)
+      if (paramUpstreamId) {
+        try {
+          console.log('🔍 [determineStageId] Found upstreamId in URL params, fetching upstream details:', paramUpstreamId);
+          // upstream 정보를 가져와서 stageId 추출
+          const upstreamData = await getUpstreamDetail(paramUpstreamId);
+          console.log('📦 [determineStageId] Upstream data response:', upstreamData);
+          const extractedStageId =
+            upstreamData.stage?.id || upstreamData.stage_id;
+          console.log('✅ [determineStageId] Extracted stageId from upstream:', extractedStageId);
+          setStageId(extractedStageId);
+
+          // 선택된 upstream 설정
+          console.log('✅ [determineStageId] Setting selected upstream:', upstreamData);
+          setSelectedUpstream(upstreamData);
+        } catch (error) {
+          console.error('❌ [determineStageId] Error fetching upstream details:', error);
+          console.error('❌ [determineStageId] Error details:', (error as any)?.message);
+        }
+        return;
+      }
+
+      console.log('⚠️ [determineStageId] No stageId or upstreamId found');
+    };
+
+    determineStageId();
+  }, [paramUpstreamId, searchParams]);
 
   // 상태 변경 추적을 위한 로그
 
-
-  // stageId 상태 변경 추적
-  useEffect(() => {
-    console.log('🔍 [State] stageId changed:', stageId);
-  }, [stageId]);
 
   useEffect(() => {
     console.log('📊 [State] UpstreamStems state updated. Length:', upstreamStems.length);
@@ -143,7 +187,7 @@ const StemSetReviewPage = () => {
 
 
         // 5. guide_path를 presigned URL로 변환
-        const response = await streamingService.getGuidePresignedUrlbyUpstream(upstreamId as string);
+        const response = await streamingService.getGuidePresignedUrlbyUpstream(paramUpstreamId as string);
         console.log('📦 [fetchPreviousGuideUrl] Guide response:', response);
         
         if (response.success && response.data) {
@@ -164,10 +208,10 @@ const StemSetReviewPage = () => {
   useEffect(() => {
     const fetchUpstreamsAndStems = async () => {
       try {
-        if (!stageId || !upstreamId) return;
+        if (!paramStageId || !paramUpstreamId) return;
     
         setStemsLoading(true);
-        const stageResponse = await getStageDetail(stageId);
+        const stageResponse = await getStageDetail(paramStageId);
         console.log('🔍 [fetchUpstreamsAndStems] Stage response:', stageResponse);
         
         if (!stageResponse?.data?.track) {
@@ -199,15 +243,13 @@ const StemSetReviewPage = () => {
     };
     
 
-    if (stageId && upstreamId) {
-      console.log('🎬 useEffect triggered with stageId:', stageId, 'selectedUpstream:', upstreamId);
+    if (paramStageId && paramUpstreamId) {
+      console.log('🎬 useEffect triggered with stageId:', paramStageId, 'selectedUpstream:', paramUpstreamId);
       fetchUpstreamsAndStems();
     } else {
       console.log('⚠️ No stageId or selectedUpstream provided');
     }
-  }, [stageId, upstreamId]);
-
-
+  }, [paramStageId, paramUpstreamId]);
 
   const handleReady = useCallback(
     (ws: WaveSurfer, id: string) => {
@@ -410,14 +452,14 @@ const StemSetReviewPage = () => {
 
   // 페이지 로딩 시점에 댓글 로드
   useEffect(() => {
-    console.log('🔍🔍 selectedUpstream:', upstreamId);
+    console.log('🔍🔍 selectedUpstream:', paramUpstreamId);
     
-    if (upstreamId) {
-      console.log('💬 [useEffect] Loading comments for upstream:', upstreamId);
-      loadComments(upstreamId);
+    if (paramUpstreamId) {
+      console.log('💬 [useEffect] Loading comments for upstream:', paramUpstreamId);
+      loadComments(paramUpstreamId);
     }
   
-  }, [upstreamId, loadComments]);
+  }, [paramUpstreamId, loadComments]);
   
 
   // 댓글 삭제 함수
@@ -529,7 +571,79 @@ const StemSetReviewPage = () => {
     [readyStates]
   );
 
+  const handleAudioFileClick = useCallback(
+    async (upstream: any) => {
+      try {
+        console.log('🎵 [handleAudioFileClick] Audio file clicked:', upstream);
+        console.log('🎵 [handleAudioFileClick] Upstream keys:', Object.keys(upstream));
+        console.log('🎵 [handleAudioFileClick] Upstream ID:', upstream.id);
 
+        // 선택된 upstream 설정
+        setSelectedUpstream(upstream);
+        console.log('✅ [handleAudioFileClick] Selected upstream set');
+
+        // 스트리밍 최적화된 URL을 가져오기
+        console.log('🌊 Getting streaming URL for upstream:', upstream.id);
+        const response = await streamingService.getUpstreamStems(upstream.id);
+        console.log('🌊 Streaming response:', response);
+
+        // 타입 가드를 사용한 응답 처리
+        if ('success' in response && response.success === false) {
+          // 실패 응답 처리
+          console.warn('⚠️ Streaming API failed:', response.message);
+        } else if ('stems' in response && response.stems && Array.isArray(response.stems) && response.stems.length > 0) {
+          // 성공 응답 처리
+          const streamingUrl = response.stems[0].presignedUrl;
+          console.log('✅ Using streaming URL:', streamingUrl);
+          setExtraAudio(streamingUrl);
+          setShowExtraWaveform(true);
+          return; // 성공했으므로 함수 종료
+        }
+
+        // 스트리밍에 스템이 없거나 실패한 경우 - guide_path가 있으면 guide URL 사용
+        console.warn('⚠️ No stems found, trying guide_path fallback');
+        if (upstream.guide_path) {
+          console.log('🔗 Using guide_path as fallback:', upstream.guide_path);
+          try {
+            const guideResponse = await streamingService.getUpstreamGuideStreamingUrl(upstream.id);
+            if (guideResponse && guideResponse.success && guideResponse.data?.presignedUrl) {
+              setExtraAudio(guideResponse.data.presignedUrl);
+              setShowExtraWaveform(true);
+            } else {
+              console.warn('⚠️ No guide URL available');
+              alert('No audio file available for this upstream');
+            }
+          } catch (guideError) {
+            console.error('Error getting guide URL:', guideError);
+            alert('No audio file available for this upstream');
+          }
+        } else {
+          console.warn('⚠️ No guide_path available');
+          alert('No audio file available for this upstream');
+        }
+      } catch (error) {
+        console.error('Error loading streaming URL:', error);
+        // 에러 발생 시에도 guide_path 시도
+        if (upstream.guide_path) {
+          try {
+            const guideResponse = await streamingService.getUpstreamGuideStreamingUrl(upstream.id);
+            if (guideResponse && guideResponse.success && guideResponse.data?.presignedUrl) {
+              setExtraAudio(guideResponse.data.presignedUrl);
+              setShowExtraWaveform(true);
+            } else {
+              alert('No audio file available for this upstream');
+            }
+          } catch (guideError) {
+            console.error('Error getting guide URL as fallback:', guideError);
+            alert('No audio file available for this upstream');
+          }
+        } else {
+          alert('No audio file available for this upstream');
+        }
+      }
+    },
+    []
+  );
 
   // Solo 버튼 핸들러들을 메모이제이션
   const handleMainSolo = useCallback(() => handleSolo('main'), [handleSolo]);
@@ -560,17 +674,17 @@ const StemSetReviewPage = () => {
   }, [currentTime, readyStates, isPlaying]);
 
   const handleApprove = async () => {
-    console.log('🔍 Stage ID:', stageId);
-    console.log('🔍 Selected Upstream:', upstreamId);
+    console.log('🔍 Stage ID:', paramStageId);
+    console.log('🔍 Selected Upstream:', paramUpstreamId);
 
    
-    if (!stageId || !upstreamId) {
+    if (!paramStageId || !paramUpstreamId) {
       alert('Stage 또는 Upstream이 선택되지 않았습니다.');
       return;
     }
 
     try {
-      await approveDropReviewer(stageId, upstreamId);
+      await approveDropReviewer(paramStageId, paramUpstreamId);
       alert('승인 완료!');
     } catch (error) {
       console.error('승인 실패:', error);
@@ -579,13 +693,13 @@ const StemSetReviewPage = () => {
   };
 
   const handleReject = async () => {
-    if (!stageId || !upstreamId) {
+    if (!paramStageId || !paramUpstreamId) {
       alert('Stage 또는 Upstream이 선택되지 않았습니다.');
       return;
     }
 
     try {
-      await rejectDropReviewer(stageId, upstreamId);
+      await rejectDropReviewer(paramStageId, paramUpstreamId);
       alert('거절 완료!');
     } catch (error) {
       console.error('거절 실패:', error);
@@ -650,12 +764,8 @@ const StemSetReviewPage = () => {
                 showHistory, 
                 upstreamStems: upstreamStems.length,
                 stageId,
-                selectedUpstream: selectedUpstream?.id,
-                paramUpstreamId 
+                selectedUpstream 
               });
-              
-              // Show History 버튼 클릭 - 현재 upstream의 stem 정보를 표시
-              
               setShowHistory(!showHistory);
             }}
             className='self-start rounded bg-[#3a3a3a] px-3 py-1 text-sm hover:bg-[#555]'
@@ -680,52 +790,37 @@ const StemSetReviewPage = () => {
                 Streaming Audio Files
               </h2>
               <button
-                  onClick={() => setShowHistory(false)}
-                  className='rounded-full p-1 text-gray-300 transition-all duration-200 hover:text-white'
-                  style={{ backgroundColor: 'transparent' }}
-                  onMouseEnter={(e) =>
-                    (e.currentTarget.style.backgroundColor = '#ffffff')
-                  }
-                  onMouseLeave={(e) =>
-                    (e.currentTarget.style.backgroundColor = 'transparent')
-                  }
+                onClick={() => setShowHistory(false)}
+                className='rounded-full p-1 text-gray-300 transition-all duration-200 hover:text-white'
+                style={{ backgroundColor: 'transparent' }}
+                onMouseEnter={(e) =>
+                  (e.currentTarget.style.backgroundColor = '#ffffff')
+                }
+                onMouseLeave={(e) =>
+                  (e.currentTarget.style.backgroundColor = 'transparent')
+                }
+              >
+                <svg
+                  className='h-5 w-5'
+                  fill='none'
+                  stroke='currentColor'
+                  viewBox='0 0 24 24'
                 >
-                  <svg
-                    className='h-5 w-5'
-                    fill='none'
-                    stroke='currentColor'
-                    viewBox='0 0 24 24'
-                  >
-                    <path
-                      strokeLinecap='round'
-                      strokeLinejoin='round'
-                      strokeWidth={2}
-                      d='M6 18L18 6M6 6l12 12'
-                    />
-                  </svg>
-                </button>
+                  <path
+                    strokeLinecap='round'
+                    strokeLinejoin='round'
+                    strokeWidth={2}
+                    d='M6 18L18 6M6 6l12 12'
+                  />
+                </svg>
+              </button>
             </div>
 
             {/* Audio Files List */}
             <div className='mb-6'>
               <h3 className='mb-3 text-sm font-semibold text-white'>
-                Current Upstream Stems
+                Available Stem Files
               </h3>
-              
-              {/* 현재 선택된 upstream 정보 표시 */}
-              {selectedUpstream && (
-                <div className='mb-4 rounded bg-[#3a3a3a] p-3'>
-                  <div className='text-sm font-medium text-white'>
-                    {selectedUpstream.title}
-                  </div>
-                  <div className='text-xs text-gray-400'>
-                    {selectedUpstream.description}
-                  </div>
-                  <div className='mt-1 text-xs text-blue-400'>
-                    by {selectedUpstream.user?.username}
-                  </div>
-                </div>
-              )}
               {stemsLoading ? (
                 <div className='flex justify-center py-8'>
                   <div className='h-8 w-8 animate-spin rounded-full border-b-2 border-white'></div>
@@ -793,48 +888,70 @@ const StemSetReviewPage = () => {
                       );
                     }
 
-                    // 현재 upstream의 stem 정보 표시
-                    const currentStemData = upstreamStems[0]?.stemData;
-                    
-                    if (!currentStemData || currentStemData.length === 0) {
-                      return (
-                        <div className='py-4 text-center text-gray-400'>
-                          No stems found for this upstream
-                        </div>
+                    return upstreamStems.map((stemItem, index) => {
+                      console.log(
+                        `🎨 Rendering stem item ${index + 1}:`,
+                        stemItem
                       );
-                    }
+                      console.log(
+                        `🎨 [Render] Upstream keys:`,
+                        Object.keys(stemItem)
+                      );
 
-                    return currentStemData.map((stemItem: any, index: number) => {
-                      console.log(`🎨 Rendering stem ${index + 1}:`, stemItem);
-                      
+                     
+
                       return (
-                        <div key={index} className='mb-3 rounded bg-[#3a3a3a] p-3 text-sm text-white'>
-                          <div className='flex items-center justify-between'>
-                            <div className='flex items-center space-x-2'>
-                              <span className='font-medium text-white'>
-                                {stemItem.category?.name || 'Unknown Category'}
-                              </span>
-                              <span
-                                className={`rounded px-2 py-1 text-xs ${
-                                  stemItem.type === 'new'
-                                    ? 'bg-green-600'
-                                    : stemItem.type === 'modify'
-                                      ? 'bg-yellow-600'
-                                      : 'bg-gray-600'
-                                }`}
-                              >
-                                {stemItem.type || 'unknown'}
-                              </span>
+                        <div key={index} className='space-y-2'>
+                          <div
+                            onClick={() => handleAudioFileClick(stemItem)}
+                            className='cursor-pointer rounded bg-[#3a3a3a] p-3 text-sm text-white transition-colors hover:bg-[#4a4a4a]'
+                          >
+                            <div className='font-medium'>
+                              {stemItem?.title || 'Unnamed File'}
                             </div>
-                          </div>
-                          <div className='mt-1 text-xs text-gray-400'>
-                            File: {stemItem.stem?.file_name || 'Unknown file'}
-                          </div>
-                          {stemItem.stem?.description && (
+                            <div className='text-xs text-gray-400'>
+                              {stemItem?.description || 'No description'}
+                            </div>
                             <div className='mt-1 text-xs text-gray-500'>
-                              {stemItem.stem.description}
+                              Category: {stemItem?.category || 'Unknown'} | By:{' '}
+                              {stemItem?.user?.username || 'Unknown'}
                             </div>
-                          )}
+                          </div>
+
+                          {/* Stem 정보 표시 */}
+                          {/* {stemInfo?.stemData && (
+                            <div className='ml-4 space-y-1 rounded bg-[#2a2a2a] p-2 text-xs'>
+                              <div className='font-medium text-blue-400'>
+                                📁 Stems in this upstream:
+                              </div>
+                              {stemInfo.stemData.map(
+                                (item: any, stemIndex: number) => (
+                                  <div
+                                    key={stemIndex}
+                                    className='flex items-center justify-between'
+                                  >
+                                    <span className='text-white'>
+                                      {item.category?.name ||
+                                        'Unknown Category'}
+                                      <span
+                                        className={`ml-2 rounded px-2 py-1 text-xs ${item.type === 'new'
+                                          ? 'bg-green-600'
+                                          : item.type === 'modify'
+                                            ? 'bg-yellow-600'
+                                            : 'bg-gray-600'
+                                          }`}
+                                      >
+                                        {item.type || 'unknown'}
+                                      </span>
+                                    </span>
+                                    <span className='text-gray-400'>
+                                      {item.stem?.file_name || 'Unknown file'}
+                                    </span>
+                                  </div>
+                                )
+                              )}
+                            </div>
+                          )} */}
                         </div>
                       );
                     });
