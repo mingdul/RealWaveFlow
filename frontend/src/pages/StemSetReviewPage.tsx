@@ -956,7 +956,7 @@ const StemSetReviewPage = () => {
                       }
                     });
 
-                    return allItems.map((item, index) => {
+                    return allItems.map((item, _index) => {
                       if (item.type === 'upstream') {
                         const stemItem = item.data;
                         return (
