@@ -153,12 +153,15 @@ async getGuidePresignedUrlByStageId(stageId: string): Promise<StreamingResponse<
   }
 
   // 업스트림 스템 파일들 스트리밍 URL 조회
-  async getUpstreamStems(upstreamId: string): Promise<StreamingResponse<{
+  async getUpstreamStems(upstreamId: string): Promise<{
     upstreamId: string;
     stems: StemStreamingInfo[];
     totalStems: number;
     urlExpiresAt: string;
-  }>> {
+  } | {
+    success: false;
+    message: string;
+  }> {
     try {
       const response = await api.get(`/streaming/upstream/${upstreamId}/stems`);
       return response.data;
@@ -191,6 +194,30 @@ async getGuidePresignedUrlByStageId(stageId: string): Promise<StreamingResponse<
       return {
         success: false,
         message: error.response?.data?.message || 'Failed to fetch stage guide',
+      };
+    }
+  }
+
+  // 업스트림 가이드 파일 스트리밍 URL 조회
+  async getUpstreamGuideStreamingUrl(upstreamId: string): Promise<StreamingResponse<{
+    guidePath: string;
+    presignedUrl: string;
+    urlExpiresAt: string;
+    fileName: string;
+  }>> {
+    try {
+      const response = await api.get(`/streaming/upstream/${upstreamId}/guide`);
+      
+      // 백엔드가 직접 데이터 객체를 반환하므로 success wrapper로 감싸서 반환
+      return {
+        success: true,
+        data: response.data,
+      };
+    } catch (error: any) {
+      console.error('Error fetching upstream guide:', error);
+      return {
+        success: false,
+        message: error.response?.data?.message || 'Failed to fetch upstream guide',
       };
     }
   }
