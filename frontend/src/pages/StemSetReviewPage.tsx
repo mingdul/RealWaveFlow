@@ -197,19 +197,25 @@ const StemSetReviewPage = () => {
       console.log('🎯 단일 upstream에 대해 getUpstreamStems 호출:', upstream.id);
       const stemResponse = await getUpstreamStems(upstream.id, currentTrackId);
       console.log('📦 [loadStemsData] Stem response:', stemResponse);
+      console.log('📦 [loadStemsData] Stem response.data:', stemResponse?.data);
+      console.log('📦 [loadStemsData] Stem response.data.data:', stemResponse?.data?.data);
       
-      if(!stemResponse || !stemResponse.data){
+      if(!stemResponse || !stemResponse.data || !stemResponse.data.data){
         console.log('❌ [loadStemsData] stem 정보가 없습니다:', stemResponse);
+      } else {
+        console.log('✅ [loadStemsData] stem 정보 있음. 데이터 길이:', stemResponse.data.data?.length);
+        console.log('✅ [loadStemsData] stem 정보 첫번째 아이템:', stemResponse.data.data[0]);
       }
       
       const stemsResult = [
         {
           ...upstream,
           upstreamId: upstream.id,
-          stemData: stemResponse?.data || null,
+          stemData: stemResponse?.data?.data || null,
         },
       ];
       console.log('✅ [loadStemsData] Stems result:', stemsResult);
+      console.log('✅ [loadStemsData] Stems result[0].stemData:', stemsResult[0].stemData);
       setUpstreamStems(stemsResult);
     } catch (error) {
       console.error('❌ [loadStemsData] 오류:', error);
@@ -929,6 +935,17 @@ const StemSetReviewPage = () => {
                     console.log('🎨 [Render] upstreamStems:', upstreamStems);
                     console.log('🎨 [Render] stageId:', stageId);
                     console.log('🎨 [Render] selectedUpstream:', selectedUpstream);
+                    
+                    // 스템 데이터 구조 상세 로깅
+                    if (upstreamStems.length > 0) {
+                      console.log('🎨 [Render] First upstream details:', upstreamStems[0]);
+                      console.log('🎨 [Render] stemData exists:', !!upstreamStems[0]?.stemData);
+                      console.log('🎨 [Render] stemData content:', upstreamStems[0]?.stemData);
+                      if (upstreamStems[0]?.stemData) {
+                        console.log('🎨 [Render] stemData is array:', Array.isArray(upstreamStems[0].stemData));
+                        console.log('🎨 [Render] stemData length:', upstreamStems[0].stemData.length);
+                      }
+                    }
 
                     if (stemsLoading) {
                       console.log('🎨 [Render] Showing loading state');
