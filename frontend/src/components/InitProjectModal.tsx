@@ -155,7 +155,7 @@ const FileSelectionAndUploadStep: React.FC<{
         )}
 
         {/* Upload Button */}
-        {!isUploading && selectedFiles.length > 0 && (
+        {/* {!isUploading && selectedFiles.length > 0 && (
           <div className="mb-6">
             <button
               onClick={onStartUpload}
@@ -171,7 +171,7 @@ const FileSelectionAndUploadStep: React.FC<{
               </p>
             )}
           </div>
-        )}
+        )} */}
 
         {/* File List */}
         {files.length > 0 && (
@@ -280,6 +280,25 @@ const FileSelectionAndUploadStep: React.FC<{
                 </div>
               );
             })}
+          </div>
+        )}
+        
+        {/* Upload Button */}
+        {!isUploading && selectedFiles.length > 0 && (
+          <div className="mb-6">
+            <button
+              onClick={onStartUpload}
+              disabled={!canStartUpload}
+              className={`w-full flex items-center justify-center px-6 py-3 bg-purple-600 text-white font-medium rounded-lg hover:bg-purple-700 transition-colors ${!canStartUpload ? 'opacity-50 cursor-not-allowed' : ''}`}
+            >
+              <Upload size={20} className="mr-2" />
+              Start Upload ({selectedFiles.length} files)
+            </button>
+            {!canStartUpload && (
+              <p className="text-amber-400 text-sm mt-2 text-center">
+                Please set <b>tag</b> for all selected files before uploading. (Key and BPM are optional)
+              </p>
+            )}
           </div>
         )}
 
