@@ -71,7 +71,7 @@ const StemSetReviewPage = () => {
   const [editCommentText, setEditCommentText] = useState('');
   const [extraAudio, setExtraAudio] = useState<string>('');
   const [showExtraWaveform, setShowExtraWaveform] = useState(false);
-  const [stemsLoading] = useState(false);
+  const [stemsLoading, setStemsLoading] = useState(false);
   const [upstreamStems, setUpstreamStems] = useState<any[]>([]);
   const [guideAudioUrl, setGuideAudioUrl] = useState<string>('');
   const [guideLoading, setGuideLoading] = useState(false);
@@ -80,7 +80,7 @@ const StemSetReviewPage = () => {
   const wavesurferRefs = useRef<{ [id: string]: WaveSurfer }>({});
   const [readyStates, setReadyStates] = useState<{ [id: string]: boolean }>({});
   const isSeeking = useRef(false); // 무한 루프 방지용 플래그
-  const { upstreamId: paramUpstreamId } = useParams<{ upstreamId: string }>();
+  const { upstreamId: paramUpstreamId, stageId: paramStageId } = useParams<{ upstreamId: string, stageId: string }>();
   const [searchParams] = useSearchParams();
   const [stageId, setStageId] = useState<string | null>(null);
 
@@ -206,16 +206,11 @@ const StemSetReviewPage = () => {
   }, [stageId]);
 
   useEffect(() => {
-    const fetchUpstreamsAndStems = async (upstreamId: string) => {
+    const fetchUpstreamsAndStems = async () => {
       try {
-        console.log('🔍 [fetchUpstreamsAndStems] Starting with:', { stageId, upstreamId, selectedUpstream });
-        
-        if (!stageId) {
-          console.log('⚠️ [fetchUpstreamsAndStems] No stageId, returning early');
-          return;
-        }
+        if (!stageId || !selectedUpstream) return;
     
-        console.log('🔍 [fetchUpstreamsAndStems] Getting stage detail for:', stageId);
+        setStemsLoading(true);
         const stageResponse = await getStageDetail(stageId);
         console.log('🔍 [fetchUpstreamsAndStems] Stage response:', stageResponse);
         
@@ -225,60 +220,36 @@ const StemSetReviewPage = () => {
         }
     
         const currentTrackId = stageResponse.data.track.id;
-        console.log('🔍 [fetchUpstreamsAndStems] currentTrackId:', currentTrackId);
-        console.log('🔍🔍🔍 [fetchUpstreamsAndStems] selectedUpstream:', selectedUpstream);
+        console.log('🔍 currentTrackId:', currentTrackId);
+        console.log('🔍🔍🔍 selectedUpstream:', selectedUpstream);
         
-        // Show History를 위해 모든 stage upstreams를 가져오기
-        console.log('🔍 [fetchUpstreamsAndStems] Getting all stage upstreams for Show History');
-        const allUpstreamsResponse = await getStageUpstreams(stageId);
-        console.log('🔍 [fetchUpstreamsAndStems] All upstreams response:', allUpstreamsResponse);
-        
-        if (allUpstreamsResponse && allUpstreamsResponse.length > 0) {
-          console.log('🔍 [fetchUpstreamsAndStems] Processing', allUpstreamsResponse.length, 'upstreams');
-          
-          // 각 upstream에 대해 stem 정보 가져오기
-          const stemsPromises = allUpstreamsResponse.map(async (upstream: any) => {
-            try {
-              console.log('🔍 [fetchUpstreamsAndStems] Getting stems for upstream:', upstream.id);
-              const stemResponse = await getUpstreamStems(upstream.id, currentTrackId);
-              console.log('🔍 [fetchUpstreamsAndStems] Stem response for', upstream.id, ':', stemResponse);
-              
-              return {
-                ...upstream, // upstream 전체 데이터 포함
-                upstreamId: upstream.id,
-                stemData: stemResponse.data || null,
-              };
-            } catch (error) {
-              console.error('❌ [fetchUpstreamsAndStems] Error getting stems for upstream', upstream.id, ':', error);
-              return {
-                ...upstream,
-                upstreamId: upstream.id,
-                stemData: null,
-              };
-            }
-          });
-          
-          const stemsResults = await Promise.all(stemsPromises);
-          console.log('🔍 [fetchUpstreamsAndStems] Final stems results:', stemsResults);
-          setUpstreamStems(stemsResults);
-        } else {
-          console.log('⚠️ [fetchUpstreamsAndStems] No upstreams found in stage');
-          setUpstreamStems([]);
-        }
+        // ✅ 단일 upstream에 대해서만 처리
+        console.log('🎯 단일 upstream에 대해 getUpstreamStems 호출:', selectedUpstream.id);
+        const stemResponse = await getUpstreamStems(selectedUpstream.id, currentTrackId);
+    
+        const stemsResult = [
+          {
+            upstreamId: selectedUpstream.id,
+            stemData: stemResponse.data || null,
+          },
+        ];
+        setUpstreamStems(stemsResult);
       } catch (error) {
         console.error('❌ [fetchUpstreamsAndStems] 오류:', error);
-        setUpstreamStems([]);
+        alert('스템 정보를 불러오는 중 오류가 발생했습니다.');
+      } finally {
+        setStemsLoading(false);
       }
     };
     
 
-    if (stageId) {
-      console.log('🎬 [fetchUpstreamsAndStems] useEffect triggered with stageId:', stageId);
-      fetchUpstreamsAndStems(paramUpstreamId || '');
+    if (stageId && selectedUpstream) {
+      console.log('🎬 useEffect triggered with stageId:', stageId, 'selectedUpstream:', selectedUpstream.id);
+      fetchUpstreamsAndStems();
     } else {
-      console.log('⚠️ [fetchUpstreamsAndStems] No stageId provided');
+      console.log('⚠️ No stageId or selectedUpstream provided');
     }
-  }, [stageId]);
+  }, [stageId, selectedUpstream]);
 
   const handleReady = useCallback(
     (ws: WaveSurfer, id: string) => {
@@ -472,6 +443,7 @@ const StemSetReviewPage = () => {
       }
     } catch (error) {
       console.error('댓글 로드 실패:', error);
+      alert('댓글을 불러오는 중 오류가 발생했습니다.');
       setComments([]);
     } finally {
       setCommentsLoading(false);
@@ -479,11 +451,13 @@ const StemSetReviewPage = () => {
   }, []);
 
   useEffect(() => {
-    console.log('🔍🔍 selectedUpstream:', paramUpstreamId);
+    console.log('🔍🔍 selectedUpstream:', selectedUpstream);
     
-    loadComments(paramUpstreamId || '');
+    if (selectedUpstream?.id) {
+      loadComments(selectedUpstream.id);
+    }
   
-  }, [paramUpstreamId, loadComments]);
+  }, [selectedUpstream, loadComments]);
   
 
   // 댓글 삭제 함수
@@ -493,6 +467,7 @@ const StemSetReviewPage = () => {
       setComments((prev) => prev.filter((comment) => comment.id !== commentId));
     } catch (error) {
       console.error('댓글 삭제 실패:', error);
+      alert('댓글 삭제 중 오류가 발생했습니다.');
     }
   }, []);
 
@@ -529,6 +504,7 @@ const StemSetReviewPage = () => {
         setEditCommentText('');
       } catch (error) {
         console.error('댓글 수정 실패:', error);
+        alert('댓글 수정 중 오류가 발생했습니다.');
       }
     },
     [editCommentText, comments]
@@ -700,16 +676,17 @@ const StemSetReviewPage = () => {
   }, [currentTime, readyStates, isPlaying]);
 
   const handleApprove = async () => {
-    console.log('🔍 Stage ID:', stageId);
-    console.log('🔍 Selected Upstream:', selectedUpstream);
+    console.log('🔍 Stage ID:', paramStageId);
+    console.log('🔍 Selected Upstream:', paramUpstreamId);
 
-    if (!stageId || !selectedUpstream) {
+   
+    if (!paramStageId || !paramUpstreamId) {
       alert('Stage 또는 Upstream이 선택되지 않았습니다.');
       return;
     }
 
     try {
-      await approveDropReviewer(stageId, selectedUpstream.id);
+      await approveDropReviewer(paramStageId, paramUpstreamId);
       alert('승인 완료!');
     } catch (error) {
       console.error('승인 실패:', error);
@@ -718,13 +695,13 @@ const StemSetReviewPage = () => {
   };
 
   const handleReject = async () => {
-    if (!stageId || !selectedUpstream) {
+    if (!paramStageId || !paramUpstreamId) {
       alert('Stage 또는 Upstream이 선택되지 않았습니다.');
       return;
     }
 
     try {
-      await rejectDropReviewer(stageId, selectedUpstream.id);
+      await rejectDropReviewer(paramStageId, paramUpstreamId);
       alert('거절 완료!');
     } catch (error) {
       console.error('거절 실패:', error);
@@ -849,6 +826,7 @@ const StemSetReviewPage = () => {
               {stemsLoading ? (
                 <div className='flex justify-center py-8'>
                   <div className='h-8 w-8 animate-spin rounded-full border-b-2 border-white'></div>
+                  <span className='ml-2 text-white'>Loading stems...</span>
                 </div>
               ) : (
                 <div className='max-h-96 space-y-2 overflow-y-auto'>
@@ -907,50 +885,43 @@ const StemSetReviewPage = () => {
                       console.log('⚠️ [Render] No upstreams to render');
                       return (
                         <div className='py-8 text-center text-gray-400'>
-                          No audio files found for this stage
+                          {stemsLoading ? 'Loading stems...' : 'No stems found for this upstream'}
                         </div>
                       );
                     }
 
-                    return upstreamStems.map((upstream, index) => {
+                    return upstreamStems.map((stemItem, index) => {
                       console.log(
-                        `🎨 [Render] Rendering upstream ${index + 1}:`,
-                        upstream
+                        `🎨 Rendering stem item ${index + 1}:`,
+                        stemItem
                       );
                       console.log(
                         `🎨 [Render] Upstream keys:`,
-                        Object.keys(upstream)
+                        Object.keys(stemItem)
                       );
 
-                      // 해당 upstream의 stem 정보 찾기
-                      const stemInfo = upstreamStems.find(
-                        (s) => s.upstreamId === upstream.id
-                      );
-                      console.log(
-                        `🎨 [Render] Stem info for upstream ${upstream.id}:`,
-                        stemInfo
-                      );
+                     
 
                       return (
                         <div key={index} className='space-y-2'>
                           <div
-                            onClick={() => handleAudioFileClick(upstream)}
+                            onClick={() => handleAudioFileClick(stemItem)}
                             className='cursor-pointer rounded bg-[#3a3a3a] p-3 text-sm text-white transition-colors hover:bg-[#4a4a4a]'
                           >
                             <div className='font-medium'>
-                              {upstream.title || upstream.fileName || 'Unnamed File'}
+                              {stemItem?.title || 'Unnamed File'}
                             </div>
                             <div className='text-xs text-gray-400'>
-                              {upstream.description || 'No description'}
+                              {stemItem?.description || 'No description'}
                             </div>
                             <div className='mt-1 text-xs text-gray-500'>
-                              Category: {upstream.category || 'Unknown'} | By:{' '}
-                              {upstream.user?.username || upstream.uploadedBy?.username || 'Unknown'}
+                              Category: {stemItem?.category || 'Unknown'} | By:{' '}
+                              {stemItem?.user?.username || 'Unknown'}
                             </div>
                           </div>
 
                           {/* Stem 정보 표시 */}
-                          {stemInfo?.stemData && (
+                          {/* {stemInfo?.stemData && (
                             <div className='ml-4 space-y-1 rounded bg-[#2a2a2a] p-2 text-xs'>
                               <div className='font-medium text-blue-400'>
                                 📁 Stems in this upstream:
@@ -982,7 +953,7 @@ const StemSetReviewPage = () => {
                                 )
                               )}
                             </div>
-                          )}
+                          )} */}
                         </div>
                       );
                     });
@@ -1052,6 +1023,7 @@ const StemSetReviewPage = () => {
             {commentsLoading ? (
               <div className='flex justify-center py-8'>
                 <div className='h-6 w-6 animate-spin rounded-full border-b-2 border-white'></div>
+                <span className='ml-2 text-white'>Loading comments...</span>
               </div>
             ) : (
               <ul className='space-y-2 text-sm text-white'>
