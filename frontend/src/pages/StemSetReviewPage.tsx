@@ -229,6 +229,7 @@ const StemSetReviewPage = () => {
     
         const stemsResult = [
           {
+            ...selectedUpstream,
             upstreamId: selectedUpstream.id,
             stemData: stemResponse.data || null,
           },
@@ -617,17 +618,24 @@ const StemSetReviewPage = () => {
   const handleAudioFileClick = useCallback(
     async (upstream: any) => {
       try {
+        const id = upstream.id || upstream.upstreamId;
+        if (!id) {
+          console.error("❌ [handleAudioFileClick] Upstream object has no id or upstreamId property:", upstream);
+          alert("Cannot play audio: ID is missing.");
+          return;
+        }
+
         console.log('🎵 [handleAudioFileClick] Audio file clicked:', upstream);
         console.log('🎵 [handleAudioFileClick] Upstream keys:', Object.keys(upstream));
-        console.log('🎵 [handleAudioFileClick] Upstream ID:', upstream.id);
+        console.log('🎵 [handleAudioFileClick] Upstream ID being used:', id);
 
         // 선택된 upstream 설정
         setSelectedUpstream(upstream);
         console.log('✅ [handleAudioFileClick] Selected upstream set');
 
         // 스트리밍 최적화된 URL을 가져오기
-        console.log('🌊 Getting streaming URL for upstream:', upstream.id);
-        const response = await streamingService.getUpstreamStems(upstream.id);
+        console.log('🌊 Getting streaming URL for upstream:', id);
+        const response = await streamingService.getUpstreamStems(upstream.upstreamId);
         console.log('🌊 Streaming response:', response);
 
         // 타입 가드를 사용한 응답 처리
@@ -648,7 +656,7 @@ const StemSetReviewPage = () => {
         if (upstream.guide_path) {
           console.log('🔗 Using guide_path as fallback:', upstream.guide_path);
           try {
-            const guideResponse = await streamingService.getUpstreamGuideStreamingUrl(upstream.id);
+            const guideResponse = await streamingService.getUpstreamGuideStreamingUrl(id);
             if (guideResponse && guideResponse.success && guideResponse.data?.presignedUrl) {
               setExtraAudio(guideResponse.data.presignedUrl);
               setShowExtraWaveform(true);
@@ -669,7 +677,8 @@ const StemSetReviewPage = () => {
         // 에러 발생 시에도 guide_path 시도
         if (upstream.guide_path) {
           try {
-            const guideResponse = await streamingService.getUpstreamGuideStreamingUrl(upstream.id);
+            const id = upstream.id || upstream.upstreamId;
+            const guideResponse = await streamingService.getUpstreamGuideStreamingUrl(id);
             if (guideResponse && guideResponse.success && guideResponse.data?.presignedUrl) {
               setExtraAudio(guideResponse.data.presignedUrl);
               setShowExtraWaveform(true);
