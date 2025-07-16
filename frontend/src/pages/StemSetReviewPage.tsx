@@ -85,23 +85,37 @@ const StemSetReviewPage = () => {
   // stageId 결정 로직 (쿼리 파라미터 우선, 없으면 upstream API 사용)
   useEffect(() => {
     const determineStageId = async () => {
-      if (upstreamId) {
-        try {
-          console.log('🔍 [determineStageId] Found upstreamId in URL params, fetching upstream details:', upstreamId);
-          // upstream 정보를 가져와서 stageId 추출
-          const upstreamData = await getUpstreamByUpstreamId(upstreamId);
-          const extractedStageId = upstreamData.data.stage.id;
-          console.log('✅ [determineStageId] Extracted stageId from upstream:', extractedStageId);
+              if (upstreamId) {
+          try {
+            console.log('🔍 [determineStageId] Found upstreamId in URL params, fetching upstream details:', upstreamId);
+            // upstream 정보를 가져와서 stageId 추출
+            const upstreamData = await getUpstreamByUpstreamId(upstreamId);
+            console.log('📦 [determineStageId] Upstream data response:', upstreamData);
+            
+            if (upstreamData?.data?.upstream) {
+              console.log('📦 [determineStageId] Upstream object:', upstreamData.data.upstream);
+              console.log('📦 [determineStageId] Upstream keys:', Object.keys(upstreamData.data.upstream));
+              
+              // stage 정보가 있는지 확인
+              if (upstreamData.data.upstream.stage) {
+                const extractedStageId = upstreamData.data.upstream.stage.id;
+                console.log('✅ [determineStageId] Extracted stageId from upstream:', extractedStageId);
+              } else {
+                console.warn('⚠️ [determineStageId] No stage information in upstream');
+              }
 
-          // 선택된 upstream 설정
-          console.log('✅ [determineStageId] Setting selected upstream:', upstreamData);
-          setSelectedUpstream(upstreamData);
-        } catch (error) {
-          console.error('❌ [determineStageId] Error fetching upstream details:', error);
-          console.error('❌ [determineStageId] Error details:', (error as any)?.message);
+              // 선택된 upstream 설정
+              console.log('✅ [determineStageId] Setting selected upstream:', upstreamData.data.upstream);
+              setSelectedUpstream(upstreamData.data.upstream);
+            } else {
+              console.error('❌ [determineStageId] No upstream data found in response');
+            }
+          } catch (error) {
+            console.error('❌ [determineStageId] Error fetching upstream details:', error);
+            console.error('❌ [determineStageId] Error details:', (error as any)?.message);
+          }
+          return;
         }
-        return;
-      }
 
       console.log('⚠️ [determineStageId] No stageId or upstreamId found');
     };
@@ -157,10 +171,13 @@ const StemSetReviewPage = () => {
   }, [stageId]);
 
   useEffect(() => {
-    const fetchUpstreamsAndStems = async () => {
+        const fetchUpstreamsAndStems = async () => {
       try {
-        if (!stageId || !selectedUpstream) return;
-    
+        if (!stageId || !selectedUpstream) {
+          console.log('⚠️ [fetchUpstreamsAndStems] Missing stageId or selectedUpstream:', { stageId, selectedUpstream });
+          return;
+        }
+      
         setStemsLoading(true);
         const stageResponse = await getStageDetail(stageId);
         
@@ -168,23 +185,28 @@ const StemSetReviewPage = () => {
           console.error('❌ [fetchUpstreamsAndStems] track 정보가 없습니다:', stageResponse);
           return;
         }
-    
+      
         const currentTrackId = stageResponse.data.track.id;
         console.log('🔍 currentTrackId:', currentTrackId);
+        console.log('🔍 selectedUpstream:', selectedUpstream);
         
         // ✅ 단일 upstream에 대해서만 처리
         console.log('🎯 단일 upstream에 대해 getUpstreamStems 호출:', selectedUpstream.id);
         const stemResponse = await getUpstreamStems(selectedUpstream.id, currentTrackId);
+        console.log('📦 [fetchUpstreamsAndStems] Stem response:', stemResponse);
+        
         if(!stemResponse || !stemResponse.data){
           console.log('❌ [fetchUpstreamsAndStems] stem 정보가 없습니다:', stemResponse);
         }
+        
         const stemsResult = [
           {
             ...selectedUpstream,
             upstreamId: selectedUpstream.id,
-            stemData: stemResponse.data || null,
+            stemData: stemResponse?.data || null,
           },
         ];
+        console.log('✅ [fetchUpstreamsAndStems] Stems result:', stemsResult);
         setUpstreamStems(stemsResult);
       } catch (error) {
         console.error('❌ [fetchUpstreamsAndStems] 오류:', error);
@@ -322,9 +344,12 @@ const StemSetReviewPage = () => {
 
       const response = await createUpstreamComment(commentData);
 
+      // 백엔드 응답 구조에 맞게 수정: upstream_comment 객체에서 데이터 추출
+      const createdComment = response.upstream_comment || response;
+      
       // 새 댓글을 로컬 상태에 추가
       const newComment: Comment = {
-        id: response.id,
+        id: createdComment.id,
         time: timeString,
         comment: commentInput.trim(),
         timeNumber: currentTime,
@@ -372,8 +397,15 @@ const StemSetReviewPage = () => {
       setCommentsLoading(true);
       const response = await getUpstreamComments(upstreamId);
       console.log('🔍🔍🔍🔍 response comments:', response);
-      if (response.data) {
-        const formattedComments = response.data.map((comment: any) => {
+      
+      // API 응답 구조에 맞게 수정: upstreamComments 배열 사용
+      const commentsData = response.upstreamComments || response.data || [];
+      console.log('📦 [loadComments] Comments data:', commentsData);
+
+      if (commentsData && Array.isArray(commentsData)) {
+        const formattedComments = commentsData.map((comment: any) => {
+          console.log('📝 [loadComments] Processing comment:', comment);
+          
           // time 문자열을 파싱하여 숫자로 변환 (MM:SS 형식)
           const [minutes, seconds] = comment.time.split(':').map(Number);
           const timeNumber = minutes * 60 + seconds;
@@ -393,7 +425,11 @@ const StemSetReviewPage = () => {
           };
         });
 
+        console.log('✅ [loadComments] Formatted comments:', formattedComments);
         setComments(formattedComments);
+      } else {
+        console.warn('⚠️ [loadComments] No comments data found');
+        setComments([]);
       }
     } catch (error) {
       console.error('댓글 로드 실패:', error);
@@ -408,7 +444,10 @@ const StemSetReviewPage = () => {
     console.log('🔍🔍 selectedUpstream:', selectedUpstream);
     
     if (selectedUpstream?.id) {
+      console.log('💬 [useEffect] Loading comments for upstream:', selectedUpstream.id);
       loadComments(selectedUpstream.id);
+    } else {
+      console.log('⚠️ [useEffect] No selectedUpstream or missing id');
     }
   
   }, [selectedUpstream, loadComments]);
@@ -526,7 +565,11 @@ const StemSetReviewPage = () => {
   const handleAudioFileClick = useCallback(
     async (upstream: any) => {
       try {
+        console.log('🎵 [handleAudioFileClick] Audio file clicked:', upstream);
         
+        // 선택된 upstream 설정
+        setSelectedUpstream(upstream);
+        console.log('✅ [handleAudioFileClick] Selected upstream set');
 
         // 스트리밍 최적화된 URL을 가져오기
         const response = await streamingService.getUpstreamStems(upstream.id);
@@ -864,12 +907,12 @@ const StemSetReviewPage = () => {
                           </div>
 
                           {/* Stem 정보 표시 */}
-                          {/* {stemInfo?.stemData && (
+                          {stemItem?.stemData && Array.isArray(stemItem.stemData) && (
                             <div className='ml-4 space-y-1 rounded bg-[#2a2a2a] p-2 text-xs'>
                               <div className='font-medium text-blue-400'>
                                 📁 Stems in this upstream:
                               </div>
-                              {stemInfo.stemData.map(
+                              {stemItem.stemData.map(
                                 (item: any, stemIndex: number) => (
                                   <div
                                     key={stemIndex}
@@ -896,7 +939,7 @@ const StemSetReviewPage = () => {
                                 )
                               )}
                             </div>
-                          )} */}
+                          )}
                         </div>
                       );
                     });

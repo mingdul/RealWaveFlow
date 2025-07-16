@@ -12,6 +12,7 @@ export const createUpstreamComment = async (commentData: {
 
 export const getUpstreamComments = async (upstreamId: string) => {
   const response = await api.get(`/upstream-comment/upstream/${upstreamId}`);
+  console.log('📦 [getUpstreamComments] Raw response:', response);
   return response.data;
 };
 
