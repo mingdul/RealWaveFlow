@@ -637,6 +637,58 @@ const StemSetReviewPage = () => {
     []
   );
 
+  // 개별 스템 클릭 핸들러
+  const handleIndividualStemClick = useCallback(
+    async (stemData: any, upstream: any) => {
+      try {
+        console.log('🎵 [handleIndividualStemClick] Individual stem clicked:', stemData);
+        
+        // 선택된 upstream 설정 (댓글을 위해)
+        setSelectedUpstream(upstream);
+
+        // 개별 스템의 스트리밍 URL 가져오기
+        let streamingUrl = '';
+        
+        if (stemData.type === 'unchanged' && stemData.stem?.id) {
+          // version-stem API 사용
+          try {
+            const versionStemResponse = await streamingService.getVersionStemStreamingUrl(stemData.stem.id);
+            if (versionStemResponse.success && versionStemResponse.data?.presignedUrl) {
+              streamingUrl = versionStemResponse.data.presignedUrl;
+            }
+          } catch (error) {
+            console.warn('Version stem streaming failed, trying regular stem API');
+          }
+        }
+        
+        if (!streamingUrl && stemData.stem?.id) {
+          // 일반 stem API 사용
+          try {
+            const stemResponse = await streamingService.getStemStreamingUrl(stemData.stem.id);
+            if (stemResponse.success && stemResponse.data?.presignedUrl) {
+              streamingUrl = stemResponse.data.presignedUrl;
+            }
+          } catch (error) {
+            console.warn('Regular stem streaming failed');
+          }
+        }
+
+        if (streamingUrl) {
+          console.log('✅ [handleIndividualStemClick] Using streaming URL:', streamingUrl);
+          setExtraAudio(streamingUrl);
+          setShowExtraWaveform(true);
+        } else {
+          console.warn('⚠️ [handleIndividualStemClick] No streaming URL available for stem');
+          alert('No audio file available for this stem');
+        }
+      } catch (error) {
+        console.error('Error loading individual stem:', error);
+        alert('Failed to load stem audio');
+      }
+    },
+    []
+  );
+
   // Solo 버튼 핸들러들을 메모이제이션
   const handleMainSolo = useCallback(() => handleSolo('main'), [handleSolo]);
   const handleExtraSolo = useCallback(() => handleSolo('extra'), [handleSolo]);
@@ -880,72 +932,89 @@ const StemSetReviewPage = () => {
                       );
                     }
 
-                    return upstreamStems.map((stemItem, index) => {
-                      console.log(
-                        `🎨 Rendering stem item ${index + 1}:`,
-                        stemItem
-                      );
-                      console.log(
-                        `🎨 [Render] Upstream keys:`,
-                        Object.keys(stemItem)
-                      );
+                    // 업스트림과 개별 스템들을 모두 렌더링
+                    const allItems: any[] = [];
+                    
+                    upstreamStems.forEach((stemItem, upstreamIndex) => {
+                      // 메인 업스트림 정보 추가
+                      allItems.push({
+                        type: 'upstream',
+                        data: stemItem,
+                        key: `upstream-${upstreamIndex}`
+                      });
+                      
+                      // 개별 스템들 추가
+                      if (stemItem?.stemData && Array.isArray(stemItem.stemData)) {
+                        stemItem.stemData.forEach((stem: any, stemIndex: number) => {
+                          allItems.push({
+                            type: 'stem',
+                            data: stem,
+                            upstream: stemItem,
+                            key: `stem-${upstreamIndex}-${stemIndex}`
+                          });
+                        });
+                      }
+                    });
 
-                     
-
-                      return (
-                        <div key={index} className='space-y-2'>
-                          <div
-                            onClick={() => handleAudioFileClick(stemItem)}
-                            className='cursor-pointer rounded bg-[#3a3a3a] p-3 text-sm text-white transition-colors hover:bg-[#4a4a4a]'
-                          >
-                            <div className='font-medium'>
-                              {stemItem?.title || 'Unnamed File'}
-                            </div>
-                            <div className='text-xs text-gray-400'>
-                              {stemItem?.description || 'No description'}
-                            </div>
-                            <div className='mt-1 text-xs text-gray-500'>
-                              Category: {stemItem?.category || 'Unknown'} | By:{' '}
-                              {stemItem?.user?.username || 'Unknown'}
+                    return allItems.map((item, index) => {
+                      if (item.type === 'upstream') {
+                        const stemItem = item.data;
+                        return (
+                          <div key={item.key} className='space-y-2'>
+                            <div
+                              onClick={() => handleAudioFileClick(stemItem)}
+                              className='cursor-pointer rounded bg-[#3a3a3a] p-3 text-sm text-white transition-colors hover:bg-[#4a4a4a]'
+                            >
+                              <div className='font-medium'>
+                                📁 {stemItem?.title || 'Unnamed File'}
+                              </div>
+                              <div className='text-xs text-gray-400'>
+                                {stemItem?.description || 'No description'}
+                              </div>
+                              <div className='mt-1 text-xs text-gray-500'>
+                                Category: {stemItem?.category || 'Unknown'} | By:{' '}
+                                {stemItem?.user?.username || 'Unknown'}
+                              </div>
                             </div>
                           </div>
-
-                          {/* Stem 정보 표시 */}
-                          {stemItem?.stemData && Array.isArray(stemItem.stemData) && (
-                            <div className='ml-4 space-y-1 rounded bg-[#2a2a2a] p-2 text-xs'>
-                              <div className='font-medium text-blue-400'>
-                                📁 Stems in this upstream:
+                        );
+                      } else {
+                        // 개별 스템 렌더링
+                        const stemData = item.data;
+                        const upstream = item.upstream;
+                        
+                        return (
+                          <div key={item.key} className='ml-4 space-y-2'>
+                            <div
+                              onClick={() => handleIndividualStemClick(stemData, upstream)}
+                              className='cursor-pointer rounded bg-[#2a2a2a] p-3 text-sm text-white transition-colors hover:bg-[#3a3a3a] border-l-4 border-blue-500'
+                            >
+                              <div className='flex items-center justify-between'>
+                                <div className='font-medium'>
+                                  🎵 {stemData.category?.name || 'Unknown Category'}
+                                </div>
+                                <span
+                                  className={`rounded px-2 py-1 text-xs ${stemData.type === 'new'
+                                    ? 'bg-green-600'
+                                    : stemData.type === 'modify'
+                                      ? 'bg-yellow-600'
+                                      : 'bg-gray-600'
+                                    }`}
+                                >
+                                  {stemData.type || 'unknown'}
+                                </span>
                               </div>
-                              {stemItem.stemData.map(
-                                (item: any, stemIndex: number) => (
-                                  <div
-                                    key={stemIndex}
-                                    className='flex items-center justify-between'
-                                  >
-                                    <span className='text-white'>
-                                      {item.category?.name ||
-                                        'Unknown Category'}
-                                      <span
-                                        className={`ml-2 rounded px-2 py-1 text-xs ${item.type === 'new'
-                                          ? 'bg-green-600'
-                                          : item.type === 'modify'
-                                            ? 'bg-yellow-600'
-                                            : 'bg-gray-600'
-                                          }`}
-                                      >
-                                        {item.type || 'unknown'}
-                                      </span>
-                                    </span>
-                                    <span className='text-gray-400'>
-                                      {item.stem?.file_name || 'Unknown file'}
-                                    </span>
-                                  </div>
-                                )
-                              )}
+                              <div className='text-xs text-gray-400 mt-1'>
+                                {stemData.stem?.file_name || 'Unknown file'}
+                              </div>
+                              <div className='text-xs text-gray-500 mt-1'>
+                                Instrument: {stemData.category?.instrument || 'Unknown'} | 
+                                By: {stemData.stem?.user?.username || upstream?.user?.username || 'Unknown'}
+                              </div>
                             </div>
-                          )}
-                        </div>
-                      );
+                          </div>
+                        );
+                      }
                     });
                   })()}
                 </div>
