@@ -411,7 +411,7 @@ const StemSetReviewPage = () => {
     }
   }, [commentInput, currentTime, duration, selectedUpstream, user]);
 
-  // 댓글 로드 함수
+  // 댓글 로드 함수 (먼저 선언)
   const loadComments = useCallback(async (upstreamId: string) => {
     console.log('🔍🔍🔍🔍 loadComments:', upstreamId);
     try {
@@ -450,10 +450,12 @@ const StemSetReviewPage = () => {
     }
   }, []);
 
+  // 페이지 로딩 시점에 댓글 로드
   useEffect(() => {
     console.log('🔍🔍 selectedUpstream:', selectedUpstream);
     
     if (selectedUpstream?.id) {
+      console.log('💬 [useEffect] Loading comments for upstream:', selectedUpstream.id);
       loadComments(selectedUpstream.id);
     }
   
@@ -580,10 +582,6 @@ const StemSetReviewPage = () => {
         setSelectedUpstream(upstream);
         console.log('✅ [handleAudioFileClick] Selected upstream set');
 
-        // 해당 upstream의 댓글 로드
-        console.log('💬 [handleAudioFileClick] Loading comments for upstream:', upstream.id);
-        await loadComments(upstream.id);
-
         // 스트리밍 최적화된 URL을 가져오기
         console.log('🌊 Getting streaming URL for upstream:', upstream.id);
         const response = await streamingService.getUpstreamStems(upstream.id);
@@ -644,7 +642,7 @@ const StemSetReviewPage = () => {
         }
       }
     },
-    [loadComments]
+    []
   );
 
   // Solo 버튼 핸들러들을 메모이제이션
