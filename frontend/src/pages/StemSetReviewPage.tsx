@@ -162,24 +162,36 @@ const StemSetReviewPage = () => {
         }
 
 
-        // 5. guide audio URL 가져오기 (기존 방식 유지)
+        // 5. guide audio URL 가져오기 (오디오 재생용)
         const audioResponse = await streamingService.getGuidePresignedUrlbyUpstream(upstreamId as string);
-        console.log('📦 [fetchPreviousGuideUrl] Guide audio response:', audioResponse);
+        console.log('🎵 [fetchPreviousGuideUrl] Guide audio response:', audioResponse);
         
         if (audioResponse.success && audioResponse.data) {
           setGuideAudioUrl(audioResponse.data.presignedUrl);
+          console.log('🎵 Guide audio URL set:', audioResponse.data.presignedUrl);
         } else {
+          console.warn('⚠️ Guide audio not available, using fallback');
           setGuideAudioUrl('/audio/track_ex.wav');
         }
 
-        // 6. guide waveform 데이터 가져오기 (새로운 방식)
+        // 6. guide waveform 데이터 가져오기 (파형 표시용)
         const waveformResponse = await streamingService.getGuideWaveformData(upstreamId as string);
-        console.log('📦 [fetchPreviousGuideUrl] Guide waveform response:', waveformResponse);
+        console.log('🌊 [fetchPreviousGuideUrl] Guide waveform response:', waveformResponse);
         
         if (waveformResponse.success && waveformResponse.data) {
+          console.log('🌊 Guide waveform data type:', typeof waveformResponse.data);
+          console.log('🌊 Guide waveform data structure:', waveformResponse.data);
+          
+          // 데이터가 배열인지 객체인지 확인
+          if (Array.isArray(waveformResponse.data)) {
+            console.log('🌊 Guide waveform data is array with length:', waveformResponse.data.length);
+          } else if (waveformResponse.data.data && Array.isArray(waveformResponse.data.data)) {
+            console.log('🌊 Guide waveform data.data is array with length:', waveformResponse.data.data.length);
+          }
+          
           setGuidePeaks(waveformResponse.data);
-          console.log('📦 Guide waveform data:', waveformResponse.data);
         } else {
+          console.warn('⚠️ Guide waveform data not available');
           setGuidePeaks(null);
         }
       } catch (error) {

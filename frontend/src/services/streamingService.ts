@@ -320,11 +320,11 @@ async getGuidePresignedUrlByStageId(stageId: string): Promise<StreamingResponse<
   /**
    * Presigned URL에서 Waveform JSON 데이터 다운로드
    * @param presignedUrl S3 presigned URL
-   * @returns Waveform JSON 데이터
+   * @returns Waveform JSON 데이터 (peaks 배열 또는 WaveformData 객체)
    */
   async downloadWaveformData(presignedUrl: string): Promise<{
     success: boolean;
-    data?: WaveformData;
+    data?: any; // peaks 배열 또는 WaveformData 객체
     message?: string;
   }> {
     try {
@@ -334,11 +334,12 @@ async getGuidePresignedUrlByStageId(stageId: string): Promise<StreamingResponse<
         throw new Error(`HTTP error! status: ${response.status}`);
       }
       
-      const waveformData: WaveformData = await response.json();
+      const jsonData = await response.json();
+      console.log('📦 Downloaded waveform JSON:', jsonData);
       
       return {
         success: true,
-        data: waveformData,
+        data: jsonData,
       };
     } catch (error: any) {
       console.error('Download waveform data error:', error);
@@ -353,11 +354,11 @@ async getGuidePresignedUrlByStageId(stageId: string): Promise<StreamingResponse<
    * Stem Waveform 데이터 가져오기 (PresignedUrl 요청 + JSON 다운로드)
    * @param trackId 트랙 ID
    * @param stemId 스템 ID
-   * @returns Waveform JSON 데이터
+   * @returns Waveform JSON 데이터 (peaks 배열 또는 WaveformData 객체)
    */
   async getStemWaveformData(trackId: string, stemId: string): Promise<{
     success: boolean;
-    data?: WaveformData;
+    data?: any; // peaks 배열 또는 WaveformData 객체
     message?: string;
   }> {
     try {
@@ -387,11 +388,11 @@ async getGuidePresignedUrlByStageId(stageId: string): Promise<StreamingResponse<
   /**
    * Guide Waveform 데이터 가져오기 (PresignedUrl 요청 + JSON 다운로드)
    * @param upstreamId 업스트림 ID
-   * @returns Waveform JSON 데이터
+   * @returns Waveform JSON 데이터 (peaks 배열 또는 WaveformData 객체)
    */
   async getGuideWaveformData(upstreamId: string): Promise<{
     success: boolean;
-    data?: WaveformData;
+    data?: any; // peaks 배열 또는 WaveformData 객체
     message?: string;
   }> {
     try {

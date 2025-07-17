@@ -586,3 +586,20 @@ export interface WaveformData {
   duration?: number;
 }
 
+// Streaming Waveform 관련 DTO들
+export interface StemPeaksPresignedUrlDto {
+  trackId: string;
+  stemId: string;
+}
+
+export interface GuideWaveformPresignedUrlDto {
+  upstreamId: string;
+}
+
+export interface GuidePathStreamingResponse {
+  guidePath: string;
+  presignedUrl: string;
+  urlExpiresAt: string;
+  fileName: string;
+}
+

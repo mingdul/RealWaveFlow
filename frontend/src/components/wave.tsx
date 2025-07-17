@@ -120,13 +120,31 @@ const Wave = ({
     currentAudioUrlRef.current = audioUrl;
 
     // peaks 데이터가 있으면 함께 로드, 없으면 오디오만 로드
-    if (peaks && peaks.data) {
-      wavesurferRef.current.load(audioUrl, peaks.data).catch((error) => {
+    if (peaks) {
+      // peaks 데이터 형태 확인 및 처리
+      let peaksData = peaks;
+      if (peaks.data && Array.isArray(peaks.data)) {
+        // WaveformData 타입인 경우
+        peaksData = peaks.data;
+      } else if (Array.isArray(peaks)) {
+        // 이미 배열 형태인 경우
+        peaksData = peaks;
+      }
+      
+      console.log(`🌊 Loading with peaks data for ${id}:`, peaksData);
+      wavesurferRef.current.load(audioUrl, peaksData).catch((error) => {
         if (error.name !== 'AbortError') {
           console.warn('Failed to load audio with peaks:', error);
+          // peaks 로드 실패 시 오디오만 로드
+          wavesurferRef.current.load(audioUrl).catch((fallbackError) => {
+            if (fallbackError.name !== 'AbortError') {
+              console.warn('Failed to load audio (fallback):', fallbackError);
+            }
+          });
         }
       });
     } else {
+      console.log(`🎵 Loading audio only for ${id}`);
       wavesurferRef.current.load(audioUrl).catch((error) => {
         if (error.name !== 'AbortError') {
           console.warn('Failed to load audio:', error);

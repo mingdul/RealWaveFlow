@@ -312,4 +312,18 @@ export class StreamingController {
     return this.streamingService.getUpstreamGuideWaveformUrl(dto.upstreamId, req.user.id);
   }
 
+  @Post('/streaming/stem-peaks-presigned-url')
+  @ApiOperation({ summary: 'Stem Peaks 스트리밍 presignedUrl 생성', description: 'StemId와 TrackId로 스템 파형 데이터 스트리밍 URL을 생성합니다.' })
+  @ApiBody({ type: StemPeaksPresignedUrlDto })
+  @ApiResponse({ status: 200, description: '스템 파형 PreSigned URL 생성 성공' })
+  @ApiResponse({ status: 401, description: '인증되지 않은 사용자' })
+  @ApiResponse({ status: 403, description: '권한 없음' })
+  @ApiResponse({ status: 404, description: '스템 파일을 찾을 수 없음' })
+  async getStemPeaksPresignedUrl(
+    @Body() dto: StemPeaksPresignedUrlDto,
+    @Request() req: any
+  ) {
+    return this.streamingService.getStemPeaksPresignedUrl(dto.trackId, dto.stemId, req.user.id);
+  }
+
 }
