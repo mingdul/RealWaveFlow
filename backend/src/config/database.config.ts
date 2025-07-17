@@ -15,6 +15,7 @@ import { StemJob } from 'src/stem-job/stem-job.entity';
 import { Guide } from 'src/guide/guide.entity';
 import { InviteBatch } from 'src/invite/invite-batch.entity';
 import { InviteTarget } from 'src/invite/invite-target.entity';
+import { Notification } from 'src/notification/notification.entity';
 
 export const databaseConfig: TypeOrmModuleOptions = {
   type: 'postgres',
