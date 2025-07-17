@@ -10,5 +10,6 @@ import { Category } from 'src/category/category.entity';
   imports: [TypeOrmModule.forFeature([Stem, VersionStem, Category])],
   controllers: [StemController],
   providers: [StemService],
+  exports: [StemService], // 다른 모듈에서 사용할 수 있도록 export
 })
 export class StemModule {}
