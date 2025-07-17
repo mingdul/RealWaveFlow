@@ -2,38 +2,16 @@
 @tailwind components;
 @tailwind utilities;
 
-/* Color Variables */
+/* ----------------------------------------------
+   Color Variables
+---------------------------------------------- */
 :root {
   --color-lightest: #D9D9D9;
   --color-light: #BFBFBF;
   --color-medium: #595959;
   --color-dark: #262626;
   --color-darkest: #0D0D0D;
-}
 
-/* Comprehensive CSS Reset */
-* {
-  margin: 0;
-  padding: 0;
-  box-sizing: border-box;
-}
-
-html, body, #root {
-
-  height: auto;
-  overflow: hidden;
-  max-height: 100%;
-}
-
-html, body {
-  margin: 0;
-  padding: 0;
-  width: 100%;
-  height: auto;
-  overflow: hidden;
-}
-
-:root {
   font-family: Inter, system-ui, Avenir, Helvetica, Arial, sans-serif;
   line-height: 1.5;
   font-weight: 400;
@@ -48,23 +26,39 @@ html, body {
   -moz-osx-font-smoothing: grayscale;
 }
 
+/* ----------------------------------------------
+   Reset
+---------------------------------------------- */
 * {
+  margin: 0;
+  padding: 0;
   box-sizing: border-box;
 }
 
+/* ----------------------------------------------
+   Base Layout
+---------------------------------------------- */
 html, body {
   margin: 0;
   padding: 0;
-  height: auto;
   width: 100%;
-  overflow: hidden;
+  min-height: 100%;
+  overflow-x: hidden;
+}
+
+body {
+  min-width: 320px;
+  min-height: 100vh;
 }
 
 #root {
-  height: auto;
   width: 100%;
+  min-height: 100%;
 }
 
+/* ----------------------------------------------
+   Typography & Tags
+---------------------------------------------- */
 a {
   font-weight: 500;
   color: var(--color-light);
@@ -74,20 +68,14 @@ a:hover {
   color: var(--color-lightest);
 }
 
-body {
-  margin: 0;
-  padding: 0;
-  width: 100%;
-  height: auto;
-  min-width: 320px;
-  min-height: 100vh;
-}
-
 h1 {
   font-size: 3.2em;
   line-height: 1.1;
 }
 
+/* ----------------------------------------------
+   Buttons
+---------------------------------------------- */
 button {
   border-radius: 8px;
   padding: 0.6em 1.2em;
@@ -109,6 +97,9 @@ button:focus-visible {
   outline: 2px solid var(--color-light);
 }
 
+/* ----------------------------------------------
+   Light Mode Support
+---------------------------------------------- */
 @media (prefers-color-scheme: light) {
   :root {
     color: var(--color-darkest);
