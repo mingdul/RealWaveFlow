@@ -374,7 +374,14 @@ const StagePage: React.FC = () => {
       </header> */}
       
       <TrackHeader
-      onBack={() => navigate(`/track/${trackId}`)}/>
+      onBack={() => {
+        const targetTrackId = trackId || stage?.track?.id;
+        if (targetTrackId) {
+          navigate(`/track/${targetTrackId}`);
+        } else {
+          navigate('/dashboard');
+        }
+      }}/>
       
       <main className='px-8 pb-8'>
         <div className='mb-8'>

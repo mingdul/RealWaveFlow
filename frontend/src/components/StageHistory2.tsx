@@ -51,16 +51,20 @@ const StageHistory2: React.FC<StageHistoryProps> = ({
     });
   };
 
+  // 선택된 스테이지가 변경될 때마다 자동으로 가운데로 스크롤
+  useEffect(() => {
+    if (selectedStage) {
+      const cardElement = document.getElementById(`stage-card-${selectedStage.id}`);
+      if (cardElement) {
+        setTimeout(() => scrollToCenter(cardElement), 100);
+      }
+    }
+  }, [selectedStage]);
+
   const handleStageClick = (stage: Stage) => {
     setSelectedStage(stage);
     if (onStageSelect) {
       onStageSelect(stage);
-    }
-
-    // Find and scroll the clicked card to center
-    const cardElement = document.getElementById(`stage-card-${stage.id}`);
-    if (cardElement) {
-      scrollToCenter(cardElement);
     }
   };
 
@@ -82,77 +86,79 @@ const StageHistory2: React.FC<StageHistoryProps> = ({
       <div className="relative">
         {/* Timeline scrollable area */}
         <div className="overflow-x-auto scrollbar-hide" ref={scrollRef}>
-          <div className="relative flex items-center gap-6 pb-6 min-w-max px-4">
+          <div className="relative flex items-center gap-16 pb-6 min-w-max px-8">
             {/* Timeline line background */}
             <div className="absolute top-6 left-0 right-0 h-0.5 bg-gray-700 z-0"></div>
             
             {sortedStages.map((stage, index) => (
-              <div key={stage.id} className="relative flex flex-col items-center z-10">
-                {/* Timeline dot */}
-                <div className={`
-                  w-4 h-4 rounded-full border-2 mb-4 z-20 transition-all duration-300
-                  ${stage.status === 'active' 
-                    ? 'bg-green-400 border-green-400 shadow-lg shadow-green-400/50' 
-                    : stage.status === 'approve'
-                    ? 'bg-blue-400 border-blue-400'
-                    : stage.status === 'reject'
-                    ? 'bg-red-400 border-red-400'
-                    : 'bg-gray-600 border-gray-600'
-                  }
-                  ${selectedStage?.id === stage.id ? 'scale-125' : 'scale-100'}
-                `}></div>
+              <React.Fragment key={stage.id}>
+                <div className="relative flex flex-col items-center z-10">
+                  {/* Timeline dot */}
+                  {/* <div className={`
+                    w-4 h-4 rounded-full border-2 mb-4 z-20 transition-all duration-300
+                    ${stage.status === 'active' 
+                      ? 'bg-green-400 border-green-400 shadow-lg shadow-green-400/50' 
+                      : stage.status === 'approve'
+                      ? 'bg-blue-400 border-blue-400'
+                      : stage.status === 'reject'
+                      ? 'bg-red-400 border-red-400'
+                      : 'bg-gray-600 border-gray-600'
+                    }
+                    ${selectedStage?.id === stage.id ? 'scale-125' : 'scale-100'}
+                  `}></div> */}
 
-                {/* Stage card */}
-                <StageCard2
-                  id={`stage-card-${stage.id}`}
-                  stage={stage}
-                  index={index}
-                  isSelected={selectedStage?.id === stage.id}
-                  isActive={stage.status === 'active'}
-                  onClick={handleStageClick}
-                />
+                  {/* Stage card */}
+                  <StageCard2
+                    id={`stage-card-${stage.id}`}
+                    stage={stage}
+                    isSelected={selectedStage?.id === stage.id}
+                    isActive={stage.status === 'active'}
+                    onClick={handleStageClick}
+                  />
+                </div>
 
-                {/* Connection arrow (only between stages, not before the last one) */}
+                {/* Connection arrow between cards */}
                 {index < sortedStages.length - 1 && (
-                  <div className="absolute top-6 -right-3 z-30">
-                    <ArrowRight 
-                      size={16} 
-                      className="text-gray-600 bg-[#2a2a2a] rounded-full p-1" 
-                    />
+                  <div className="flex items-center justify-center z-30">
+                    <div className="bg-[#2a2a2a] rounded-full p-2 border border-gray-600">
+                      <ArrowRight 
+                        size={20} 
+                        className="text-gray-400" 
+                      />
+                    </div>
                   </div>
                 )}
-              </div>
+              </React.Fragment>
             ))}
             
+            {/* Arrow before Open Stage */}
+            {!disableStageOpening && !isActiveStage && sortedStages.length > 0 && (
+              <div className="flex items-center justify-center z-30">
+                <div className="bg-[#2a2a2a] rounded-full p-2 border border-purple-500/50">
+                  <ArrowRight 
+                    size={20} 
+                    className="text-purple-400" 
+                  />
+                </div>
+              </div>
+            )}
+
             {/* Open Stage Card */}
             {!disableStageOpening && !isActiveStage && (
               <div className="relative flex flex-col items-center z-10">
                 {/* Timeline dot for new stage */}
-                <div className="w-4 h-4 rounded-full border-2 border-dashed border-purple-400 mb-4 z-20 animate-pulse"></div>
-                
+                {/* <div className="w-4 h-4 rounded-full border-2 border-dashed border-purple-400 mb-4 z-20 animate-pulse"></div>
+                 */}
                 {/* Open stage button */}
                 <div 
                   className="bg-gradient-to-br from-purple-600 to-purple-800 p-6 rounded-xl flex flex-col items-center justify-center cursor-pointer hover:from-purple-500 hover:to-purple-700 transition-all duration-300 hover:scale-105 flex-shrink-0 min-w-[280px] shadow-lg hover:shadow-purple-500/30 border border-purple-500/30"
                   onClick={onOpenStageClick}
                 >
-                  <div className="text-white text-lg font-bold mb-3">새 스테이지 열기</div>
+                  <div className="text-white text-lg font-bold mb-3">NEW STAGE</div>
                   <div className="bg-white/20 p-3 rounded-full mb-2">
                     <Plus size={24} className="text-white" />
                   </div>
-                  <div className="text-purple-200 text-sm text-center">
-                    다음 버전을 시작하세요
-                  </div>
                 </div>
-
-                {/* Connection arrow from last stage */}
-                {sortedStages.length > 0 && (
-                  <div className="absolute top-6 -left-3 z-30">
-                    <ArrowRight 
-                      size={16} 
-                      className="text-purple-500 bg-[#2a2a2a] rounded-full p-1" 
-                    />
-                  </div>
-                )}
               </div>
             )}
           </div>

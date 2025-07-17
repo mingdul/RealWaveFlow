@@ -5,7 +5,6 @@ interface StageCardProps {
   stage: Stage;
   isSelected?: boolean;
   onClick?: (stage: Stage) => void;
-  index: number;
   id?: string;
   isActive?: boolean;
 }
