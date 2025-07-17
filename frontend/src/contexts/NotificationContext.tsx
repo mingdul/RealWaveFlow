@@ -52,6 +52,9 @@ export const NotificationProvider: React.FC<NotificationProviderProps> = ({ chil
       
       console.log('🔔 [NotificationSocket] Base URL:', baseUrl);
       console.log('🔔 [NotificationSocket] User:', user);
+      console.log('🔔 [NotificationSocket] 🎯 User ID for socket auth:', user?.id);
+      console.log('🔔 [NotificationSocket] 📧 User email:', user?.email);
+      console.log('🔔 [NotificationSocket] 👤 Full user object:', JSON.stringify(user, null, 2));
       
       // 알림 전용 소켓 연결 (/notifications 네임스페이스)
       const notificationSocket = io(`${baseUrl}/notifications`, {
@@ -73,20 +76,32 @@ export const NotificationProvider: React.FC<NotificationProviderProps> = ({ chil
       // 🔥 모든 이벤트 리스너 등록 (강화된 로깅)
       notificationSocket.onAny((eventName: string, ...args: any[]) => {
         console.log(`📡 [Socket] Event received: ${eventName}`, args);
+        
+        // 🔥 특별히 인증 관련 이벤트 상세 로깅
+        if (eventName === 'authenticated' || eventName === 'unauthorized') {
+          console.log(`🔐 [Socket] Auth event details:`, {
+            event: eventName,
+            args: args,
+            userId: user?.id,
+            socketId: notificationSocket.id
+          });
+        }
       });
 
       // 🔥 연결 성공 (강화된 로깅)
       notificationSocket.on('connect', () => {
         console.log('🔔 [NotificationSocket] ✅ Connected successfully');
         console.log('🔔 [NotificationSocket] Socket ID:', notificationSocket.id);
-        console.log('🔔 [NotificationSocket] Socket status:', {
-          connected: notificationSocket.connected,
-          id: notificationSocket.id,
-          url: `${baseUrl}/notifications`,
-          transport: notificationSocket.io.engine?.transport?.name || 'unknown'
+        console.log('🔔 [NotificationSocket] 🎯 Connected with user ID:', user?.id);
+                  console.log('🔔 [NotificationSocket] Socket status:', {
+            connected: notificationSocket.connected,
+            id: notificationSocket.id,
+            url: `${baseUrl}/notifications`,
+            transport: notificationSocket.io.engine?.transport?.name || 'unknown',
+            userId: user?.id,
+            userEmail: user?.email
+          });
         });
-
-      });
 
       // 연결 해제
       notificationSocket.on('disconnect', (reason) => {
