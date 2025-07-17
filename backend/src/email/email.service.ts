@@ -568,7 +568,10 @@ export class EmailService {
   <body>
       <div class="email-wrapper">
           <div class="header">
-              <div class="logo">WaveFlow</div>
+              <div class="logo">
+              <img src="https://waveflow.pro/assets/waveflow_logo_resized.png" alt="WaveFlow Logo" style="height: 40px; margin-right: 10px;">
+              WaveFlow
+          </div>
               <h1 class="header-title">음악 협업 초대</h1>
               <p class="header-subtitle">창의적인 음악 여행에 함께하세요</p>
           </div>
