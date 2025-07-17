@@ -212,6 +212,19 @@ export class NotificationGateway
     this.logger.log(`🔔 [NotificationGateway] Room: ${userRoom}`);
     this.logger.log(`🔔 [NotificationGateway] Notification: ${notification.title}`);
     
+    // 🔥 연결된 사용자 목록 디버깅
+    const connectedUsersList = Array.from(this.connectedUsers.keys());
+    this.logger.log(`🔔 [NotificationGateway] 🚀 Currently connected users: ${connectedUsersList.length}`);
+    this.logger.log(`🔔 [NotificationGateway] 📋 Connected user IDs: ${JSON.stringify(connectedUsersList)}`);
+    this.logger.log(`🔔 [NotificationGateway] 🎯 Target user ID: ${userId}`);
+    this.logger.log(`🔔 [NotificationGateway] 🔍 User exists in connected list: ${connectedUsersList.includes(userId)}`);
+    
+    // 🔥 Room 정보 디버깅
+    const rooms = this.server.sockets.adapter.rooms;
+    const targetRoom = rooms.get(userRoom);
+    this.logger.log(`🔔 [NotificationGateway] 🏠 Room ${userRoom} exists: ${!!targetRoom}`);
+    this.logger.log(`🔔 [NotificationGateway] 🏠 Room size: ${targetRoom?.size || 0}`);
+    
     this.server.to(userRoom).emit('notification', notification);
     this.logger.log(`🔔 [NotificationGateway] ✅ Notification emitted to room ${userRoom}`);
   }
