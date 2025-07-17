@@ -298,7 +298,7 @@ export class StreamingController {
     return this.streamingService.getUpstreamGuideStreamingUrl(upstreamId, req.user.id);
   }
 
-  @Post('/streaming/guide-waveform-presigned-url')
+  @Post('guide-waveform-presigned-url')
   @ApiOperation({ summary: 'Guide Waveform 스트리밍 presignedUrl 생성', description: 'UpstreamId로 가이드 파형 데이터 스트리밍 URL을 생성합니다.' })
   @ApiBody({ type: GuideWaveformPresignedUrlDto })
   @ApiResponse({ status: 200, description: '가이드 파형 PreSigned URL 생성 성공' })
@@ -312,7 +312,7 @@ export class StreamingController {
     return this.streamingService.getUpstreamGuideWaveformUrl(dto.upstreamId, req.user.id);
   }
 
-  @Post('/streaming/stem-peaks-presigned-url')
+  @Post('stem-peaks-presigned-url')
   @ApiOperation({ summary: 'Stem Peaks 스트리밍 presignedUrl 생성', description: 'StemId와 TrackId로 스템 파형 데이터 스트리밍 URL을 생성합니다.' })
   @ApiBody({ type: StemPeaksPresignedUrlDto })
   @ApiResponse({ status: 200, description: '스템 파형 PreSigned URL 생성 성공' })
