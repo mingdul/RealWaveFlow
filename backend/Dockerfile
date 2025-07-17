@@ -11,6 +11,9 @@ COPY package*.json ./
 # Install dependencies
 RUN npm install
 
+# 정적 파일 복사 (public/assets)
+COPY ./public ./public
+
 # Copy source code
 COPY . .
 
