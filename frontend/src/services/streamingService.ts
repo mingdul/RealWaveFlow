@@ -1,5 +1,5 @@
 import api from '../lib/api';
-import { StemPeaksPresignedUrlDto, GuidePathStreamingResponse, GuideWaveformPresignedUrlDto, WaveformData } from '../types/api';
+import { StemPeaksPresignedUrlDto, GuidePathStreamingResponse, GuideWaveformPresignedUrlDto} from '../types/api';
 
 export interface AudioMetadata {
   duration?: number;
