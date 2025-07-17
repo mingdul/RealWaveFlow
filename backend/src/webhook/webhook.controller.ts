@@ -196,7 +196,7 @@ export class WebhookController {
         audio_wave_path?: string;
         upstreamId?: string;
     }) {
-        this.logger.log(`작업 완료 알림 수신: ${data.stemId} (상태: ${data.status})`);
+        this.logger.log(`작업 완료 알림 수신: ${data.stemId} (상태: ${data.status}, upstreamID : ${data.upstreamId})`);
 
         try {
             if (data.status === 'SUCCESS') {
