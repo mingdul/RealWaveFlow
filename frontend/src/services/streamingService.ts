@@ -52,10 +52,13 @@ export interface StreamingResponse<T = any> {
 
 class StreamingService {
 
-  async getStemPeaks(stemId: string): Promise<StreamingResponse<{ presignedUrl: string;}>> {
+  async getStemWaveformUrl(stemId: string): Promise<StreamingResponse<{ presignedUrl: string; urlExpiresAt: string }>> {
     try {
       const response = await api.get(`/streaming/stem/${stemId}/waveform`);
-      return response.data;
+      return {
+        success: true,
+        data: response.data,
+      };
     } catch (error: any) {
       console.error('Error fetching stem waveform:', error);
       return {
@@ -350,25 +353,26 @@ async getGuidePresignedUrlByStageId(stageId: string): Promise<StreamingResponse<
     }
   }
 
+
+
   /**
    * Stem Waveform 데이터 가져오기 (PresignedUrl 요청 + JSON 다운로드)
-   * @param trackId 트랙 ID
    * @param stemId 스템 ID
    * @returns Waveform JSON 데이터 (peaks 배열 또는 WaveformData 객체)
    */
-  async getStemWaveformData(trackId: string, stemId: string): Promise<{
+  async getStemWaveformData(stemId: string): Promise<{
     success: boolean;
     data?: any; // peaks 배열 또는 WaveformData 객체
     message?: string;
   }> {
     try {
       // 1. PresignedUrl 요청
-      const urlResult = await this.getStemPeaksPresignedUrl(trackId, stemId);
+      const urlResult = await this.getStemWaveformUrl(stemId);
       
       if (!urlResult.success || !urlResult.data?.presignedUrl) {
         return {
           success: false,
-          message: urlResult.message || 'Failed to get presigned URL',
+          message: urlResult.message || 'Failed to get stem waveform presigned URL',
         };
       }
 

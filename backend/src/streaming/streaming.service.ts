@@ -6,6 +6,7 @@ import { Track } from '../track/track.entity';
 import { Stage } from '../stage/stage.entity';
 import { VersionStem } from '../version-stem/version-stem.entity';
 import { Upstream } from '../upstream/upstream.entity';
+import { Guide } from '../guide/guide.entity';
 import { S3Service } from './s3.service';
 import { StemStreamingInfo, AudioMetadata, StemInfoDto, SimpleStemStreamingInfo } from './dto/streaming.dto';
 import { VersionStemService } from 'src/version-stem/version-stem.service';
@@ -36,6 +37,8 @@ export class StreamingService {
     private versionStemRepository: Repository<VersionStem>,
     @InjectRepository(Upstream)
     private upstreamRepository: Repository<Upstream>,
+    @InjectRepository(Guide)
+    private guideRepository: Repository<Guide>,
     private versionStemService: VersionStemService,
     private s3Service: S3Service,
 
@@ -818,11 +821,13 @@ export class StreamingService {
   }
 
   /**
-   * Upstream ID로 guide waveform JSON path 조회 후 스트리밍 URL 생성
+   * Upstream의 Guide Waveform 데이터 URL 조회
    * 
-   * @param upstreamId - Upstream ID
+   * @param upstreamId - 업스트림 ID
    * @param userId - 요청한 사용자 ID
-   * @returns guide waveform JSON의 presigned URL과 메타데이터
+   * @returns waveform JSON 데이터의 presigned URL
+   * 
+   * 권한 검증: Upstream → Stage → Track 경로로 트랙 접근 권한 확인
    */
   async getUpstreamGuideWaveformUrl(
     upstreamId: string, 
@@ -848,20 +853,74 @@ export class StreamingService {
       throw new NotFoundException('No guide file found for this upstream');
     }
 
-    // guide_path에서 waveform JSON path 생성 (확장자를 .json으로 변경)
-    const guideWaveformPath = upstream.guide_path.replace(/\.[^.]+$/, '_waveform.json');
+    // guide_path를 기반으로 해당 guide 레코드를 찾아서 waveform_data_path 가져오기
+    const guide = await this.guideRepository.findOne({
+      where: { mixed_file_path: upstream.guide_path },
+    });
+
+    if (!guide || !guide.waveform_data_path) {
+      throw new NotFoundException('No waveform data found for this guide');
+    }
 
     // S3 presigned URL 생성 (1시간 유효)
-    const presignedUrl = await this.s3Service.getPresignedUrl(guideWaveformPath);
+    const presignedUrl = await this.s3Service.getPresignedUrl(guide.waveform_data_path);
     const expiresAt = new Date(Date.now() + 3600 * 1000).toISOString();
 
-    const fileName = guideWaveformPath.split('/').pop() || 'guide_waveform.json';
+    const fileName = guide.waveform_data_path.split('/').pop() || 'waveform.json';
 
     return {
-      guidePath: guideWaveformPath,
+      guidePath: guide.waveform_data_path,
       presignedUrl,
       urlExpiresAt: expiresAt,
       fileName,
     };
   }
+
+  /**
+   * Stem의 Waveform 데이터 URL 조회
+   * 
+   * @param stemId - 스템 ID
+   * @param userId - 요청한 사용자 ID
+   * @returns waveform JSON 데이터의 presigned URL
+   * 
+   * 권한 검증: Stem → Upstream → Stage → Track 경로로 트랙 접근 권한 확인
+   */
+  async getStemWaveformUrl(
+    stemId: string, 
+    userId: string
+  ): Promise<GuidePathStreamingResponse> {
+    // Stem과 관련 엔티티들을 함께 조회
+    const stem = await this.stemRepository.findOne({
+      where: { id: stemId },
+      relations: ['upstream', 'upstream.stage', 'upstream.stage.track'],
+    });
+
+    if (!stem) {
+      throw new NotFoundException('Stem not found');
+    }
+
+    // 권한 검증 - stem을 통해 트랙에 접근 권한 확인
+    if (!stem.upstream?.stage?.track?.id) {
+      throw new NotFoundException('Track information not found for this stem');
+    }
+    await this.validateTrackAccess(stem.upstream.stage.track.id, userId);
+
+    if (!stem.audio_wave_path) {
+      throw new NotFoundException('No waveform data found for this stem');
+    }
+
+    // S3 presigned URL 생성 (1시간 유효)
+    const presignedUrl = await this.s3Service.getPresignedUrl(stem.audio_wave_path);
+    const expiresAt = new Date(Date.now() + 3600 * 1000).toISOString();
+
+    const fileName = stem.audio_wave_path.split('/').pop() || 'waveform.json';
+
+    return {
+      guidePath: stem.audio_wave_path,
+      presignedUrl,
+      urlExpiresAt: expiresAt,
+      fileName,
+    };
+  }
+
 }
