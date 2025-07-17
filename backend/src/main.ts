@@ -19,7 +19,7 @@ async function bootstrap() {
 
     // ✅ Express 인스턴스를 얻어서 정적 파일 서빙 미들웨어 등록
     const expressApp = app.getHttpAdapter().getInstance();
-    expressApp.use('/api/assets', express.static(join(__dirname, '..', 'public', 'assets')));
+    expressApp.use('/backend-assets', express.static(join(__dirname, '..', 'public', 'assets')));
     
     app.use(cookieParser());
     // src/main.ts

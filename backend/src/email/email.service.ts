@@ -569,7 +569,7 @@ export class EmailService {
       <div class="email-wrapper">
           <div class="header">
               <div class="logo">
-              <img src="https://waveflow.pro/assets/waveflow_logo_resized.png" alt="WaveFlow Logo" style="height: 40px; margin-right: 10px;">
+              <img src="https://waveflow.pro/backend-assets/waveflow_logo_resized.png" alt="WaveFlow Logo" style="height: 40px; margin-right: 10px;">
               WaveFlow
           </div>
               <h1 class="header-title">음악 협업 초대</h1>
