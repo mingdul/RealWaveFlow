@@ -9,6 +9,7 @@ import { Track } from '../track/track.entity';
 import { Stage } from '../stage/stage.entity';
 import { VersionStem } from '../version-stem/version-stem.entity';
 import { Upstream } from '../upstream/upstream.entity';
+import { Guide } from '../guide/guide.entity';
 import { TrackCollaborator } from '../track_collaborator/track_collaborator.entity';
 import { User } from '../users/user.entity';
 import { S3Service } from './s3.service';
@@ -43,6 +44,7 @@ import { Category } from 'src/category/category.entity';
       Stage, 
       VersionStem, 
       Upstream, 
+      Guide,
       TrackCollaborator, 
       User,
       VersionStem,

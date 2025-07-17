@@ -678,7 +678,7 @@ const StemSetReviewPage = () => {
         console.log('🎵 [handleIndividualStemClick] Individual stem clicked:', stemData);
 
         // Stem waveform 데이터 가져오기
-        const stemWaveformData = await streamingService.getStemWaveformData(trackId, stemData.stem.id);
+        const stemWaveformData = await streamingService.getStemWaveformData(stemData.stem.id);
         console.log('🌊 Stem waveform data:', stemWaveformData);
         
         if (stemWaveformData.success && stemWaveformData.data) {
@@ -1247,18 +1247,21 @@ const StemSetReviewPage = () => {
               <span className='text-white'>Loading guide...</span>
             </div>
           ) : guideLoadAttempted && guideAudioUrl ? (
-            <Wave
-              onReady={handleReady}
-              audioUrl={guideAudioUrl}
-              peaks={guidePeaks}
-              waveColor='#f87171'
-              id='main'
-              isPlaying={isPlaying}
-              currentTime={currentTime}
-              onSolo={handleMainSolo}
-              isSolo={soloTrack === 'main'}
-              onSeek={handleSeek}
-            />
+            <>
+              {console.log('DEBUG: Guide Wave Component Props - audioUrl:', guideAudioUrl, 'peaks:', guidePeaks)}
+              <Wave
+                onReady={handleReady}
+                audioUrl={guideAudioUrl}
+                peaks={guidePeaks}
+                waveColor='#f87171'
+                id='main'
+                isPlaying={isPlaying}
+                currentTime={currentTime}
+                onSolo={handleMainSolo}
+                isSolo={soloTrack === 'main'}
+                onSeek={handleSeek}
+              />
+            </>
           ) : (
             <div className='flex items-center justify-center py-8'>
               <span className='text-sm text-white'>
@@ -1268,18 +1271,21 @@ const StemSetReviewPage = () => {
           )}
 
           {showExtraWaveform && extraAudio && (
-            <Wave
-              onReady={handleReady}
-              audioUrl={extraAudio}
-              peaks={extraPeaks}
-              waveColor='#60a5fa'
-              id='extra'
-              isPlaying={isPlaying}
-              currentTime={currentTime}
-              onSolo={handleExtraSolo}
-              isSolo={soloTrack === 'extra'}
-              onSeek={handleSeek}
-            />
+            <>
+              {console.log('DEBUG: Extra Wave Component Props - audioUrl:', extraAudio, 'peaks:', extraPeaks)}
+              <Wave
+                onReady={handleReady}
+                audioUrl={extraAudio}
+                peaks={extraPeaks}
+                waveColor='#60a5fa'
+                id='extra'
+                isPlaying={isPlaying}
+                currentTime={currentTime}
+                onSolo={handleExtraSolo}
+                isSolo={soloTrack === 'extra'}
+                onSeek={handleSeek}
+              />
+            </>
           )}
         </div>
 
