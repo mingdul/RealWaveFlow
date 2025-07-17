@@ -42,16 +42,46 @@ export const getUpstreamDetail = async (upstreamId: string) => {
 };
 
 // 새로운 함수: 백엔드의 stem API 호출
-export const getUpstreamStems = async (upstreamId: string, trackId: string) => {
-  const response = await apiClient.get(`/stem/upstream/${trackId}/track/${upstreamId}`);
-  console.log('📦 [getUpstreamStems] Raw response:', response);
-  return response;
+export const getUpstreamStems = async (trackId: string, upstreamId: string): Promise<{
+  success: boolean;
+  data?: any;
+  message?: string;
+}> => {
+  try {
+    const response = await apiClient.get(`/stem/upstream/${trackId}/track/${upstreamId}`);
+    console.log('📦 [getUpstreamStems] Raw response:', response);
+    return {
+      success: true,
+      data: response.data,
+    };
+  } catch (error: any) {
+    console.error('Error fetching upstream stems:', error);
+    return {
+      success: false,
+      message: error.response?.data?.message || 'Failed to fetch upstream stems',
+    };
+  }
 }; 
 
-export const getUpstreamByUpstreamId = async (upstreamId: string) => {
-  const response = await apiClient.get(`/upstream/get-upstreams-stems/${upstreamId}`);
-  console.log('📦 [getUpstreamByUpstreamId] Raw response:', response);
-  return response;
+export const getUpstreamByUpstreamId = async (upstreamId: string): Promise<{
+  success: boolean;
+  data?: any;
+  message?: string;
+}> => {
+  try {
+    const response = await apiClient.get(`/upstream/get-upstreams-stems/${upstreamId}`);
+    console.log('📦 [getUpstreamByUpstreamId] Raw response:', response);
+    return {
+      success: true,
+      data: response.data,
+    };
+  } catch (error: any) {
+    console.error('Error fetching upstream by ID:', error);
+    return {
+      success: false,
+      message: error.response?.data?.message || 'Failed to fetch upstream by ID',
+    };
+  }
 };
 
 export default {

@@ -22,16 +22,26 @@ export const getTrackStages = async (trackId: string) => {
 };
 
 // 스테이지 상세 조회
-export const getStageDetail = async (stageId: string) => {
+export const getStageDetail = async (stageId: string): Promise<{
+  success: boolean;
+  data?: any;
+  message?: string;
+}> => {
   try {
     const response = await apiClient.get(`/stage/stage/${stageId}`);
     if (!response.data.success) {
       throw new Error(response.data.message);
     }
-    return response.data;
-  } catch (error) {
+    return {
+      success: true,
+      data: response.data.data,
+    };
+  } catch (error: any) {
     console.error('Failed to get stage detail:', error);
-    throw error;
+    return {
+      success: false,
+      message: error.response?.data?.message || 'Failed to get stage detail',
+    };
   }
 };
 
