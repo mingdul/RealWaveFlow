@@ -266,10 +266,106 @@ const ProjectPage: React.FC<ProjectPageProps> = () => {
   const isActiveStage = !!getActiveStage();
 
   return (
-    <div className="relative min-h-screen bg-gradient-to-br from-slate-900 via-purple-900 to-slate-900">
-      {/* 동적 배경 오버레이 */}
-      <div className="absolute inset-0 bg-[url('/background.jpg')] bg-cover bg-center opacity-20"></div>
-      <div className="absolute inset-0 bg-gradient-to-br from-black/80 via-purple-900/50 to-black/80"></div>
+    <div className="relative min-h-screen bg-gradient-to-br from-slate-950 via-indigo-950 to-slate-950 overflow-hidden">
+      {/* 기하학적 네트워크 배경 */}
+      <div className="absolute inset-0">
+        {/* SVG 네트워크 패턴 */}
+        <svg
+          className="absolute inset-0 w-full h-full opacity-30"
+          xmlns="http://www.w3.org/2000/svg"
+          viewBox="0 0 1920 1080"
+          preserveAspectRatio="xMidYMid slice"
+        >
+          <defs>
+            <linearGradient id="lineGradient" x1="0%" y1="0%" x2="100%" y2="100%">
+              <stop offset="0%" stopColor="#3b82f6" stopOpacity="0.6" />
+              <stop offset="50%" stopColor="#06b6d4" stopOpacity="0.8" />
+              <stop offset="100%" stopColor="#8b5cf6" stopOpacity="0.6" />
+            </linearGradient>
+            <filter id="glow">
+              <feGaussianBlur stdDeviation="2" result="coloredBlur"/>
+              <feMerge> 
+                <feMergeNode in="coloredBlur"/>
+                <feMergeNode in="SourceGraphic"/>
+              </feMerge>
+            </filter>
+          </defs>
+          
+          {/* 네트워크 연결선들 */}
+          <g stroke="url(#lineGradient)" strokeWidth="1" fill="none" filter="url(#glow)">
+            {/* 왼쪽 상단 클러스터 */}
+            <path d="M100,100 L250,180 L180,280 L80,220 Z" />
+            <path d="M250,180 L400,120 L380,250 L250,300" />
+            <path d="M180,280 L320,350 L250,480 L120,420" />
+            
+            {/* 중앙 메인 네트워크 */}
+            <path d="M500,200 L700,150 L800,300 L650,400 L450,350 Z" />
+            <path d="M700,150 L920,180 L880,320 L800,300" />
+            <path d="M800,300 L950,450 L750,520 L650,400" />
+            <path d="M650,400 L480,500 L450,350" />
+            
+            {/* 우측 클러스터 */}
+            <path d="M1200,100 L1400,150 L1350,280 L1150,250 Z" />
+            <path d="M1400,150 L1600,200 L1580,350 L1350,280" />
+            <path d="M1350,280 L1500,400 L1300,480 L1150,380" />
+            
+            {/* 하단 네트워크 */}
+            <path d="M200,600 L450,650 L400,800 L180,750 Z" />
+            <path d="M450,650 L680,620 L720,780 L500,820" />
+            <path d="M680,620 L900,580 L950,720 L720,780" />
+            <path d="M900,580 L1150,600 L1200,750 L950,720" />
+            
+            {/* 연결 브릿지들 */}
+            <path d="M400,120 L500,200" />
+            <path d="M650,400 L720,620" />
+            <path d="M800,300 L1150,250" />
+            <path d="M320,350 L450,650" />
+            <path d="M950,450 L1200,600" />
+            <path d="M1350,280 L1500,400" />
+          </g>
+          
+          {/* 네트워크 노드들 */}
+          <g>
+            {/* 메인 노드들 */}
+            <circle cx="100" cy="100" r="4" fill="#3b82f6" filter="url(#glow)" />
+            <circle cx="250" cy="180" r="3" fill="#06b6d4" filter="url(#glow)" />
+            <circle cx="500" cy="200" r="5" fill="#8b5cf6" filter="url(#glow)" />
+            <circle cx="700" cy="150" r="4" fill="#3b82f6" filter="url(#glow)" />
+            <circle cx="800" cy="300" r="4" fill="#06b6d4" filter="url(#glow)" />
+            <circle cx="650" cy="400" r="3" fill="#8b5cf6" filter="url(#glow)" />
+            <circle cx="1200" cy="100" r="4" fill="#3b82f6" filter="url(#glow)" />
+            <circle cx="1400" cy="150" r="3" fill="#06b6d4" filter="url(#glow)" />
+            
+            {/* 작은 노드들 */}
+            <circle cx="180" cy="280" r="2" fill="#3b82f6" opacity="0.8" />
+            <circle cx="380" cy="250" r="2" fill="#06b6d4" opacity="0.8" />
+            <circle cx="920" cy="180" r="2" fill="#8b5cf6" opacity="0.8" />
+            <circle cx="1350" cy="280" r="2" fill="#3b82f6" opacity="0.8" />
+            <circle cx="450" cy="650" r="3" fill="#06b6d4" filter="url(#glow)" />
+            <circle cx="680" cy="620" r="3" fill="#8b5cf6" filter="url(#glow)" />
+            <circle cx="900" cy="580" r="4" fill="#3b82f6" filter="url(#glow)" />
+            
+            {/* 미세 노드들 */}
+            <circle cx="320" cy="350" r="1.5" fill="#3b82f6" opacity="0.6" />
+            <circle cx="880" cy="320" r="1.5" fill="#06b6d4" opacity="0.6" />
+            <circle cx="1500" cy="400" r="1.5" fill="#8b5cf6" opacity="0.6" />
+            <circle cx="720" cy="780" r="1.5" fill="#3b82f6" opacity="0.6" />
+          </g>
+        </svg>
+        
+        {/* 애니메이션 파티클들 */}
+        <div className="absolute inset-0">
+          <div className="absolute top-1/4 left-1/4 w-1 h-1 bg-blue-400 rounded-full animate-pulse opacity-60"></div>
+          <div className="absolute top-1/3 right-1/3 w-1 h-1 bg-cyan-400 rounded-full animate-pulse opacity-40 delay-1000"></div>
+          <div className="absolute bottom-1/4 left-1/3 w-1 h-1 bg-purple-400 rounded-full animate-pulse opacity-50 delay-2000"></div>
+          <div className="absolute bottom-1/3 right-1/4 w-1 h-1 bg-blue-400 rounded-full animate-pulse opacity-60 delay-3000"></div>
+          <div className="absolute top-1/2 left-1/2 w-1 h-1 bg-cyan-400 rounded-full animate-pulse opacity-40 delay-500"></div>
+        </div>
+      </div>
+      
+      {/* 어두운 오버레이 */}
+      <div className="absolute inset-0 bg-gradient-to-br from-slate-950/60 via-transparent to-slate-950/80"></div>
+      <div className="absolute inset-0 bg-gradient-to-t from-slate-950/90 via-transparent to-transparent"></div>
       
       {/* 메인 컨텐츠 */}
       <div className="relative z-10 overflow-y-auto scrollbar-hide">
