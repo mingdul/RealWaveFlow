@@ -5,7 +5,7 @@ import { SocketProvider } from './contexts/SocketContext';
 import { NotificationProvider } from './contexts/NotificationContext';
 import './App.css';
 
-import LandingPage from './pages/LandingPage.tsx';
+import LandingPage2 from './pages/LandingPage2.tsx';
 import LoginPage from './pages/LoginPage.tsx';
 import SignUpPage from './pages/SignUpPage';
 import DashboardPage from './pages/DashboardPage';
@@ -37,7 +37,7 @@ const App = () => {
           <NotificationProvider>
             <SocketProvider>
               <Routes>
-              <Route path="/" element={<LandingPage />} />
+              <Route path="/" element={<LandingPage2 />} />
               <Route path="/login" element={<PublicRoute><LoginPage /></PublicRoute>} />
               <Route path="/signup" element={<PublicRoute><SignUpPage /></PublicRoute>} />
               <Route path="/dashboard" element={<DashboardPageV2 />} />
