@@ -205,8 +205,15 @@ export class NotificationGateway
   // 특정 사용자에게 알림 전송
   sendNotificationToUser(userId: string, notification: NotificationPayload) {
     const userRoom = `user_${userId}`;
+    const isUserConnected = this.connectedUsers.has(userId);
+    
+    this.logger.log(`🔔 [NotificationGateway] Sending notification to user ${userId}`);
+    this.logger.log(`🔔 [NotificationGateway] User connected: ${isUserConnected}`);
+    this.logger.log(`🔔 [NotificationGateway] Room: ${userRoom}`);
+    this.logger.log(`🔔 [NotificationGateway] Notification: ${notification.title}`);
+    
     this.server.to(userRoom).emit('notification', notification);
-    this.logger.log(`Notification sent to user ${userId}: ${notification.title}`);
+    this.logger.log(`🔔 [NotificationGateway] ✅ Notification emitted to room ${userRoom}`);
   }
 
   // 여러 사용자에게 알림 전송

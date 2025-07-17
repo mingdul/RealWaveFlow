@@ -51,14 +51,12 @@ export const NotificationProvider: React.FC<NotificationProviderProps> = ({ chil
       const baseUrl = import.meta.env.VITE_API_URL ? 
         import.meta.env.VITE_API_URL.replace('/api', '') : 
         'https://waveflow.pro';
-      const socketUrl = `${baseUrl}/notifications`;
       
       console.log('🔔 [NotificationSocket] Base URL:', baseUrl);
-      console.log('🔔 [NotificationSocket] Socket URL:', socketUrl);
       console.log('🔔 [NotificationSocket] User:', user);
       
       // 알림 전용 소켓 연결 (/notifications 네임스페이스)
-      const notificationSocket = io(socketUrl, {
+      const notificationSocket = io(`${baseUrl}/notifications`, {
         withCredentials: true, // 쿠키 전송 허용 (JWT 토큰 포함)
         autoConnect: true,
         transports: ['websocket', 'polling'],
@@ -66,9 +64,18 @@ export const NotificationProvider: React.FC<NotificationProviderProps> = ({ chil
         reconnectionDelay: 1000,
         reconnectionDelayMax: 5000,
         reconnectionAttempts: 5,
+        upgrade: true,
+        rememberUpgrade: true,
+        timeout: 20000,
       });
       
       console.log('🔔 [NotificationSocket] Socket instance created:', notificationSocket);
+      console.log('🔔 [NotificationSocket] Initial connection state:', notificationSocket.connected);
+
+      // 모든 이벤트 리스너 등록
+      notificationSocket.onAny((eventName, ...args) => {
+        console.log('🔔 [NotificationSocket] 📡 Event received:', eventName, args);
+      });
 
       // 연결 성공
       notificationSocket.on('connect', () => {
@@ -76,7 +83,8 @@ export const NotificationProvider: React.FC<NotificationProviderProps> = ({ chil
         console.log('🔔 [NotificationSocket] Socket status:', {
           connected: notificationSocket.connected,
           id: notificationSocket.id,
-          url: socketUrl
+          url: `${baseUrl}/notifications`,
+          transport: notificationSocket.io.engine.transport.name
         });
       });
 
@@ -94,10 +102,14 @@ export const NotificationProvider: React.FC<NotificationProviderProps> = ({ chil
       // 새 알림 수신
       notificationSocket.on('notification', (notification: Notification) => {
         console.log('🔔 [NotificationSocket] 🎉 New notification received:', notification);
+        console.log('🔔 [NotificationSocket] Notification type:', notification.type);
+        console.log('🔔 [NotificationSocket] Notification data:', notification.data);
+        
         addNotification(notification);
         
         // 토스트로 알림 표시
         showToast('info', `${notification.title}: ${notification.message}`, 5000);
+        console.log('🔔 [NotificationSocket] ✅ Notification processed and toast shown');
       });
 
       // 연결 오류
@@ -108,7 +120,7 @@ export const NotificationProvider: React.FC<NotificationProviderProps> = ({ chil
           type: (error as any).type,
           description: (error as any).description,
           context: (error as any).context,
-          url: socketUrl
+          url: `${baseUrl}/notifications`
         });
         
         if (error.message.includes('Unauthorized')) {
