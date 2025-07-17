@@ -191,34 +191,38 @@ const StemSetReviewPage = () => {
         }
 
         // 2. guide audio URL 및 waveform 데이터 가져오기 (병렬 처리)
+        console.log('🔍 [fetchGuideUrl] Requesting guide presigned URL and waveform data...');
         const [audioResponse, waveformResponse] = await Promise.all([
           streamingService.getGuidePresignedUrlbyUpstream(upstreamId),
           streamingService.getGuideWaveformData(upstreamId),
         ]);
+        console.log('📦 [fetchGuideUrl] Received audioResponse:', audioResponse);
+        console.log('📦 [fetchGuideUrl] Received waveformResponse:', waveformResponse);
 
         // 오디오 URL 처리
-        if (audioResponse.success && audioResponse.data) {
+        if (audioResponse.success && audioResponse.data?.presignedUrl) {
           const audioUrl = audioResponse.data.presignedUrl;
           setGuideAudioUrl(audioUrl);
-          console.log('🎵 Guide audio URL set:', audioUrl);
+          console.log('🎵 [fetchGuideUrl] Guide audio URL set:', audioUrl);
           sessionStorage.setItem(`audio-${cacheKey}`, audioUrl);
         } else {
-          console.warn('⚠️ Guide audio not available, using fallback');
+          console.warn('⚠️ [fetchGuideUrl] Guide audio not available, using fallback');
           setGuideAudioUrl('/audio/track_ex.wav');
         }
 
         // 파형 데이터 처리
         if (waveformResponse.success && waveformResponse.data) {
-          console.log('🌊 Guide waveform data type:', typeof waveformResponse.data);
+          console.log('🌊 [fetchGuideUrl] Guide waveform data type:', typeof waveformResponse.data);
           if (Array.isArray(waveformResponse.data)) {
-            console.log('🌊 Guide waveform data is array with length:', waveformResponse.data.length);
+            console.log('🌊 [fetchGuideUrl] Guide waveform data is array with length:', waveformResponse.data.length);
           } else if (waveformResponse.data.data && Array.isArray(waveformResponse.data.data)) {
-            console.log('🌊 Guide waveform data.data is array with length:', waveformResponse.data.data.length);
+            console.log('🌊 [fetchGuideUrl] Guide waveform data.data is array with length:', waveformResponse.data.data.data.length);
           }
           setGuidePeaks(waveformResponse.data);
+          console.log('📦 [fetchGuideUrl] Guide peaks set:', waveformResponse.data);
           sessionStorage.setItem(`peaks-${cacheKey}`, JSON.stringify(waveformResponse.data));
         } else {
-          console.warn('⚠️ Guide waveform data not available');
+          console.warn('⚠️ [fetchGuideUrl] Guide waveform data not available');
           setGuidePeaks(null);
         }
       } catch (error) {
@@ -255,11 +259,11 @@ const StemSetReviewPage = () => {
       console.log('📦 [loadStemsData] Stem response:', stemResponse);
       console.log('📦 [loadStemsData] Stem response.data:', stemResponse?.data);
       console.log('📦 [loadStemsData] Stem response.data.data:', stemResponse?.data?.data);
-      if(!stemResponse || !stemResponse.success || !stemResponse.data || !stemResponse.data.stems){
+      if(!stemResponse || !stemResponse.success || !stemResponse.data || !stemResponse.data.data){
         console.log('❌ [loadStemsData] stem 정보가 없습니다:', stemResponse);
       } else {
-        console.log('✅ [loadStemsData] stem 정보 있음. 데이터 길이:', stemResponse.data.stems?.length);
-        console.log('✅ [loadStemsData] stem 정보 첫번째 아이템:', stemResponse.data.stems[0]);
+        console.log('✅ [loadStemsData] stem 정보 있음. 데이터 길이:', stemResponse.data.data?.length);
+        console.log('✅ [loadStemsData] stem 정보 첫번째 아이템:', stemResponse.data.data[0]);
       }
       
       const stemsResult = [
@@ -822,11 +826,13 @@ const StemSetReviewPage = () => {
           return;
         }
 
+        console.log('🔍 [handleIndividualStemClick] Before Promise.all - stemLoading:', stemLoading, 'waveformLoading:', waveformLoading);
         try {
           const [audioResponse, waveformResponse] = await Promise.all([
             streamingUrlPromise,
             waveformDataPromise,
           ]);
+          console.log('🔍 [handleIndividualStemClick] After Promise.all - audioResponse:', audioResponse, 'waveformResponse:', waveformResponse);
 
           // 오디오 URL 처리
           if (audioResponse.success && audioResponse.data?.presignedUrl) {
@@ -856,6 +862,7 @@ const StemSetReviewPage = () => {
           setExtraAudio('');
           setExtraPeaks(null);
         } finally {
+          console.log('🔍 [handleIndividualStemClick] In finally block - setting loading to false');
           setStemLoading(false);
           setWaveformLoading(false);
         }
