@@ -436,54 +436,7 @@ const DashboardPageV2 = () => {
             )}
           </div> */}
 
-            {/* Toast 테스트 버튼들 (개발 모드에서만 표시) */}
-            {/* {import.meta.env.DEV && (
-              <div className='flex items-center space-x-2'>
-                <span className='text-xs text-gray-400'>Toast:</span>
-                <div className='flex space-x-1'>
-                  <button
-                    onClick={() => showSuccess('✅ Track uploaded successfully!')}
-                    className='px-2 py-1 text-xs bg-green-600/20 text-green-400 rounded hover:bg-green-600/30 transition-colors'
-                    title='Test Success Toast'
-                  >
-                    ✓
-                  </button>
-                  <button
-                    onClick={() => showError('❌ Failed to connect to server. Please try again.')}
-                    className='px-2 py-1 text-xs bg-red-600/20 text-red-400 rounded hover:bg-red-600/30 transition-colors'
-                    title='Test Error Toast'
-                  >
-                    ✗
-                  </button>
-                  <button
-                    onClick={() => showWarning('⚠️ You have unsaved changes. Save before continuing?')}
-                    className='px-2 py-1 text-xs bg-yellow-600/20 text-yellow-400 rounded hover:bg-yellow-600/30 transition-colors'
-                    title='Test Warning Toast'
-                  >
-                    ⚠
-                  </button>
-                  <button
-                    onClick={() => showInfo('💡 New collaboration features are now available!')}
-                    className='px-2 py-1 text-xs bg-blue-600/20 text-blue-400 rounded hover:bg-blue-600/30 transition-colors'
-                    title='Test Info Toast'
-                  >
-                    ⓘ
-                  </button>
-                  <button
-                    onClick={() => {
-                      showSuccess('First success message');
-                      setTimeout(() => showError('Second error message'), 500);
-                      setTimeout(() => showWarning('Third warning message'), 1000);
-                      setTimeout(() => showInfo('Fourth info message'), 1500);
-                    }}
-                    className='px-2 py-1 text-xs bg-purple-600/20 text-purple-400 rounded hover:bg-purple-600/30 transition-colors'
-                    title='Test Multiple Toasts'
-                  >
-                    🎭
-                  </button>
-                </div>
-              </div>
-            )} */}
+
 
             <button
               onClick={handleLogout}

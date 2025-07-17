@@ -12,6 +12,7 @@ import {
 import streamingService from '../services/streamingService';
 import { useParams } from 'react-router-dom';
 import { useAuth } from '../contexts/AuthContext';
+import { useToast } from '../contexts/ToastContext';
 import Button from '../components/Button';
 import {
   approveDropReviewer,
@@ -53,6 +54,7 @@ interface Comment {
 
 const StemSetReviewPage = () => {
   const { user } = useAuth();
+  const { showError, showSuccess, showWarning, showInfo } = useToast();
   const navigate = useNavigate();
   // const wavesurferRef = useRef<any>(null);
   const [volume, setVolume] = useState(1);
@@ -219,7 +221,7 @@ const StemSetReviewPage = () => {
       setUpstreamStems(stemsResult);
     } catch (error) {
       console.error('❌ [loadStemsData] 오류:', error);
-      alert('스템 정보를 불러오는 중 오류가 발생했습니다.');
+      showError('스템 정보를 불러오는 중 오류가 발생했습니다.');
     } finally {
       setStemsLoading(false);
     }
@@ -443,7 +445,7 @@ const StemSetReviewPage = () => {
       }
     } catch (error) {
       console.error('댓글 로드 실패:', error);
-      alert('댓글을 불러오는 중 오류가 발생했습니다.');
+      showError('댓글을 불러오는 중 오류가 발생했습니다.');
       setComments([]);
     } finally {
       setCommentsLoading(false);
@@ -470,7 +472,7 @@ const StemSetReviewPage = () => {
       setComments((prev) => prev.filter((comment) => comment.id !== commentId));
     } catch (error) {
       console.error('댓글 삭제 실패:', error);
-      alert('댓글 삭제 중 오류가 발생했습니다.');
+      showError('댓글 삭제 중 오류가 발생했습니다.');
     }
   }, []);
 
@@ -507,7 +509,7 @@ const StemSetReviewPage = () => {
         setEditCommentText('');
       } catch (error) {
         console.error('댓글 수정 실패:', error);
-        alert('댓글 수정 중 오류가 발생했습니다.');
+        showError('댓글 수정 중 오류가 발생했습니다.');
       }
     },
     [editCommentText, comments]
@@ -685,11 +687,11 @@ const StemSetReviewPage = () => {
           setShowExtraWaveform(true);
         } else {
           console.warn('⚠️ [handleIndividualStemClick] No streaming URL available for stem');
-          alert('No audio file available for this stem');
+          showWarning('No audio file available for this stem');
         }
       } catch (error) {
         console.error('Error loading individual stem:', error);
-        alert('Failed to load stem audio');
+        showError('Failed to load stem audio');
       }
     },
     []
@@ -729,31 +731,31 @@ const StemSetReviewPage = () => {
 
    
     if (!stageId || !upstreamId) {
-      alert('Stage 또는 Upstream이 선택되지 않았습니다.');
+      showWarning('Stage 또는 Upstream이 선택되지 않았습니다.');
       return;
     }
 
     try {
       await approveDropReviewer(stageId, upstreamId);
-      alert('승인 완료!');
+      showSuccess('승인 완료!');
     } catch (error) {
       console.error('승인 실패:', error);
-      alert('승인 중 오류 발생');
+      showError('승인 중 오류 발생');
     }
   };
 
   const handleReject = async () => {
     if (!stageId || !upstreamId) {
-      alert('Stage 또는 Upstream이 선택되지 않았습니다.');
+      showWarning('Stage 또는 Upstream이 선택되지 않았습니다.');
       return;
     }
 
     try {
       await rejectDropReviewer(stageId, upstreamId);
-      alert('거절 완료!');
+      showSuccess('거절 완료!');
     } catch (error) {
       console.error('거절 실패:', error);
-      alert('거절 중 오류 발생');
+      showError('거절 중 오류 발생');
     }
   };
 
