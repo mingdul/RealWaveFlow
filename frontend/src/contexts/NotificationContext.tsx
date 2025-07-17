@@ -13,7 +13,7 @@ interface NotificationProviderProps {
 export const NotificationProvider: React.FC<NotificationProviderProps> = ({ children }) => {
   const [notifications, setNotifications] = useState<Notification[]>([]);
   const [socket, setSocket] = useState<Socket | null>(null);
-  const [isConnected, setIsConnected] = useState(false);
+
   
   const { user, logout } = useAuth();
   const { showToast } = useToast();
@@ -39,7 +39,7 @@ export const NotificationProvider: React.FC<NotificationProviderProps> = ({ chil
       console.log('🔔 [NotificationProvider] useEffect triggered - User changed:', user);
       console.log('🔔 [NotificationProvider] No user, disconnecting socket and clearing notifications...');
       setNotifications([]);
-      setIsConnected(false);
+
     }
   }, [user]);
 
@@ -85,7 +85,7 @@ export const NotificationProvider: React.FC<NotificationProviderProps> = ({ chil
           url: `${baseUrl}/notifications`,
           transport: notificationSocket.io.engine?.transport?.name || 'unknown'
         });
-        setIsConnected(true);
+
       });
 
       // 연결 해제
@@ -158,13 +158,6 @@ export const NotificationProvider: React.FC<NotificationProviderProps> = ({ chil
     } catch (error) {
       console.error('Failed to initialize notification socket:', error);
       showToast('error', '실시간 알림 연결에 실패했습니다.');
-    }
-  };
-
-  const disconnectNotificationSocket = () => {
-    if (socket) {
-      socket.disconnect();
-      setSocket(null);
     }
   };
 
