@@ -154,20 +154,20 @@ const Wave = ({
 
   return (
     <div 
-      className={`w-full bg-gray-900 rounded-md shadow-lg p-4 space-y-4 ${isActive ? 'border-2 border-blue-500' : ''}`}
+      className={`w-full bg-gray-900 rounded-md shadow-lg p-3 sm:p-4 space-y-3 sm:space-y-4 ${isActive ? 'border-2 border-blue-500' : ''}`}
       onClick={onClick}
     >
       <div className="relative border border-gray-700 rounded overflow-hidden">
-        <div id="wave-minimap" ref={minimapRef} className="h-[60px]" />
+        <div id="wave-minimap" ref={minimapRef} className="h-12 sm:h-14 md:h-16" />
       </div>
       <div className="relative border border-gray-700 rounded overflow-hidden">
-        <div id="wave-timeline" ref={timelineRef} className="h-[40px]" />
-        <div id="wave-presentation" ref={waveRef} className="h-[260px]" />
+        <div id="wave-timeline" ref={timelineRef} className="h-8 sm:h-9 md:h-10" />
+        <div id="wave-presentation" ref={waveRef} className="h-48 sm:h-56 md:h-64 lg:h-72" />
       </div>
       <button 
         onClick={onSolo}
         disabled={!isReady}
-        className={`px-4 py-2 rounded transition-all ${
+        className={`px-3 py-2 sm:px-4 sm:py-2 rounded transition-all text-sm sm:text-base ${
           isSolo 
             ? 'bg-purple-500 text-black' 
             : 'bg-gray-700 text-white hover:bg-gray-600'

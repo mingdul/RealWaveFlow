@@ -30,12 +30,12 @@ const StemListModal: React.FC<StemListModalProps> = ({
   if (!isOpen) return null;
 
   return (
-    <div className="fixed inset-0 bg-black/60 backdrop-blur-sm flex items-center justify-center z-50">
-      <div className="bg-[#262626] rounded-xl p-6 max-w-6xl w-full mx-4 max-h-[85vh] overflow-y-auto shadow-2xl border border-[#595959]">
+    <div className="fixed inset-0 bg-black/60 backdrop-blur-sm flex items-center justify-center z-50 p-4">
+      <div className="bg-[#262626] rounded-xl p-4 sm:p-6 max-w-sm sm:max-w-2xl md:max-w-4xl lg:max-w-6xl w-full mx-4 max-h-[85vh] overflow-y-auto shadow-2xl border border-[#595959]">
         {/* Header */}
-        <div className="flex items-center justify-between mb-8">
+        <div className="flex items-center justify-between mb-6 md:mb-8">
           <div className="flex-1">
-            <h2 className="text-2xl font-bold text-[#D9D9D9] mb-2">
+            <h2 className="text-xl sm:text-2xl font-bold text-[#D9D9D9] mb-2">
               Version {versionNumber}
             </h2>
             <h3 className="text-[#BFBFBF] text-sm">
@@ -54,12 +54,12 @@ const StemListModal: React.FC<StemListModalProps> = ({
             onClick={onClose}
             className="text-white p-2"
           >
-            <X size={24} />
+            <X size={20} />
           </Button>
         </div>
 
         {/* Content */}
-        <div className="space-y-6">
+        <div className="space-y-4 md:space-y-6">
           {loading ? (
             <div className="flex justify-center items-center py-12">
               <div className="animate-spin rounded-full h-12 w-12 border-b-2 border-purple-600"></div>

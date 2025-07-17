@@ -18,6 +18,14 @@ const DiffWaveGraph: React.FC<DiffWaveGraphProps> = ({
     const ctx = canvas.getContext('2d');
     if (!ctx) return;
 
+    // Update canvas size based on container
+    const container = canvas.parentElement;
+    if (container) {
+      const rect = container.getBoundingClientRect();
+      canvas.width = rect.width;
+      canvas.height = rect.height;
+    }
+
     const width = canvas.width;
     const height = canvas.height;
 
@@ -55,12 +63,37 @@ const DiffWaveGraph: React.FC<DiffWaveGraphProps> = ({
 
   }, [waveformData]);
 
+  // Add resize observer to handle container size changes
+  useEffect(() => {
+    const canvas = canvasRef.current;
+    if (!canvas) return;
+
+    const resizeObserver = new ResizeObserver(() => {
+      const container = canvas.parentElement;
+      if (container) {
+        const rect = container.getBoundingClientRect();
+        canvas.width = rect.width;
+        canvas.height = rect.height;
+        
+        // Trigger redraw
+        const event = new Event('resize');
+        window.dispatchEvent(event);
+      }
+    });
+
+    if (canvas.parentElement) {
+      resizeObserver.observe(canvas.parentElement);
+    }
+
+    return () => {
+      resizeObserver.disconnect();
+    };
+  }, []);
+
   return (
-    <div className={`w-full h-16 bg-[#262626] rounded-lg flex items-center justify-center ${className}`}>
+    <div className={`w-full h-12 sm:h-14 md:h-16 lg:h-20 bg-[#262626] rounded-lg flex items-center justify-center ${className}`}>
       <canvas
         ref={canvasRef}
-        width={192}
-        height={64}
         className="w-full h-full"
         style={{ imageRendering: 'pixelated' }}
       />

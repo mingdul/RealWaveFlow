@@ -138,25 +138,25 @@ const CreateTrackModal: React.FC<CreateTrackModalProps> = ({ onClose, onSubmit }
       onClick={handleCloseModal}
     >
       <div 
-        className="bg-gray-800 rounded-xl w-full max-w-4xl max-h-[90vh] flex flex-col shadow-2xl"
+        className="bg-gray-800 rounded-xl w-full max-w-sm sm:max-w-2xl md:max-w-3xl lg:max-w-4xl max-h-[90vh] flex flex-col shadow-2xl"
         onClick={(e) => e.stopPropagation()}
       >
         {/* Header */}
-        <div className="flex items-center justify-between p-6 border-b border-gray-700">
+        <div className="flex items-center justify-between p-4 sm:p-6 border-b border-gray-700">
           <div>
-            <h2 className="text-2xl font-bold text-white">Create New Track</h2>
+            <h2 className="text-xl sm:text-2xl font-bold text-white">Create New Track</h2>
             <p className="text-gray-400 text-sm mt-1">Set up your track information</p>
           </div>
           <button 
             onClick={handleCloseModal}
             className="p-2 text-gray-400 hover:text-white hover:bg-gray-700 rounded-lg transition-colors"
           >
-            <X size={24} />
+            <X size={20} />
           </button>
         </div>
 
         {/* Content */}
-        <div className="flex-1 overflow-hidden p-6">
+        <div className="flex-1 overflow-y-auto p-4 sm:p-6 space-y-4 sm:space-y-6">
           <StepProgress currentStep={1} steps={steps} />
           
           <div className="max-h-[calc(90vh-200px)] overflow-y-auto">
