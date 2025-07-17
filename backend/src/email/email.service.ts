@@ -117,7 +117,7 @@ export class EmailService {
 
       // Resend API를 통한 이메일 발송
       const result = await this.resend.emails.send({
-        from: 'WaveFlow <onboarding@resend.dev>',
+        from: 'WaveFlow <onboarding@waveflow.pro>',
         to: [to],
         subject: `🎵 ${inviteData.inviterName}님이 "${inviteData.trackName}" 트랙에 초대했습니다`,
         html: emailHtml,
@@ -681,7 +681,7 @@ export class EmailService {
 
     try {
       const result = await this.resend.emails.send({
-        from: 'WaveFlow <noreply@waveflow.com>',
+        from: 'WaveFlow <noreply@waveflow.pro>',
         to: [to],
         subject: 'WaveFlow 이메일 테스트',
         html: `
