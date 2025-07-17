@@ -1,4 +1,5 @@
 import api from '../lib/api';
+import { StemPeaksPresignedUrlDto, GuidePathStreamingResponse, GuideWaveformPresignedUrlDto, WaveformData } from '../types/api';
 
 export interface AudioMetadata {
   duration?: number;
@@ -50,6 +51,19 @@ export interface StreamingResponse<T = any> {
 }
 
 class StreamingService {
+
+  async getStemPeaks(stemId: string): Promise<StreamingResponse<{ presignedUrl: string;}>> {
+    try {
+      const response = await api.get(`/streaming/stem/${stemId}/waveform`);
+      return response.data;
+    } catch (error: any) {
+      console.error('Error fetching stem waveform:', error);
+      return {
+        success: false,
+        message: error.response?.data?.message || 'Failed to fetch stem waveform',
+      };
+    }
+  }
   // 트랙의 모든 스템 파일 스트리밍 URL 조회
   async getTrackStems(trackId: string, version?: string): Promise<StreamingResponse<TrackStemsResponse>> {
     try {
@@ -240,6 +254,171 @@ async getGuidePresignedUrlByStageId(stageId: string): Promise<StreamingResponse<
       };
     }
   }
+
+  /**
+   * Stem Peaks PresignedUrl 요청
+   * @param trackId 트랙 ID
+   * @param stemId 스템 ID
+   * @returns 파형 데이터 스트리밍 URL
+   */
+  async getStemPeaksPresignedUrl(trackId: string, stemId: string): Promise<{
+    success: boolean;
+    data?: GuidePathStreamingResponse;
+    message?: string;
+  }> {
+    try {
+      const requestData: StemPeaksPresignedUrlDto = {
+        trackId,
+        stemId
+      };
+
+      const response = await api.post<GuidePathStreamingResponse>('/streaming/stem-peaks-presigned-url', requestData);
+      
+      return {
+        success: true,
+        data: response.data,
+      };
+    } catch (error: any) {
+      console.error('Stem peaks presigned URL error:', error);
+      return {
+        success: false,
+        message: error.response?.data?.message || 'Failed to get stem peaks presigned URL',
+      };
+    }
+  }
+
+  /**
+   * Guide Waveform PresignedUrl 요청
+   * @param upstreamId 업스트림 ID
+   * @returns 가이드 파형 데이터 스트리밍 URL
+   */
+  async getGuideWaveformPresignedUrl(upstreamId: string): Promise<{
+    success: boolean;
+    data?: GuidePathStreamingResponse;
+    message?: string;
+  }> {
+    try {
+      const requestData: GuideWaveformPresignedUrlDto = {
+        upstreamId
+      };
+
+      const response = await api.post<GuidePathStreamingResponse>('/streaming/guide-waveform-presigned-url', requestData);
+      
+      return {
+        success: true,
+        data: response.data,
+      };
+    } catch (error: any) {
+      console.error('Guide waveform presigned URL error:', error);
+      return {
+        success: false,
+        message: error.response?.data?.message || 'Failed to get guide waveform presigned URL',
+      };
+    }
+  }
+
+  /**
+   * Presigned URL에서 Waveform JSON 데이터 다운로드
+   * @param presignedUrl S3 presigned URL
+   * @returns Waveform JSON 데이터
+   */
+  async downloadWaveformData(presignedUrl: string): Promise<{
+    success: boolean;
+    data?: WaveformData;
+    message?: string;
+  }> {
+    try {
+      const response = await fetch(presignedUrl);
+      
+      if (!response.ok) {
+        throw new Error(`HTTP error! status: ${response.status}`);
+      }
+      
+      const waveformData: WaveformData = await response.json();
+      
+      return {
+        success: true,
+        data: waveformData,
+      };
+    } catch (error: any) {
+      console.error('Download waveform data error:', error);
+      return {
+        success: false,
+        message: error.message || 'Failed to download waveform data',
+      };
+    }
+  }
+
+  /**
+   * Stem Waveform 데이터 가져오기 (PresignedUrl 요청 + JSON 다운로드)
+   * @param trackId 트랙 ID
+   * @param stemId 스템 ID
+   * @returns Waveform JSON 데이터
+   */
+  async getStemWaveformData(trackId: string, stemId: string): Promise<{
+    success: boolean;
+    data?: WaveformData;
+    message?: string;
+  }> {
+    try {
+      // 1. PresignedUrl 요청
+      const urlResult = await this.getStemPeaksPresignedUrl(trackId, stemId);
+      
+      if (!urlResult.success || !urlResult.data?.presignedUrl) {
+        return {
+          success: false,
+          message: urlResult.message || 'Failed to get presigned URL',
+        };
+      }
+
+      // 2. JSON 데이터 다운로드
+      const dataResult = await this.downloadWaveformData(urlResult.data.presignedUrl);
+      
+      return dataResult;
+    } catch (error: any) {
+      console.error('Get stem waveform data error:', error);
+      return {
+        success: false,
+        message: error.message || 'Failed to get stem waveform data',
+      };
+    }
+  }
+
+  /**
+   * Guide Waveform 데이터 가져오기 (PresignedUrl 요청 + JSON 다운로드)
+   * @param upstreamId 업스트림 ID
+   * @returns Waveform JSON 데이터
+   */
+  async getGuideWaveformData(upstreamId: string): Promise<{
+    success: boolean;
+    data?: WaveformData;
+    message?: string;
+  }> {
+    try {
+      // 1. PresignedUrl 요청
+      const urlResult = await this.getGuideWaveformPresignedUrl(upstreamId);
+      
+      if (!urlResult.success || !urlResult.data?.presignedUrl) {
+        return {
+          success: false,
+          message: urlResult.message || 'Failed to get guide waveform presigned URL',
+        };
+      }
+
+      // 2. JSON 데이터 다운로드
+      const dataResult = await this.downloadWaveformData(urlResult.data.presignedUrl);
+      
+      return dataResult;
+    } catch (error: any) {
+      console.error('Get guide waveform data error:', error);
+      return {
+        success: false,
+        message: error.message || 'Failed to get guide waveform data',
+      };
+    }
+  }
 }
 
+
 export default new StreamingService();
+

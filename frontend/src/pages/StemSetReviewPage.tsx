@@ -83,6 +83,7 @@ const StemSetReviewPage = () => {
   const isSeeking = useRef(false); // 무한 루프 방지용 플래그
   const { upstreamId, stageId: urlStageId } = useParams<{ upstreamId: string, stageId: string }>();
   const [stageId, setStageId] = useState<string | undefined>(urlStageId);
+  const [trackId, setTrackId] = useState<string>('');
 
 
   // stageId 결정 로직 (쿼리 파라미터 우선, 없으면 upstream API 사용)
@@ -159,14 +160,23 @@ const StemSetReviewPage = () => {
         }
 
 
-        // 5. guide_path를 presigned URL로 변환
-        const response = await streamingService.getGuidePresignedUrlbyUpstream(upstreamId as string);
-        console.log('📦 [fetchPreviousGuideUrl] Guide response:', response);
+        // 5. guide audio URL 가져오기 (기존 방식 유지)
+        const audioResponse = await streamingService.getGuidePresignedUrlbyUpstream(upstreamId as string);
+        console.log('📦 [fetchPreviousGuideUrl] Guide audio response:', audioResponse);
         
-        if (response.success && response.data) {
-          setGuideAudioUrl(response.data.presignedUrl);
+        if (audioResponse.success && audioResponse.data) {
+          setGuideAudioUrl(audioResponse.data.presignedUrl);
         } else {
           setGuideAudioUrl('/audio/track_ex.wav');
+        }
+
+        // 6. guide waveform 데이터 가져오기 (새로운 방식)
+        const waveformResponse = await streamingService.getGuideWaveformData(upstreamId as string);
+        console.log('📦 [fetchPreviousGuideUrl] Guide waveform response:', waveformResponse);
+        
+        if (waveformResponse.success && waveformResponse.data) {
+          // TODO: waveform 데이터를 Wave 컴포넌트에 전달
+          console.log('📦 Guide waveform data:', waveformResponse.data);
         }
       } catch (error) {
         setGuideAudioUrl('/audio/track_ex.wav');
@@ -192,6 +202,7 @@ const StemSetReviewPage = () => {
       }
     
       const currentTrackId = stageResponse.data.track.id;
+      setTrackId(currentTrackId); // trackId state에 저장
       console.log('🔍 currentTrackId:', currentTrackId);
       console.log('🔍 upstream:', upstream);
       
@@ -201,7 +212,6 @@ const StemSetReviewPage = () => {
       console.log('📦 [loadStemsData] Stem response:', stemResponse);
       console.log('📦 [loadStemsData] Stem response.data:', stemResponse?.data);
       console.log('📦 [loadStemsData] Stem response.data.data:', stemResponse?.data?.data);
-      
       if(!stemResponse || !stemResponse.data || !stemResponse.data.data){
         console.log('❌ [loadStemsData] stem 정보가 없습니다:', stemResponse);
       } else {
@@ -650,7 +660,18 @@ const StemSetReviewPage = () => {
     async (stemData: any, upstream: any) => {
       try {
         console.log('🎵 [handleIndividualStemClick] Individual stem clicked:', stemData);
+
+        // Stem waveform 데이터 가져오기
+        const stemWaveformData = await streamingService.getStemWaveformData(trackId, stemData.stem.id);
+        console.log('🌊 Stem waveform data:', stemWaveformData);
         
+        if (stemWaveformData.success && stemWaveformData.data) {
+          peaks = stemWaveformData.data;
+          console.log('📦 Stem waveform data:', stemWaveformData.data);
+        } else {
+          showWarning('No waveform data available for this stem');
+        }
+        setShowExtraWaveform(true);
         // 선택된 upstream 설정 (댓글을 위해)
         setSelectedUpstream(upstream);
 
@@ -684,7 +705,6 @@ const StemSetReviewPage = () => {
         if (streamingUrl) {
           console.log('✅ [handleIndividualStemClick] Using streaming URL:', streamingUrl);
           setExtraAudio(streamingUrl);
-          setShowExtraWaveform(true);
         } else {
           console.warn('⚠️ [handleIndividualStemClick] No streaming URL available for stem');
           showWarning('No audio file available for this stem');
@@ -1233,6 +1253,7 @@ const StemSetReviewPage = () => {
             <Wave
               onReady={handleReady}
               audioUrl={extraAudio}
+              peaks={extraAudio.}
               waveColor='#60a5fa'
               id='extra'
               isPlaying={isPlaying}

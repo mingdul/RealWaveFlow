@@ -14,7 +14,7 @@ export class CategoryService {
 
   async createCategory(createCategoryDto: CreateCategoryDto) {
     const {name, track_id, instrument} = createCategoryDto;
-
+    createCategoryDto.name = createCategoryDto.instrument
     const category = this.categoryRepository.create({
       name,
       track : {id : track_id},

@@ -1,7 +1,7 @@
 import { Controller, Get, Post, Body, Param, Query, UseGuards, Request } from '@nestjs/common';
 import { ApiTags, ApiOperation, ApiResponse, ApiParam, ApiBody, ApiBearerAuth } from '@nestjs/swagger';
 import { StreamingService } from './streaming.service';
-import { BatchStreamRequestDto, TrackStemsQueryDto, StemInfoDto, BatchStemInfoRequestDto } from './dto/streaming.dto';
+import { BatchStreamRequestDto, TrackStemsQueryDto, StemInfoDto, BatchStemInfoRequestDto, StemPeaksPresignedUrlDto, GuideWaveformPresignedUrlDto } from './dto/streaming.dto';
 import { AuthGuard } from '@nestjs/passport';
 
 /**
@@ -297,4 +297,19 @@ export class StreamingController {
   ) {
     return this.streamingService.getUpstreamGuideStreamingUrl(upstreamId, req.user.id);
   }
+
+  @Post('/streaming/guide-waveform-presigned-url')
+  @ApiOperation({ summary: 'Guide Waveform 스트리밍 presignedUrl 생성', description: 'UpstreamId로 가이드 파형 데이터 스트리밍 URL을 생성합니다.' })
+  @ApiBody({ type: GuideWaveformPresignedUrlDto })
+  @ApiResponse({ status: 200, description: '가이드 파형 PreSigned URL 생성 성공' })
+  @ApiResponse({ status: 401, description: '인증되지 않은 사용자' })
+  @ApiResponse({ status: 403, description: '권한 없음' })
+  @ApiResponse({ status: 404, description: '가이드 파일을 찾을 수 없음' })
+  async getGuideWaveformPresignedUrl(
+    @Body() dto: GuideWaveformPresignedUrlDto,
+    @Request() req: any
+  ) {
+    return this.streamingService.getUpstreamGuideWaveformUrl(dto.upstreamId, req.user.id);
+  }
+
 }

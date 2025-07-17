@@ -561,3 +561,28 @@ export interface Stem {
   uploaded_at: string;
 }
 
+// Streaming 관련 타입
+export interface StemPeaksPresignedUrlDto {
+  trackId: string;
+  stemId: string;
+}
+
+export interface GuideWaveformPresignedUrlDto {
+  upstreamId: string;
+}
+
+export interface GuidePathStreamingResponse {
+  guidePath: string;
+  presignedUrl: string;
+  urlExpiresAt: string;
+  fileName: string;
+}
+
+// Waveform JSON 데이터 타입
+export interface WaveformData {
+  data: number[];
+  length: number;
+  sampleRate?: number;
+  duration?: number;
+}
+

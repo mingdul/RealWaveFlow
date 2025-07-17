@@ -633,6 +633,39 @@ export class StreamingService {
     };
   }
 
+  async getStemPeaksPresignedUrl(
+    trackId: string,
+    stemId: string, 
+    userId: string
+  ): Promise<GuidePathStreamingResponse> {
+    // 권한 검증 - trackId를 통해 트랙 접근 권한 확인
+    await this.validateTrackAccess(trackId, userId);
+
+    const stem = await this.stemRepository.findOne({
+      where: { id: stemId }
+    });
+
+    if (!stem) {
+      throw new NotFoundException(`Stem not found: ${stemId}`);
+    }
+
+    if (!stem.audio_wave_path) {
+      throw new NotFoundException('No waveform data found for this stem');
+    }
+
+    // S3 presigned URL 생성 (1시간 유효) - audio_wave_path는 waveform JSON 파일
+    const presignedUrl = await this.s3Service.getPresignedUrl(stem.audio_wave_path);
+    const expiresAt = new Date(Date.now() + 3600 * 1000).toISOString();
+    const fileName = stem.audio_wave_path.split('/').pop() || 'waveform.json';
+
+    return {
+      guidePath: stem.audio_wave_path,
+      presignedUrl,
+      urlExpiresAt: expiresAt,
+      fileName,
+    };
+  }
+
   /**
    * 배치 Guide Path presigned URL 생성
    * 
@@ -778,6 +811,54 @@ export class StreamingService {
 
     return {
       guidePath: upstream.guide_path,
+      presignedUrl,
+      urlExpiresAt: expiresAt,
+      fileName,
+    };
+  }
+
+  /**
+   * Upstream ID로 guide waveform JSON path 조회 후 스트리밍 URL 생성
+   * 
+   * @param upstreamId - Upstream ID
+   * @param userId - 요청한 사용자 ID
+   * @returns guide waveform JSON의 presigned URL과 메타데이터
+   */
+  async getUpstreamGuideWaveformUrl(
+    upstreamId: string, 
+    userId: string
+  ): Promise<GuidePathStreamingResponse> {
+    // Upstream과 관련 엔티티들을 함께 조회
+    const upstream = await this.upstreamRepository.findOne({
+      where: { id: upstreamId },
+      relations: ['stage', 'stage.track'],
+    });
+
+    if (!upstream) {
+      throw new NotFoundException('Upstream not found');
+    }
+
+    // 권한 검증 - upstream을 통해 트랙에 접근 권한 확인
+    if (!upstream.stage?.track?.id) {
+      throw new NotFoundException('Track information not found for this upstream');
+    }
+    await this.validateTrackAccess(upstream.stage.track.id, userId);
+
+    if (!upstream.guide_path) {
+      throw new NotFoundException('No guide file found for this upstream');
+    }
+
+    // guide_path에서 waveform JSON path 생성 (확장자를 .json으로 변경)
+    const guideWaveformPath = upstream.guide_path.replace(/\.[^.]+$/, '_waveform.json');
+
+    // S3 presigned URL 생성 (1시간 유효)
+    const presignedUrl = await this.s3Service.getPresignedUrl(guideWaveformPath);
+    const expiresAt = new Date(Date.now() + 3600 * 1000).toISOString();
+
+    const fileName = guideWaveformPath.split('/').pop() || 'guide_waveform.json';
+
+    return {
+      guidePath: guideWaveformPath,
       presignedUrl,
       urlExpiresAt: expiresAt,
       fileName,
