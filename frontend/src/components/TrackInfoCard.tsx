@@ -20,8 +20,6 @@ interface TrackInfoCardProps {
 
 const TrackInfoCard: React.FC<TrackInfoCardProps> = ({
   track,
-
-  
   onShowAllStems,
   versionNumber,
   stemsLoading = false,

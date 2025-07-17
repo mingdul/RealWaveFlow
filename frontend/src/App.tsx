@@ -17,7 +17,7 @@ import StemSetReviewPage from './pages/StemSetReviewPage.tsx';
 import DashboardPageV2 from './pages/DashboardssPageV2.tsx';
 import InvitePage from './pages/InvitePage.tsx';
 import ProjectPage from './pages/ProjectPage.tsx';
-import MockTrackPage from './pages/mockTrackPage.tsx';
+
 // import PR_Page from './pages/PR_Page.tsx';     
 // import MasterPage from './pages/MasterPage';
 // import CommitPage from './pages/UploadPage';
@@ -48,7 +48,6 @@ const App = () => {
               {/* <Route path="/review" element={<StemSetReviewPage />} /> */}
               <Route path="/review/:upstreamId" element={<StemSetReviewPage />} />
               <Route path="*" element={<Notfound />} />
-              <Route path="/mock-track/:trackId" element={<MockTrackPage />} />
               {/* <Route path="/master" element={<MasterPage />} />
               <Route path="/commit" element={<CommitPage />} />
               <Route path="/pr" element={<PR_Page />} /> 
