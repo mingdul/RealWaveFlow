@@ -7,6 +7,45 @@ const NotificationBell: React.FC = () => {
   const dropdownRef = useRef<HTMLDivElement>(null);
   const { notifications, unreadCount, markAsRead, markAllAsRead } = useNotifications();
 
+  // 🔥 실시간 상태 모니터링
+  useEffect(() => {
+    console.log('🔔 [NotificationBell] 🔄 State changed - Notifications:', notifications.length, 'Unread:', unreadCount);
+    console.log('🔔 [NotificationBell] 📋 Current notifications:', notifications.map(n => ({
+      id: n.id,
+      type: n.type,
+      title: n.title,
+      read: n.read,
+      timestamp: n.timestamp
+    })));
+  }, [notifications, unreadCount]);
+
+  // 🔥 컴포넌트 마운트 시 초기 상태 확인
+  useEffect(() => {
+    console.log('🔔 [NotificationBell] 🚀 Component mounted');
+    console.log('🔔 [NotificationBell] 📊 Initial state:');
+    console.log('  - Notifications count:', notifications.length);
+    console.log('  - Unread count:', unreadCount);
+    console.log('  - Has notifications context:', !!useNotifications);
+    
+    // 5초마다 상태 확인
+    const interval = setInterval(() => {
+      console.log('🔔 [NotificationBell] ⏰ Periodic check:');
+      console.log('  - Current time:', new Date().toLocaleTimeString());
+      console.log('  - Notifications:', notifications.length);
+      console.log('  - Unread:', unreadCount);
+      console.log('  - Latest notification:', notifications[0] ? {
+        title: notifications[0].title,
+        time: notifications[0].timestamp,
+        type: notifications[0].type
+      } : 'None');
+    }, 5000);
+
+    return () => {
+      console.log('🔔 [NotificationBell] 🔚 Component unmounting');
+      clearInterval(interval);
+    };
+  }, []);
+
   // 외부 클릭 시 드롭다운 닫기
   useEffect(() => {
     const handleClickOutside = (event: MouseEvent) => {
@@ -22,9 +61,13 @@ const NotificationBell: React.FC = () => {
   }, []);
 
   const toggleDropdown = () => {
-    console.log('🔔 [NotificationBell] Button clicked - Current state:', isOpen);
-    console.log('🔔 [NotificationBell] Notifications:', notifications);
-    console.log('🔔 [NotificationBell] Unread count:', unreadCount);
+    console.log('🔔 [NotificationBell] 🖱️ Button clicked - Current state:', isOpen);
+    console.log('🔔 [NotificationBell] 📊 Current data:');
+    console.log('  - Notifications array:', notifications);
+    console.log('  - Unread count:', unreadCount);
+    console.log('  - Notifications length:', notifications.length);
+    console.log('  - First notification:', notifications[0] || 'None');
+    console.log('  - Context available:', !!useNotifications);
     setIsOpen(!isOpen);
   };
 

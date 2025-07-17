@@ -13,6 +13,7 @@ interface NotificationProviderProps {
 export const NotificationProvider: React.FC<NotificationProviderProps> = ({ children }) => {
   const [notifications, setNotifications] = useState<Notification[]>([]);
   const [socket, setSocket] = useState<Socket | null>(null);
+  const [isConnected, setIsConnected] = useState(false);
   
   const { user, logout } = useAuth();
   const { showToast } = useToast();
@@ -25,24 +26,21 @@ export const NotificationProvider: React.FC<NotificationProviderProps> = ({ chil
   console.log('🔔 [NotificationProvider] Notifications count:', notifications.length);
 
   useEffect(() => {
-    console.log('🔔 [NotificationProvider] useEffect triggered - User changed:', user ? `${user.id} (${user.email})` : 'null');
-    
-    // 사용자가 로그인한 경우에만 알림 소켓 연결 시도
-    if (user) {
-      console.log('🔔 [NotificationProvider] User found, initializing notification socket...');
-      initializeNotificationSocket();
-    } else {
-      console.log('🔔 [NotificationProvider] No user, disconnecting socket and clearing notifications...');
-      // 로그아웃 시 소켓 연결 해제 및 알림 초기화
-      disconnectNotificationSocket();
-      clearNotifications();
+    console.log('🔔 [NotificationProvider] useEffect cleanup - disconnecting socket...');
+    if (socket) {
+      socket.disconnect();
     }
 
-    // 컴포넌트 언마운트 시 소켓 정리
-    return () => {
-      console.log('🔔 [NotificationProvider] useEffect cleanup - disconnecting socket...');
-      disconnectNotificationSocket();
-    };
+          if (user) {
+        console.log('🔔 [NotificationProvider] useEffect triggered - User changed:', user.id, `(${user.email})`);
+        console.log('🔔 [NotificationProvider] User found, initializing notification socket...');
+        initializeNotificationSocket();
+      } else {
+      console.log('🔔 [NotificationProvider] useEffect triggered - User changed:', user);
+      console.log('🔔 [NotificationProvider] No user, disconnecting socket and clearing notifications...');
+      setNotifications([]);
+      setIsConnected(false);
+    }
   }, [user]);
 
   const initializeNotificationSocket = () => {
@@ -72,20 +70,22 @@ export const NotificationProvider: React.FC<NotificationProviderProps> = ({ chil
       console.log('🔔 [NotificationSocket] Socket instance created:', notificationSocket);
       console.log('🔔 [NotificationSocket] Initial connection state:', notificationSocket.connected);
 
-      // 모든 이벤트 리스너 등록
-      notificationSocket.onAny((eventName, ...args) => {
-        console.log('🔔 [NotificationSocket] 📡 Event received:', eventName, args);
+      // 🔥 모든 이벤트 리스너 등록 (강화된 로깅)
+      notificationSocket.onAny((eventName: string, ...args: any[]) => {
+        console.log(`📡 [Socket] Event received: ${eventName}`, args);
       });
 
-      // 연결 성공
+      // 🔥 연결 성공 (강화된 로깅)
       notificationSocket.on('connect', () => {
-        console.log('🔔 [NotificationSocket] ✅ Connected successfully:', notificationSocket.id);
+        console.log('🔔 [NotificationSocket] ✅ Connected successfully');
+        console.log('🔔 [NotificationSocket] Socket ID:', notificationSocket.id);
         console.log('🔔 [NotificationSocket] Socket status:', {
           connected: notificationSocket.connected,
           id: notificationSocket.id,
           url: `${baseUrl}/notifications`,
-          transport: notificationSocket.io.engine.transport.name
+          transport: notificationSocket.io.engine?.transport?.name || 'unknown'
         });
+        setIsConnected(true);
       });
 
       // 연결 해제
