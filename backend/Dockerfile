@@ -21,7 +21,7 @@ COPY . .
 RUN npm run build
 
 # Verify build output
-RUN ls -la dist/ && echo "Build completed successfully"
+RUN ls -la dist/ && echo "Build completed successfully..."
 
 # Start the application
 CMD ["node", "dist/main.js"]
