@@ -6,7 +6,7 @@ import {
   TrackInfoCard,
   OpenStageModal,
   StemListModal,
-  StageHistory,
+  StageHis,
 } from '../components';
 import { useAuth } from '../contexts/AuthContext';
 import {
@@ -18,6 +18,7 @@ import streamingService, {
   StemStreamingInfo,
 } from '../services/streamingService';
 import trackService from '../services/trackService';
+ 
 
 interface ProjectPageProps {}
 
@@ -295,7 +296,7 @@ const ProjectPage: React.FC<ProjectPageProps> = () => {
 
             {/* 스테이지 히스토리 */}
             <div className="transform transition-all duration-300">
-              <StageHistory
+              <StageHis
                 stages={stages}
                 onStageSelect={handleStageClick}
                 onOpenStageClick={() => setIsOpenStageModalOpen(true)}

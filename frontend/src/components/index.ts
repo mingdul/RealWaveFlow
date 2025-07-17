@@ -16,6 +16,7 @@ export { default as TrackHeader } from './TrackHeader';
 export { default as TrackInfoCard } from './TrackInfoCard';
 export { default as VersionHistory } from './VersionHistory';
 export { default as VersionCard } from './VersionCard';
+export { default as StageHis } from './StageHis';
 export { default as StageHistory } from './StageHistory';
 export { default as StageCard } from './StageCard';
 export { default as OpenStageModal } from './OpenStageModal';
