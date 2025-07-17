@@ -13,7 +13,9 @@ import { NewCategoryStemDto } from './dto/newCategoryStem.dto';
 import { CategoryService } from 'src/category/category.service';
 import { Category } from 'src/category/category.entity';
 import { Stage } from 'src/stage/stage.entity';
+import { StageReviewer } from '../stage-reviewer/stage-reviewer.entity';
 import { SqsService } from '../sqs/service/sqs.service';
+import { NotificationGateway, NotificationPayload } from '../notification/notification.gateway';
 
 @Injectable()
 export class UpstreamService {
@@ -30,10 +32,13 @@ export class UpstreamService {
         private categoryRepository: Repository<Category>,
         @InjectRepository(Stage)
         private stageRepository: Repository<Stage>,
+        @InjectRepository(StageReviewer)
+        private stageReviewerRepository: Repository<StageReviewer>,
         private readonly stemJobService : StemJobService,
         private readonly categoryService : CategoryService,
         private readonly sqsService: SqsService,
         private readonly upstreamReviewService: UpstreamReviewService,
+        private readonly notificationGateway: NotificationGateway,
 
     ) {}
 
@@ -133,7 +138,8 @@ export class UpstreamService {
             await this.requestMixing(allFilePaths, savedUpstream.id, stage_id);
         }
 
-
+        // 6) 알림 전송: 스테이지의 모든 리뷰어에게 새 업스트림 생성 알림
+        await this.sendUpstreamCreatedNotification(savedUpstream, stage);
 
         return {
             success: true,
@@ -337,6 +343,50 @@ export class UpstreamService {
             upstream: upstream,
             stems: upstream.stems
         };
+    }
+
+    // 업스트림 생성 알림 전송
+    private async sendUpstreamCreatedNotification(upstream: Upstream, stage: Stage) {
+        try {
+            // 스테이지의 모든 리뷰어 조회
+            const stageReviewers = await this.stageReviewerRepository.find({
+                where: { stage: { id: stage.id } },
+                relations: ['user'],
+            });
+
+            if (stageReviewers.length === 0) {
+                this.logger.warn(`No reviewers found for stage: ${stage.id}`);
+                return;
+            }
+
+            // 리뷰어 ID 목록 생성
+            const reviewerIds = stageReviewers.map(reviewer => reviewer.user.id);
+
+            // 알림 페이로드 생성
+            const notification: NotificationPayload = {
+                id: `upstream_created_${upstream.id}_${Date.now()}`,
+                type: 'upstream_created',
+                title: '새 업스트림이 생성되었습니다',
+                message: `"${stage.title}" 스테이지에 "${upstream.title}" 업스트림이 생성되었습니다. 리뷰를 진행해주세요.`,
+                data: {
+                    upstreamId: upstream.id,
+                    stageId: stage.id,
+                    trackId: stage.track?.id,
+                    upstreamTitle: upstream.title,
+                    stageTitle: stage.title,
+                    uploader: upstream.user?.id,
+                },
+                timestamp: new Date().toISOString(),
+                read: false,
+            };
+
+            // 각 리뷰어에게 알림 전송
+            this.notificationGateway.sendNotificationToUsers(reviewerIds, notification);
+
+            this.logger.log(`Upstream created notification sent to ${reviewerIds.length} reviewers for upstream: ${upstream.id}`);
+        } catch (error) {
+            this.logger.error(`Failed to send upstream created notification: ${error.message}`);
+        }
     }
     
 }

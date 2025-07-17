@@ -2,6 +2,7 @@ import { BrowserRouter, Routes, Route } from 'react-router-dom';
 import { AuthProvider } from './contexts/AuthContext';
 import { ToastProvider } from './contexts/ToastContext';
 import { SocketProvider } from './contexts/SocketContext';
+import { NotificationProvider } from './contexts/NotificationContext';
 import './App.css';
 
 import LandingPage from './pages/LandingPage.tsx';
@@ -30,10 +31,10 @@ const App = () => {
   return (
     <BrowserRouter>
       <ToastProvider>
-        
         <AuthProvider>
-          <SocketProvider>
-            <Routes>
+          <NotificationProvider>
+            <SocketProvider>
+              <Routes>
               <Route path="/" element={<LandingPage />} />
               <Route path="/login" element={<PublicRoute><LoginPage /></PublicRoute>} />
               <Route path="/signup" element={<PublicRoute><SignUpPage /></PublicRoute>} />
@@ -58,7 +59,8 @@ const App = () => {
               <Route path="/track" element={<TrackPage />} /> */}
             </Routes>
           </SocketProvider>
-        </AuthProvider>
+        </NotificationProvider>
+      </AuthProvider>
       </ToastProvider>
     </BrowserRouter>
   );

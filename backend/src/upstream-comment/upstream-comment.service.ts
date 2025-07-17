@@ -1,15 +1,22 @@
-import { BadRequestException, Injectable, NotFoundException } from '@nestjs/common';
+import { BadRequestException, Injectable, NotFoundException, Logger } from '@nestjs/common';
 import { UpstreamComment } from './upstream-comment.entity';
+import { Upstream } from '../upstream/upstream.entity';
 import { InjectRepository } from '@nestjs/typeorm';
 import { Repository } from 'typeorm';
 import { CreateUpstreamCommentDto } from './dto/createUpstreamComment.dto';
 import { UpdateUpstreamCommentDto } from './dto/updateUpstreamComment.dto';
+import { NotificationGateway, NotificationPayload } from '../notification/notification.gateway';
 
 @Injectable()
 export class UpstreamCommentService {
+    private readonly logger = new Logger(UpstreamCommentService.name);
+
     constructor(
         @InjectRepository(UpstreamComment)
         private upstreamCommentRepository: Repository<UpstreamComment>,
+        @InjectRepository(Upstream)
+        private upstreamRepository: Repository<Upstream>,
+        private readonly notificationGateway: NotificationGateway,
     ) {}
 
     async createUpstreamComment(createUpstreamCommentDto: CreateUpstreamCommentDto) {
@@ -25,6 +32,10 @@ export class UpstreamCommentService {
         if (!savedUpstreamComment) {
             throw new BadRequestException('Failed to create upstream comment');
         }
+
+        // 알림 전송: 업스트림 업로더에게 새 댓글 알림
+        await this.sendCommentCreatedNotification(savedUpstreamComment);
+
         return {
             success: true,
             message: 'Upstream comment created successfully',
@@ -85,5 +96,52 @@ export class UpstreamCommentService {
             message: 'Upstream comment updated successfully',
             upstream_comment: upstreamComment,
         };
+    }
+
+    // 댓글 생성 알림 전송
+    private async sendCommentCreatedNotification(comment: UpstreamComment) {
+        try {
+            // 업스트림 정보와 업로더 정보 조회
+            const upstream = await this.upstreamRepository.findOne({
+                where: { id: comment.upstream.id },
+                relations: ['user', 'stage', 'stage.track'],
+            });
+
+            if (!upstream || !upstream.user) {
+                this.logger.error(`Upstream or uploader not found for comment notification: ${comment.id}`);
+                return;
+            }
+
+            // 댓글 작성자와 업스트림 업로더가 같으면 알림을 보내지 않음
+            if (comment.user.id === upstream.user.id) {
+                return;
+            }
+
+            // 알림 페이로드 생성
+            const notification: NotificationPayload = {
+                id: `comment_created_${comment.id}_${Date.now()}`,
+                type: 'upstream_reviewed',
+                title: '새 댓글이 작성되었습니다',
+                message: `"${upstream.title}" 업스트림에 새 댓글이 작성되었습니다.`,
+                data: {
+                    commentId: comment.id,
+                    upstreamId: upstream.id,
+                    stageId: upstream.stage?.id,
+                    trackId: upstream.stage?.track?.id,
+                    upstreamTitle: upstream.title,
+                    commentContent: comment.comment,
+                    commenter: comment.user?.id,
+                },
+                timestamp: new Date().toISOString(),
+                read: false,
+            };
+
+            // 업스트림 업로더에게 알림 전송
+            this.notificationGateway.sendNotificationToUser(upstream.user.id, notification);
+
+            this.logger.log(`Comment created notification sent to uploader ${upstream.user.id} for comment: ${comment.id}`);
+        } catch (error) {
+            this.logger.error(`Failed to send comment created notification: ${error.message}`);
+        }
     }
 }

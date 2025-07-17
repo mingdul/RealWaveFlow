@@ -1,5 +1,6 @@
 import React, { useState } from 'react';
 import Logo from './Logo';
+import NotificationBell from './NotificationBell';
 
 const HeaderInfo: React.FC = () => {
   const [activeTab, setActiveTab] = useState('MASTER');
@@ -64,6 +65,9 @@ const HeaderInfo: React.FC = () => {
             <button className='rounded-md bg-red-500 px-4 py-2 text-sm font-medium transition-colors hover:bg-red-600'>
               + Drop Request
             </button>
+
+            {/* Notification Bell */}
+            <NotificationBell />
           </div>
         </div>
       </div>

@@ -7,11 +7,13 @@ import { VersionStem } from '../version-stem/version-stem.entity';
 import { StemJob } from '../stem-job/stem-job.entity';
 import { Category } from '../category/category.entity';
 import { Stage } from '../stage/stage.entity';
+import { StageReviewer } from '../stage-reviewer/stage-reviewer.entity';
 import { StemJobModule } from '../stem-job/stem-job.module';
 import { CategoryModule } from '../category/category.module';
 import { SqsModule } from '../sqs/sqs.module';
 import { UpstreamReviewModule } from 'src/upstream-review/upstream-review.module';
 import { StageReviewerModule } from 'src/stage-reviewer/stage-reviewer.module';
+import { NotificationModule } from '../notification/notification.module';
 
 @Module({
   imports: [
@@ -22,6 +24,7 @@ import { StageReviewerModule } from 'src/stage-reviewer/stage-reviewer.module';
       StemJob,
       Category,
       Stage,
+      StageReviewer,
     ]),
 
     // 도메인 모듈들
@@ -30,6 +33,7 @@ import { StageReviewerModule } from 'src/stage-reviewer/stage-reviewer.module';
     SqsModule,
     UpstreamReviewModule,
     StageReviewerModule,
+    NotificationModule,
   ],
   controllers: [UpstreamController],
   providers: [UpstreamService],
