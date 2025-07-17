@@ -22,6 +22,7 @@ import { UsersService } from '../users/users.service';
       'http://localhost:3000', // React 개발 서버
       process.env.FRONTEND_URL || 'http://13.125.231.115:3000',
       'http://13.125.231.115:3000', // EC2 프론트엔드 URL
+      'https://waveflow.pro',
     ],
     credentials: true, // 쿠키 전송 허용
     methods: ['GET', 'POST'],

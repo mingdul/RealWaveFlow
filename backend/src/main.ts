@@ -30,6 +30,7 @@ async function bootstrap() {
         'http://localhost:5173', 
         'http://localhost:3000', 
         'http://127.0.0.1:3000',
+        'https://waveflow.pro', // 프로덕션 URL 추가
         'http://13.125.231.115:3000',
         'http://13.209.14.85',
       ],

@@ -38,7 +38,7 @@ export const NotificationProvider: React.FC<NotificationProviderProps> = ({ chil
 
   const initializeNotificationSocket = () => {
     try {
-      const socketUrl = `${import.meta.env.VITE_API_URL || 'http://13.125.231.115:8080'}/notifications`;
+      const socketUrl = `${import.meta.env.VITE_API_URL || 'https://waveflow.pro/api'}/notifications`;
       console.log('🔔 [NotificationSocket] Attempting to connect to:', socketUrl);
       console.log('🔔 [NotificationSocket] User:', user);
       

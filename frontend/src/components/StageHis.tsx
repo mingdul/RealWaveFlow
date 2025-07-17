@@ -246,9 +246,6 @@ const StageHis: React.FC<StageHisProps> = ({
         {/* 호버 시 잘림 방지를 위한 충분한 패딩 */}
         <div className="overflow-x-auto scrollbar-hide py-8 px-4" ref={scrollRef}>
           <div className="relative flex items-center gap-0 pb-4 min-w-max">
-            {/* 메인 타임라인 */}
-            <div className="absolute top-1/2 left-0 right-0 h-0.5 bg-gradient-to-r from-purple-500/50 via-blue-500/50 to-green-500/50 transform -translate-y-1/2 z-0" />
-            
             {sortedStages.map((stage, index) => {
               const statusConfig = getStatusConfig(stage.status);
               const isSelected = selectedStage?.id === stage.id;

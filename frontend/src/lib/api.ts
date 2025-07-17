@@ -1,7 +1,7 @@
 import axios, { AxiosInstance, AxiosResponse, AxiosError } from 'axios';
 
 // API 기본 설정 - 환경변수 사용
-const API_BASE_URL = import.meta.env.VITE_API_URL || 'http://localhost:8080';
+const API_BASE_URL = import.meta.env.VITE_API_URL || 'https://waveflow.pro/api';
 
 console.log('[DEBUG] API_BASE_URL:', API_BASE_URL);
 
