@@ -437,7 +437,7 @@ const DashboardPageV2 = () => {
           </div> */}
 
             {/* Toast 테스트 버튼들 (개발 모드에서만 표시) */}
-            {import.meta.env.DEV && (
+            {/* {import.meta.env.DEV && (
               <div className='flex items-center space-x-2'>
                 <span className='text-xs text-gray-400'>Toast:</span>
                 <div className='flex space-x-1'>
@@ -483,7 +483,7 @@ const DashboardPageV2 = () => {
                   </button>
                 </div>
               </div>
-            )}
+            )} */}
 
             <button
               onClick={handleLogout}
