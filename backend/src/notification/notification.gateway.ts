@@ -53,37 +53,48 @@ export class NotificationGateway
 
   // 게이트웨이 초기화
   afterInit(server: Server) {
-    this.logger.log('Notification Gateway initialized');
+    this.logger.log('🔔 [NotificationGateway] Notification Gateway initialized');
     
     // 소켓 연결 전 JWT 인증 미들웨어
     server.use(async (socket, next) => {
       try {
+        this.logger.log('🔔 [NotificationGateway] 🔐 Socket authentication attempt started');
+        this.logger.log('🔔 [NotificationGateway] 🔐 Socket ID:', socket.id);
+        this.logger.log('🔔 [NotificationGateway] 🔐 Socket handshake headers:', socket.handshake.headers);
+        
         const token = this.extractTokenFromSocket(socket);
         
         if (!token) {
-          this.logger.error('JWT token not found in notification socket connection');
+          this.logger.error('🔔 [NotificationGateway] ❌ JWT token not found in notification socket connection');
           return next(new Error('Unauthorized - No token provided'));
         }
 
+        this.logger.log('🔔 [NotificationGateway] 🔐 JWT token found and extracted');
+        this.logger.log('🔔 [NotificationGateway] 🔐 Token preview:', token.substring(0, 50) + '...');
+
         // JWT 토큰 검증
         const payload = this.jwtService.verify(token);
+        this.logger.log('🔔 [NotificationGateway] 🔐 JWT payload verified:', payload);
         
         // 사용자 정보 조회
         const user = await this.usersService.findById(payload.sub);
         
         if (!user) {
-          this.logger.error(`User not found for ID: ${payload.sub}`);
+          this.logger.error(`🔔 [NotificationGateway] ❌ User not found for ID: ${payload.sub}`);
           return next(new Error('Unauthorized - User not found'));
         }
+
+        this.logger.log(`🔔 [NotificationGateway] 🔐 User found: ${user.id} (${user.email})`);
 
         // 소켓 객체에 사용자 정보 저장
         socket.data.user = user;
         socket.data.userId = user.id;
         
-        this.logger.log(`Notification socket authenticated for user: ${user.id}`);
+        this.logger.log(`🔔 [NotificationGateway] ✅ Notification socket authenticated for user: ${user.id}`);
         next();
       } catch (error) {
-        this.logger.error('Notification socket authentication failed:', error.message);
+        this.logger.error('🔔 [NotificationGateway] ❌ Notification socket authentication failed:', error.message);
+        this.logger.error('🔔 [NotificationGateway] ❌ Error stack:', error.stack);
         next(new Error('Unauthorized - Invalid token'));
       }
     });
@@ -219,14 +230,27 @@ export class NotificationGateway
     this.logger.log(`🔔 [NotificationGateway] 🎯 Target user ID: ${userId}`);
     this.logger.log(`🔔 [NotificationGateway] 🔍 User exists in connected list: ${connectedUsersList.includes(userId)}`);
     
-    // 🔥 Room 정보 디버깅
-    const rooms = this.server.sockets.adapter.rooms;
-    const targetRoom = rooms.get(userRoom);
-    this.logger.log(`🔔 [NotificationGateway] 🏠 Room ${userRoom} exists: ${!!targetRoom}`);
-    this.logger.log(`🔔 [NotificationGateway] 🏠 Room size: ${targetRoom?.size || 0}`);
+    // 🔥 Room 정보 디버깅 (안전하게 접근)
+    try {
+      if (this.server && this.server.sockets && this.server.sockets.adapter && this.server.sockets.adapter.rooms) {
+        const rooms = this.server.sockets.adapter.rooms;
+        const targetRoom = rooms.get(userRoom);
+        this.logger.log(`🔔 [NotificationGateway] 🏠 Room ${userRoom} exists: ${!!targetRoom}`);
+        this.logger.log(`🔔 [NotificationGateway] 🏠 Room size: ${targetRoom?.size || 0}`);
+      } else {
+        this.logger.warn(`🔔 [NotificationGateway] ⚠️ Server adapter rooms not available`);
+      }
+    } catch (error) {
+      this.logger.error(`🔔 [NotificationGateway] ❌ Error accessing rooms: ${error.message}`);
+    }
     
-    this.server.to(userRoom).emit('notification', notification);
-    this.logger.log(`🔔 [NotificationGateway] ✅ Notification emitted to room ${userRoom}`);
+    // 알림 전송
+    try {
+      this.server.to(userRoom).emit('notification', notification);
+      this.logger.log(`🔔 [NotificationGateway] ✅ Notification emitted to room ${userRoom}`);
+    } catch (error) {
+      this.logger.error(`🔔 [NotificationGateway] ❌ Error emitting notification: ${error.message}`);
+    }
   }
 
   // 여러 사용자에게 알림 전송

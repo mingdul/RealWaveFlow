@@ -26,21 +26,31 @@ export const NotificationProvider: React.FC<NotificationProviderProps> = ({ chil
   console.log('🔔 [NotificationProvider] Notifications count:', notifications.length);
 
   useEffect(() => {
-    console.log('🔔 [NotificationProvider] useEffect cleanup - disconnecting socket...');
+    console.log('🔔 [NotificationProvider] useEffect triggered - User changed:', user ? `${user.id} (${user.email})` : 'null');
+    
+    // 기존 소켓이 있다면 정리
     if (socket) {
+      console.log('🔔 [NotificationProvider] Cleaning up existing socket...');
       socket.disconnect();
+      setSocket(null);
     }
 
-          if (user) {
-        console.log('🔔 [NotificationProvider] useEffect triggered - User changed:', user.id, `(${user.email})`);
-        console.log('🔔 [NotificationProvider] User found, initializing notification socket...');
-        initializeNotificationSocket();
-      } else {
-      console.log('🔔 [NotificationProvider] useEffect triggered - User changed:', user);
-      console.log('🔔 [NotificationProvider] No user, disconnecting socket and clearing notifications...');
+    if (user) {
+      console.log('🔔 [NotificationProvider] User found, initializing notification socket...');
+      initializeNotificationSocket();
+    } else {
+      console.log('🔔 [NotificationProvider] No user, clearing notifications...');
       setNotifications([]);
-
     }
+
+    // cleanup function
+    return () => {
+      console.log('🔔 [NotificationProvider] useEffect cleanup - disconnecting socket...');
+      if (socket) {
+        socket.disconnect();
+        setSocket(null);
+      }
+    };
   }, [user]);
 
   const initializeNotificationSocket = () => {
