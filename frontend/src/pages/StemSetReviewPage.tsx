@@ -54,7 +54,7 @@ interface Comment {
 
 const StemSetReviewPage = () => {
   const { user } = useAuth();
-  const { showError, showSuccess, showWarning, showInfo } = useToast();
+  const { showError, showSuccess, showWarning} = useToast();
   const navigate = useNavigate();
   // const wavesurferRef = useRef<any>(null);
   const [volume, setVolume] = useState(1);
