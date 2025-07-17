@@ -77,6 +77,8 @@ const StemSetReviewPage = () => {
   const [guideAudioUrl, setGuideAudioUrl] = useState<string>('');
   const [guideLoading, setGuideLoading] = useState(false);
   const [guideLoadAttempted, setGuideLoadAttempted] = useState(false); // 가이드 로드 시도 여부 추가
+  const [guidePeaks, setGuidePeaks] = useState<any>(null); // guide waveform 데이터
+  const [extraPeaks, setExtraPeaks] = useState<any>(null); // extra/stem waveform 데이터
 
   const wavesurferRefs = useRef<{ [id: string]: WaveSurfer }>({});
   const [readyStates, setReadyStates] = useState<{ [id: string]: boolean }>({});
@@ -175,8 +177,10 @@ const StemSetReviewPage = () => {
         console.log('📦 [fetchPreviousGuideUrl] Guide waveform response:', waveformResponse);
         
         if (waveformResponse.success && waveformResponse.data) {
-          // TODO: waveform 데이터를 Wave 컴포넌트에 전달
+          setGuidePeaks(waveformResponse.data);
           console.log('📦 Guide waveform data:', waveformResponse.data);
+        } else {
+          setGuidePeaks(null);
         }
       } catch (error) {
         setGuideAudioUrl('/audio/track_ex.wav');
@@ -666,10 +670,11 @@ const StemSetReviewPage = () => {
         console.log('🌊 Stem waveform data:', stemWaveformData);
         
         if (stemWaveformData.success && stemWaveformData.data) {
-          peaks = stemWaveformData.data;
+          setExtraPeaks(stemWaveformData.data);
           console.log('📦 Stem waveform data:', stemWaveformData.data);
         } else {
           showWarning('No waveform data available for this stem');
+          setExtraPeaks(null);
         }
         setShowExtraWaveform(true);
         // 선택된 upstream 설정 (댓글을 위해)
@@ -1233,6 +1238,7 @@ const StemSetReviewPage = () => {
             <Wave
               onReady={handleReady}
               audioUrl={guideAudioUrl}
+              peaks={guidePeaks}
               waveColor='#f87171'
               id='main'
               isPlaying={isPlaying}
@@ -1253,7 +1259,7 @@ const StemSetReviewPage = () => {
             <Wave
               onReady={handleReady}
               audioUrl={extraAudio}
-              peaks={extraAudio.}
+              peaks={extraPeaks}
               waveColor='#60a5fa'
               id='extra'
               isPlaying={isPlaying}
