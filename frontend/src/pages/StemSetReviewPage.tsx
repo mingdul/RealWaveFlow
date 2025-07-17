@@ -266,7 +266,7 @@ const StemSetReviewPage = () => {
         {
           ...upstream,
           upstreamId: upstream.id,
-          stemData: stemResponse?.data?.stems || null,
+          stemData: stemResponse?.data?.data || null,
         },
       ];
       console.log('✅ [loadStemsData] Stems result:', stemsResult);
