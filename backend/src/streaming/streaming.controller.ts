@@ -347,4 +347,25 @@ export class StreamingController {
     return this.streamingService.getStemWaveformUrl(stemId, req.user.id);
   }
 
+  /**
+   * VersionStem Waveform 데이터 URL 조회
+   * 
+   * GET /streaming/version-stem/:stemId/waveform
+   * 
+   * VersionStem ID를 받아서 해당 stem의 waveform 데이터 URL을 반환
+   */
+  @Get('version-stem/:stemId/waveform')
+  @ApiOperation({ summary: 'VersionStem Waveform 데이터 URL 조회', description: 'VersionStem ID로 waveform 데이터 URL을 조회합니다.' })
+  @ApiParam({ name: 'stemId', description: 'VersionStem ID' })
+  @ApiResponse({ status: 200, description: 'VersionStem Waveform 데이터 URL 조회 성공' })
+  @ApiResponse({ status: 401, description: '인증되지 않은 사용자' })
+  @ApiResponse({ status: 403, description: '권한 없음' })
+  @ApiResponse({ status: 404, description: 'VersionStem을 찾을 수 없음' })
+  async getVersionStemWaveformUrl(
+    @Param('stemId') stemId: string,
+    @Request() req: any
+  ) {
+    return this.streamingService.getVersionStemWaveformUrl(stemId, req.user.id);
+  }
+
 }

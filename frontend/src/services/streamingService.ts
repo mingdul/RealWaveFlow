@@ -51,6 +51,23 @@ export interface StreamingResponse<T = any> {
 }
 
 class StreamingService {
+  // waveform 데이터 캐싱을 위한 Map
+  private waveformCache = new Map<string, { data: any; timestamp: number }>();
+  private readonly CACHE_DURATION = 5 * 60 * 1000; // 5분 캐시
+
+  // 캐시에서 데이터 조회
+  private getFromCache(key: string): any | null {
+    const cached = this.waveformCache.get(key);
+    if (cached && Date.now() - cached.timestamp < this.CACHE_DURATION) {
+      return cached.data;
+    }
+    return null;
+  }
+
+  // 캐시에 데이터 저장
+  private setCache(key: string, data: any): void {
+    this.waveformCache.set(key, { data, timestamp: Date.now() });
+  }
 
   async getStemWaveformUrl(stemId: string): Promise<StreamingResponse<{ presignedUrl: string; urlExpiresAt: string }>> {
     try {
@@ -64,6 +81,27 @@ class StreamingService {
       return {
         success: false,
         message: error.response?.data?.message || 'Failed to fetch stem waveform',
+      };
+    }
+  }
+
+  /**
+   * Version-Stem Waveform URL 요청
+   * @param stemId 버전 스템 ID
+   * @returns 파형 데이터 스트리밍 URL
+   */
+  async getVersionStemWaveformUrl(stemId: string): Promise<StreamingResponse<{ presignedUrl: string; urlExpiresAt: string }>> {
+    try {
+      const response = await api.get(`/streaming/version-stem/${stemId}/waveform`);
+      return {
+        success: true,
+        data: response.data,
+      };
+    } catch (error: any) {
+      console.error('Error fetching version-stem waveform:', error);
+      return {
+        success: false,
+        message: error.response?.data?.message || 'Failed to fetch version-stem waveform',
       };
     }
   }
@@ -144,7 +182,12 @@ async getGuidePresignedUrlByStageId(stageId: string): Promise<StreamingResponse<
   }>> {
     try {
       const response = await api.get(`/streaming/stem/${stemId}`);
-      return response.data;
+      
+      // 백엔드가 직접 데이터 객체를 반환하므로 success wrapper로 감싸서 반환
+      return {
+        success: true,
+        data: response.data,
+      };
     } catch (error: any) {
       console.error('Error fetching stem streaming URL:', error);
       return {
@@ -164,7 +207,12 @@ async getGuidePresignedUrlByStageId(stageId: string): Promise<StreamingResponse<
   }>> {
     try {
       const response = await api.get(`/streaming/version-stem/${stemId}`);
-      return response.data;
+      
+      // 백엔드가 직접 데이터 객체를 반환하므로 success wrapper로 감싸서 반환
+      return {
+        success: true,
+        data: response.data,
+      };
     } catch (error: any) {
       console.error('Error fetching version stem streaming URL:', error);
       return {
@@ -366,6 +414,17 @@ async getGuidePresignedUrlByStageId(stageId: string): Promise<StreamingResponse<
     message?: string;
   }> {
     try {
+      // 캐시에서 먼저 확인
+      const cacheKey = `stem-${stemId}`;
+      const cachedData = this.getFromCache(cacheKey);
+      if (cachedData) {
+        console.log('📦 Using cached stem waveform data for:', stemId);
+        return {
+          success: true,
+          data: cachedData,
+        };
+      }
+
       // 1. PresignedUrl 요청
       const urlResult = await this.getStemWaveformUrl(stemId);
       
@@ -378,6 +437,11 @@ async getGuidePresignedUrlByStageId(stageId: string): Promise<StreamingResponse<
 
       // 2. JSON 데이터 다운로드
       const dataResult = await this.downloadWaveformData(urlResult.data.presignedUrl);
+      
+      // 성공한 경우 캐시에 저장
+      if (dataResult.success && dataResult.data) {
+        this.setCache(cacheKey, dataResult.data);
+      }
       
       return dataResult;
     } catch (error: any) {
@@ -400,6 +464,17 @@ async getGuidePresignedUrlByStageId(stageId: string): Promise<StreamingResponse<
     message?: string;
   }> {
     try {
+      // 캐시에서 먼저 확인
+      const cacheKey = `guide-${upstreamId}`;
+      const cachedData = this.getFromCache(cacheKey);
+      if (cachedData) {
+        console.log('📦 Using cached guide waveform data for:', upstreamId);
+        return {
+          success: true,
+          data: cachedData,
+        };
+      }
+
       // 1. PresignedUrl 요청
       const urlResult = await this.getGuideWaveformPresignedUrl(upstreamId);
       
@@ -413,12 +488,67 @@ async getGuidePresignedUrlByStageId(stageId: string): Promise<StreamingResponse<
       // 2. JSON 데이터 다운로드
       const dataResult = await this.downloadWaveformData(urlResult.data.presignedUrl);
       
+      // 성공한 경우 캐시에 저장
+      if (dataResult.success && dataResult.data) {
+        this.setCache(cacheKey, dataResult.data);
+      }
+      
       return dataResult;
     } catch (error: any) {
       console.error('Get guide waveform data error:', error);
       return {
         success: false,
         message: error.message || 'Failed to get guide waveform data',
+      };
+    }
+  }
+
+  /**
+   * Version-Stem Waveform 데이터 가져오기 (PresignedUrl 요청 + JSON 다운로드)
+   * @param stemId 버전 스템 ID
+   * @returns Waveform JSON 데이터 (peaks 배열 또는 WaveformData 객체)
+   */
+  async getVersionStemWaveformData(stemId: string): Promise<{
+    success: boolean;
+    data?: any; // peaks 배열 또는 WaveformData 객체
+    message?: string;
+  }> {
+    try {
+      // 캐시에서 먼저 확인
+      const cacheKey = `version-stem-${stemId}`;
+      const cachedData = this.getFromCache(cacheKey);
+      if (cachedData) {
+        console.log('📦 Using cached version-stem waveform data for:', stemId);
+        return {
+          success: true,
+          data: cachedData,
+        };
+      }
+
+      // 1. PresignedUrl 요청
+      const urlResult = await this.getVersionStemWaveformUrl(stemId);
+      
+      if (!urlResult.success || !urlResult.data?.presignedUrl) {
+        return {
+          success: false,
+          message: urlResult.message || 'Failed to get version-stem waveform presigned URL',
+        };
+      }
+
+      // 2. JSON 데이터 다운로드
+      const dataResult = await this.downloadWaveformData(urlResult.data.presignedUrl);
+      
+      // 성공한 경우 캐시에 저장
+      if (dataResult.success && dataResult.data) {
+        this.setCache(cacheKey, dataResult.data);
+      }
+      
+      return dataResult;
+    } catch (error: any) {
+      console.error('Get version-stem waveform data error:', error);
+      return {
+        success: false,
+        message: error.message || 'Failed to get version-stem waveform data',
       };
     }
   }

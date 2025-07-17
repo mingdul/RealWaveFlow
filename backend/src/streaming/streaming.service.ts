@@ -923,4 +923,51 @@ export class StreamingService {
     };
   }
 
+  /**
+   * VersionStem의 Waveform 데이터 URL 조회
+   * 
+   * @param stemId - 버전 스템 ID
+   * @param userId - 요청한 사용자 ID
+   * @returns waveform JSON 데이터의 presigned URL
+   * 
+   * 권한 검증: VersionStem → Stage → Track 경로로 트랙 접근 권한 확인
+   */
+  async getVersionStemWaveformUrl(
+    stemId: string, 
+    userId: string
+  ): Promise<GuidePathStreamingResponse> {
+    // VersionStem과 관련 엔티티들을 함께 조회
+    const versionStem = await this.versionStemRepository.findOne({
+      where: { id: stemId },
+      relations: ['stage', 'stage.track'],
+    });
+
+    if (!versionStem) {
+      throw new NotFoundException('Version stem not found');
+    }
+
+    // 권한 검증 - versionStem을 통해 트랙에 접근 권한 확인
+    if (!versionStem.stage?.track?.id) {
+      throw new NotFoundException('Track information not found for this version stem');
+    }
+    await this.validateTrackAccess(versionStem.stage.track.id, userId);
+
+    if (!versionStem.audio_wave_path) {
+      throw new NotFoundException('No waveform data found for this version stem');
+    }
+
+    // S3 presigned URL 생성 (1시간 유효)
+    const presignedUrl = await this.s3Service.getPresignedUrl(versionStem.audio_wave_path);
+    const expiresAt = new Date(Date.now() + 3600 * 1000).toISOString();
+
+    const fileName = versionStem.audio_wave_path.split('/').pop() || 'waveform.json';
+
+    return {
+      guidePath: versionStem.audio_wave_path,
+      presignedUrl,
+      urlExpiresAt: expiresAt,
+      fileName,
+    };
+  }
+
 }
