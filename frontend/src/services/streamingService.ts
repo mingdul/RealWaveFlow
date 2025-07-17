@@ -73,14 +73,16 @@ class StreamingService {
     presignedUrl: string;
     urlExpiresAt: string;
   }>> {
+    console.log(`[StreamingService] Requesting stem waveform URL for stemId: ${stemId}`);
     try {
       const response = await api.get(`/streaming/stem/${stemId}/waveform`);
+      console.log(`[StreamingService] Successfully fetched stem waveform URL for stemId: ${stemId}`, response.data);
       return {
         success: true,
         data: response.data,
       };
     } catch (error: any) {
-      console.error('Error fetching stem waveform:', error);
+      console.error(`[StreamingService] Error fetching stem waveform URL for stemId: ${stemId}`, error);
       return {
         success: false,
         message: error.response?.data?.message || 'Failed to fetch stem waveform',
@@ -97,14 +99,16 @@ class StreamingService {
     presignedUrl: string;
     urlExpiresAt: string;
   }>> {
+    console.log(`[StreamingService] Requesting version-stem waveform URL for stemId: ${stemId}`);
     try {
       const response = await api.get(`/streaming/version-stem/${stemId}/waveform`);
+      console.log(`[StreamingService] Successfully fetched version-stem waveform URL for stemId: ${stemId}`, response.data);
       return {
         success: true,
         data: response.data,
       };
     } catch (error: any) {
-      console.error('Error fetching version-stem waveform:', error);
+      console.error(`[StreamingService] Error fetching version-stem waveform URL for stemId: ${stemId}`, error);
       return {
         success: false,
         message: error.response?.data?.message || 'Failed to fetch version-stem waveform',
@@ -113,12 +117,14 @@ class StreamingService {
   }
   // 트랙의 모든 스템 파일 스트리밍 URL 조회
   async getTrackStems(trackId: string, version?: string): Promise<StreamingResponse<TrackStemsResponse>> {
+    console.log(`[StreamingService] Requesting track stems for trackId: ${trackId}, version: ${version}`);
     try {
       const params = version ? { version } : {};
       const response = await api.get(`/streaming/track/${trackId}/stems`, { params });
+      console.log(`[StreamingService] Successfully fetched track stems for trackId: ${trackId}`, response.data);
       return response.data;
     } catch (error: any) {
-      console.error('Error fetching track stems:', error);
+      console.error(`[StreamingService] Error fetching track stems for trackId: ${trackId}`, error);
       return {
         success: false,
         message: error.response?.data?.message || 'Failed to fetch track stems',
@@ -128,8 +134,10 @@ class StreamingService {
 
 // guidePath → stageId 기반으로 presigned URL 요청
 async getGuidePresignedUrlByStageId(stageId: string): Promise<StreamingResponse<{ presignedUrl: string; urlExpiresAt: string }>> {
+  console.log(`[StreamingService] Requesting guide presigned URL by stageId: ${stageId}`);
   try {
     const response = await api.get(`/streaming/stage/${stageId}/guide`);
+    console.log(`[StreamingService] Successfully fetched guide presigned URL by stageId: ${stageId}`, response.data);
     
     // 백엔드가 직접 데이터 객체를 반환하므로 success wrapper로 감싸서 반환
     return {
@@ -137,7 +145,7 @@ async getGuidePresignedUrlByStageId(stageId: string): Promise<StreamingResponse<
       data: response.data,
     };
   } catch (error: any) {
-    console.error('Error fetching guide streaming URL by stageId:', error);
+    console.error(`[StreamingService] Error fetching guide streaming URL by stageId: ${stageId}`, error);
     return {
       success: false,
       message: error.response?.data?.message || 'Failed to fetch guide streaming URL',
@@ -146,8 +154,10 @@ async getGuidePresignedUrlByStageId(stageId: string): Promise<StreamingResponse<
 }
 
   async getGuidePresignedUrlbyUpstream(upstreamId: string): Promise<StreamingResponse<{ presignedUrl: string; urlExpiresAt: string }>> {
+    console.log(`[StreamingService] Requesting guide presigned URL by upstreamId: ${upstreamId}`);
     try {
       const response = await api.get(`/streaming/upstream/${upstreamId}/guide`);
+      console.log(`[StreamingService] Successfully fetched guide presigned URL by upstreamId: ${upstreamId}`, response.data);
 
       // 백엔드가 직접 데이터 객체를 반환하므로 success wrapper로 감싸서 반환
       return {
@@ -155,7 +165,7 @@ async getGuidePresignedUrlByStageId(stageId: string): Promise<StreamingResponse<
         data: response.data,
       };
     } catch (error: any) {
-      console.error('Error fetching guide streaming URL by upstreamId:', error);
+      console.error(`[StreamingService] Error fetching guide streaming URL by upstreamId: ${upstreamId}`, error);
       return {
         success: false,
         message: error.response?.data?.message || 'Failed to fetch guide streaming URL',
@@ -166,11 +176,13 @@ async getGuidePresignedUrlByStageId(stageId: string): Promise<StreamingResponse<
 
   // 특정 버전의 마스터 스템 파일들 스트리밍 URL 조회
   async getMasterStemStreams(trackId: string, version: number): Promise<StreamingResponse<TrackStemsResponse>> {
+    console.log(`[StreamingService] Requesting master stem streams for trackId: ${trackId}, version: ${version}`);
     try {
       const response = await api.get(`/streaming/track/${trackId}/version/${version}/master-stems`);
+      console.log(`[StreamingService] Successfully fetched master stem streams for trackId: ${trackId}`, response.data);
       return response.data;
     } catch (error: any) {
-      console.error('Error fetching master stem streams:', error);
+      console.error(`[StreamingService] Error fetching master stem streams for trackId: ${trackId}`, error);
       return {
         success: false,
         message: error.response?.data?.message || 'Failed to fetch master stem streams',
@@ -186,8 +198,10 @@ async getGuidePresignedUrlByStageId(stageId: string): Promise<StreamingResponse<
     metadata: AudioMetadata;
     urlExpiresAt: string;
   }>> {
+    console.log(`[StreamingService] Requesting stem streaming URL for stemId: ${stemId}`);
     try {
       const response = await api.get(`/streaming/stem/${stemId}`);
+      console.log(`[StreamingService] Successfully fetched stem streaming URL for stemId: ${stemId}`, response.data);
       
       // 백엔드가 직접 데이터 객체를 반환하므로 success wrapper로 감싸서 반환
       return {
@@ -195,7 +209,7 @@ async getGuidePresignedUrlByStageId(stageId: string): Promise<StreamingResponse<
         data: response.data,
       };
     } catch (error: any) {
-      console.error('Error fetching stem streaming URL:', error);
+      console.error(`[StreamingService] Error fetching stem streaming URL for stemId: ${stemId}`, error);
       return {
         success: false,
         message: error.response?.data?.message || 'Failed to fetch stem streaming URL',
@@ -211,8 +225,10 @@ async getGuidePresignedUrlByStageId(stageId: string): Promise<StreamingResponse<
     metadata: AudioMetadata;
     urlExpiresAt: string;
   }>> {
+    console.log(`[StreamingService] Requesting version stem streaming URL for stemId: ${stemId}`);
     try {
       const response = await api.get(`/streaming/version-stem/${stemId}`);
+      console.log(`[StreamingService] Successfully fetched version stem streaming URL for stemId: ${stemId}`, response.data);
       
       // 백엔드가 직접 데이터 객체를 반환하므로 success wrapper로 감싸서 반환
       return {
@@ -220,7 +236,7 @@ async getGuidePresignedUrlByStageId(stageId: string): Promise<StreamingResponse<
         data: response.data,
       };
     } catch (error: any) {
-      console.error('Error fetching version stem streaming URL:', error);
+      console.error(`[StreamingService] Error fetching version stem streaming URL for stemId: ${stemId}`, error);
       return {
         success: false,
         message: error.response?.data?.message || 'Failed to fetch version stem streaming URL',
@@ -230,11 +246,13 @@ async getGuidePresignedUrlByStageId(stageId: string): Promise<StreamingResponse<
 
   // 여러 스템 파일 스트리밍 URL 일괄 조회
   async getBatchStreamingUrls(stemIds: string[]): Promise<StreamingResponse<BatchStreamingResponse>> {
+    console.log(`[StreamingService] Requesting batch streaming URLs for stemIds: ${stemIds.join(', ')}`);
     try {
       const response = await api.post('/streaming/batch', { stemIds });
+      console.log(`[StreamingService] Successfully fetched batch streaming URLs for stemIds: ${stemIds.join(', ')}`, response.data);
       return response.data;
     } catch (error: any) {
-      console.error('Error fetching batch streaming URLs:', error);
+      console.error(`[StreamingService] Error fetching batch streaming URLs for stemIds: ${stemIds.join(', ')}`, error);
       return {
         success: false,
         message: error.response?.data?.message || 'Failed to fetch batch streaming URLs',
@@ -249,14 +267,16 @@ async getGuidePresignedUrlByStageId(stageId: string): Promise<StreamingResponse<
     totalStems: number;
     urlExpiresAt: string;
   }>> {
+    console.log(`[StreamingService] Requesting upstream stems for upstreamId: ${upstreamId}`);
     try {
       const response = await api.get(`/streaming/upstream/${upstreamId}/stems`);
+      console.log(`[StreamingService] Successfully fetched upstream stems for upstreamId: ${upstreamId}`, response.data);
       return {
         success: true,
         data: response.data,
       };
     } catch (error: any) {
-      console.error('Error fetching upstream stems:', error);
+      console.error(`[StreamingService] Error fetching upstream stems for upstreamId: ${upstreamId}`, error);
       return {
         success: false,
         message: error.response?.data?.message || 'Failed to fetch upstream stems',
@@ -271,8 +291,10 @@ async getGuidePresignedUrlByStageId(stageId: string): Promise<StreamingResponse<
     urlExpiresAt: string;
     fileName: string;
   }>> {
+    console.log(`[StreamingService] Requesting stage guide for stageId: ${stageId}`);
     try {
       const response = await api.get(`/streaming/stage/${stageId}/guide`);
+      console.log(`[StreamingService] Successfully fetched stage guide for stageId: ${stageId}`, response.data);
       
       // 백엔드가 직접 데이터 객체를 반환하므로 success wrapper로 감싸서 반환
       return {
@@ -280,7 +302,7 @@ async getGuidePresignedUrlByStageId(stageId: string): Promise<StreamingResponse<
         data: response.data,
       };
     } catch (error: any) {
-      console.error('Error fetching stage guide:', error);
+      console.error(`[StreamingService] Error fetching stage guide for stageId: ${stageId}`, error);
       return {
         success: false,
         message: error.response?.data?.message || 'Failed to fetch stage guide',
@@ -295,8 +317,10 @@ async getGuidePresignedUrlByStageId(stageId: string): Promise<StreamingResponse<
     urlExpiresAt: string;
     fileName: string;
   }>> {
+    console.log(`[StreamingService] Requesting upstream guide streaming URL for upstreamId: ${upstreamId}`);
     try {
       const response = await api.get(`/streaming/upstream/${upstreamId}/guide`);
+      console.log(`[StreamingService] Successfully fetched upstream guide streaming URL for upstreamId: ${upstreamId}`, response.data);
       
       // 백엔드가 직접 데이터 객체를 반환하므로 success wrapper로 감싸서 반환
       return {
@@ -304,7 +328,7 @@ async getGuidePresignedUrlByStageId(stageId: string): Promise<StreamingResponse<
         data: response.data,
       };
     } catch (error: any) {
-      console.error('Error fetching upstream guide:', error);
+      console.error(`[StreamingService] Error fetching upstream guide for upstreamId: ${upstreamId}`, error);
       return {
         success: false,
         message: error.response?.data?.message || 'Failed to fetch upstream guide',
@@ -323,6 +347,7 @@ async getGuidePresignedUrlByStageId(stageId: string): Promise<StreamingResponse<
     data?: GuidePathStreamingResponse;
     message?: string;
   }> {
+    console.log(`[StreamingService] Requesting stem peaks presigned URL for trackId: ${trackId}, stemId: ${stemId}`);
     try {
       const requestData: StemPeaksPresignedUrlDto = {
         trackId,
@@ -330,13 +355,14 @@ async getGuidePresignedUrlByStageId(stageId: string): Promise<StreamingResponse<
       };
 
       const response = await api.post<GuidePathStreamingResponse>('/streaming/stem-peaks-presigned-url', requestData);
+      console.log(`[StreamingService] Successfully fetched stem peaks presigned URL for trackId: ${trackId}, stemId: ${stemId}`, response.data);
       
       return {
         success: true,
         data: response.data,
       };
     } catch (error: any) {
-      console.error('Stem peaks presigned URL error:', error);
+      console.error(`[StreamingService] Error fetching stem peaks presigned URL for trackId: ${trackId}, stemId: ${stemId}`, error);
       return {
         success: false,
         message: error.response?.data?.message || 'Failed to get stem peaks presigned URL',
@@ -353,19 +379,21 @@ async getGuidePresignedUrlByStageId(stageId: string): Promise<StreamingResponse<
     presignedUrl: string;
     urlExpiresAt: string;
   }>> {
+    console.log(`[StreamingService] Requesting guide waveform presigned URL for upstreamId: ${upstreamId}`);
     try {
       const requestData: GuideWaveformPresignedUrlDto = {
         upstreamId
       };
 
       const response = await api.post<GuidePathStreamingResponse>('/streaming/guide-waveform-presigned-url', requestData);
+      console.log(`[StreamingService] Successfully fetched guide waveform presigned URL for upstreamId: ${upstreamId}`, response.data);
       
       return {
         success: true,
         data: response.data,
       };
     } catch (error: any) {
-      console.error('Guide waveform presigned URL error:', error);
+      console.error(`[StreamingService] Error fetching guide waveform presigned URL for upstreamId: ${upstreamId}`, error);
       return {
         success: false,
         message: error.response?.data?.message || 'Failed to get guide waveform presigned URL',
@@ -383,10 +411,12 @@ async getGuidePresignedUrlByStageId(stageId: string): Promise<StreamingResponse<
     data?: any; // peaks 배열 또는 WaveformData 객체
     message?: string;
   }> {
+    console.log(`[StreamingService] Downloading waveform data from presigned URL: ${presignedUrl}`);
     try {
       const response = await fetch(presignedUrl);
       
       if (!response.ok) {
+        console.error(`[StreamingService] HTTP error downloading waveform data: ${response.status} ${response.statusText}`);
         throw new Error(`HTTP error! status: ${response.status}`);
       }
       
@@ -398,7 +428,7 @@ async getGuidePresignedUrlByStageId(stageId: string): Promise<StreamingResponse<
         data: jsonData,
       };
     } catch (error: any) {
-      console.error('Download waveform data error:', error);
+      console.error(`[StreamingService] Error downloading waveform data from ${presignedUrl}:`, error);
       return {
         success: false,
         message: error.message || 'Failed to download waveform data',
@@ -418,6 +448,7 @@ async getGuidePresignedUrlByStageId(stageId: string): Promise<StreamingResponse<
     data?: any; // peaks 배열 또는 WaveformData 객체
     message?: string;
   }> {
+    console.log(`[StreamingService] Getting stem waveform data for stemId: ${stemId}`);
     try {
       // 캐시에서 먼저 확인
       const cacheKey = `stem-${stemId}`;
@@ -432,6 +463,7 @@ async getGuidePresignedUrlByStageId(stageId: string): Promise<StreamingResponse<
 
       // 1. PresignedUrl 요청
       const urlResult = await this.getStemWaveformUrl(stemId);
+      console.log(`[StreamingService] Stem waveform URL result for ${stemId}:`, urlResult);
       
       if (!urlResult.success || !urlResult.data?.presignedUrl) {
         return {
@@ -442,6 +474,7 @@ async getGuidePresignedUrlByStageId(stageId: string): Promise<StreamingResponse<
 
       // 2. JSON 데이터 다운로드
       const dataResult = await this.downloadWaveformData(urlResult.data.presignedUrl);
+      console.log(`[StreamingService] Downloaded stem waveform data result for ${stemId}:`, dataResult);
       
       // 성공한 경우 캐시에 저장
       if (dataResult.success && dataResult.data) {
@@ -450,7 +483,7 @@ async getGuidePresignedUrlByStageId(stageId: string): Promise<StreamingResponse<
       
       return dataResult;
     } catch (error: any) {
-      console.error('Get stem waveform data error:', error);
+      console.error(`[StreamingService] Error getting stem waveform data for stemId: ${stemId}`, error);
       return {
         success: false,
         message: error.message || 'Failed to get stem waveform data',
@@ -468,6 +501,7 @@ async getGuidePresignedUrlByStageId(stageId: string): Promise<StreamingResponse<
     data?: any; // peaks 배열 또는 WaveformData 객체
     message?: string;
   }> {
+    console.log(`[StreamingService] Getting guide waveform data for upstreamId: ${upstreamId}`);
     try {
       // 캐시에서 먼저 확인
       const cacheKey = `guide-${upstreamId}`;
@@ -482,6 +516,7 @@ async getGuidePresignedUrlByStageId(stageId: string): Promise<StreamingResponse<
 
       // 1. PresignedUrl 요청
       const urlResult = await this.getGuideWaveformPresignedUrl(upstreamId);
+      console.log(`[StreamingService] Guide waveform URL result for ${upstreamId}:`, urlResult);
       
       if (!urlResult.success || !urlResult.data?.presignedUrl) {
         return {
@@ -492,6 +527,7 @@ async getGuidePresignedUrlByStageId(stageId: string): Promise<StreamingResponse<
 
       // 2. JSON 데이터 다운로드
       const dataResult = await this.downloadWaveformData(urlResult.data.presignedUrl);
+      console.log(`[StreamingService] Downloaded guide waveform data result for ${upstreamId}:`, dataResult);
       
       // 성공한 경우 캐시에 저장
       if (dataResult.success && dataResult.data) {
@@ -500,7 +536,7 @@ async getGuidePresignedUrlByStageId(stageId: string): Promise<StreamingResponse<
       
       return dataResult;
     } catch (error: any) {
-      console.error('Get guide waveform data error:', error);
+      console.error(`[StreamingService] Error getting guide waveform data for upstreamId: ${upstreamId}`, error);
       return {
         success: false,
         message: error.message || 'Failed to get guide waveform data',
@@ -518,6 +554,7 @@ async getGuidePresignedUrlByStageId(stageId: string): Promise<StreamingResponse<
     data?: any; // peaks 배열 또는 WaveformData 객체
     message?: string;
   }> {
+    console.log(`[StreamingService] Getting version-stem waveform data for stemId: ${stemId}`);
     try {
       // 캐시에서 먼저 확인
       const cacheKey = `version-stem-${stemId}`;
@@ -532,6 +569,7 @@ async getGuidePresignedUrlByStageId(stageId: string): Promise<StreamingResponse<
 
       // 1. PresignedUrl 요청
       const urlResult = await this.getVersionStemWaveformUrl(stemId);
+      console.log(`[StreamingService] Version-stem waveform URL result for ${stemId}:`, urlResult);
       
       if (!urlResult.success || !urlResult.data?.presignedUrl) {
         return {
@@ -542,6 +580,7 @@ async getGuidePresignedUrlByStageId(stageId: string): Promise<StreamingResponse<
 
       // 2. JSON 데이터 다운로드
       const dataResult = await this.downloadWaveformData(urlResult.data.presignedUrl);
+      console.log(`[StreamingService] Downloaded version-stem waveform data result for ${stemId}:`, dataResult);
       
       // 성공한 경우 캐시에 저장
       if (dataResult.success && dataResult.data) {
@@ -550,7 +589,7 @@ async getGuidePresignedUrlByStageId(stageId: string): Promise<StreamingResponse<
       
       return dataResult;
     } catch (error: any) {
-      console.error('Get version-stem waveform data error:', error);
+      console.error(`[StreamingService] Error getting version-stem waveform data for stemId: ${stemId}`, error);
       return {
         success: false,
         message: error.message || 'Failed to get version-stem waveform data',
