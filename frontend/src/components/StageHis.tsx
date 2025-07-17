@@ -229,7 +229,7 @@ const StageHis: React.FC<StageHisProps> = ({
                     </div>
                     <div className="flex items-center space-x-2">
                       <Calendar className="w-3 h-3" />
-                      <span>{formatDate(stage.created_at.toISOString())}</span>
+                      <span>{formatDate(stage.created_at.toString())}</span>
                     </div>
                   </div>
 

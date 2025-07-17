@@ -6,6 +6,9 @@ import { CreateStageDto } from './dto/createStage.dto';
 import { SqsService } from '../sqs/service/sqs.service';
 import { VersionStemService } from '../version-stem/version-stem.service';
 import { StageReviewerService } from 'src/stage-reviewer/stage-reviewer.service';
+import { NotificationGateway, NotificationPayload } from '../notification/notification.gateway';
+import { TrackCollaborator } from '../track_collaborator/track_collaborator.entity';
+import { Track } from '../track/track.entity';
 
 @Injectable()
 export class StageService {
@@ -14,9 +17,14 @@ export class StageService {
     constructor(    
         @InjectRepository(Stage)
         private stageRepository: Repository<Stage>,
+        @InjectRepository(Track)
+        private trackRepository: Repository<Track>,
+        @InjectRepository(TrackCollaborator)
+        private trackCollaboratorRepository: Repository<TrackCollaborator>,
         private sqsService: SqsService,
         private versionStemService: VersionStemService,
         private stageReviewerService: StageReviewerService,
+        private notificationGateway: NotificationGateway,
     ) {}
 
     async createStage(createStageDto: CreateStageDto) {
@@ -49,6 +57,9 @@ export class StageService {
         if (!stageReviewer) {
             throw new BadRequestException('Failed to create stage reviewer');
         }
+
+        // 알림 전송: 트랙의 모든 사용자에게 새 스테이지 생성 알림
+        await this.sendStageCreatedNotification(savedStage);
 
         return {
             success: true,
@@ -195,5 +206,57 @@ export class StageService {
             success: true,
             message: 'Stage deleted successfully',
         };
+    }
+
+    // 스테이지 생성 알림 전송
+    private async sendStageCreatedNotification(stage: Stage) {
+        try {
+            // 트랙 정보와 소유자, 협업자 정보 조회
+            const track = await this.trackRepository.findOne({
+                where: { id: stage.track.id },
+                relations: ['owner_id', 'collaborators', 'collaborators.user_id'],
+            });
+
+            if (!track) {
+                this.logger.error(`Track not found for stage notification: ${stage.id}`);
+                return;
+            }
+
+            // 알림을 받을 사용자 ID 목록 생성 (소유자 + 협업자)
+            const userIds: string[] = [track.owner_id.id];
+            
+            // 협업자 추가
+            if (track.collaborators) {
+                track.collaborators.forEach(collaborator => {
+                    if (collaborator.user_id?.id && !userIds.includes(collaborator.user_id.id)) {
+                        userIds.push(collaborator.user_id.id);
+                    }
+                });
+            }
+
+            // 알림 페이로드 생성
+            const notification: NotificationPayload = {
+                id: `stage_created_${stage.id}_${Date.now()}`,
+                type: 'stage_created',
+                title: '새 스테이지가 생성되었습니다',
+                message: `"${track.title}" 트랙에 "${stage.title}" 스테이지가 생성되었습니다.`,
+                data: {
+                    stageId: stage.id,
+                    trackId: track.id,
+                    stageTitle: stage.title,
+                    trackTitle: track.title,
+                    version: stage.version,
+                },
+                timestamp: new Date().toISOString(),
+                read: false,
+            };
+
+            // 각 사용자에게 알림 전송
+            this.notificationGateway.sendNotificationToUsers(userIds, notification);
+
+            this.logger.log(`Stage created notification sent to ${userIds.length} users for stage: ${stage.id}`);
+        } catch (error) {
+            this.logger.error(`Failed to send stage created notification: ${error.message}`);
+        }
     }
 }
