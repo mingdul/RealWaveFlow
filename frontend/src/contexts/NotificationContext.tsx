@@ -50,8 +50,8 @@ export const NotificationProvider: React.FC<NotificationProviderProps> = ({ chil
       
       return () => {
         clearTimeout(timer);
-        if (currentSocket) {
-          currentSocket.disconnect();
+        if (socket) {
+          socket.disconnect();
         }
       };
     } else {
@@ -99,6 +99,7 @@ export const NotificationProvider: React.FC<NotificationProviderProps> = ({ chil
         'https://waveflow.pro';
       
       console.log('🔔 [NotificationSocket] Connecting to:', `${baseUrl}/notifications`);
+      console.log('🔔 [NotificationSocket] Current user:', user?.email);
       
       // 알림 전용 소켓 연결 (/notifications 네임스페이스)
       const notificationSocket = io(`${baseUrl}/notifications`, {
@@ -116,23 +117,25 @@ export const NotificationProvider: React.FC<NotificationProviderProps> = ({ chil
 
       // 연결 성공
       notificationSocket.on('connect', () => {
-        console.log('🔔 [NotificationSocket] ✅ Connected successfully');
-        });
+        console.log('🔔 [NotificationSocket] ✅ Connected successfully, Socket ID:', notificationSocket.id);
+        showToast('success', '실시간 알림이 연결되었습니다.', 2000);
+      });
 
       // 연결 해제
       notificationSocket.on('disconnect', (reason) => {
         console.log('🔔 [NotificationSocket] ❌ Disconnected:', reason);
+        showToast('warning', '실시간 알림 연결이 해제되었습니다.', 2000);
       });
 
       // 알림 서비스 연결 확인
       notificationSocket.on('notification_connected', (data) => {
-        console.log('Notification service connected:', data);
-        showToast('success', '실시간 알림이 활성화되었습니다.');
+        console.log('🔔 [NotificationSocket] Notification service connected:', data);
+        showToast('success', '알림 서비스가 활성화되었습니다.', 3000);
       });
 
       // 새 알림 수신
       notificationSocket.on('notification', (notification: Notification) => {
-        console.log('🔔 [NotificationSocket] New notification:', notification.title);
+        console.log('🔔 [NotificationSocket] 📢 New notification received:', notification.title);
         addNotification(notification);
         
         // 토스트로 알림 표시
@@ -141,7 +144,8 @@ export const NotificationProvider: React.FC<NotificationProviderProps> = ({ chil
 
       // 연결 오류
       notificationSocket.on('connect_error', (error) => {
-        console.error('🔔 [NotificationSocket] Connection error:', error.message);
+        console.error('🔔 [NotificationSocket] ❌ Connection error:', error.message);
+        showToast('error', '실시간 알림 연결에 실패했습니다.', 3000);
         
         if (error.message.includes('Unauthorized')) {
           showToast('error', '인증이 만료되었습니다. 다시 로그인해주세요.');
@@ -158,23 +162,20 @@ export const NotificationProvider: React.FC<NotificationProviderProps> = ({ chil
 
       // 재연결 시 기존 알림 다시 로드
       notificationSocket.on('reconnect', (_attemptNumber) => {
-        console.log('🔔 [NotificationProvider] WebSocket 재연결됨');
+        console.log('🔔 [NotificationProvider] WebSocket 재연결됨 - 알림 다시 로드');
         if (user) {
           loadExistingNotifications();
         }
       });
 
-      // 재연결 실패
-      notificationSocket.on('reconnect_failed', () => {
-        console.error('🔔 [NotificationSocket] Reconnection failed');
-        showToast('warning', '실시간 알림 연결에 실패했습니다.');
-      });
-
+      // 연결 소켓 저장
       setSocket(notificationSocket);
       
+      console.log('🔔 [NotificationSocket] Socket initialization completed');
+      
     } catch (error) {
-      console.error('🔔 [NotificationSocket] Failed to initialize:', error);
-      showToast('error', '실시간 알림 연결에 실패했습니다.');
+      console.error('🔔 [NotificationSocket] ❌ Failed to initialize socket:', error);
+      showToast('error', '알림 시스템 초기화에 실패했습니다.');
     }
   };
 
