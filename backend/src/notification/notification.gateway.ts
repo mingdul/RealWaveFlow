@@ -27,8 +27,9 @@ export interface NotificationPayload {
     origin: [
       'http://localhost:5173', // Vite 개발 서버
       'http://localhost:3000', // React 개발 서버
-      process.env.FRONTEND_URL || 'http://13.125.231.115:3000',
-      'http://13.125.231.115:3000', // EC2 프론트엔드 URL
+      'https://waveflow.pro', // 프로덕션 URL
+      'http://13.125.231.115:3000', // EC2 프론트엔드 URL (백업)
+      process.env.FRONTEND_URL || 'https://waveflow.pro',
     ],
     credentials: true, // 쿠키 전송 허용
     methods: ['GET', 'POST'],

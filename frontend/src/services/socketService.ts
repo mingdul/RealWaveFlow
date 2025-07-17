@@ -24,7 +24,7 @@ class SocketService {
       return;
     }
 
-    this.socket = io(import.meta.env.VITE_API_URL || 'http://13.125.231.115:8080', {
+    this.socket = io(import.meta.env.VITE_API_URL || 'https://waveflow.pro/api', {
       withCredentials: true, // 쿠키 전송 허용 (JWT 토큰 포함)
       autoConnect: false, // 수동으로 연결 제어
       transports: ['websocket', 'polling'],
