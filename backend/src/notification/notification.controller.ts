@@ -1,8 +1,7 @@
-import { Controller, Get, Patch, Param, UseGuards, Req, Query, Logger, Post } from '@nestjs/common';
+import { Controller, Get, Patch, Param, UseGuards, Req, Query, Logger, Post, Request } from '@nestjs/common';
 import { JwtAuthGuard } from '../auth/jwt-auth.guard';
 import { NotificationService } from './notification.service';
 import { NotificationScheduler } from './notification.scheduler';
-import { Request } from 'express';
 
 @Controller('notifications')
 @UseGuards(JwtAuthGuard)
@@ -17,13 +16,18 @@ export class NotificationController {
   // 사용자의 모든 알림 조회
   @Get()
   async getUserNotifications(
-    @Req() req: Request,
+    @Request() req: any,
     @Query('limit') limit?: string,
     @Query('unread') unread?: string,
   ) {
     try {
-      const userId = (req as any).user.id;
+      console.log('[DEBUG] req.user:', req.user);
+      const userId = req.user?.id;
       this.logger.log(`📋 [NotificationController] 사용자 ${userId}의 알림 조회 요청`);
+
+      if (!userId) {
+        throw new Error('User ID not found in request');
+      }
 
       let notifications;
       
@@ -60,9 +64,9 @@ export class NotificationController {
 
   // 미읽은 알림 개수 조회
   @Get('unread-count')
-  async getUnreadCount(@Req() req: Request) {
+  async getUnreadCount(@Request() req: any) {
     try {
-      const userId = (req as any).user.id;
+      const userId = req.user.id;
       this.logger.log(`🔢 [NotificationController] 사용자 ${userId}의 미읽은 알림 개수 조회 요청`);
 
       const count = await this.notificationService.getUnreadCount(userId);
@@ -84,9 +88,9 @@ export class NotificationController {
 
   // 특정 알림을 읽음으로 표시
   @Patch(':id/read')
-  async markAsRead(@Param('id') notificationId: string, @Req() req: Request) {
+  async markAsRead(@Param('id') notificationId: string, @Request() req: any) {
     try {
-      const userId = (req as any).user.id;
+      const userId = req.user.id;
       this.logger.log(`📖 [NotificationController] 알림 읽음 처리 요청: ${notificationId} by user ${userId}`);
 
       const success = await this.notificationService.markAsRead(notificationId, userId);
@@ -99,7 +103,7 @@ export class NotificationController {
       } else {
         return {
           success: false,
-          message: 'Notification not found or already read',
+          message: 'Failed to mark notification as read or notification not found',
         };
       }
     } catch (error) {
@@ -114,16 +118,16 @@ export class NotificationController {
 
   // 모든 알림을 읽음으로 표시
   @Patch('mark-all-read')
-  async markAllAsRead(@Req() req: Request) {
+  async markAllAsRead(@Request() req: any) {
     try {
-      const userId = (req as any).user.id;
+      const userId = req.user.id;
       this.logger.log(`📖 [NotificationController] 모든 알림 읽음 처리 요청 by user ${userId}`);
 
       const count = await this.notificationService.markAllAsRead(userId);
 
       return {
         success: true,
-        message: `${count} notifications marked as read successfully`,
+        message: 'All notifications marked as read successfully',
         data: { updatedCount: count },
       };
     } catch (error) {
@@ -138,23 +142,23 @@ export class NotificationController {
 
   // 읽은 알림 수동 삭제 (관리자용)
   @Post('cleanup/read')
-  async cleanupReadNotifications(@Req() req: Request) {
+  async cleanupReadNotifications(@Request() req: any) {
     try {
-      const userId = (req as any).user.id;
-      this.logger.log(`🗑️ [NotificationController] 읽은 알림 수동 삭제 요청 by user ${userId}`);
+      const userId = req.user.id;
+      this.logger.log(`🗑️ [NotificationController] 읽은 알림 정리 요청 by user ${userId}`);
 
       const deletedCount = await this.notificationService.deleteReadNotifications();
 
       return {
         success: true,
-        message: `${deletedCount} read notifications deleted successfully`,
+        message: 'Read notifications cleanup completed',
         data: { deletedCount },
       };
     } catch (error) {
-      this.logger.error(`❌ [NotificationController] 읽은 알림 삭제 실패: ${error.message}`);
+      this.logger.error(`❌ [NotificationController] 읽은 알림 정리 실패: ${error.message}`);
       return {
         success: false,
-        message: 'Failed to delete read notifications',
+        message: 'Failed to cleanup read notifications',
         error: error.message,
       };
     }
@@ -162,16 +166,16 @@ export class NotificationController {
 
   // 전체 알림 정리 (관리자용)
   @Post('cleanup/all')
-  async manualCleanup(@Req() req: Request) {
+  async manualCleanup(@Request() req: any) {
     try {
-      const userId = (req as any).user.id;
+      const userId = req.user.id;
       this.logger.log(`🗑️ [NotificationController] 전체 알림 정리 요청 by user ${userId}`);
 
       const result = await this.notificationScheduler.manualCleanup();
 
       return {
         success: true,
-        message: `Manual cleanup completed successfully`,
+        message: 'Manual cleanup completed',
         data: result,
       };
     } catch (error) {

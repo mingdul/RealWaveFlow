@@ -200,7 +200,10 @@ export class NotificationGateway
     const userRoom = `user_${userId}`;
     const isUserConnected = this.connectedUsers.has(userId);
     
-    this.logger.log(`🔔 [NotificationGateway] Sending "${notification.title}" to user (connected: ${isUserConnected})`);
+    // 연결된 사용자 목록 로그 추가
+    const connectedUserIds = Array.from(this.connectedUsers.keys());
+    this.logger.log(`🔔 [NotificationGateway] Connected users: [${connectedUserIds.join(', ')}]`);
+    this.logger.log(`🔔 [NotificationGateway] Sending "${notification.title}" to user ${userId} (connected: ${isUserConnected})`);
     
     // 💾 DB에 알림 저장
     let savedNotification: any;
@@ -219,7 +222,7 @@ export class NotificationGateway
         id: savedNotification.id,
       };
       this.server.to(userRoom).emit('notification', notificationWithId);
-      this.logger.log(`🔔 [NotificationGateway] Notification sent via websocket`);
+      this.logger.log(`🔔 [NotificationGateway] Notification sent via websocket to room: ${userRoom}`);
     } catch (error) {
       this.logger.error(`🔔 [NotificationGateway] Websocket send error: ${error.message}`);
     }
