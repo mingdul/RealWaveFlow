@@ -50,12 +50,12 @@ jobs:
         DB_NAME=postgres
         JWT_SECRET=${{ secrets.JWT_SECRET }}
         RESEND_API_KEY=${{ secrets.RESEND_API_KEY }}
-        FRONTEND_URL=${{ secrets.FRONTEND_URL }}
+        FRONTEND_URL=https://waveflow.pro
         EMAIL_USER=${{ secrets.EMAIL_USER }}
         EMAIL_PASS=${{ secrets.EMAIL_PASS }}
         GOOGLE_CLIENT_ID=${{ secrets.GOOGLE_CLIENT_ID }}
         GOOGLE_CLIENT_SECRET=${{ secrets.GOOGLE_CLIENT_SECRET }}
-        GOOGLE_CALLBACK_URL=${{ secrets.GOOGLE_CALLBACK_URL }}
+        GOOGLE_CALLBACK_URL=https://waveflow.pro/auth/google/callback
         AWS_REGION=${{ secrets.AWS_REGION }}
         AWS_ACCESS_KEY_ID_FOR_GITACTIONS=${{ secrets.AWS_ACCESS_KEY_ID_FOR_GITACTIONS }}
         AWS_SECRET_ACCESS_KEY_FOR_GITACTIONS=${{ secrets.AWS_SECRET_ACCESS_KEY_FOR_GITACTIONS }}
@@ -66,6 +66,51 @@ jobs:
 
         echo "✅ Environment file created successfully"
 
+        # Nginx 설정 업데이트
+        echo "Updating Nginx configuration..."
+        
+        # Nginx 설정 파일 생성
+        cat > ./nginx-waveflow.conf << 'NGINXEOF'
+        server {
+            listen 80;
+            server_name waveflow.pro www.waveflow.pro;
+            
+            # HTTP에서 HTTPS로 리다이렉션
+            return 301 https://$host$request_uri;
+        }
+
+        server {
+            listen 443 ssl;
+            server_name waveflow.pro www.waveflow.pro;
+            
+            # SSL 인증서 설정 (Certbot이 자동으로 설정함)
+            ssl_certificate /etc/letsencrypt/live/waveflow.pro/fullchain.pem;
+            ssl_certificate_key /etc/letsencrypt/live/waveflow.pro/privkey.pem;
+            
+            # Docker 컨테이너로 프록시
+            location / {
+                proxy_pass http://localhost:3000;  # 프론트엔드 컨테이너 포트
+                proxy_set_header Host $host;
+                proxy_set_header X-Real-IP $remote_addr;
+                proxy_set_header X-Forwarded-For $proxy_add_x_forwarded_for;
+                proxy_set_header X-Forwarded-Proto $scheme;
+            }
+            
+            location /api/ {
+                proxy_pass http://localhost:8080/;  # 백엔드 컨테이너 포트
+                proxy_set_header Host $host;
+                proxy_set_header X-Real-IP $remote_addr;
+                proxy_set_header X-Forwarded-For $proxy_add_x_forwarded_for;
+                proxy_set_header X-Forwarded-Proto $scheme;
+            }
+        }
+        NGINXEOF
+        
+        # Nginx 설정 적용
+        sudo cp ./nginx-waveflow.conf /etc/nginx/sites-available/default
+        sudo nginx -t && sudo systemctl restart nginx
+        echo "✅ Nginx configuration updated successfully"
+
         # Docker 정리 및 재빌드
         echo "Starting Docker deployment..."
         sudo docker-compose down --remove-orphans || true
@@ -74,7 +119,7 @@ jobs:
 
         # 환경변수 설정 및 빌드
         echo "Building containers..."
-        export VITE_API_URL=http://${{ secrets.EC2_HOST }}:8080
+        export VITE_API_URL=https://waveflow.pro/api
         sudo -E docker-compose build --no-cache
         sudo docker-compose up -d
 
@@ -99,9 +144,9 @@ jobs:
 
         echo "================================"
         echo "✅ DEVELOPMENT deployment completed!"
-        echo "🔗 Backend: http://${{ secrets.EC2_HOST }}:8080"
-        echo "🔗 Frontend: http://${{ secrets.EC2_HOST }}:3000"
-        echo "🔗 API Docs: http://${{ secrets.EC2_HOST }}:8080/api"
+        echo "🔗 Backend: https://waveflow.pro/api"
+        echo "🔗 Frontend: https://waveflow.pro"
+        echo "🔗 API Docs: https://waveflow.pro/api"
         echo "================================"
         EOF
 
@@ -113,7 +158,7 @@ jobs:
       if: success()
       run: |
         curl -X POST -H 'Content-type: application/json' --data '{
-          "text": "🧪 개발 서버 배포 성공!\n📋 Branch: `ec2test`\n👤 Author: `${{ github.actor }}`\n🔗 Backend: http://${{ secrets.EC2_HOST }}:8080\n🔗 Frontend: http://${{ secrets.EC2_HOST }}:3000\n💡 팀원들은 이제 서버에서 테스트 가능합니다!"
+          "text": "🧪 개발 서버 배포 성공!\n📋 Branch: `ec2test`\n👤 Author: `${{ github.actor }}`\n🔗 Backend: https://waveflow.pro/api\n🔗 Frontend: https://waveflow.pro\n💡 팀원들은 이제 서버에서 테스트 가능합니다!"
         }' ${{ secrets.SLACK_WEBHOOK_URL }}
 
     - name: Notify Team on Failure
