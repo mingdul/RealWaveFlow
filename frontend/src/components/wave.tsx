@@ -41,6 +41,7 @@ const Wave = ({
   const [isReady, setIsReady] = useState(false);
   const [isDestroyed, setIsDestroyed] = useState(false);
   const currentAudioUrlRef = useRef<string>('');
+  const [isAudioLoading, setIsAudioLoading] = useState(false);
 
   // WaveSurfer 인스턴스 생성 (한 번만)
   useEffect(() => {
@@ -119,7 +120,10 @@ const Wave = ({
     }
     
     setIsReady(false);
+    setIsAudioLoading(true);
     currentAudioUrlRef.current = audioUrl;
+
+    const wavesurfer = wavesurferRef.current;
 
     // peaks 데이터가 있으면 함께 로드, 없으면 오디오만 로드
     if (peaks) {
@@ -145,8 +149,6 @@ const Wave = ({
       if (Array.isArray(peaksData) && peaksData.length > 0) {
         console.log(`🌊 Loading with peaks data for ${id}, length: ${peaksData.length}`);
         
-        const wavesurfer = wavesurferRef.current;
-        
         // 성능 최적화: 오디오와 peaks 데이터를 함께 로드
         try {
           // WaveSurfer 2.x 버전에서는 load 메서드에 peaks 데이터를 직접 전달할 수 있음
@@ -158,24 +160,25 @@ const Wave = ({
             if (err.name !== 'AbortError') {
               console.warn('Failed to load audio:', err);
             }
+            setIsAudioLoading(false);
           });
         }
       } else {
         console.warn('Invalid peaks data, loading audio only');
-        const wavesurfer = wavesurferRef.current;
         wavesurfer.load(audioUrl).catch((error) => {
           if (error.name !== 'AbortError') {
             console.warn('Failed to load audio:', error);
           }
+          setIsAudioLoading(false);
         });
       }
     } else {
       console.log(`🎵 Loading audio only for ${id}`);
-      const wavesurfer = wavesurferRef.current;
       wavesurfer.load(audioUrl).catch((error) => {
         if (error.name !== 'AbortError') {
           console.warn('Failed to load audio:', error);
         }
+        setIsAudioLoading(false);
       });
     }
   }, [audioUrl, peaks, id, isDestroyed]);
@@ -211,12 +214,15 @@ const Wave = ({
     }
   }, [currentTime, isReady, isDestroyed]);
 
+  // 실제 로딩 상태 계산 (외부 로딩 상태 또는 내부 오디오 로딩 상태)
+  const isActuallyLoading = isLoading || isAudioLoading;
+
   return (
     <div 
       className={`w-full bg-gray-900 rounded-md shadow-lg p-3 sm:p-4 space-y-3 sm:space-y-4 ${isActive ? 'border-2 border-blue-500' : ''}`}
       onClick={onClick}
     >
-      {isLoading ? (
+      {isActuallyLoading ? (
         <div className="flex flex-col items-center justify-center py-8">
           <div className="mb-3 h-10 w-10 animate-spin rounded-full border-b-2 border-t-2 border-blue-500"></div>
           <span className="text-white font-medium">오디오를 불러오는 중...</span>

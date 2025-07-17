@@ -216,7 +216,7 @@ const StemSetReviewPage = () => {
           if (Array.isArray(waveformResponse.data)) {
             console.log('🌊 [fetchGuideUrl] Guide waveform data is array with length:', waveformResponse.data.length);
           } else if (waveformResponse.data.data && Array.isArray(waveformResponse.data.data)) {
-            console.log('🌊 [fetchGuideUrl] Guide waveform data.data is array with length:', waveformResponse.data.data.data.length);
+            console.log('🌊 [fetchGuideUrl] Guide waveform data.data is array with length:', waveformResponse.data.data.length);
           }
           setGuidePeaks(waveformResponse.data);
           console.log('📦 [fetchGuideUrl] Guide peaks set:', waveformResponse.data);
@@ -728,97 +728,17 @@ const StemSetReviewPage = () => {
               return; // 캐시된 데이터로 완료
             } catch (e) {
               console.warn('⚠️ Failed to parse cached peaks data:', e);
-              // 파싱 오류 시 캐시 삭제
               sessionStorage.removeItem(`peaks-${cacheKey}`);
+              setWaveformLoading(false);
             }
+          } else {
+            console.log('⚠️ [handleIndividualStemClick] Cached audio URL found, but no cached peaks data.');
+            setWaveformLoading(false);
           }
         }
 
-        // 개별 스템의 스트리밍 URL 가져오기
-        let streamingUrl = '';
-        
-        console.log('🔍 [handleIndividualStemClick] Stem data type:', stemData.type);
-        console.log('🔍 [handleIndividualStemClick] Stem data:', stemData);
-        
-        if (stemData.type === 'unchanged' && stemData.stem?.id) {
-          // version-stem API 사용 (version_stem 테이블)
-          try {
-            console.log('🔍 [handleIndividualStemClick] Using version-stem API for unchanged stem:', stemData.stem.id);
-            const versionStemResponse = await streamingService.getVersionStemStreamingUrl(stemData.stem.id);
-            console.log('🔍 [handleIndividualStemClick] Version stem response:', versionStemResponse);
-            
-            if (versionStemResponse.success && versionStemResponse.data?.presignedUrl) {
-              streamingUrl = versionStemResponse.data.presignedUrl;
-              console.log('✅ [handleIndividualStemClick] Version stem streaming URL obtained');
-              // 캐시에 저장
-              sessionStorage.setItem(`audio-${cacheKey}`, streamingUrl);
-            } else {
-              console.warn('⚠️ [handleIndividualStemClick] Version stem response not successful:', versionStemResponse);
-              // 실패 시 일반 stem API로 fallback 시도
-              try {
-                console.log('🔄 [handleIndividualStemClick] Trying fallback to regular stem API');
-                const fallbackResponse = await streamingService.getStemStreamingUrl(stemData.stem.id);
-                if (fallbackResponse.success && fallbackResponse.data?.presignedUrl) {
-                  streamingUrl = fallbackResponse.data.presignedUrl;
-                  console.log('✅ [handleIndividualStemClick] Fallback successful');
-                  // 캐시에 저장
-                  sessionStorage.setItem(`audio-${cacheKey}`, streamingUrl);
-                }
-              } catch (fallbackError) {
-                console.warn('Fallback also failed:', fallbackError);
-              }
-            }
-          } catch (error: any) {
-            console.warn('Version stem streaming failed:', error);
-            console.warn('Error details:', error.response?.data);
-            // 실패 시 일반 stem API로 fallback 시도
-            try {
-              console.log('🔄 [handleIndividualStemClick] Trying fallback to regular stem API after error');
-              const fallbackResponse = await streamingService.getStemStreamingUrl(stemData.stem.id);
-              if (fallbackResponse.success && fallbackResponse.data?.presignedUrl) {
-                streamingUrl = fallbackResponse.data.presignedUrl;
-                console.log('✅ [handleIndividualStemClick] Fallback successful after error');
-                // 캐시에 저장
-                sessionStorage.setItem(`audio-${cacheKey}`, streamingUrl);
-              }
-            } catch (fallbackError) {
-              console.warn('Fallback also failed:', fallbackError);
-            }
-          }
-        } else if ((stemData.type === 'new' || stemData.type === 'modify') && stemData.stem?.id) {
-          // 일반 stem API 사용 (stem 테이블)
-          try {
-            console.log('🔍 [handleIndividualStemClick] Using regular stem API for new/modify stem:', stemData.stem.id);
-            const stemResponse = await streamingService.getStemStreamingUrl(stemData.stem.id);
-            console.log('🔍 [handleIndividualStemClick] Stem response:', stemResponse);
-            
-            if (stemResponse.success && stemResponse.data?.presignedUrl) {
-              streamingUrl = stemResponse.data.presignedUrl;
-              console.log('✅ [handleIndividualStemClick] Regular stem streaming URL obtained');
-              // 캐시에 저장
-              sessionStorage.setItem(`audio-${cacheKey}`, streamingUrl);
-            } else {
-              console.warn('⚠️ [handleIndividualStemClick] Stem response not successful:', stemResponse);
-            }
-          } catch (error: any) {
-            console.warn('Regular stem streaming failed:', error);
-            console.warn('Error details:', error.response?.data);
-          }
-        } else {
-          console.warn('⚠️ [handleIndividualStemClick] Invalid stem data type or missing stem ID:', stemData);
-        }
-
-        // 개별 스템의 스트리밍 URL 및 waveform 데이터 가져오기 (병렬 처리)
-        let streamingUrlPromise: Promise<any>;
-        let waveformDataPromise: Promise<any>;
-
-        if (stemData.type === 'unchanged' && stemData.stem?.id) {
-          streamingUrlPromise = streamingService.getVersionStemStreamingUrl(stemData.stem.id);
-          waveformDataPromise = streamingService.getVersionStemWaveformData(stemData.stem.id);
-        } else if ((stemData.type === 'new' || stemData.type === 'modify') && stemData.stem?.id) {
-          streamingUrlPromise = streamingService.getStemStreamingUrl(stemData.stem.id);
-          waveformDataPromise = streamingService.getStemWaveformData(stemData.stem.id);
-        } else {
+        // 유효성 검사
+        if (!stemData.stem?.id) {
           console.warn('⚠️ [handleIndividualStemClick] Invalid stem data type or missing stem ID:', stemData);
           showWarning('유효하지 않은 스템 데이터입니다.');
           setStemLoading(false);
@@ -826,13 +746,34 @@ const StemSetReviewPage = () => {
           return;
         }
 
-        console.log('🔍 [handleIndividualStemClick] Before Promise.all - stemLoading:', stemLoading, 'waveformLoading:', waveformLoading);
+        // API 호출 함수 결정
+        let getStreamingUrl: () => Promise<any>;
+        let getWaveformData: () => Promise<any>;
+
+        if (stemData.type === 'unchanged') {
+          getStreamingUrl = () => streamingService.getVersionStemStreamingUrl(stemData.stem.id);
+          getWaveformData = () => streamingService.getVersionStemWaveformData(stemData.stem.id);
+        } else if (stemData.type === 'new' || stemData.type === 'modify') {
+          getStreamingUrl = () => streamingService.getStemStreamingUrl(stemData.stem.id);
+          getWaveformData = () => streamingService.getStemWaveformData(stemData.stem.id);
+        } else {
+          console.warn('⚠️ [handleIndividualStemClick] Unknown stem type:', stemData.type);
+          showWarning('알 수 없는 스템 타입입니다.');
+          setStemLoading(false);
+          setWaveformLoading(false);
+          return;
+        }
+
+        // 병렬로 오디오 URL과 파형 데이터 가져오기
+        console.log('🔍 [handleIndividualStemClick] Fetching audio and waveform data in parallel...');
         try {
           const [audioResponse, waveformResponse] = await Promise.all([
-            streamingUrlPromise,
-            waveformDataPromise,
+            getStreamingUrl(),
+            getWaveformData(),
           ]);
-          console.log('🔍 [handleIndividualStemClick] After Promise.all - audioResponse:', audioResponse, 'waveformResponse:', waveformResponse);
+
+          console.log('📦 [handleIndividualStemClick] Audio response:', audioResponse);
+          console.log('📦 [handleIndividualStemClick] Waveform response:', waveformResponse);
 
           // 오디오 URL 처리
           if (audioResponse.success && audioResponse.data?.presignedUrl) {
@@ -841,9 +782,9 @@ const StemSetReviewPage = () => {
             sessionStorage.setItem(`audio-${cacheKey}`, url);
             console.log('✅ [handleIndividualStemClick] Streaming URL obtained:', url);
           } else {
-            console.warn('⚠️ [handleIndividualStemClick] No streaming URL available for stem. Audio response:', audioResponse);
+            console.warn('⚠️ [handleIndividualStemClick] No streaming URL available. Audio response:', audioResponse);
             showWarning('이 스템의 오디오 파일을 불러올 수 없습니다.');
-            setExtraAudio(''); // 오디오 URL 초기화
+            setExtraAudio('');
           }
 
           // 파형 데이터 처리
@@ -852,22 +793,22 @@ const StemSetReviewPage = () => {
             sessionStorage.setItem(`peaks-${cacheKey}`, JSON.stringify(waveformResponse.data));
             console.log('📦 [handleIndividualStemClick] Waveform data loaded successfully');
           } else {
-            console.warn('⚠️ [handleIndividualStemClick] No waveform data available for this stem. Waveform response:', waveformResponse);
+            console.warn('⚠️ [handleIndividualStemClick] No waveform data available. Waveform response:', waveformResponse);
             setExtraPeaks(null);
           }
 
         } catch (error) {
-          console.error('❌ [handleIndividualStemClick] Error loading individual stem or waveform:', error);
+          console.error('❌ [handleIndividualStemClick] Error loading stem data:', error);
           showError('스템을 불러오는 중 오류가 발생했습니다.');
           setExtraAudio('');
           setExtraPeaks(null);
         } finally {
-          console.log('🔍 [handleIndividualStemClick] In finally block - setting loading to false');
           setStemLoading(false);
           setWaveformLoading(false);
         }
+
       } catch (error) {
-        console.error('Error in handleIndividualStemClick outer try-catch:', error);
+        console.error('❌ [handleIndividualStemClick] Outer error:', error);
         showError('스템을 불러오는 중 오류가 발생했습니다.');
         setStemLoading(false);
         setWaveformLoading(false);
