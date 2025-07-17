@@ -85,7 +85,6 @@ const StemSetReviewPage = () => {
   const isSeeking = useRef(false); // 무한 루프 방지용 플래그
   const { upstreamId, stageId: urlStageId } = useParams<{ upstreamId: string, stageId: string }>();
   const [stageId, setStageId] = useState<string | undefined>(urlStageId);
-  const [trackId, setTrackId] = useState<string>('');
 
 
   // stageId 결정 로직 (쿼리 파라미터 우선, 없으면 upstream API 사용)
@@ -218,7 +217,6 @@ const StemSetReviewPage = () => {
       }
     
       const currentTrackId = stageResponse.data.track.id;
-      setTrackId(currentTrackId); // trackId state에 저장
       console.log('🔍 currentTrackId:', currentTrackId);
       console.log('🔍 upstream:', upstream);
       
