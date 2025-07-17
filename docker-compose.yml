@@ -11,6 +11,7 @@ services:
       - ./backend/.env
     environment:
       - NODE_ENV=development
+      - FRONTEND_URL=https://waveflow.pro
     # 현재 개발 단계임. NODE_ENV 수정 금지.
     networks:
       - waveflow-network
@@ -27,7 +28,7 @@ services:
       context: ./frontend
       dockerfile: Dockerfile
       args:
-        VITE_API_URL: ${VITE_API_URL:-http://13.125.231.115:8080}
+        VITE_API_URL: https://waveflow.pro/api
     container_name: waveflow-frontend
     restart: unless-stopped
     ports:
@@ -35,7 +36,9 @@ services:
     environment:
       - NODE_ENV=development
     # 현재 개발 단계임. NODE_ENV 수정 금지.
-      - VITE_API_URL=${VITE_API_URL:-http://13.125.231.115:8080}
+      - VITE_API_URL=https://waveflow.pro/api
+    volumes:
+      - ./frontend/nginx.conf:/etc/nginx/conf.d/default.conf
     networks:
       - waveflow-network
     # 헬스체크 의존성 제거
