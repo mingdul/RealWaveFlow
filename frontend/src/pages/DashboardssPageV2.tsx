@@ -25,7 +25,7 @@ import PresignedImage from '../components/PresignedImage';
 const DashboardPageV2 = () => {
   const navigate = useNavigate();
   const { user, logout, isAuthenticated, isLoading: authLoading } = useAuth();
-  const { showError, showSuccess, showWarning, showInfo } = useToast();
+  const { showError, showSuccess} = useToast();
   // const { isConnected, onlineUsers, sendMessage, ping } = useSocket();
 
   const [tracks, setTracks] = useState<Track[]>([]);
