@@ -100,6 +100,9 @@ jobs:
                 proxy_set_header Upgrade $http_upgrade;
                 proxy_set_header Connection "upgrade";
                 proxy_cache_bypass $http_upgrade;
+                
+                # React Router를 위한 설정 - 모든 경로에 대해 index.html 제공
+                try_files $uri $uri/ /index.html;
             }
 
             # 정적 파일 경로 추가 - 백엔드 assets
