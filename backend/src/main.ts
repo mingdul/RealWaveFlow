@@ -3,6 +3,7 @@ import { AppModule } from './app.module';
 import { DocumentBuilder, SwaggerModule } from '@nestjs/swagger';
 import { ValidationPipe } from '@nestjs/common';
 import * as cookieParser from 'cookie-parser';
+import { IoAdapter } from '@nestjs/platform-socket.io';
 
 async function bootstrap() {
   try {
@@ -14,6 +15,10 @@ async function bootstrap() {
     console.log('Database User:', process.env.DB_USERNAME);
     
     const app = await NestFactory.create(AppModule);
+
+    // Socket.IO adapter 설정
+    app.useWebSocketAdapter(new IoAdapter(app));
+    console.log('🔌 Socket.IO adapter initialized');
 
     app.use(cookieParser());
     // src/main.ts
