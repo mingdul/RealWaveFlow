@@ -108,25 +108,26 @@ const ProjectPage: React.FC<ProjectPageProps> = () => {
     try {
       setStemsLoading(true);
 
-      const approveStages = stages.filter(stage => stage.status === 'approve');
-      if (approveStages.length === 0) {
-        console.warn('[WARN][TrackPage] No approved stages found');
+      // active가 아닌 모든 스테이지 중 가장 높은 버전 선택
+      const nonActiveStages = stages.filter(stage => stage.status !== 'active');
+      if (nonActiveStages.length === 0) {
+        console.warn('[WARN][TrackPage] No non-active stages found');
         setStems([]);
         return;
       }
 
-      const latestApproveStage = approveStages.reduce((prev, current) => 
+      const latestNonActiveStage = nonActiveStages.reduce((prev, current) => 
         current.version > prev.version ? current : prev
       );
 
       const response = await streamingService.getMasterStemStreams(
         trackId,
-        latestApproveStage.version
+        latestNonActiveStage.version
       );
       
       if (response.data) {
         setStems(response.data.stems);
-        setSelectedStageVersion(latestApproveStage.version);
+        setSelectedStageVersion(latestNonActiveStage.version);
       } else {
         console.error('[ERROR][TrackPage] Failed to load stems:', response.message);
         setStems([]);
