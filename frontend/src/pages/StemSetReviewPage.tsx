@@ -142,7 +142,7 @@ const StemSetReviewPage = () => {
     }
   }, [upstreamStems]);
 
-  // 이전 버전의 가이드 스템 URL 가져오기
+  // 현재 버전의 가이드 스템 URL 가져오기
   useEffect(() => {
     const fetchGuideUrl = async () => {
       if (!stageId) return;
@@ -676,14 +676,40 @@ const StemSetReviewPage = () => {
         console.log('🎵 [handleIndividualStemClick] Individual stem clicked:', stemData);
 
         // Stem waveform 데이터 가져오기
-        const stemWaveformData = await streamingService.getStemWaveformData(stemData.stem.id);
-        console.log('🌊 Stem waveform data:', stemWaveformData);
+        console.log('🔍 [handleIndividualStemClick] Getting waveform data for stem type:', stemData.type);
         
-        if (stemWaveformData.success && stemWaveformData.data) {
-          setExtraPeaks(stemWaveformData.data);
-          console.log('📦 Stem waveform data:', stemWaveformData.data);
+        if (stemData.type === 'unchanged' && stemData.stem?.id) {
+          // version-stem waveform 데이터 가져오기
+          try {
+            console.log('🔍 [handleIndividualStemClick] Getting version-stem waveform data:', stemData.stem.id);
+            // TODO: version-stem waveform API가 있다면 여기서 호출
+            // 현재는 version-stem waveform API가 없으므로 null로 설정
+            setExtraPeaks(null);
+            console.log('⚠️ Version-stem waveform API not implemented yet');
+          } catch (error: any) {
+            console.warn('Failed to get version-stem waveform data:', error);
+            setExtraPeaks(null);
+          }
+        } else if ((stemData.type === 'new' || stemData.type === 'modify') && stemData.stem?.id) {
+          // 일반 stem waveform 데이터 가져오기
+          try {
+            console.log('🔍 [handleIndividualStemClick] Getting regular stem waveform data:', stemData.stem.id);
+            const stemWaveformData = await streamingService.getStemWaveformData(stemData.stem.id);
+            console.log('🌊 Stem waveform data:', stemWaveformData);
+            
+            if (stemWaveformData.success && stemWaveformData.data) {
+              setExtraPeaks(stemWaveformData.data);
+              console.log('📦 Stem waveform data:', stemWaveformData.data);
+            } else {
+              console.warn('⚠️ No waveform data available for this stem');
+              setExtraPeaks(null);
+            }
+          } catch (error: any) {
+            console.warn('Failed to get stem waveform data:', error);
+            setExtraPeaks(null);
+          }
         } else {
-          showWarning('No waveform data available for this stem');
+          console.warn('⚠️ Invalid stem data type for waveform:', stemData);
           setExtraPeaks(null);
         }
         setShowExtraWaveform(true);
@@ -693,28 +719,43 @@ const StemSetReviewPage = () => {
         // 개별 스템의 스트리밍 URL 가져오기
         let streamingUrl = '';
         
+        console.log('🔍 [handleIndividualStemClick] Stem data type:', stemData.type);
+        console.log('🔍 [handleIndividualStemClick] Stem data:', stemData);
+        
         if (stemData.type === 'unchanged' && stemData.stem?.id) {
-          // version-stem API 사용
+          // version-stem API 사용 (version_stem 테이블)
           try {
+            console.log('🔍 [handleIndividualStemClick] Using version-stem API for unchanged stem:', stemData.stem.id);
             const versionStemResponse = await streamingService.getVersionStemStreamingUrl(stemData.stem.id);
+            console.log('🔍 [handleIndividualStemClick] Version stem response:', versionStemResponse);
+            
             if (versionStemResponse.success && versionStemResponse.data?.presignedUrl) {
               streamingUrl = versionStemResponse.data.presignedUrl;
+            } else {
+              console.warn('⚠️ [handleIndividualStemClick] Version stem response not successful:', versionStemResponse);
             }
-          } catch (error) {
-            console.warn('Version stem streaming failed, trying regular stem API');
+          } catch (error: any) {
+            console.warn('Version stem streaming failed:', error);
+            console.warn('Error details:', error.response?.data);
           }
-        }
-        
-        if (!streamingUrl && stemData.stem?.id) {
-          // 일반 stem API 사용
+        } else if ((stemData.type === 'new' || stemData.type === 'modify') && stemData.stem?.id) {
+          // 일반 stem API 사용 (stem 테이블)
           try {
+            console.log('🔍 [handleIndividualStemClick] Using regular stem API for new/modify stem:', stemData.stem.id);
             const stemResponse = await streamingService.getStemStreamingUrl(stemData.stem.id);
+            console.log('🔍 [handleIndividualStemClick] Stem response:', stemResponse);
+            
             if (stemResponse.success && stemResponse.data?.presignedUrl) {
               streamingUrl = stemResponse.data.presignedUrl;
+            } else {
+              console.warn('⚠️ [handleIndividualStemClick] Stem response not successful:', stemResponse);
             }
-          } catch (error) {
-            console.warn('Regular stem streaming failed');
+          } catch (error: any) {
+            console.warn('Regular stem streaming failed:', error);
+            console.warn('Error details:', error.response?.data);
           }
+        } else {
+          console.warn('⚠️ [handleIndividualStemClick] Invalid stem data type or missing stem ID:', stemData);
         }
 
         if (streamingUrl) {

@@ -138,21 +138,32 @@ const Wave = ({
         peaksData = peaks;
       }
       
-      console.log(`🌊 Loading with peaks data for ${id}:`, peaksData);
-      const wavesurfer = wavesurferRef.current;
-      wavesurfer.load(audioUrl, peaksData).catch((error) => {
-        if (error.name !== 'AbortError') {
-          console.warn('Failed to load audio with peaks:', error);
-          // peaks 로드 실패 시 오디오만 로드
-          if (wavesurferRef.current) {
-            wavesurferRef.current.load(audioUrl).catch((fallbackError) => {
-              if (fallbackError.name !== 'AbortError') {
-                console.warn('Failed to load audio (fallback):', fallbackError);
-              }
-            });
+      // WaveSurfer가 기대하는 형식으로 변환
+      // peaks 배열이 유효한지 확인
+      if (Array.isArray(peaksData) && peaksData.length > 0) {
+        console.log(`🌊 Loading with peaks data for ${id}:`, peaksData);
+        console.log(`🌊 Peaks data type:`, typeof peaksData);
+        console.log(`🌊 Peaks data length:`, peaksData.length);
+        console.log(`🌊 First few peaks:`, peaksData.slice(0, 5));
+        
+        const wavesurfer = wavesurferRef.current;
+        
+        // WaveSurfer의 load 메소드에 peaks 데이터를 전달하지 않고 오디오만 로드
+        // peaks 데이터는 나중에 별도로 처리
+        wavesurfer.load(audioUrl).catch((error) => {
+          if (error.name !== 'AbortError') {
+            console.warn('Failed to load audio:', error);
           }
-        }
-      });
+        });
+      } else {
+        console.warn('Invalid peaks data, loading audio only');
+        const wavesurfer = wavesurferRef.current;
+        wavesurfer.load(audioUrl).catch((error) => {
+          if (error.name !== 'AbortError') {
+            console.warn('Failed to load audio:', error);
+          }
+        });
+      }
     } else {
       console.log(`🎵 Loading audio only for ${id}`);
       const wavesurfer = wavesurferRef.current;
