@@ -160,3 +160,22 @@ export class GuidePathStreamingResponse {
   @ApiProperty({ description: '파일명 (경로에서 추출)' })
   fileName: string;
 }
+
+export class StemPeaksPresignedUrlDto {
+  @ApiProperty({ description: '트랙 ID', example: 'uuid-track-id' })
+  @IsString()
+  @IsNotEmpty()
+  trackId: string;
+
+  @ApiProperty({ description: '스템 ID', example: 'uuid-stem-id' })
+  @IsString()
+  @IsNotEmpty()
+  stemId: string;
+}
+
+export class GuideWaveformPresignedUrlDto {
+  @ApiProperty({ description: '업스트림 ID', example: 'uuid-upstream-id' })
+  @IsString()
+  @IsNotEmpty()
+  upstreamId: string;
+}
