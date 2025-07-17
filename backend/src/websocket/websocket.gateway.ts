@@ -22,16 +22,13 @@ import { UsersService } from '../users/users.service';
       'http://localhost:3000', // React 개발 서버
       process.env.FRONTEND_URL || 'http://13.125.231.115:3000',
       'http://13.125.231.115:3000', // EC2 프론트엔드 URL
-      'https://waveflow.pro', // 프로덕션 프론트엔드
-      'https://waveflow.pro/', // trailing slash 포함
+      'https://waveflow.pro',
     ],
     credentials: true, // 쿠키 전송 허용
     methods: ['GET', 'POST'],
-    allowedHeaders: ['Content-Type', 'Authorization', 'Cookie'],
   },
   transports: ['websocket', 'polling'], // 전송 방법 설정
   allowEIO3: true, // Socket.IO 호환성
-  path: '/socket.io/', // 명시적으로 path 설정
 })
 export class ChatGateway
   implements OnGatewayInit, OnGatewayConnection, OnGatewayDisconnect

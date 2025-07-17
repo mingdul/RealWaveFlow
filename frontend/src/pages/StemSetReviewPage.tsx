@@ -75,8 +75,6 @@ const StemSetReviewPage = () => {
   const [stemsLoading, setStemsLoading] = useState(false);
   const [upstreamStems, setUpstreamStems] = useState<any[]>([]);
   const [guideAudioUrl, setGuideAudioUrl] = useState<string>('');
-  const [actualGuideAudioUrl, setActualGuideAudioUrl] = useState<string>(''); // 실제 Wave 컴포넌트에 전달할 URL
-  const [actualExtraAudio, setActualExtraAudio] = useState<string>(''); // 실제 Wave 컴포넌트에 전달할 URL
   const [guideLoading, setGuideLoading] = useState(false);
   const [guideLoadAttempted, setGuideLoadAttempted] = useState(false); // 가이드 로드 시도 여부 추가
   const [guidePeaks, setGuidePeaks] = useState<any>(null); // guide waveform 데이터
@@ -313,14 +311,6 @@ const StemSetReviewPage = () => {
     const mainPlayer = wavesurferRefs.current['main'];
     const extraPlayer = wavesurferRefs.current['extra'];
 
-    // 처음 play 시 audioUrl 설정
-    if (!isPlaying && !actualGuideAudioUrl && guideAudioUrl) {
-      setActualGuideAudioUrl(guideAudioUrl);
-    }
-    if (!isPlaying && !actualExtraAudio && extraAudio) {
-      setActualExtraAudio(extraAudio);
-    }
-
     if (mainPlayer) {
       if (isPlaying) {
         mainPlayer.pause();
@@ -330,7 +320,7 @@ const StemSetReviewPage = () => {
         if (extraPlayer) extraPlayer.play();
       }
     }
-  }, [isPlaying, actualGuideAudioUrl, guideAudioUrl, actualExtraAudio, extraAudio]);
+  }, [isPlaying]);
 
   const stopPlayback = useCallback(() => {
     const mainPlayer = wavesurferRefs.current['main'];
@@ -701,9 +691,6 @@ const StemSetReviewPage = () => {
         setShowExtraWaveform(true);
         // 선택된 upstream 설정 (댓글을 위해)
         setSelectedUpstream(upstream);
-
-        // 새로운 스템 선택 시 실제 오디오 URL 초기화
-        setActualExtraAudio('');
 
         // 개별 스템의 스트리밍 URL 가져오기
         let streamingUrl = '';
@@ -1262,7 +1249,7 @@ const StemSetReviewPage = () => {
           ) : guideLoadAttempted && guideAudioUrl ? (
             <Wave
               onReady={handleReady}
-              audioUrl={actualGuideAudioUrl}
+              audioUrl={guideAudioUrl}
               peaks={guidePeaks}
               waveColor='#f87171'
               id='main'
@@ -1283,7 +1270,7 @@ const StemSetReviewPage = () => {
           {showExtraWaveform && extraAudio && (
             <Wave
               onReady={handleReady}
-              audioUrl={actualExtraAudio}
+              audioUrl={extraAudio}
               peaks={extraPeaks}
               waveColor='#60a5fa'
               id='extra'

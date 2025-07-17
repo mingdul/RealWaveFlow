@@ -13,7 +13,6 @@ class SocketService {
   private socket: Socket | null = null;
   private callbacks: SocketCallbacks = {};
   private isConnecting = false;
-  private currentUrl = '';
 
   constructor() {
     this.setupSocket();
@@ -25,17 +24,15 @@ class SocketService {
       return;
     }
 
-    // WebSocket은 기본 도메인에서 실행됩니다 (/api 경로 제외)
-    this.currentUrl = import.meta.env.VITE_API_URL ? 
+    // Socket.IO는 자동으로 /socket.io/ 경로를 추가하므로 base URL만 사용
+    const baseUrl = import.meta.env.VITE_API_URL ? 
       import.meta.env.VITE_API_URL.replace('/api', '') : 
       'https://waveflow.pro';
     
-    console.log('🌐 [SocketService] Base URL:', this.currentUrl);
+    console.log('🌐 [SocketService] Base URL:', baseUrl);
     console.log('🌐 [SocketService] VITE_API_URL:', import.meta.env.VITE_API_URL);
     
-    console.log('🔌 [SocketService] Creating socket connection to:', this.currentUrl);
-    
-    this.socket = io(this.currentUrl, {
+    this.socket = io(baseUrl, {
       withCredentials: true, // 쿠키 전송 허용 (JWT 토큰 포함)
       autoConnect: false, // 수동으로 연결 제어
       transports: ['websocket', 'polling'],
@@ -43,9 +40,6 @@ class SocketService {
       reconnectionDelay: 1000,
       reconnectionDelayMax: 5000,
       reconnectionAttempts: 5,
-      forceNew: true, // 새로운 연결 강제
-      timeout: 10000, // 연결 타임아웃 10초
-      path: '/socket.io/', // 명시적으로 Socket.IO 경로 설정
     });
 
     this.setupEventListeners();
@@ -94,9 +88,7 @@ class SocketService {
 
     // 연결 오류
     this.socket.on('connect_error', (error) => {
-      console.error('❌ [SocketService] Connection error:', error);
-      console.error('❌ [SocketService] Error message:', error.message);
-      console.error('❌ [SocketService] Attempted URL:', this.currentUrl);
+      console.error('Socket connection error:', error);
       this.isConnecting = false;
       this.callbacks.onError?.(error);
     });
