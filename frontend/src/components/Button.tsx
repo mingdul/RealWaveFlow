@@ -1,7 +1,7 @@
 import React from 'react';
 
 interface ButtonProps extends React.ButtonHTMLAttributes<HTMLButtonElement> {
-  variant?: 'primary' | 'secondary' | 'gradient' | 'outline' | 'ghost';
+  variant?: 'primary' | 'secondary' | 'gradient' | 'outline' | 'ghost' | 'waveflowbtn';
   size?: 'sm' | 'md' | 'lg';
   children: React.ReactNode;
   isLoading?: boolean;
@@ -23,7 +23,8 @@ const Button: React.FC<ButtonProps> = ({
     secondary: 'bg-[#595959] text-[#D9D9D9] hover:bg-[#BFBFBF] hover:text-[#0D0D0D] focus:ring-[#BFBFBF]',
     gradient: 'bg-[#D9D9D9] text-[#0D0D0D] hover:bg-[#BFBFBF] focus:ring-[#D9D9D9] shadow-lg hover:shadow-[#D9D9D9]/25',
     outline: 'border border-[#595959] text-[#D9D9D9] hover:bg-[#595959] focus:ring-[#BFBFBF]',
-    ghost: 'text-[#BFBFBF] hover:text-[#D9D9D9] hover:bg-[#595959]/50 focus:ring-[#BFBFBF]'
+    ghost: 'text-[#BFBFBF] hover:text-[#D9D9D9] hover:bg-[#595959]/50 focus:ring-[#BFBFBF]',
+    waveflowbtn: 'bg-[#1F2325] text-[#ffffff] hover:bg-[#40413E] focus:bg-white focus:text-black',
   };
   
   const sizeClasses = {
