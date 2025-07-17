@@ -365,33 +365,7 @@ const StagePage: React.FC = () => {
 
   return (
     <div className="min-h-screen bg-black">
-      {/* <header className='flex items-center justify-between px-8 py-6'>
-      <div className="bg-black px-6 py-4 flex items-center justify-between">
-      <div className="flex items-center gap-4">
-        <Button size="sm" className="p-2 bg-black text-white" onClick={onBack}>
-          <ChevronLeft size={20} />
-        </Button>
-        <Logo />
-      </div>
-      <div className="flex space-x-4">
-        <button
-          className="text-white text-sm"
-          onClick={() => navigate(`/dashboard`)}
-        >
-          Dashboard
-        </button>
 
-      </div>
-      <div className="flex items-center gap-4">
-        <Button size="sm" className="p-2 bg-black text-white" onClick={onNotificationClick}>
-          <Bell size={20} />
-        </Button>
-        <Button size="sm" className="p-2 bg-black text-white" onClick={onSettingsClick}>
-          <Settings size={20} />
-        </Button>
-      </div>
-    </div>
-      </header> */}
       
       <TrackHeader
       onBack={() => {

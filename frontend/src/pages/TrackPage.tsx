@@ -279,7 +279,6 @@ const TrackPage: React.FC<TrackPageProps> = () => {
       <div className='absolute inset-0 bg-black bg-opacity-60 overflow-y-auto scrollbar-hide'>
         <TrackHeader
           onBack={handleBack}
-          onNotificationClick={() => console.log('Notification clicked')}
           onSettingsClick={() => console.log('Settings clicked')}
         />
 
