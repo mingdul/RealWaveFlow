@@ -69,7 +69,10 @@ class StreamingService {
     this.waveformCache.set(key, { data, timestamp: Date.now() });
   }
 
-  async getStemWaveformUrl(stemId: string): Promise<StreamingResponse<{ presignedUrl: string; urlExpiresAt: string }>> {
+  async getStemWaveformUrl(stemId: string): Promise<StreamingResponse<{
+    presignedUrl: string;
+    urlExpiresAt: string;
+  }>> {
     try {
       const response = await api.get(`/streaming/stem/${stemId}/waveform`);
       return {
@@ -90,7 +93,10 @@ class StreamingService {
    * @param stemId 버전 스템 ID
    * @returns 파형 데이터 스트리밍 URL
    */
-  async getVersionStemWaveformUrl(stemId: string): Promise<StreamingResponse<{ presignedUrl: string; urlExpiresAt: string }>> {
+  async getVersionStemWaveformUrl(stemId: string): Promise<StreamingResponse<{
+    presignedUrl: string;
+    urlExpiresAt: string;
+  }>> {
     try {
       const response = await api.get(`/streaming/version-stem/${stemId}/waveform`);
       return {
@@ -237,18 +243,18 @@ async getGuidePresignedUrlByStageId(stageId: string): Promise<StreamingResponse<
   }
 
   // 업스트림 스템 파일들 스트리밍 URL 조회
-  async getUpstreamStems(upstreamId: string): Promise<{
+  async getUpstreamStems(upstreamId: string): Promise<StreamingResponse<{
     upstreamId: string;
     stems: StemStreamingInfo[];
     totalStems: number;
     urlExpiresAt: string;
-  } | {
-    success: false;
-    message: string;
-  }> {
+  }>> {
     try {
       const response = await api.get(`/streaming/upstream/${upstreamId}/stems`);
-      return response.data;
+      return {
+        success: true,
+        data: response.data,
+      };
     } catch (error: any) {
       console.error('Error fetching upstream stems:', error);
       return {
@@ -343,11 +349,10 @@ async getGuidePresignedUrlByStageId(stageId: string): Promise<StreamingResponse<
    * @param upstreamId 업스트림 ID
    * @returns 가이드 파형 데이터 스트리밍 URL
    */
-  async getGuideWaveformPresignedUrl(upstreamId: string): Promise<{
-    success: boolean;
-    data?: GuidePathStreamingResponse;
-    message?: string;
-  }> {
+  async getGuideWaveformPresignedUrl(upstreamId: string): Promise<StreamingResponse<{
+    presignedUrl: string;
+    urlExpiresAt: string;
+  }>> {
     try {
       const requestData: GuideWaveformPresignedUrlDto = {
         upstreamId
