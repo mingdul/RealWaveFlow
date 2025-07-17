@@ -12,7 +12,7 @@ import { UsersService } from '../users/users.service';
 import { NotificationService } from './notification.service';
 
 export interface NotificationPayload {
-  id: string;
+  id?: string;
   type: 'stage_created' | 'upstream_created' | 'upstream_completed' | 'upstream_reviewed' | 'track_approved';
   title: string;
   message: string;
@@ -203,16 +203,22 @@ export class NotificationGateway
     this.logger.log(`🔔 [NotificationGateway] Sending "${notification.title}" to user (connected: ${isUserConnected})`);
     
     // 💾 DB에 알림 저장
+    let savedNotification: any;
     try {
-      await this.notificationService.createNotification(userId, notification);
-      this.logger.log(`🔔 [NotificationGateway] Notification saved to DB`);
+      savedNotification = await this.notificationService.createNotification(userId, notification);
+      this.logger.log(`🔔 [NotificationGateway] Notification saved to DB with ID: ${savedNotification.id}`);
     } catch (error) {
       this.logger.error(`🔔 [NotificationGateway] Failed to save to DB: ${error.message}`);
+      return; // DB 저장 실패 시 웹소켓 전송도 하지 않음
     }
     
-    // 알림 전송
+    // 알림 전송 (DB에서 생성된 ID 포함)
     try {
-      this.server.to(userRoom).emit('notification', notification);
+      const notificationWithId = {
+        ...notification,
+        id: savedNotification.id,
+      };
+      this.server.to(userRoom).emit('notification', notificationWithId);
       this.logger.log(`🔔 [NotificationGateway] Notification sent via websocket`);
     } catch (error) {
       this.logger.error(`🔔 [NotificationGateway] Websocket send error: ${error.message}`);

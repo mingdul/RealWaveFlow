@@ -413,7 +413,6 @@ export class UpstreamService {
 
             // 알림 페이로드 생성
             const notification: NotificationPayload = {
-                id: `upstream_created_${upstream.id}_${Date.now()}`,
                 type: 'upstream_created',
                 title: '📁 새 업로드',
                 message: `${upstream.title}`,

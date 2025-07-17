@@ -236,7 +236,6 @@ export class StageService {
 
             // 알림 페이로드 생성
             const notification: NotificationPayload = {
-                id: `stage_created_${stage.id}_${Date.now()}`,
                 type: 'stage_created',
                 title: '🎵 새 스테이지',
                 message: `${track.title}`,
