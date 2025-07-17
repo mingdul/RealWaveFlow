@@ -17,7 +17,7 @@ export class NotificationService {
   async createNotification(userId: string, notificationPayload: NotificationPayload): Promise<Notification> {
     try {
       const notification = this.notificationRepository.create({
-        id: notificationPayload.id,
+        // id는 자동 생성되므로 설정하지 않음
         type: notificationPayload.type,
         title: notificationPayload.title,
         message: notificationPayload.message,

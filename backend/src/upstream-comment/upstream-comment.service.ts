@@ -119,7 +119,6 @@ export class UpstreamCommentService {
 
             // 알림 페이로드 생성
             const notification: NotificationPayload = {
-                id: `comment_created_${comment.id}_${Date.now()}`,
                 type: 'upstream_reviewed',
                 title: '💬 새 리뷰',
                 message: `${upstream.title}`,
