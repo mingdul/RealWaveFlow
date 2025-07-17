@@ -7,6 +7,7 @@ import { CategoryService } from 'src/category/category.service';
 import { ChatGateway } from 'src/websocket/websocket.gateway';
 import { GuideService } from 'src/guide/guide.service';
 import { UpstreamService } from 'src/upstream/upstream.service';
+import { StemService } from 'src/stem/stem.service';
 
 @ApiTags('webhook')
 @Controller('webhook')
@@ -20,6 +21,7 @@ export class WebhookController {
         private readonly chatGateway: ChatGateway,
         private readonly guideService: GuideService,
         private readonly upstreamService: UpstreamService,
+        private readonly stemService: StemService,
     ) {}
     
     @Post('hash-check')
@@ -192,32 +194,45 @@ export class WebhookController {
         original_filename?: string;
         processing_time?: number;
         audio_wave_path?: string;
+        upstreamId?: string;
     }) {
         this.logger.log(`작업 완료 알림 수신: ${data.stemId} (상태: ${data.status})`);
 
         try {
             if (data.status === 'SUCCESS') {
-                // 성공 시 audio_wave_path 업데이트 (파형 분석 완료)
-                if (data.audio_wave_path) {
-                    await this.stemJobService.updateJobWithWavePath(data.stemId, data.audio_wave_path);
-                    this.logger.log(`파형 path 업데이트 완료: ${data.stemId} -> ${data.audio_wave_path}`);
-                }
-                
-                // StemJob을 Stem으로 변환 (version-Stem도 동시 생성)
-                const stem = await this.stemJobService.convertJobToStem(data.stemId, data.userId);
-                
-                if (stem) {
-                    this.logger.log(`작업 완료 처리 성공: ${data.stemId} -> ${stem.id}`);
+                if (data.upstreamId) {
+                    // upstream 요청인 경우: stem entity에 직접 audio_wave_path 업데이트
+                    if (data.audio_wave_path) {
+                        await this.stemService.updateStemAudioWavePath(data.stemId, data.audio_wave_path);
+                        this.logger.log(`Upstream Stem 파형 path 업데이트 완료: ${data.stemId} -> ${data.audio_wave_path}`);
+                    }
                     
-                    // 웹소켓으로 처리 완료 알림 전송 (개별 스템 완료)
-                    this.chatGateway.sendFileProcessingCompleted(data.userId, {
-                        trackId: data.trackId,
-                        fileName: data.original_filename || 'Unknown',
-                        result: data.result,
-                        processingTime: data.processing_time || 0,
-                    });
+                    // upstream 요청은 변환 로직 건너뛰기 (이미 stem으로 변환됨)
+                    this.logger.log(`Upstream 오디오 분석 완료: ${data.stemId} (upstream: ${data.upstreamId})`);
                 } else {
-                    this.logger.error(`StemJob을 Stem으로 변환 실패: ${data.stemId}`);
+                    // 일반 요청인 경우: 기존 로직 수행
+                    // 성공 시 audio_wave_path 업데이트 (파형 분석 완료)
+                    if (data.audio_wave_path) {
+                        await this.stemJobService.updateJobWithWavePath(data.stemId, data.audio_wave_path);
+                        this.logger.log(`파형 path 업데이트 완료: ${data.stemId} -> ${data.audio_wave_path}`);
+                    }
+                    
+                    // StemJob을 Stem으로 변환 (version-Stem도 동시 생성)
+                    const stem = await this.stemJobService.convertJobToStem(data.stemId, data.userId);
+                    
+                    if (stem) {
+                        this.logger.log(`작업 완료 처리 성공: ${data.stemId} -> ${stem.id}`);
+                        
+                        // 웹소켓으로 처리 완료 알림 전송 (개별 스템 완료)
+                        this.chatGateway.sendFileProcessingCompleted(data.userId, {
+                            trackId: data.trackId,
+                            fileName: data.original_filename || 'Unknown',
+                            result: data.result,
+                            processingTime: data.processing_time || 0,
+                        });
+                    } else {
+                        this.logger.error(`StemJob을 Stem으로 변환 실패: ${data.stemId}`);
+                    }
                 }
                 
             } else {

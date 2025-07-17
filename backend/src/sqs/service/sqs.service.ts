@@ -99,6 +99,7 @@ export class SqsService {
         audio_hash: string;
         timestamp: string;
         original_filename: string;
+        upstreamId?: string;
       }) {
         const message = {
           task: 'app.tasks.process_audio_analysis',
@@ -113,6 +114,7 @@ export class SqsService {
             timestamp: data.timestamp,
             original_filename: data.original_filename,
             num_peaks: 4000,
+            upstreamId: data.upstreamId,
           },
         };
     
