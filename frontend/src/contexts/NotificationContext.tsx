@@ -38,18 +38,17 @@ export const NotificationProvider: React.FC<NotificationProviderProps> = ({ chil
 
   const initializeNotificationSocket = () => {
     try {
-      // Socket.IO는 자동으로 /socket.io/ 경로를 추가하므로 base URL만 사용
+      // WebSocket은 기본 도메인에서 실행됩니다 (/api 경로 제외)
       const baseUrl = import.meta.env.VITE_API_URL ? 
         import.meta.env.VITE_API_URL.replace('/api', '') : 
         'https://waveflow.pro';
-      const socketUrl = `${baseUrl}/notifications`;
       
       console.log('🔔 [NotificationSocket] Base URL:', baseUrl);
-      console.log('🔔 [NotificationSocket] Socket URL:', socketUrl);
+      console.log('🔔 [NotificationSocket] Socket URL:', baseUrl);
       console.log('🔔 [NotificationSocket] User:', user);
       
-      // 알림 전용 소켓 연결 (/notifications 네임스페이스)
-      const notificationSocket = io(socketUrl, {
+      // 기본 네임스페이스 사용 (백엔드의 ChatGateway와 동일)
+      const notificationSocket = io(baseUrl, {
         withCredentials: true, // 쿠키 전송 허용 (JWT 토큰 포함)
         autoConnect: true,
         transports: ['websocket', 'polling'],
@@ -57,6 +56,7 @@ export const NotificationProvider: React.FC<NotificationProviderProps> = ({ chil
         reconnectionDelay: 1000,
         reconnectionDelayMax: 5000,
         reconnectionAttempts: 5,
+        path: '/socket.io/', // 명시적으로 Socket.IO 경로 설정
       });
       
       console.log('🔔 [NotificationSocket] Socket instance created:', notificationSocket);
@@ -67,7 +67,7 @@ export const NotificationProvider: React.FC<NotificationProviderProps> = ({ chil
         console.log('🔔 [NotificationSocket] Socket status:', {
           connected: notificationSocket.connected,
           id: notificationSocket.id,
-          url: socketUrl
+          url: baseUrl
         });
       });
 
@@ -99,7 +99,7 @@ export const NotificationProvider: React.FC<NotificationProviderProps> = ({ chil
           type: (error as any).type,
           description: (error as any).description,
           context: (error as any).context,
-          url: socketUrl
+          url: baseUrl
         });
         
         if (error.message.includes('Unauthorized')) {
