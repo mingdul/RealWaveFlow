@@ -40,6 +40,7 @@ export const databaseConfig: TypeOrmModuleOptions = {
     UpstreamComment,
     UpstreamReview,
     Guide,
+    Notification,
   ],
   // 개발 단계에서는 동기화 활성화
   synchronize: true,

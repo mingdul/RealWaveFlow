@@ -7,44 +7,12 @@ const NotificationBell: React.FC = () => {
   const dropdownRef = useRef<HTMLDivElement>(null);
   const { notifications, unreadCount, markAsRead, markAllAsRead } = useNotifications();
 
-  // 🔥 실시간 상태 모니터링
+  // 알림 상태 변경 시 로그 (개발용)
   useEffect(() => {
-    console.log('🔔 [NotificationBell] 🔄 State changed - Notifications:', notifications.length, 'Unread:', unreadCount);
-    console.log('🔔 [NotificationBell] 📋 Current notifications:', notifications.map(n => ({
-      id: n.id,
-      type: n.type,
-      title: n.title,
-      read: n.read,
-      timestamp: n.timestamp
-    })));
-  }, [notifications, unreadCount]);
-
-  // 🔥 컴포넌트 마운트 시 초기 상태 확인
-  useEffect(() => {
-    console.log('🔔 [NotificationBell] 🚀 Component mounted');
-    console.log('🔔 [NotificationBell] 📊 Initial state:');
-    console.log('  - Notifications count:', notifications.length);
-    console.log('  - Unread count:', unreadCount);
-    console.log('  - Has notifications context:', !!useNotifications);
-    
-    // 5초마다 상태 확인
-    const interval = setInterval(() => {
-      console.log('🔔 [NotificationBell] ⏰ Periodic check:');
-      console.log('  - Current time:', new Date().toLocaleTimeString());
-      console.log('  - Notifications:', notifications.length);
-      console.log('  - Unread:', unreadCount);
-      console.log('  - Latest notification:', notifications[0] ? {
-        title: notifications[0].title,
-        time: notifications[0].timestamp,
-        type: notifications[0].type
-      } : 'None');
-    }, 5000);
-
-    return () => {
-      console.log('🔔 [NotificationBell] 🔚 Component unmounting');
-      clearInterval(interval);
-    };
-  }, []);
+    if (unreadCount > 0) {
+      console.log('🔔 [NotificationBell] Unread notifications:', unreadCount);
+    }
+  }, [unreadCount]);
 
   // 외부 클릭 시 드롭다운 닫기
   useEffect(() => {
@@ -61,19 +29,12 @@ const NotificationBell: React.FC = () => {
   }, []);
 
   const toggleDropdown = () => {
-    console.log('🔔 [NotificationBell] 🖱️ Button clicked - Current state:', isOpen);
-    console.log('🔔 [NotificationBell] 📊 Current data:');
-    console.log('  - Notifications array:', notifications);
-    console.log('  - Unread count:', unreadCount);
-    console.log('  - Notifications length:', notifications.length);
-    console.log('  - First notification:', notifications[0] || 'None');
-    console.log('  - Context available:', !!useNotifications);
     setIsOpen(!isOpen);
   };
 
-  const handleNotificationClick = (notification: Notification) => {
+  const handleNotificationClick = async (notification: Notification) => {
     if (!notification.read) {
-      markAsRead(notification.id);
+      await markAsRead(notification.id);
     }
     
     // 알림 데이터에 따라 적절한 페이지로 이동
@@ -102,21 +63,8 @@ const NotificationBell: React.FC = () => {
     }
   };
 
-  const getNotificationIcon = (type: Notification['type']) => {
-    switch (type) {
-      case 'stage_created':
-        return '🎵';
-      case 'upstream_created':
-        return '📁';
-      case 'upstream_completed':
-        return '✅';
-      case 'upstream_reviewed':
-        return '💬';
-      case 'track_approved':
-        return '🎉';
-      default:
-        return '🔔';
-    }
+  const handleMarkAllAsRead = async () => {
+    await markAllAsRead();
   };
 
   const formatTimeAgo = (timestamp: string) => {
@@ -124,16 +72,16 @@ const NotificationBell: React.FC = () => {
     const notificationTime = new Date(timestamp);
     const diffInMinutes = Math.floor((now.getTime() - notificationTime.getTime()) / (1000 * 60));
 
-    if (diffInMinutes < 1) return '방금 전';
-    if (diffInMinutes < 60) return `${diffInMinutes}분 전`;
+    if (diffInMinutes < 1) return '방금';
+    if (diffInMinutes < 60) return `${diffInMinutes}분`;
     
     const diffInHours = Math.floor(diffInMinutes / 60);
-    if (diffInHours < 24) return `${diffInHours}시간 전`;
+    if (diffInHours < 24) return `${diffInHours}시간`;
     
     const diffInDays = Math.floor(diffInHours / 24);
-    if (diffInDays < 7) return `${diffInDays}일 전`;
+    if (diffInDays < 7) return `${diffInDays}일`;
     
-    return notificationTime.toLocaleDateString('ko-KR');
+    return notificationTime.toLocaleDateString('ko-KR', { month: 'short', day: 'numeric' });
   };
 
   return (
@@ -177,7 +125,7 @@ const NotificationBell: React.FC = () => {
               <h3 className="text-lg font-semibold text-gray-900">알림</h3>
               {unreadCount > 0 && (
                 <button
-                  onClick={markAllAsRead}
+                  onClick={handleMarkAllAsRead}
                   className="text-sm text-blue-600 hover:text-blue-800 font-medium"
                 >
                   모두 읽음
@@ -216,27 +164,36 @@ const NotificationBell: React.FC = () => {
                 >
                   <div className="flex items-start space-x-3">
                     {/* 아이콘 */}
-                    <div className="flex-shrink-0 text-xl">
-                      {getNotificationIcon(notification.type)}
+                    <div className="flex-shrink-0 mt-1">
+                      <div className={`w-2 h-2 rounded-full ${
+                        notification.type === 'stage_created' ? 'bg-blue-500' :
+                        notification.type === 'upstream_created' ? 'bg-green-500' :
+                        notification.type === 'upstream_reviewed' ? 'bg-purple-500' :
+                        notification.type === 'upstream_completed' ? 'bg-emerald-500' :
+                        notification.type === 'track_approved' ? 'bg-yellow-500' :
+                        'bg-gray-400'
+                      }`}></div>
                     </div>
                     
                     {/* 내용 */}
                     <div className="flex-1 min-w-0">
-                      <h4 className={`text-sm font-medium ${!notification.read ? 'text-gray-900' : 'text-gray-700'}`}>
-                        {notification.title}
-                      </h4>
-                      <p className={`text-sm ${!notification.read ? 'text-gray-700' : 'text-gray-500'} mt-1`}>
+                      <div className="flex items-center justify-between">
+                        <h4 className={`text-sm font-medium ${!notification.read ? 'text-gray-900' : 'text-gray-600'}`}>
+                          {notification.title}
+                        </h4>
+                        <p className="text-xs text-gray-400 ml-2">
+                          {formatTimeAgo(notification.timestamp)}
+                        </p>
+                      </div>
+                      <p className={`text-sm ${!notification.read ? 'text-gray-700' : 'text-gray-500'} mt-0.5`}>
                         {notification.message}
-                      </p>
-                      <p className="text-xs text-gray-400 mt-2">
-                        {formatTimeAgo(notification.timestamp)}
                       </p>
                     </div>
                     
                     {/* 읽지 않은 알림 표시 */}
                     {!notification.read && (
-                      <div className="flex-shrink-0">
-                        <div className="w-2 h-2 bg-blue-500 rounded-full"></div>
+                      <div className="flex-shrink-0 mt-1">
+                        <div className="w-2 h-2 bg-red-500 rounded-full"></div>
                       </div>
                     )}
                   </div>
@@ -247,9 +204,9 @@ const NotificationBell: React.FC = () => {
 
           {/* 푸터 (선택사항) */}
           {notifications.length > 0 && (
-            <div className="px-4 py-3 border-t border-gray-200 bg-gray-50">
-              <p className="text-xs text-gray-500 text-center">
-                총 {notifications.length}개의 알림
+            <div className="px-4 py-2 border-t border-gray-200 bg-gray-50">
+              <p className="text-xs text-gray-400 text-center">
+                {notifications.length}개
               </p>
             </div>
           )}
