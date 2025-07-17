@@ -481,7 +481,7 @@ const StagePage: React.FC = () => {
                     </div>
                   ) : reviewers && reviewers.length > 0 ? (
                     <>
-                      {(showAllReviewers ? reviewers : reviewers.slice(0, MAX_DISPLAYED_REVIEWERS)).map((reviewer, index) => (
+                      {(showAllReviewers ? reviewers : reviewers.slice(0, MAX_DISPLAYED_REVIEWERS)).map((reviewer, _index) => (
                         <div key={reviewer.id} className='relative group'>
                           <div className='h-12 w-12 rounded-full border-3 border-white bg-gradient-to-br from-purple-500 to-blue-500 flex items-center justify-center text-white font-bold text-lg shadow-lg hover:scale-110 transition-transform duration-200'>
                             {reviewer.user?.username?.charAt(0).toUpperCase() || 'U'}
