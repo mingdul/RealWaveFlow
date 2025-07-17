@@ -1,8 +1,11 @@
-import React, { useState } from 'react';
-import { X, UserPlus, Users, FileText, CirclePlus } from 'lucide-react';
+import React, { useState, useEffect } from 'react';
+import { X, Users, FileText, CirclePlus, Check, UserCheck } from 'lucide-react';
 import { Button, Input } from './';
+import trackService from '../services/trackService';
+import { createStageReviewer } from '../services/stageReviewerService';
+import { TrackCollaborator, Track } from '../types/api';
 
-interface Reviewer {
+interface User {
   id: string;
   username: string;
   email: string;
@@ -11,55 +14,97 @@ interface Reviewer {
 interface OpenStageModalProps {
   isOpen: boolean;
   onClose: () => void;
-  onSubmit: (description: string, reviewers: Reviewer[]) => void;
+  onSubmit: (description: string, reviewerIds: string[]) => void;
+  trackId: string;
 }
 
 const OpenStageModal: React.FC<OpenStageModalProps> = ({ 
   isOpen, 
   onClose, 
-  onSubmit 
+  onSubmit,
+  trackId
 }) => {
   const [description, setDescription] = useState('');
-  const [reviewers, setReviewers] = useState<Reviewer[]>([]);
-  const [newReviewerEmail, setNewReviewerEmail] = useState('');
+  const [selectedReviewers, setSelectedReviewers] = useState<string[]>([]);
+  const [availableUsers, setAvailableUsers] = useState<User[]>([]);
+  const [loading, setLoading] = useState(false);
+  const [searchTerm, setSearchTerm] = useState('');
 
-  const handleAddReviewer = () => {
-    if (newReviewerEmail.trim()) {
-      const newReviewer: Reviewer = {
-        id: Date.now().toString(),
-        username: newReviewerEmail.split('@')[0],
-        email: newReviewerEmail
-      };
-      setReviewers([...reviewers, newReviewer]);
-      setNewReviewerEmail('');
+  // 트랙 참여인원 가져오기
+  useEffect(() => {
+    if (isOpen && trackId) {
+      fetchTrackParticipants();
+    }
+  }, [isOpen, trackId]);
+
+  const fetchTrackParticipants = async () => {
+    setLoading(true);
+    try {
+      // 트랙 정보와 협업자 정보를 가져오기
+      const [trackResponse, collaboratorsResponse] = await Promise.all([
+        trackService.getTrackById(trackId),
+        trackService.getCollaborators(trackId)
+      ]);
+
+      const users: User[] = [];
+      
+      // 트랙 오너 추가
+      if (trackResponse.success && trackResponse.data?.owner_id) {
+        users.push({
+          id: trackResponse.data.owner_id.id,
+          username: trackResponse.data.owner_id.username || 'Owner',
+          email: trackResponse.data.owner_id.email || 'owner@example.com'
+        });
+      }
+
+      // 협업자들 추가
+      if (collaboratorsResponse.success && collaboratorsResponse.data) {
+        collaboratorsResponse.data.forEach((collaborator: TrackCollaborator) => {
+          if (collaborator.user_id && !users.find(u => u.id === collaborator.user_id.id)) {
+            users.push({
+              id: collaborator.user_id.id,
+              username: collaborator.user_id.username || 'User',
+              email: collaborator.user_id.email || 'user@example.com'
+            });
+          }
+        });
+      }
+
+      setAvailableUsers(users);
+    } catch (error) {
+      console.error('Failed to fetch track participants:', error);
+    } finally {
+      setLoading(false);
     }
   };
 
-  const handleRemoveReviewer = (id: string) => {
-    setReviewers(reviewers.filter(r => r.id !== id));
+  const toggleReviewer = (userId: string) => {
+    setSelectedReviewers(prev => 
+      prev.includes(userId)
+        ? prev.filter(id => id !== userId)
+        : [...prev, userId]
+    );
   };
 
   const handleSubmit = () => {
     if (description.trim()) {
-      onSubmit(description, reviewers);
+      onSubmit(description, selectedReviewers);
       setDescription('');
-      setReviewers([]);
+      setSelectedReviewers([]);
       onClose();
     }
   };
 
-  const handleKeyPress = (e: React.KeyboardEvent) => {
-    if (e.key === 'Enter' && !e.shiftKey) {
-      e.preventDefault();
-      handleAddReviewer();
-    }
-  };
+  const filteredUsers = availableUsers.filter(user =>
+    user.username.toLowerCase().includes(searchTerm.toLowerCase()) ||
+    user.email.toLowerCase().includes(searchTerm.toLowerCase())
+  );
 
   if (!isOpen) return null;
 
   return (
     <div className="fixed inset-0 bg-black/60 backdrop-blur-sm flex items-center justify-center z-50 p-4">
-      <div className="bg-[#262626] rounded-xl p-4 sm:p-6 max-w-sm sm:max-w-md lg:max-w-lg w-full mx-4 shadow-2xl border border-[#595959]">
+      <div className="bg-[#262626] rounded-xl p-4 sm:p-6 max-w-sm sm:max-w-md lg:max-w-lg w-full mx-4 shadow-2xl border border-[#595959] max-h-[90vh] overflow-y-auto">
         {/* Header */}
         <div className="flex items-center justify-between mb-6 sm:mb-8">
           <div className="flex items-center gap-3">
@@ -80,7 +125,7 @@ const OpenStageModal: React.FC<OpenStageModalProps> = ({
         </div>
 
         {/* Description Section */}
-        <div className="space-y-4 sm:space-y-6">
+        <div className="space-y-4 sm:space-y-6 mb-6">
           <div className="flex items-center gap-2 mb-4">
             <FileText size={18} className="text-[#BFBFBF]" />
             <label className="text-sm font-semibold text-[#D9D9D9] uppercase tracking-wide">
@@ -106,60 +151,72 @@ const OpenStageModal: React.FC<OpenStageModalProps> = ({
           <div className="flex items-center gap-2 mb-4">
             <Users size={18} className="text-[#BFBFBF]" />
             <label className="text-sm font-semibold text-[#D9D9D9] uppercase tracking-wide">
-              Reviewers
+              Select Reviewers
             </label>
-            <span className="text-xs text-[#BFBFBF] ml-2">({reviewers.length})</span>
-          </div>
-          
-          {/* Add Reviewer Input */}
-          <div className="flex gap-3 mb-4">
-            <div className="flex-1">
-              <Input
-                value={newReviewerEmail}
-                onChange={(e) => setNewReviewerEmail(e.target.value)}
-                onKeyPress={handleKeyPress}
-                placeholder="Enter reviewer email"
-                className="bg-[#595959]/30 border-[#595959]/50 focus:border-[#BFBFBF] focus:ring-[#BFBFBF]/50"
-              />
-            </div>
-            <Button 
-              variant="outline" 
-              size="sm" 
-              onClick={handleAddReviewer}
-              disabled={!newReviewerEmail.trim()}
-              className="px-4 border-[#595959] text-[#D9D9D9] hover:bg-[#595959] disabled:opacity-50"
-            >
-              <UserPlus size={16} />
-            </Button>
+            <span className="text-xs text-[#BFBFBF] ml-2">({selectedReviewers.length} selected)</span>
           </div>
 
-          {/* Reviewer List */}
-          {reviewers.length > 0 ? (
-            <div className="space-y-2 max-h-40 overflow-y-auto">
-              {reviewers.map(reviewer => (
-                <div key={reviewer.id} className="flex items-center justify-between bg-[#595959]/20 p-3 rounded-lg border border-[#595959]/30 hover:border-[#BFBFBF]/30 transition-all duration-200">
+          {/* Search Input */}
+          <div className="mb-4">
+            <Input
+              value={searchTerm}
+              onChange={(e) => setSearchTerm(e.target.value)}
+              placeholder="Search participants..."
+              className="bg-[#595959]/30 border-[#595959]/50 focus:border-[#BFBFBF] focus:ring-[#BFBFBF]/50"
+            />
+          </div>
+
+          {/* Participants List */}
+          {loading ? (
+            <div className="text-center py-6 bg-[#595959]/10 rounded-lg border border-[#595959]/30">
+              <div className="animate-spin rounded-full h-8 w-8 border-b-2 border-purple-500 mx-auto mb-2"></div>
+              <p className="text-[#BFBFBF] text-sm">Loading participants...</p>
+            </div>
+          ) : filteredUsers.length > 0 ? (
+            <div className="space-y-2 max-h-60 overflow-y-auto bg-[#595959]/10 p-3 rounded-lg border border-[#595959]/30">
+              {filteredUsers.map(user => (
+                <div 
+                  key={user.id} 
+                  className={`flex items-center justify-between p-3 rounded-lg border transition-all duration-200 cursor-pointer ${
+                    selectedReviewers.includes(user.id)
+                      ? 'bg-purple-500/20 border-purple-500/50 hover:border-purple-400/70'
+                      : 'bg-[#595959]/20 border-[#595959]/30 hover:border-[#BFBFBF]/30'
+                  }`}
+                  onClick={() => toggleReviewer(user.id)}
+                >
                   <div className="flex items-center gap-3">
-                    <div className="w-10 h-10 bg-gradient-to-br from-green-500 to-teal-500 rounded-full flex items-center justify-center shadow-md">
-                      <span className="text-white font-semibold text-sm">{reviewer.username.charAt(0).toUpperCase()}</span>
+                    <div className={`w-10 h-10 rounded-full flex items-center justify-center shadow-md ${
+                      selectedReviewers.includes(user.id)
+                        ? 'bg-gradient-to-br from-purple-500 to-blue-500'
+                        : 'bg-gradient-to-br from-gray-500 to-gray-600'
+                    }`}>
+                      <span className="text-white font-semibold text-sm">
+                        {user.username.charAt(0).toUpperCase()}
+                      </span>
                     </div>
                     <div>
-                      <div className="text-[#D9D9D9] font-medium text-sm">{reviewer.username}</div>
-                      <div className="text-[#BFBFBF] text-xs">{reviewer.email}</div>
+                      <div className="text-[#D9D9D9] font-medium text-sm">{user.username}</div>
+                      <div className="text-[#BFBFBF] text-xs">{user.email}</div>
                     </div>
                   </div>
-                  <button
-                    onClick={() => handleRemoveReviewer(reviewer.id)}
-                    className="text-[#BFBFBF] hover:text-red-400 transition-colors p-1 rounded hover:bg-red-500/10"
-                  >
-                    <X size={16} />
-                  </button>
+                  <div className={`w-6 h-6 rounded-full border-2 flex items-center justify-center transition-all duration-200 ${
+                    selectedReviewers.includes(user.id)
+                      ? 'bg-purple-500 border-purple-500'
+                      : 'border-[#BFBFBF] hover:border-purple-400'
+                  }`}>
+                    {selectedReviewers.includes(user.id) && (
+                      <Check size={12} className="text-white" />
+                    )}
+                  </div>
                 </div>
               ))}
             </div>
           ) : (
             <div className="text-center py-6 bg-[#595959]/10 rounded-lg border border-[#595959]/30">
-              <Users size={32} className="text-[#BFBFBF] mx-auto mb-2" />
-              <p className="text-[#BFBFBF] text-sm">no reviewers</p>
+              <UserCheck size={32} className="text-[#BFBFBF] mx-auto mb-2" />
+              <p className="text-[#BFBFBF] text-sm">
+                {searchTerm ? 'No participants found' : 'No participants available'}
+              </p>
             </div>
           )}
         </div>

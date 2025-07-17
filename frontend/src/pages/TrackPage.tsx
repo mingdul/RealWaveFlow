@@ -14,6 +14,7 @@ import {
   createStage,
   getBackToPreviousStage,
 } from '../services/stageService';
+import { createStageReviewer } from '../services/stageReviewerService';
 import streamingService, {
   StemStreamingInfo,
 } from '../services/streamingService';
@@ -177,7 +178,7 @@ const TrackPage: React.FC<TrackPageProps> = () => {
     }
   };
 
-  const handleOpenStageSubmit = async (description: string) => {
+  const handleOpenStageSubmit = async (description: string, reviewerIds: string[]) => {
     if (!user || !trackId) {
       console.error('User or track ID not available');
       return;
@@ -193,14 +194,28 @@ const TrackPage: React.FC<TrackPageProps> = () => {
       };
 
       const newStage = await createStage(stageData);
+      newStage.user = user;
+      
+      // 선택된 리뷰어들에 대해 stage reviewer 생성
+      if (reviewerIds && reviewerIds.length > 0) {
+        try {
+          const reviewerPromises = reviewerIds.map(userId => 
+            createStageReviewer({
+              stage_id: newStage.id,
+              user_id: userId
+            })
+          );
+          
+          await Promise.all(reviewerPromises);
+          console.log('Stage reviewers created successfully');
+        } catch (reviewerError) {
+          console.error('Failed to create some stage reviewers:', reviewerError);
+          // Stage는 생성되었으므로 경고만 표시하고 계속 진행
+        }
+      }
+
       setStages((prevStages) => [...prevStages, newStage]);
-
-      newStage.user = user;
-
-      newStage.user = user;
       console.log('New stage created:', newStage);
-      // TODO: Reviewers 기능 구현 필요
-
       setIsOpenStageModalOpen(false);
     } catch (error) {
       console.error('Failed to create stage:', error);
@@ -326,6 +341,7 @@ const TrackPage: React.FC<TrackPageProps> = () => {
           isOpen={isOpenStageModalOpen}
           onClose={() => setIsOpenStageModalOpen(false)}
           onSubmit={handleOpenStageSubmit}
+          trackId={trackId || ''}
         />
 
         <StemListModal
