@@ -115,7 +115,7 @@ const Wave = ({
 
     console.log(`🎵 Loading new audio URL for ${id}:`, audioUrl);
     if (peaks) {
-      console.log(`🌊 Using peaks data for ${id}:`, peaks);
+      console.log(`🌊 Using peaks data for ${id}`);
     }
     
     setIsReady(false);
@@ -143,20 +143,23 @@ const Wave = ({
       // WaveSurfer가 기대하는 형식으로 변환
       // peaks 배열이 유효한지 확인
       if (Array.isArray(peaksData) && peaksData.length > 0) {
-        console.log(`🌊 Loading with peaks data for ${id}:`, peaksData);
-        console.log(`🌊 Peaks data type:`, typeof peaksData);
-        console.log(`🌊 Peaks data length:`, peaksData.length);
-        console.log(`🌊 First few peaks:`, peaksData.slice(0, 5));
+        console.log(`🌊 Loading with peaks data for ${id}, length: ${peaksData.length}`);
         
         const wavesurfer = wavesurferRef.current;
         
-        // WaveSurfer의 load 메소드에 peaks 데이터를 전달하지 않고 오디오만 로드
-        // peaks 데이터는 나중에 별도로 처리
-        wavesurfer.load(audioUrl).catch((error) => {
-          if (error.name !== 'AbortError') {
-            console.warn('Failed to load audio:', error);
-          }
-        });
+        // 성능 최적화: 오디오와 peaks 데이터를 함께 로드
+        try {
+          // WaveSurfer 2.x 버전에서는 load 메서드에 peaks 데이터를 직접 전달할 수 있음
+          wavesurfer.load(audioUrl, peaksData);
+        } catch (error: any) {
+          console.warn('Failed to load audio with peaks:', error);
+          // 실패 시 오디오만 로드 시도
+          wavesurfer.load(audioUrl).catch((err: any) => {
+            if (err.name !== 'AbortError') {
+              console.warn('Failed to load audio:', err);
+            }
+          });
+        }
       } else {
         console.warn('Invalid peaks data, loading audio only');
         const wavesurfer = wavesurferRef.current;
@@ -214,9 +217,15 @@ const Wave = ({
       onClick={onClick}
     >
       {isLoading ? (
-        <div className="flex items-center justify-center py-8">
-          <div className="mr-3 h-8 w-8 animate-spin rounded-full border-b-2 border-blue-500"></div>
-          <span className="text-white">오디오를 불러오는 중...</span>
+        <div className="flex flex-col items-center justify-center py-8">
+          <div className="mb-3 h-10 w-10 animate-spin rounded-full border-b-2 border-t-2 border-blue-500"></div>
+          <span className="text-white font-medium">오디오를 불러오는 중...</span>
+          <span className="text-gray-400 text-sm mt-2">잠시만 기다려주세요</span>
+        </div>
+      ) : !isReady ? (
+        <div className="flex flex-col items-center justify-center py-8">
+          <div className="mb-3 h-8 w-8 animate-spin rounded-full border-b-2 border-blue-300"></div>
+          <span className="text-white">파형을 준비하는 중...</span>
         </div>
       ) : (
         <>
@@ -227,17 +236,20 @@ const Wave = ({
             <div id="wave-timeline" ref={timelineRef} className="h-8 sm:h-9 md:h-10" />
             <div id="wave-presentation" ref={waveRef} className="h-48 sm:h-56 md:h-64 lg:h-72" />
           </div>
-          <button 
-            onClick={onSolo}
-            disabled={!isReady}
-            className={`px-3 py-2 sm:px-4 sm:py-2 rounded transition-all text-sm sm:text-base ${
-              isSolo 
-                ? 'bg-purple-500 text-black' 
-                : 'bg-gray-700 text-white hover:bg-gray-600'
-            } ${!isReady ? 'opacity-50 cursor-not-allowed' : ''}`}
-          >
-            Solo
-          </button>
+          <div className="flex justify-between items-center">
+            <button 
+              onClick={onSolo}
+              disabled={!isReady}
+              className={`px-3 py-2 sm:px-4 sm:py-2 rounded transition-all text-sm sm:text-base ${
+                isSolo 
+                  ? 'bg-purple-500 text-black font-medium' 
+                  : 'bg-gray-700 text-white hover:bg-gray-600'
+              } ${!isReady ? 'opacity-50 cursor-not-allowed' : ''}`}
+            >
+              {isSolo ? 'Solo 활성화됨' : 'Solo'}
+            </button>
+            {isReady && <span className="text-green-400 text-xs">✓ 준비 완료</span>}
+          </div>
         </>
       )}
     </div>
