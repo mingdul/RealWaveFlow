@@ -10,7 +10,7 @@ interface StageCardProps {
   isActive?: boolean;
 }
 
-const StageCard2: React.FC<StageCardProps> = ({ stage, isSelected, onClick, index, id, isActive }) => {
+const StageCard2: React.FC<StageCardProps> = ({ stage, isSelected, onClick, id, isActive }) => {
   const getCardClasses = () => {
     let baseClasses = 'group relative bg-[#1a1a1a] border rounded-xl cursor-pointer transition-all duration-300 hover:scale-102 flex-shrink-0 min-w-[280px] shadow-lg hover:shadow-xl';
     
