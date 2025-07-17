@@ -1,7 +1,7 @@
 import React from 'react';
 
 interface ButtonProps extends React.ButtonHTMLAttributes<HTMLButtonElement> {
-  variant?: 'primary' | 'secondary' | 'gradient' | 'outline' | 'ghost' | 'waveflowbtn';
+  variant?: 'primary' | 'secondary' | 'gradient' | 'outline' | 'ghost' | 'waveflowbtn' | 'waveflowbtn2';
   size?: 'sm' | 'md' | 'lg';
   children: React.ReactNode;
   isLoading?: boolean;
@@ -22,9 +22,10 @@ const Button: React.FC<ButtonProps> = ({
     primary: 'bg-[#262626] text-[#D9D9D9] hover:bg-[#595959] focus:ring-[#BFBFBF]',
     secondary: 'bg-[#595959] text-[#D9D9D9] hover:bg-[#BFBFBF] hover:text-[#0D0D0D] focus:ring-[#BFBFBF]',
     gradient: 'bg-[#D9D9D9] text-[#0D0D0D] hover:bg-[#BFBFBF] focus:ring-[#D9D9D9] shadow-lg hover:shadow-[#D9D9D9]/25',
-    outline: 'border border-[#595959] text-[#D9D9D9] hover:bg-[#595959] focus:ring-[#BFBFBF]',
+    outline: 'border border-[#595959] text-[#D9D9D9] hover:bg-[#595959] focus:ring-[#BFBFBF]',  
     ghost: 'text-[#BFBFBF] hover:text-[#D9D9D9] hover:bg-[#595959]/50 focus:ring-[#BFBFBF]',
     waveflowbtn: 'bg-[#1F2325] text-[#ffffff] hover:bg-[#40413E] focus:bg-white focus:text-black',
+    waveflowbtn2: 'text-purple-700 hover:text-white border border-purple-700 hover:bg-gradient-to-br from-blue-900/20 to-purple-900/20 focus:ring-4 focus:outline-none focus:ring-purple-300 font-medium rounded-lg text-sm px-5 py-2.5 text-center me-2 mb-2',
   };
   
   const sizeClasses = {

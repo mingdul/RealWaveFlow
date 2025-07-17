@@ -7,7 +7,7 @@ import {
   GitBranch,
   User,
   Calendar,
-  ArrowRight,
+
   Star,
   Activity,
   Zap,
@@ -16,7 +16,9 @@ import {
   ChevronLeft,
   ChevronRight
 } from 'lucide-react';
+// import { ArrowRight } from 'lucide-react';
 import { Stage } from '../types/api';
+import Button from './Button';
 
 interface StageHisProps {
   stages: Stage[];
@@ -170,16 +172,22 @@ const StageHis: React.FC<StageHisProps> = ({
       onStageSelect(stage);
     }
 
-    // Find and scroll the clicked card to center
-    const cardElement = document.getElementById(`stage-card-${stage.id}`);
-    if (cardElement) {
-      scrollToCenter(cardElement);
-    }
+    // Removed direct scrollToCenter call here – it will be handled in useEffect
 
     if (stage.status !== 'active') {
       setPlayingStage(playingStage === stage.id ? null : stage.id);
     }
   };
+
+  // Center the selected stage card after state updates so layout is stable
+  useEffect(() => {
+    if (!selectedStage) return;
+
+    const cardElement = document.getElementById(`stage-card-${selectedStage.id}`);
+    if (cardElement) {
+      scrollToCenter(cardElement as HTMLElement);
+    }
+  }, [selectedStage]);
 
   const formatDate = (dateString: string) => {
     return new Date(dateString).toLocaleDateString('en-US', {
@@ -202,7 +210,7 @@ const StageHis: React.FC<StageHisProps> = ({
             <GitBranch className="w-5 h-5 text-white" />
           </div>
           <div>
-            <h2 className="text-xl font-bold text-white">Stage History</h2>
+            <h2 className="text-2xl font-bold text-white">Stage History</h2>
             <p className="text-gray-400 text-sm">Track your creative journey</p>
           </div>
         </div>
@@ -286,11 +294,11 @@ const StageHis: React.FC<StageHisProps> = ({
                             <div className={`p-2 rounded-lg ${statusConfig.bgColor}`}>
                               {statusConfig.icon}
                             </div>
-                            <div>
-                              <h3 className="font-semibold text-white text-lg">
+                            <div className='flex items-center'>
+                              <h3 className="flex items-center font-semibold text-white text-2xl">
                                 Version {stage.version}
                               </h3>
-                              <p className={`text-xs ${statusConfig.textColor} font-medium`}>
+                              <p className={`flex items-center text-xs ${statusConfig.textColor} font-medium`}>
                                 {statusConfig.label}
                               </p>
                             </div>
@@ -303,11 +311,8 @@ const StageHis: React.FC<StageHisProps> = ({
                           )}
                         </div>
 
-                        {/* 제목과 설명 */}
+                        {/* 설명 */}
                         <div className="space-y-2">
-                          <h4 className="font-medium text-white group-hover:text-purple-300 transition-colors">
-                            {stage.title}
-                          </h4>
                           <p className="text-gray-400 text-sm line-clamp-2">
                             {stage.description}
                           </p>
@@ -334,11 +339,12 @@ const StageHis: React.FC<StageHisProps> = ({
                                 <span className="text-xs font-medium">Continue</span>
                               </div>
                             ) : (
-                              <button
+                              <Button
                                 onClick={(e) => {
                                   e.stopPropagation();
                                   setPlayingStage(isPlaying ? null : stage.id);
                                 }}
+                                variant="waveflowbtn2" 
                                 className="flex items-center space-x-1 text-gray-400 hover:text-white transition-colors"
                               >
                                 {isPlaying ? (
@@ -349,11 +355,11 @@ const StageHis: React.FC<StageHisProps> = ({
                                 <span className="text-xs font-medium">
                                   {isPlaying ? 'Pause' : 'Preview'}
                                 </span>
-                              </button>
+                              </Button>
                             )}
                           </div>
                           
-                          <ArrowRight className="w-4 h-4 text-gray-400 group-hover:text-white group-hover:translate-x-1 transition-all" />
+                          {/* <ArrowRight className="w-4 h-4 text-gray-400 group-hover:text-white group-hover:translate-x-1 transition-all" /> */}
                         </div>
                       </div>
 

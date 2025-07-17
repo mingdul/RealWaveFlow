@@ -24,8 +24,14 @@ const StagePage: React.FC = () => {
   const [upstreams, setUpstreams] = useState<Upstream[]>([]);
   const [reviewers, setReviewers] = useState<StageReviewer[]>([]);
   const [loading, setLoading] = useState(true);
+  const [reviewersLoading, setReviewersLoading] = useState(false);
+  const [reviewersError, setReviewersError] = useState<string | null>(null);
   const [isUploadModalOpen, setUploadModalOpen] = useState(false);
   const [track, setTrack] = useState<Track | null>(null);
+  const [showAllReviewers, setShowAllReviewers] = useState(false);
+
+  // Constants
+  const MAX_DISPLAYED_REVIEWERS = 5;
 
   // 트랙 정보 가져오기
   useEffect(() => {
@@ -41,6 +47,21 @@ const StagePage: React.FC = () => {
         .catch((error: any) => console.error("Error fetching track details:", error));
     }
   }, [trackId]);
+
+  // 리뷰어 정보 가져오기 함수
+  const fetchReviewers = async (stageId: string) => {
+    setReviewersLoading(true);
+    setReviewersError(null);
+    try {
+      const reviewersResponse = await getStageReviewers(stageId);
+      setReviewers(reviewersResponse || []);
+    } catch (error) {
+      console.error("Error fetching reviewers:", error);
+      setReviewersError("Failed to load reviewers");
+    } finally {
+      setReviewersLoading(false);
+    }
+  };
 
   // 스테이지 정보 가져오기
   useEffect(() => {
@@ -62,8 +83,7 @@ const StagePage: React.FC = () => {
         setUpstreams(upstreamsResponse || []);
 
         // 리뷰어 목록 가져오기
-        const reviewersResponse = await getStageReviewers(stageId);
-        setReviewers(reviewersResponse || []);
+        await fetchReviewers(stageId);
 
       } catch (error) {
         console.error("Error fetching stage data:", error);
@@ -386,26 +406,123 @@ const StagePage: React.FC = () => {
       <main className='px-8 pb-8'>
         <div className='mb-8'>
           <h2 className='mb-4 text-3xl font-bold text-white'>{stage.title} - V{stage.version}</h2>
-          <div className='mb-6 rounded-lg bg-gray-700 p-4'>
-            <p className='text-white'>{stage.description}</p>
+          <div className='mb-6 rounded-xl bg-gradient-to-r from-gray-800 to-gray-700 p-6 shadow-lg border border-gray-600'>
+            <div className='flex items-start gap-4'>
+              <div className='flex-shrink-0'>
+                <div className='w-12 h-12 bg-purple-600 rounded-xl flex items-center justify-center'>
+                  <svg className='w-6 h-6 text-white' fill='none' stroke='currentColor' viewBox='0 0 24 24'>
+                    <path strokeLinecap='round' strokeLinejoin='round' strokeWidth={2} d='M9 12h6m-6 4h6m2 5H7a2 2 0 01-2-2V5a2 2 0 012-2h5.586a1 1 0 01.707.293l5.414 5.414a1 1 0 01.293.707V19a2 2 0 01-2 2z' />
+                  </svg>
+                </div>
+              </div>
+              <div className='flex-1'>
+                <h4 className='text-lg font-semibold text-white mb-2'>Stage Description</h4>
+                <p className='text-gray-300 leading-relaxed'>{stage.description || 'No description provided for this stage.'}</p>
+              </div>
+            </div>
           </div>
         </div>
 
-        <div className='mb-8 flex justify-end'>
-          <div className='flex items-center gap-3'>
-            <span className='text-gray-300'>REVIEWER :</span>
-            <div className='flex -space-x-2'>
-              {(reviewers || []).map((reviewer) => (
-                <div key={reviewer.id} className='h-8 w-8 rounded-full border-2 border-white bg-gray-400 flex items-center justify-center text-xs text-white'>
-                  {reviewer.user?.username?.charAt(0) || 'U'}
+        <div className='mb-8'>
+          <div className='rounded-xl bg-gradient-to-r from-purple-900/50 to-blue-900/50 p-6 shadow-lg border border-purple-500/30'>
+            <div className='flex items-center justify-between'>
+              <div className='flex items-center gap-4'>
+                <div className='flex-shrink-0'>
+                  <div className='w-12 h-12 bg-blue-600 rounded-xl flex items-center justify-center'>
+                    <svg className='w-6 h-6 text-white' fill='none' stroke='currentColor' viewBox='0 0 24 24'>
+                      <path strokeLinecap='round' strokeLinejoin='round' strokeWidth={2} d='M17 20h5v-2a3 3 0 00-5.356-1.857M17 20H7m10 0v-2c0-.656-.126-1.283-.356-1.857M7 20H2v-2a3 3 0 015.356-1.857M7 20v-2c0-.656.126-1.283.356-1.857m0 0a5.002 5.002 0 019.288 0M15 7a3 3 0 11-6 0 3 3 0 016 0zm6 3a2 2 0 11-4 0 2 2 0 014 0zM7 10a2 2 0 11-4 0 2 2 0 014 0z' />
+                    </svg>
+                  </div>
                 </div>
-              ))}
-              {(!reviewers || reviewers.length === 0) && (
-                <>
-                  <div className='h-8 w-8 rounded-full border-2 border-white bg-gray-400'></div>
-                  <div className='h-8 w-8 rounded-full border-2 border-white bg-gray-400'></div>
-                </>
-              )}
+                <div>
+                  <h4 className='text-lg font-semibold text-white mb-1'>Stage Reviewers</h4>
+                  <p className='text-gray-300 text-sm'>
+                    {reviewersLoading ? (
+                      <span>Loading reviewers...</span>
+                    ) : reviewersError ? (
+                      <span className="text-red-400">{reviewersError}</span>
+                    ) : reviewers && reviewers.length > 0 
+                      ? `${reviewers.length} reviewer${reviewers.length > 1 ? 's' : ''} assigned` 
+                      : 'No reviewers assigned yet'
+                    }
+                  </p>
+                </div>
+              </div>
+              <div className='flex items-center gap-3'>
+                {/* Refresh Button */}
+                <button
+                  onClick={() => stageId && fetchReviewers(stageId)}
+                  disabled={reviewersLoading}
+                  className='p-2 rounded-lg bg-gray-600 text-white hover:bg-gray-500 disabled:bg-gray-700 disabled:cursor-not-allowed transition-colors duration-200'
+                  title="Refresh Reviewers"
+                >
+                  <svg 
+                    className={`w-4 h-4 ${reviewersLoading ? 'animate-spin' : ''}`} 
+                    fill='none' 
+                    stroke='currentColor' 
+                    viewBox='0 0 24 24'
+                  >
+                    <path strokeLinecap='round' strokeLinejoin='round' strokeWidth={2} d='M4 4v5h.582m15.356 2A8.001 8.001 0 004.582 9m0 0H9m11 11v-5h-.581m0 0a8.003 8.003 0 01-15.357-2m15.357 2H15' />
+                  </svg>
+                </button>
+                
+                <div className='flex -space-x-3'>
+                  {reviewersLoading ? (
+                    <div className="h-12 w-12 rounded-full border-3 border-purple-500 bg-gray-700 flex items-center justify-center animate-pulse">
+                      <svg className='w-5 h-5 text-purple-400 animate-spin' fill='none' stroke='currentColor' viewBox='0 0 24 24'>
+                        <path strokeLinecap='round' strokeLinejoin='round' strokeWidth={2} d='M4 4v5h.582m15.356 2A8.001 8.001 0 004.582 9m0 0H9m11 11v-5h-.581m0 0a8.003 8.003 0 01-15.357-2m15.357 2H15' />
+                      </svg>
+                    </div>
+                  ) : reviewersError ? (
+                    <div className="h-12 w-12 rounded-full border-3 border-red-500 bg-red-900/50 flex items-center justify-center">
+                      <svg className='w-5 h-5 text-red-400' fill='none' stroke='currentColor' viewBox='0 0 24 24'>
+                        <path strokeLinecap='round' strokeLinejoin='round' strokeWidth={2} d='M12 9v2m0 4h.01m-6.938 4h13.856c1.54 0 2.502-1.667 1.732-2.5L13.732 4c-.77-.833-1.732-.833-2.464 0L4.35 16.5c-.77.833.192 2.5 1.732 2.5z' />
+                      </svg>
+                    </div>
+                  ) : reviewers && reviewers.length > 0 ? (
+                    <>
+                      {(showAllReviewers ? reviewers : reviewers.slice(0, MAX_DISPLAYED_REVIEWERS)).map((reviewer, index) => (
+                        <div key={reviewer.id} className='relative group'>
+                          <div className='h-12 w-12 rounded-full border-3 border-white bg-gradient-to-br from-purple-500 to-blue-500 flex items-center justify-center text-white font-bold text-lg shadow-lg hover:scale-110 transition-transform duration-200'>
+                            {reviewer.user?.username?.charAt(0).toUpperCase() || 'U'}
+                          </div>
+                          <div className='absolute -top-10 left-1/2 transform -translate-x-1/2 bg-gray-800 text-white text-xs px-2 py-1 rounded opacity-0 group-hover:opacity-100 transition-opacity duration-200 whitespace-nowrap z-10'>
+                            {reviewer.user?.username || 'Unknown User'}
+                          </div>
+                        </div>
+                      ))}
+                      {reviewers.length > MAX_DISPLAYED_REVIEWERS && (
+                        <button
+                          onClick={() => setShowAllReviewers(!showAllReviewers)}
+                          className='h-12 w-12 rounded-full border-3 border-white bg-gray-600 hover:bg-gray-500 flex items-center justify-center text-white font-bold text-sm shadow-lg hover:scale-110 transition-all duration-200'
+                          title={showAllReviewers ? 'Show Less' : `Show ${reviewers.length - MAX_DISPLAYED_REVIEWERS} more`}
+                        >
+                          {showAllReviewers ? (
+                            <svg className='w-5 h-5' fill='none' stroke='currentColor' viewBox='0 0 24 24'>
+                              <path strokeLinecap='round' strokeLinejoin='round' strokeWidth={2} d='M19 9l-7 7-7-7' />
+                            </svg>
+                          ) : (
+                            <span className='text-xs'>+{reviewers.length - MAX_DISPLAYED_REVIEWERS}</span>
+                          )}
+                        </button>
+                      )}
+                    </>
+                  ) : (
+                    <div className='flex gap-2'>
+                      <div className='h-12 w-12 rounded-full border-3 border-dashed border-gray-500 bg-gray-700 flex items-center justify-center'>
+                        <svg className='w-5 h-5 text-gray-400' fill='none' stroke='currentColor' viewBox='0 0 24 24'>
+                          <path strokeLinecap='round' strokeLinejoin='round' strokeWidth={2} d='M12 6v6m0 0v6m0-6h6m-6 0H6' />
+                        </svg>
+                      </div>
+                      <div className='h-12 w-12 rounded-full border-3 border-dashed border-gray-500 bg-gray-700 flex items-center justify-center'>
+                        <svg className='w-5 h-5 text-gray-400' fill='none' stroke='currentColor' viewBox='0 0 24 24'>
+                          <path strokeLinecap='round' strokeLinejoin='round' strokeWidth={2} d='M12 6v6m0 0v6m0-6h6m-6 0H6' />
+                        </svg>
+                      </div>
+                    </div>
+                  )}
+                </div>
+              </div>
             </div>
           </div>
         </div>

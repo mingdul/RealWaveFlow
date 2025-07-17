@@ -272,7 +272,7 @@ const ProjectPage: React.FC<ProjectPageProps> = () => {
       <div className="absolute inset-0 bg-gradient-to-br from-black/80 via-purple-900/50 to-black/80"></div>
       
       {/* 메인 컨텐츠 */}
-      <div className="relative z-10 min-h-screen overflow-y-auto scrollbar-hide">
+      <div className="relative z-10 overflow-y-auto scrollbar-hide">
         <div className="backdrop-blur-sm">
           <TrackHeader
             onBack={handleBack}
