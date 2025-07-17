@@ -38,28 +38,36 @@ export const NotificationProvider: React.FC<NotificationProviderProps> = ({ chil
 
   const initializeNotificationSocket = () => {
     try {
+      const socketUrl = `${import.meta.env.VITE_API_URL || 'http://13.125.231.115:8080'}/notifications`;
+      console.log('🔔 [NotificationSocket] Attempting to connect to:', socketUrl);
+      console.log('🔔 [NotificationSocket] User:', user);
+      
       // 알림 전용 소켓 연결 (/notifications 네임스페이스)
-      const notificationSocket = io(
-        `${import.meta.env.VITE_API_URL || 'http://13.125.231.115:8080'}/notifications`,
-        {
-          withCredentials: true, // 쿠키 전송 허용 (JWT 토큰 포함)
-          autoConnect: true,
-          transports: ['websocket', 'polling'],
-          reconnection: true,
-          reconnectionDelay: 1000,
-          reconnectionDelayMax: 5000,
-          reconnectionAttempts: 5,
-        }
-      );
+      const notificationSocket = io(socketUrl, {
+        withCredentials: true, // 쿠키 전송 허용 (JWT 토큰 포함)
+        autoConnect: true,
+        transports: ['websocket', 'polling'],
+        reconnection: true,
+        reconnectionDelay: 1000,
+        reconnectionDelayMax: 5000,
+        reconnectionAttempts: 5,
+      });
+      
+      console.log('🔔 [NotificationSocket] Socket instance created:', notificationSocket);
 
       // 연결 성공
       notificationSocket.on('connect', () => {
-        console.log('Notification socket connected:', notificationSocket.id);
+        console.log('🔔 [NotificationSocket] ✅ Connected successfully:', notificationSocket.id);
+        console.log('🔔 [NotificationSocket] Socket status:', {
+          connected: notificationSocket.connected,
+          id: notificationSocket.id,
+          url: socketUrl
+        });
       });
 
       // 연결 해제
       notificationSocket.on('disconnect', (reason) => {
-        console.log('Notification socket disconnected:', reason);
+        console.log('🔔 [NotificationSocket] ❌ Disconnected:', reason);
       });
 
       // 알림 서비스 연결 확인
@@ -70,7 +78,7 @@ export const NotificationProvider: React.FC<NotificationProviderProps> = ({ chil
 
       // 새 알림 수신
       notificationSocket.on('notification', (notification: Notification) => {
-        console.log('New notification received:', notification);
+        console.log('🔔 [NotificationSocket] 🎉 New notification received:', notification);
         addNotification(notification);
         
         // 토스트로 알림 표시
@@ -79,7 +87,14 @@ export const NotificationProvider: React.FC<NotificationProviderProps> = ({ chil
 
       // 연결 오류
       notificationSocket.on('connect_error', (error) => {
-        console.error('Notification socket connection error:', error);
+        console.error('🔔 [NotificationSocket] ❌ Connection error:', error);
+        console.error('🔔 [NotificationSocket] Error details:', {
+          message: error.message,
+          type: (error as any).type,
+          description: (error as any).description,
+          context: (error as any).context,
+          url: socketUrl
+        });
         
         if (error.message.includes('Unauthorized')) {
           showToast('error', '인증이 만료되었습니다. 다시 로그인해주세요.');

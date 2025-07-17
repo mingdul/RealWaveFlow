@@ -93,8 +93,11 @@ export class NotificationGateway
     try {
       const userId = client.data.userId;
       
+      this.logger.log(`🔔 [NotificationGateway] New connection attempt from client: ${client.id}`);
+      this.logger.log(`🔔 [NotificationGateway] User data:`, client.data);
+      
       if (!userId) {
-        this.logger.error('User ID not found in notification socket data');
+        this.logger.error('🔔 [NotificationGateway] ❌ User ID not found in notification socket data');
         client.disconnect();
         return;
       }
