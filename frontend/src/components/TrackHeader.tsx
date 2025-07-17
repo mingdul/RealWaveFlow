@@ -1,21 +1,18 @@
 import React from 'react';
-import { ChevronLeft, Bell, Settings } from 'lucide-react';
+import { ChevronLeft, Settings } from 'lucide-react';
 import { Button } from './';
 import Logo from './Logo';
+import NotificationBell from './NotificationBell';
 import { useNavigate } from 'react-router-dom';
 
 interface TrackHeaderProps {
   onBack?: () => void;
-  onNotificationClick?: () => void;
   onSettingsClick?: () => void;
-
 }
 
 const TrackHeader: React.FC<TrackHeaderProps> = ({
   onBack,
-  onNotificationClick,
   onSettingsClick,
-
 }) => {
   const navigate = useNavigate();
   return (
@@ -33,12 +30,9 @@ const TrackHeader: React.FC<TrackHeaderProps> = ({
         >
           Dashboard
         </nav>
-
       </div>
       <div className="flex items-center gap-4">
-        <Button size="sm" className="p-2 bg-black text-white" onClick={onNotificationClick}>
-          <Bell size={20} />
-        </Button>
+        <NotificationBell />
         <Button size="sm" className="p-2 bg-black text-white" onClick={onSettingsClick}>
           <Settings size={20} />
         </Button>
