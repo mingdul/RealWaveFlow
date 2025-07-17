@@ -180,13 +180,19 @@ export class UpstreamService {
         // upstream_id 설정
         await this.stemJobService.updateJobWithCategoryId(new_dto.newStemId, category.id);
         await this.stemJobService.updateJobWithUpstreamId(new_dto.newStemId, upstreamId);
-        await this.stemJobService.convertJobToStemNoVersion(new_dto.newStemId, user_id);
+        
+        // StemJob을 Stem으로 변환하고 생성된 Stem 반환받기
+        const createdStem = await this.stemJobService.convertJobToStemNoVersion(new_dto.newStemId, user_id);
         await this.stemJobService.deleteJob(new_dto.newStemId);
+
+        if (!createdStem) {
+            throw new NotFoundException(`Failed to convert StemJob to Stem: ${new_dto.newStemId}`);
+        }
 
         return {
             filePath: stemJob.file_path,
             needsAudioAnalysis: true, // newStem이므로 오디오 분석 필요
-            stemId: stemJob.id,
+            stemId: createdStem.id, // 실제 생성된 Stem의 ID 사용
             audioHash: stemJob.stem_hash,
             originalFilename: stemJob.file_name
         };
@@ -223,13 +229,19 @@ export class UpstreamService {
             // oldstem의 category id를 newStem에 넣어준다.
             await this.stemJobService.updateJobWithCategoryId(newStem, category.id);
             await this.stemJobService.updateJobWithUpstreamId(newStem, upstream_id);
-            await this.stemJobService.convertJobToStemNoVersion(newStem, user_id);
+            
+            // StemJob을 Stem으로 변환하고 생성된 Stem 반환받기
+            const createdStem = await this.stemJobService.convertJobToStemNoVersion(newStem, user_id);
             await this.stemJobService.deleteJob(newStem);
+
+            if (!createdStem) {
+                throw new NotFoundException(`Failed to convert StemJob to Stem: ${newStem}`);
+            }
 
             return {
                 filePath: stemJob.file_path,
                 needsAudioAnalysis: true, // newStem이므로 오디오 분석 필요
-                stemId: stemJob.id,
+                stemId: createdStem.id, // 실제 생성된 Stem의 ID 사용
                 audioHash: stemJob.stem_hash,
                 originalFilename: stemJob.file_name
             };
