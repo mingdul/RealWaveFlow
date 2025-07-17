@@ -147,41 +147,70 @@ const StemSetReviewPage = () => {
   // 현재 버전의 가이드 스템 URL 가져오기
   useEffect(() => {
     const fetchGuideUrl = async () => {
-      if (!stageId) return;
+      if (!stageId || !upstreamId) return;
 
       try {
         setGuideLoading(true);
         setGuideLoadAttempted(true); // 로드 시도 표시
 
+        // 캐시 키 생성
+        const cacheKey = `guide-${upstreamId}`;
+        
+        // 캐시에서 오디오 URL과 파형 데이터 확인
+        const cachedAudioUrl = sessionStorage.getItem(`audio-${cacheKey}`);
+        const cachedPeaks = sessionStorage.getItem(`peaks-${cacheKey}`);
+        
+        // 캐시된 데이터가 있으면 사용
+        if (cachedAudioUrl) {
+          console.log('📦 [fetchGuideUrl] Using cached guide audio URL');
+          setGuideAudioUrl(cachedAudioUrl);
+          
+          if (cachedPeaks) {
+            try {
+              const parsedPeaks = JSON.parse(cachedPeaks);
+              console.log('📦 [fetchGuideUrl] Using cached guide peaks data');
+              setGuidePeaks(parsedPeaks);
+              setGuideLoading(false);
+              return; // 캐시된 데이터로 완료
+            } catch (e) {
+              console.warn('⚠️ Failed to parse cached guide peaks data:', e);
+              // 파싱 오류 시 캐시 삭제
+              sessionStorage.removeItem(`peaks-${cacheKey}`);
+            }
+          }
+        }
+
         // 1. 현재 스테이지 정보 가져오기
-        console.log('🔍 [fetchPreviousGuideUrl] Starting with stageId:', stageId);
+        console.log('🔍 [fetchGuideUrl] Starting with stageId:', stageId);
         const currentStageResponse = await getStageDetail(stageId);
         
         if (!currentStageResponse || !currentStageResponse.data) {
-          console.error('❌ [fetchPreviousGuideUrl] Current stage not found - Response:', currentStageResponse);
+          console.error('❌ [fetchGuideUrl] Current stage not found - Response:', currentStageResponse);
+          setGuideLoading(false);
           return;
         }
 
-
-        // 5. guide audio URL 가져오기 (오디오 재생용)
-        const audioResponse = await streamingService.getGuidePresignedUrlbyUpstream(upstreamId as string);
-        console.log('🎵 [fetchPreviousGuideUrl] Guide audio response:', audioResponse);
+        // 2. guide audio URL 가져오기 (오디오 재생용)
+        const audioResponse = await streamingService.getGuidePresignedUrlbyUpstream(upstreamId);
+        console.log('🎵 [fetchGuideUrl] Guide audio response:', audioResponse);
         
         if (audioResponse.success && audioResponse.data) {
-          setGuideAudioUrl(audioResponse.data.presignedUrl);
-          console.log('🎵 Guide audio URL set:', audioResponse.data.presignedUrl);
+          const audioUrl = audioResponse.data.presignedUrl;
+          setGuideAudioUrl(audioUrl);
+          console.log('🎵 Guide audio URL set:', audioUrl);
+          // 캐시에 저장
+          sessionStorage.setItem(`audio-${cacheKey}`, audioUrl);
         } else {
           console.warn('⚠️ Guide audio not available, using fallback');
           setGuideAudioUrl('/audio/track_ex.wav');
         }
 
-        // 6. guide waveform 데이터 가져오기 (파형 표시용)
-        const waveformResponse = await streamingService.getGuideWaveformData(upstreamId as string);
-        console.log('🌊 [fetchPreviousGuideUrl] Guide waveform response:', waveformResponse);
+        // 3. guide waveform 데이터 가져오기 (파형 표시용)
+        const waveformResponse = await streamingService.getGuideWaveformData(upstreamId);
+        console.log('🌊 [fetchGuideUrl] Guide waveform response:', waveformResponse);
         
         if (waveformResponse.success && waveformResponse.data) {
           console.log('🌊 Guide waveform data type:', typeof waveformResponse.data);
-          console.log('🌊 Guide waveform data structure:', waveformResponse.data);
           
           // 데이터가 배열인지 객체인지 확인
           if (Array.isArray(waveformResponse.data)) {
@@ -191,11 +220,14 @@ const StemSetReviewPage = () => {
           }
           
           setGuidePeaks(waveformResponse.data);
+          // 캐시에 저장
+          sessionStorage.setItem(`peaks-${cacheKey}`, JSON.stringify(waveformResponse.data));
         } else {
           console.warn('⚠️ Guide waveform data not available');
           setGuidePeaks(null);
         }
       } catch (error) {
+        console.error('❌ [fetchGuideUrl] Error:', error);
         setGuideAudioUrl('/audio/track_ex.wav');
       } finally {
         setGuideLoading(false);
@@ -203,7 +235,7 @@ const StemSetReviewPage = () => {
     };
 
     fetchGuideUrl();
-  }, [stageId]);
+  }, [stageId, upstreamId]);
 
   // 스템 데이터 로드 함수 분리
   const loadStemsData = async (stageId: string, upstream: any) => {
@@ -334,33 +366,94 @@ const StemSetReviewPage = () => {
   }, []);
 
   const handleSolo = useCallback((trackId: 'main' | 'extra') => {
-    setSoloTrack(trackId);
-
+    // 현재 선택된 트랙과 같은 트랙을 다시 클릭하면 solo 모드 해제 (모든 트랙 재생)
+    const newSoloTrack = soloTrack === trackId ? null : trackId;
+    
     // 볼륨 업데이트
     const mainPlayer = wavesurferRefs.current['main'];
     const extraPlayer = wavesurferRefs.current['extra'];
 
-    if (mainPlayer) {
-      mainPlayer.setVolume(trackId === 'main' ? 1 : 0);
+    // 플레이어 존재 여부 확인
+    if (!mainPlayer) {
+      console.warn('🔊 Solo mode change failed: Main player not ready');
+      return;
     }
-    if (extraPlayer) {
-      extraPlayer.setVolume(trackId === 'extra' ? 1 : 0);
+
+    try {
+      console.log(`🔊 Solo mode changing from ${soloTrack || 'all'} to ${newSoloTrack || 'all'}`);
+      
+      // 상태 업데이트
+      setSoloTrack(newSoloTrack);
+
+      // Solo 모드가 해제된 경우 모든 트랙 재생
+      if (newSoloTrack === null) {
+        mainPlayer.setVolume(volume);
+        if (extraPlayer) extraPlayer.setVolume(volume);
+        console.log('🔊 All tracks playing with volume:', volume);
+        return;
+      }
+
+      // Solo 모드가 활성화된 경우 해당 트랙만 재생
+      if (newSoloTrack === 'main') {
+        // 메인 트랙만 재생
+        mainPlayer.setVolume(volume);
+        if (extraPlayer) {
+          extraPlayer.setVolume(0); // 다른 트랙 음소거
+          console.log('🔊 Main track solo activated, extra track muted');
+        } else {
+          console.log('🔊 Main track solo activated (extra track not available)');
+        }
+      } else if (newSoloTrack === 'extra' && extraPlayer) {
+        // 엑스트라 트랙만 재생
+        mainPlayer.setVolume(0); // 다른 트랙 음소거
+        extraPlayer.setVolume(volume);
+        console.log('🔊 Extra track solo activated, main track muted');
+      } else {
+        // 엑스트라 트랙이 없는 경우 오류 처리
+        console.warn('🔊 Cannot solo extra track - not available');
+        setSoloTrack('main'); // 메인으로 돌아가기
+        mainPlayer.setVolume(volume);
+      }
+      
+      // 상태 변경 후 로그 출력
+      console.log(`🔊 Solo mode changed to: ${newSoloTrack || 'all tracks'}`);
+    } catch (error) {
+      console.error('🔊 Error setting solo mode:', error);
+      // 오류 발생 시 기본값으로 돌아가기
+      setSoloTrack('main');
+      if (mainPlayer) mainPlayer.setVolume(volume);
     }
-  }, []);
+  }, [soloTrack, volume]);
 
   const handleVolumeChange = useCallback(
     (e: React.ChangeEvent<HTMLInputElement>) => {
       const vol = parseFloat(e.target.value);
       setVolume(vol);
 
-      // Solo 트랙에만 볼륨 적용
+      // 볼륨 적용 로직 개선
       const mainPlayer = wavesurferRefs.current['main'];
       const extraPlayer = wavesurferRefs.current['extra'];
 
-      if (soloTrack === 'main' && mainPlayer) {
-        mainPlayer.setVolume(vol);
-      } else if (soloTrack === 'extra' && extraPlayer) {
-        extraPlayer.setVolume(vol);
+      // 플레이어 존재 여부 확인
+      if (!mainPlayer && !extraPlayer) {
+        console.warn('🔊 Volume change failed: No players available');
+        return;
+      }
+
+      try {
+        if (soloTrack === null) {
+          // Solo 모드가 아닌 경우 모든 트랙에 볼륨 적용
+          if (mainPlayer) mainPlayer.setVolume(vol);
+          if (extraPlayer) extraPlayer.setVolume(vol);
+          console.log('🔊 Volume changed for all tracks:', vol);
+        } else {
+          // Solo 모드인 경우 해당 트랙에만 볼륨 적용
+          if (mainPlayer) mainPlayer.setVolume(soloTrack === 'main' ? vol : 0);
+          if (extraPlayer) extraPlayer.setVolume(soloTrack === 'extra' ? vol : 0);
+          console.log(`🔊 Volume changed for ${soloTrack} track:`, vol);
+        }
+      } catch (error) {
+        console.error('🔊 Error setting volume:', error);
       }
     },
     [soloTrack]
@@ -612,6 +705,36 @@ const StemSetReviewPage = () => {
         setSelectedUpstream(upstream);
         setShowExtraWaveform(true);
 
+        // 스템 ID를 기반으로 캐시 키 생성
+        const stemId = stemData.stem?.id;
+        const stemType = stemData.type;
+        const cacheKey = `${stemType}-${stemId}`;
+        
+        // 캐시에서 오디오 URL 확인 (세션 스토리지 사용)
+        const cachedUrl = sessionStorage.getItem(`audio-${cacheKey}`);
+        const cachedPeaks = sessionStorage.getItem(`peaks-${cacheKey}`);
+        
+        // 캐시된 데이터가 있으면 사용
+        if (cachedUrl) {
+          console.log('📦 [handleIndividualStemClick] Using cached audio URL for:', cacheKey);
+          setExtraAudio(cachedUrl);
+          setStemLoading(false);
+          
+          if (cachedPeaks) {
+            try {
+              const parsedPeaks = JSON.parse(cachedPeaks);
+              console.log('📦 [handleIndividualStemClick] Using cached peaks data');
+              setExtraPeaks(parsedPeaks);
+              setWaveformLoading(false);
+              return; // 캐시된 데이터로 완료
+            } catch (e) {
+              console.warn('⚠️ Failed to parse cached peaks data:', e);
+              // 파싱 오류 시 캐시 삭제
+              sessionStorage.removeItem(`peaks-${cacheKey}`);
+            }
+          }
+        }
+
         // 개별 스템의 스트리밍 URL 가져오기
         let streamingUrl = '';
         
@@ -628,6 +751,8 @@ const StemSetReviewPage = () => {
             if (versionStemResponse.success && versionStemResponse.data?.presignedUrl) {
               streamingUrl = versionStemResponse.data.presignedUrl;
               console.log('✅ [handleIndividualStemClick] Version stem streaming URL obtained');
+              // 캐시에 저장
+              sessionStorage.setItem(`audio-${cacheKey}`, streamingUrl);
             } else {
               console.warn('⚠️ [handleIndividualStemClick] Version stem response not successful:', versionStemResponse);
               // 실패 시 일반 stem API로 fallback 시도
@@ -637,6 +762,8 @@ const StemSetReviewPage = () => {
                 if (fallbackResponse.success && fallbackResponse.data?.presignedUrl) {
                   streamingUrl = fallbackResponse.data.presignedUrl;
                   console.log('✅ [handleIndividualStemClick] Fallback successful');
+                  // 캐시에 저장
+                  sessionStorage.setItem(`audio-${cacheKey}`, streamingUrl);
                 }
               } catch (fallbackError) {
                 console.warn('Fallback also failed:', fallbackError);
@@ -652,6 +779,8 @@ const StemSetReviewPage = () => {
               if (fallbackResponse.success && fallbackResponse.data?.presignedUrl) {
                 streamingUrl = fallbackResponse.data.presignedUrl;
                 console.log('✅ [handleIndividualStemClick] Fallback successful after error');
+                // 캐시에 저장
+                sessionStorage.setItem(`audio-${cacheKey}`, streamingUrl);
               }
             } catch (fallbackError) {
               console.warn('Fallback also failed:', fallbackError);
@@ -667,6 +796,8 @@ const StemSetReviewPage = () => {
             if (stemResponse.success && stemResponse.data?.presignedUrl) {
               streamingUrl = stemResponse.data.presignedUrl;
               console.log('✅ [handleIndividualStemClick] Regular stem streaming URL obtained');
+              // 캐시에 저장
+              sessionStorage.setItem(`audio-${cacheKey}`, streamingUrl);
             } else {
               console.warn('⚠️ [handleIndividualStemClick] Stem response not successful:', stemResponse);
             }
@@ -681,69 +812,78 @@ const StemSetReviewPage = () => {
         if (streamingUrl) {
           console.log('✅ [handleIndividualStemClick] Using streaming URL:', streamingUrl);
           setExtraAudio(streamingUrl);
+          setStemLoading(false);
         } else {
           console.warn('⚠️ [handleIndividualStemClick] No streaming URL available for stem');
           showWarning('이 스템의 오디오 파일을 불러올 수 없습니다.');
+          setStemLoading(false);
+          setWaveformLoading(false);
+          return;
         }
 
         // Stem waveform 데이터 가져오기 (비동기로 처리하여 UI 블로킹 방지)
-        setTimeout(async () => {
-          try {
-            console.log('🔍 [handleIndividualStemClick] Getting waveform data for stem type:', stemData.type);
-            
-            if (stemData.type === 'unchanged' && stemData.stem?.id) {
-              // version-stem waveform 데이터 가져오기
-              try {
-                console.log('🔍 [handleIndividualStemClick] Getting version-stem waveform data:', stemData.stem.id);
-                const versionStemWaveformData = await streamingService.getVersionStemWaveformData(stemData.stem.id);
-                console.log('🌊 Version-stem waveform data:', versionStemWaveformData);
-                
-                if (versionStemWaveformData.success && versionStemWaveformData.data) {
-                  setExtraPeaks(versionStemWaveformData.data);
-                  console.log('📦 Version-stem waveform data loaded successfully');
-                } else {
-                  console.warn('⚠️ No waveform data available for this version-stem');
-                  setExtraPeaks(null);
-                }
-              } catch (error: any) {
-                console.warn('Failed to get version-stem waveform data:', error);
+        try {
+          console.log('🔍 [handleIndividualStemClick] Getting waveform data for stem type:', stemData.type);
+          
+          if (stemData.type === 'unchanged' && stemData.stem?.id) {
+            // version-stem waveform 데이터 가져오기
+            try {
+              console.log('🔍 [handleIndividualStemClick] Getting version-stem waveform data:', stemData.stem.id);
+              const versionStemWaveformData = await streamingService.getVersionStemWaveformData(stemData.stem.id);
+              console.log('🌊 Version-stem waveform data:', versionStemWaveformData);
+              
+              if (versionStemWaveformData.success && versionStemWaveformData.data) {
+                setExtraPeaks(versionStemWaveformData.data);
+                console.log('📦 Version-stem waveform data loaded successfully');
+                // 캐시에 저장
+                sessionStorage.setItem(`peaks-${cacheKey}`, JSON.stringify(versionStemWaveformData.data));
+              } else {
+                console.warn('⚠️ No waveform data available for this version-stem');
                 setExtraPeaks(null);
               }
-            } else if ((stemData.type === 'new' || stemData.type === 'modify') && stemData.stem?.id) {
-              // 일반 stem waveform 데이터 가져오기
-              try {
-                console.log('🔍 [handleIndividualStemClick] Getting regular stem waveform data:', stemData.stem.id);
-                const stemWaveformData = await streamingService.getStemWaveformData(stemData.stem.id);
-                console.log('🌊 Stem waveform data:', stemWaveformData);
-                
-                if (stemWaveformData.success && stemWaveformData.data) {
-                  setExtraPeaks(stemWaveformData.data);
-                  console.log('📦 Stem waveform data loaded successfully');
-                } else {
-                  console.warn('⚠️ No waveform data available for this stem');
-                  setExtraPeaks(null);
-                }
-              } catch (error: any) {
-                console.warn('Failed to get stem waveform data:', error);
-                setExtraPeaks(null);
-              }
-            } else {
-              console.warn('⚠️ Invalid stem data type for waveform:', stemData);
+            } catch (error: any) {
+              console.warn('Failed to get version-stem waveform data:', error);
               setExtraPeaks(null);
             }
-          } finally {
-            setWaveformLoading(false);
+          } else if ((stemData.type === 'new' || stemData.type === 'modify') && stemData.stem?.id) {
+            // 일반 stem waveform 데이터 가져오기
+            try {
+              console.log('🔍 [handleIndividualStemClick] Getting regular stem waveform data:', stemData.stem.id);
+              const stemWaveformData = await streamingService.getStemWaveformData(stemData.stem.id);
+              console.log('🌊 Stem waveform data:', stemWaveformData);
+              
+              if (stemWaveformData.success && stemWaveformData.data) {
+                setExtraPeaks(stemWaveformData.data);
+                console.log('📦 Stem waveform data loaded successfully');
+                // 캐시에 저장
+                sessionStorage.setItem(`peaks-${cacheKey}`, JSON.stringify(stemWaveformData.data));
+              } else {
+                console.warn('⚠️ No waveform data available for this stem');
+                setExtraPeaks(null);
+              }
+            } catch (error: any) {
+              console.warn('Failed to get stem waveform data:', error);
+              setExtraPeaks(null);
+            }
+          } else {
+            console.warn('⚠️ Invalid stem data type for waveform:', stemData);
+            setExtraPeaks(null);
           }
-        }, 100); // 약간의 지연을 두어 오디오 로딩이 먼저 시작되도록 함
+        } catch (error) {
+          console.error('Error loading waveform data:', error);
+          setExtraPeaks(null);
+        } finally {
+          setWaveformLoading(false);
+        }
 
       } catch (error) {
         console.error('Error loading individual stem:', error);
         showError('스템을 불러오는 중 오류가 발생했습니다.');
-      } finally {
         setStemLoading(false);
+        setWaveformLoading(false);
       }
     },
-    []
+    [showWarning, showError]
   );
 
   // Solo 버튼 핸들러들을 메모이제이션
@@ -761,15 +901,24 @@ const StemSetReviewPage = () => {
       extraPlayer &&
       mainPlayer &&
       readyStates['extra'] &&
-      readyStates['main']
+      readyStates['main'] &&
+      !isSeeking.current // 시크 중이 아닐 때만 동기화
     ) {
       try {
-        const progress = currentTime / mainPlayer.getDuration();
-        if (progress >= 0 && progress <= 1) {
-          extraPlayer.seekTo(progress);
+        // 현재 시간이 유효한 경우에만 동기화 시도
+        if (currentTime > 0 && mainPlayer.getDuration() > 0) {
+          const progress = currentTime / mainPlayer.getDuration();
+          if (progress >= 0 && progress <= 1) {
+            // 현재 위치와 extra 플레이어 위치가 너무 다를 때만 동기화 (성능 최적화)
+            const extraTime = extraPlayer.getCurrentTime();
+            if (Math.abs(extraTime - currentTime) > 0.1) {
+              console.log('🔄 Syncing extra player to main time:', currentTime);
+              extraPlayer.seekTo(progress);
+            }
+          }
         }
       } catch (error) {
-        // 동기화 실패 시 무시
+        console.warn('⚠️ Sync error:', error);
       }
     }
   }, [currentTime, readyStates, isPlaying]);
@@ -1254,13 +1403,13 @@ const StemSetReviewPage = () => {
         {/* Waveform */}
         <div className='space-y-6'>
           {guideLoading ? (
-            <div className='flex items-center justify-center py-8'>
-              <div className='mr-3 h-8 w-8 animate-spin rounded-full border-b-2 border-white'></div>
-              <span className='text-white'>Loading guide...</span>
+            <div className='flex flex-col items-center justify-center py-8 bg-gray-900/30 rounded-md p-6'>
+              <div className='mb-3 h-10 w-10 animate-spin rounded-full border-b-2 border-t-2 border-red-400'></div>
+              <span className='text-white font-medium'>가이드 오디오를 불러오는 중...</span>
+              <span className='text-gray-400 text-sm mt-2'>잠시만 기다려주세요</span>
             </div>
           ) : guideLoadAttempted && guideAudioUrl ? (
             <>
-              {console.log('DEBUG: Guide Wave Component Props - audioUrl:', guideAudioUrl, 'peaks:', guidePeaks)}
               <Wave
                 onReady={handleReady}
                 audioUrl={guideAudioUrl}
@@ -1276,9 +1425,9 @@ const StemSetReviewPage = () => {
               />
             </>
           ) : (
-            <div className='flex items-center justify-center py-8'>
+            <div className='flex items-center justify-center py-8 bg-gray-900/30 rounded-md p-6'>
               <span className='text-sm text-white'>
-                No guide audio available for this stage
+                이 스테이지에 사용 가능한 가이드 오디오가 없습니다.
               </span>
             </div>
           )}
@@ -1286,18 +1435,22 @@ const StemSetReviewPage = () => {
           {showExtraWaveform && extraAudio && (
             <>
               {stemLoading ? (
-                <div className='flex items-center justify-center py-8'>
-                  <div className='mr-3 h-8 w-8 animate-spin rounded-full border-b-2 border-blue-500'></div>
-                  <span className='text-white'>오디오 파일을 불러오는 중...</span>
+                <div className='flex flex-col items-center justify-center py-8 bg-gray-900/30 rounded-md p-6'>
+                  <div className='mb-3 h-10 w-10 animate-spin rounded-full border-b-2 border-t-2 border-blue-400'></div>
+                  <span className='text-white font-medium'>오디오 파일을 불러오는 중...</span>
+                  <span className='text-gray-400 text-sm mt-2'>잠시만 기다려주세요</span>
                 </div>
               ) : waveformLoading ? (
-                <div className='flex items-center justify-center py-8'>
-                  <div className='mr-3 h-8 w-8 animate-spin rounded-full border-b-2 border-blue-500'></div>
-                  <span className='text-white'>파형 데이터를 불러오는 중...</span>
+                <div className='flex flex-col items-center justify-center py-8 bg-gray-900/30 rounded-md p-6'>
+                  <div className='mb-3 h-10 w-10 animate-spin rounded-full border-b-2 border-t-2 border-blue-400'></div>
+                  <span className='text-white font-medium'>파형 데이터를 불러오는 중...</span>
+                  <span className='text-gray-400 text-sm mt-2'>잠시만 기다려주세요</span>
+                  <div className='mt-4 text-xs text-gray-500'>
+                    파형 데이터가 없으면 오디오만 로드됩니다.
+                  </div>
                 </div>
               ) : (
                 <>
-                  {console.log('DEBUG: Extra Wave Component Props - audioUrl:', extraAudio, 'peaks:', extraPeaks)}
                   <Wave
                     onReady={handleReady}
                     audioUrl={extraAudio}
