@@ -310,9 +310,9 @@ useEffect(() => {
               )}
             </Button>
             <Button 
-              variant="outline" 
+              variant="waveflowbtn" 
               size="lg"
-              className="rounded-full flex items-center gap-2 bg-[#202426] hover:bg-[#373A3D] text-white w-full sm:w-auto"
+              className="rounded-full flex items-center gap-2 w-full sm:w-auto"
               onClick={handleShowAllStems}
             >
               View All Stems

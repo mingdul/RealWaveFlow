@@ -514,14 +514,14 @@ const DashboardPageV2 = () => {
             <div className="flex space-x-4 mb-8">
               <Button
                 onClick={() => setFilter('owned')}
-                variant={filter === 'owned' ? 'primary' : 'secondary'}
+                variant='waveflowbtn'
                 className="flex items-center space-x-2"
               >
                 <span>OWNED</span>
               </Button>
               <Button
                 onClick={() => setFilter('collaborated')}
-                variant={filter === 'collaborated' ? 'primary' : 'secondary'}
+                variant='waveflowbtn'
                 className="flex items-center space-x-2"
               >
                 <span>COLLABORATED</span>
