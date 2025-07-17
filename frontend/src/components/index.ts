@@ -25,4 +25,5 @@ export { default as StemListModal } from './StemListModal';
 export { default as CreateTrackModal } from './CreateTrackModal';
 export { default as StepProgress } from './StepProgress';
 export { default as AudioPlayer } from './AudioPlayer';
-export { default as StemPlayer } from './StemPlayer';
+export { default as StemPlayer } from './StemPlayer';  
+export { default as StageHistory2 } from './StageHistory2'; 
