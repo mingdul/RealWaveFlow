@@ -3,8 +3,8 @@ import { AppModule } from './app.module';
 import { DocumentBuilder, SwaggerModule } from '@nestjs/swagger';
 import { ValidationPipe } from '@nestjs/common';
 import * as cookieParser from 'cookie-parser';
-import express from 'express';
-import path from 'path';
+import * as express from 'express'; // 🔹 반드시 *로 import 해야 static 사용 가능
+import { join } from 'path'; // 🔹 path.join 대신 join을 쓰면 깔끔함
 
 async function bootstrap() {
   try {
@@ -17,9 +17,10 @@ async function bootstrap() {
     
     const app = await NestFactory.create(AppModule);
 
-    const expressApp = app.getHttpAdapter().getInstance();  // express 인스턴스를 얻어서 static 경로 설정하기
-    app.use('/assets', express.static(path.join(__dirname, '..', 'public', 'assets')));     // 정적 파일 경로 등록 (이미지 서빙)
-
+    // ✅ Express 인스턴스를 얻어서 정적 파일 서빙 미들웨어 등록
+    const expressApp = app.getHttpAdapter().getInstance();
+    expressApp.use('/assets', express.static(join(__dirname, '..', 'public', 'assets')));
+    
     app.use(cookieParser());
     // src/main.ts
     app.use((req, res, next) => {
