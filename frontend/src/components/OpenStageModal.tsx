@@ -58,16 +58,16 @@ const OpenStageModal: React.FC<OpenStageModalProps> = ({
   if (!isOpen) return null;
 
   return (
-    <div className="fixed inset-0 bg-black/60 backdrop-blur-sm flex items-center justify-center z-50">
-      <div className="bg-[#262626] rounded-xl p-6 max-w-lg w-full mx-4 shadow-2xl border border-[#595959]">
+    <div className="fixed inset-0 bg-black/60 backdrop-blur-sm flex items-center justify-center z-50 p-4">
+      <div className="bg-[#262626] rounded-xl p-4 sm:p-6 max-w-sm sm:max-w-md lg:max-w-lg w-full mx-4 shadow-2xl border border-[#595959]">
         {/* Header */}
-        <div className="flex items-center justify-between mb-8">
+        <div className="flex items-center justify-between mb-6 sm:mb-8">
           <div className="flex items-center gap-3">
-            <div className="w-10 h-10 bg-gradient-to-br from-purple-500 to-blue-500 rounded-xl flex items-center justify-center shadow-lg">
-              <CirclePlus size={20} className="text-white" />
+            <div className="w-8 h-8 sm:w-10 sm:h-10 bg-gradient-to-br from-purple-500 to-blue-500 rounded-xl flex items-center justify-center shadow-lg">
+              <CirclePlus size={16} className="sm:w-5 sm:h-5 text-white" />
             </div>
             <div>
-              <h2 className="text-2xl font-bold text-[#D9D9D9]">Open Stage</h2>
+              <h2 className="text-xl sm:text-2xl font-bold text-[#D9D9D9]">Open Stage</h2>
               <p className="text-[#BFBFBF] text-sm">Create a new review session</p>
             </div>
           </div>
@@ -75,12 +75,12 @@ const OpenStageModal: React.FC<OpenStageModalProps> = ({
             onClick={onClose}
             className="text-[#BFBFBF] hover:text-[#D9D9D9] transition-colors p-2 rounded-lg hover:bg-[#595959]/50"
           >
-            <X size={24} />
+            <X size={20} />
           </button>
         </div>
 
         {/* Description Section */}
-        <div className="mb-8">
+        <div className="space-y-4 sm:space-y-6">
           <div className="flex items-center gap-2 mb-4">
             <FileText size={18} className="text-[#BFBFBF]" />
             <label className="text-sm font-semibold text-[#D9D9D9] uppercase tracking-wide">

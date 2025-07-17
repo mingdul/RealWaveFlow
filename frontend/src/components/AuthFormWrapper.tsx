@@ -22,18 +22,18 @@ const AuthFormWrapper: React.FC<AuthFormWrapperProps> = ({
   socialButtonsComponent
 }) => {
   return (
-    <div className="flex w-screen h-screen flex-col md:flex-row m-0 p-0 overflow-hidden">
+    <div className="flex w-screen h-screen flex-col lg:flex-row m-0 p-0 overflow-hidden">
       {/* Left side - Auth Form */}
-      <div className="w-full md:w-1/2 items-center justify-center bg-[#0D0D0D] p-8 m-0">
-        <div className="w-full px-8 md:px-32">
+      <div className="w-full lg:w-1/2 flex items-center justify-center bg-[#0D0D0D] p-4 sm:p-6 md:p-8 m-0">
+        <div className="w-full max-w-md lg:max-w-lg xl:max-w-xl px-4 sm:px-6 md:px-8 lg:px-12">
           {/* Logo and Tagline */}
-          <div className="mb-12">
+          <div className="mb-8 sm:mb-10 md:mb-12">
             <Logo size="md" />
           </div>
 
           {/* Auth Form */}
-          <div className="rounded-2xl bg-[#262626] p-8 shadow-2xl">
-            <h2 className="mb-8 text-2xl font-semibold text-[#D9D9D9]">{title}</h2>
+          <div className="rounded-xl lg:rounded-2xl bg-[#262626] p-4 sm:p-6 md:p-8 shadow-2xl">
+            <h2 className="mb-6 sm:mb-8 text-xl sm:text-2xl font-semibold text-[#D9D9D9]">{title}</h2>
 
             
               {children}
@@ -41,14 +41,14 @@ const AuthFormWrapper: React.FC<AuthFormWrapperProps> = ({
 
             {/* Divider */}
             {showSocialButtons && (
-              <div className="my-8 text-center">
+              <div className="my-6 sm:my-8 text-center">
                 <span className="text-sm text-[#BFBFBF]">or continue with</span>
               </div>
             )}
 
             {/* Social Login Buttons */}
             {showSocialButtons && socialButtonsComponent && (
-              <div className="mb-6">
+              <div className="mb-4 sm:mb-6">
                 {socialButtonsComponent}
               </div>
             )}
@@ -70,7 +70,7 @@ const AuthFormWrapper: React.FC<AuthFormWrapperProps> = ({
       </div>
 
       {/* Right side - Background Pattern */}
-      <div className="relative w-full md:w-1/2 overflow-hidden">
+      <div className="relative w-full lg:w-1/2 h-32 sm:h-48 md:h-64 lg:h-full overflow-hidden">
         <div
           className="absolute inset-0 bg-cover bg-center bg-no-repeat"
           style={{

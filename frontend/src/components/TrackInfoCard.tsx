@@ -262,42 +262,42 @@ useEffect(() => {
   };
 
   return (
-    <div className="mb-12">
-      <div className="flex gap-8 mb-6">
+    <div className="mb-6 md:mb-12">
+      <div className="flex flex-col lg:flex-row gap-4 md:gap-6 lg:gap-8 mb-4 md:mb-6">
         {/* Album Cover */}
-        <div className="flex-shrink-0">
+        <div className="flex-shrink-0 self-center lg:self-start">
           <PresignedImage
             trackId={track.id}
             imageUrl={track.image_url}
             alt={track.title}
-            className="w-80 h-80 rounded-lg shadow-lg object-cover"
+            className="w-48 h-48 sm:w-56 sm:h-56 md:w-64 md:h-64 lg:w-72 lg:h-72 xl:w-80 xl:h-80 rounded-lg shadow-lg object-cover"
           />
         </div>
 
         {/* Track Details */}
-        <div className="flex-1">
-          <h2 className="text-4xl font-bold text-white mb-2">{track.title}</h2>
-          <p className="text-gray-400 text-lg mb-4">{new Date(track.created_date).toLocaleDateString('en-US')}</p>
-          <div className="flex gap-2 mb-4 flex-wrap">
-            <span className="px-3 py-1 bg-gray-100 text-sm text-gray-600 rounded-full">{track.genre}</span>
-            <span className="px-3 py-1 bg-gray-100 text-sm text-gray-600 rounded-full">{track.bpm} bpm</span>
-            <span className="px-3 py-1 bg-gray-100 text-sm text-gray-600 rounded-full">{track.key_signature} key</span>
+        <div className="flex-1 min-w-0">
+          <h2 className="text-2xl sm:text-3xl lg:text-4xl font-bold text-white mb-2">{track.title}</h2>
+          <p className="text-gray-400 text-sm sm:text-base lg:text-lg mb-3 md:mb-4">{new Date(track.created_date).toLocaleDateString('en-US')}</p>
+          <div className="flex gap-2 mb-3 md:mb-4 flex-wrap">
+            <span className="px-2 py-1 md:px-3 md:py-1 bg-gray-100 text-xs sm:text-sm text-gray-600 rounded-full">{track.genre}</span>
+            <span className="px-2 py-1 md:px-3 md:py-1 bg-gray-100 text-xs sm:text-sm text-gray-600 rounded-full">{track.bpm} bpm</span>
+            <span className="px-2 py-1 md:px-3 md:py-1 bg-gray-100 text-xs sm:text-sm text-gray-600 rounded-full">{track.key_signature} key</span>
           </div>
 
-          <div className="mb-6">
-            <h3 className="text-lg font-semibold text-white mb-2">Owner: {track.owner_id.username}</h3>
-            <p className="text-gray-300 leading-relaxed">Description: {track.description}</p>
+          <div className="mb-4 md:mb-6">
+            <h3 className="text-base sm:text-lg font-semibold text-white mb-2">Owner: {track.owner_id.username}</h3>
+            <p className="text-gray-300 leading-relaxed text-sm sm:text-base">Description: {track.description}</p>
           </div>
 
-          <div className="mb-6">
-            <h4 className="text-gray-400 font-bold">Version: {versionNumber}</h4>
+          <div className="mb-4 md:mb-6">
+            <h4 className="text-gray-400 font-bold text-sm sm:text-base">Version: {versionNumber}</h4>
           </div>
 
-          <div className="flex gap-4 mb-6">
+          <div className="flex flex-col sm:flex-row gap-3 md:gap-4 mb-4 md:mb-6">
             <Button 
               variant="primary" 
               size="lg" 
-              className="rounded-full flex items-center gap-2 bg-purple-600 hover:bg-purple-700"
+              className="rounded-full flex items-center justify-center gap-2 bg-purple-600 hover:bg-purple-700 w-full sm:w-auto"
               onClick={handlePlayClick}
               disabled={stemsLoading || guideLoading}
             >
@@ -312,7 +312,7 @@ useEffect(() => {
             <Button 
               variant="outline" 
               size="lg"
-              className="rounded-full flex items-center gap-2 bg-[#202426] hover:bg-[#373A3D] text-white"
+              className="rounded-full flex items-center gap-2 bg-[#202426] hover:bg-[#373A3D] text-white w-full sm:w-auto"
               onClick={handleShowAllStems}
             >
               View All Stems
@@ -342,13 +342,13 @@ useEffect(() => {
 
       {/* Invite Modal */}
       {showInviteModal && (
-      <div className="fixed inset-0 bg-black bg-opacity-50 flex items-center justify-center z-50">
-        <div className="bg-gray-800 rounded-lg p-6 w-full max-w-md mx-4">
+      <div className="fixed inset-0 bg-black bg-opacity-50 flex items-center justify-center z-50 p-4">
+        <div className="bg-gray-800 rounded-lg p-4 md:p-6 w-full max-w-sm sm:max-w-md lg:max-w-lg mx-4">
           <div className="flex justify-between items-center mb-4">
-            <h3 className="text-xl font-semibold text-white">협업자 초대</h3>
+            <h3 className="text-lg sm:text-xl font-semibold text-white">협업자 초대</h3>
             <button
               onClick={handleCloseInviteModal}
-              className="text-gray-400 hover:text-white"
+              className="text-gray-400 hover:text-white p-1"
             >
               <X size={20} />
             </button>
@@ -358,7 +358,7 @@ useEffect(() => {
             <label className="block text-sm font-medium text-gray-300 mb-2">
               이메일 주소 ({emailList.length}개)
             </label>
-            <div className="min-h-[120px] px-3 py-2 bg-gray-700 border border-gray-600 rounded-md focus-within:ring-2 focus-within:ring-purple-500 focus-within:border-transparent">
+            <div className="min-h-[100px] sm:min-h-[120px] px-3 py-2 bg-gray-700 border border-gray-600 rounded-md focus-within:ring-2 focus-within:ring-purple-500 focus-within:border-transparent">
               <div className="flex flex-wrap gap-2 mb-2">
                 {emailList.map((email, index) => (
                   <span
