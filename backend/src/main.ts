@@ -3,6 +3,8 @@ import { AppModule } from './app.module';
 import { DocumentBuilder, SwaggerModule } from '@nestjs/swagger';
 import { ValidationPipe } from '@nestjs/common';
 import * as cookieParser from 'cookie-parser';
+import express from 'express';
+import path from 'path';
 
 async function bootstrap() {
   try {
@@ -14,6 +16,7 @@ async function bootstrap() {
     console.log('Database User:', process.env.DB_USERNAME);
     
     const app = await NestFactory.create(AppModule);
+    app.use('/assets', express.static(path.join(__dirname, '..', 'public', 'assets')));     // 정적 파일 경로 등록 (이미지 서빙)
 
     app.use(cookieParser());
     // src/main.ts
@@ -31,8 +34,7 @@ async function bootstrap() {
         'http://localhost:3000', 
         'http://127.0.0.1:3000',
         'https://waveflow.pro', // 프로덕션 URL 추가
-        'http://13.125.231.115:3000',
-        'http://13.209.14.85',
+        'https://www.waveflow.pro'
       ],
       credentials: true,
       methods: ['GET', 'POST', 'PUT', 'DELETE', 'OPTIONS'],
@@ -43,7 +45,7 @@ async function bootstrap() {
       .setTitle('WaveFlow API')
       .setDescription('WaveFlow 백엔드 API 문서 - Git 스타일 브랜치 시스템')
       .setVersion('1.0')
-      .setContact('WaveFlow Team', 'https://github.com/waveflow', 'contact@waveflow.com')
+      .setContact('Team HoneyBadgers', 'https://github.com/waveflow', 'lwk9589@gmail.com')
       .addBearerAuth()
       .addTag('auth', '인증 관련 API')
       .addTag('users', '사용자 관리 API')
