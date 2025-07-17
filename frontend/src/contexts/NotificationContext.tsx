@@ -38,8 +38,14 @@ export const NotificationProvider: React.FC<NotificationProviderProps> = ({ chil
 
   const initializeNotificationSocket = () => {
     try {
-      const socketUrl = `${import.meta.env.VITE_API_URL || 'https://waveflow.pro/api'}/notifications`;
-      console.log('🔔 [NotificationSocket] Attempting to connect to:', socketUrl);
+      // Socket.IO는 자동으로 /socket.io/ 경로를 추가하므로 base URL만 사용
+      const baseUrl = import.meta.env.VITE_API_URL ? 
+        import.meta.env.VITE_API_URL.replace('/api', '') : 
+        'https://waveflow.pro';
+      const socketUrl = `${baseUrl}/notifications`;
+      
+      console.log('🔔 [NotificationSocket] Base URL:', baseUrl);
+      console.log('🔔 [NotificationSocket] Socket URL:', socketUrl);
       console.log('🔔 [NotificationSocket] User:', user);
       
       // 알림 전용 소켓 연결 (/notifications 네임스페이스)
