@@ -15,6 +15,7 @@ import TrackPage from './pages/TrackPage.tsx';
 import StemSetReviewPage from './pages/StemSetReviewPage.tsx';
 import DashboardPageV2 from './pages/DashboardssPageV2.tsx';
 import InvitePage from './pages/InvitePage.tsx';
+import ProjectPage from './pages/ProjectPage.tsx';
 // import PR_Page from './pages/PR_Page.tsx';     
 // import MasterPage from './pages/MasterPage';
 // import CommitPage from './pages/UploadPage';
@@ -39,6 +40,7 @@ const App = () => {
               <Route path="/dashboard" element={<DashboardPageV2 />} />
               <Route path="/newdash" element={<DashboardPage />} />
               <Route path="/track/:trackId" element={<TrackPage />} />
+              <Route path="/project/:trackId" element={<ProjectPage />} />
               <Route path="/invite/:token" element={<InvitePage />} />
               <Route path="/stage/:stageId" element={<StagePage />} />
               {/* <Route path="/review" element={<StemSetReviewPage />} /> */}
