@@ -43,12 +43,15 @@ export const NotificationProvider: React.FC<NotificationProviderProps> = ({ chil
         import.meta.env.VITE_API_URL.replace('/api', '') : 
         'https://waveflow.pro';
       
+      // 알림 전용 네임스페이스 URL 생성
+      const socketUrl = `${baseUrl}/notifications`;
+      
       console.log('🔔 [NotificationSocket] Base URL:', baseUrl);
-      console.log('🔔 [NotificationSocket] Socket URL:', baseUrl);
+      console.log('🔔 [NotificationSocket] Socket URL:', socketUrl);
       console.log('🔔 [NotificationSocket] User:', user);
       
-      // 기본 네임스페이스 사용 (백엔드의 ChatGateway와 동일)
-      const notificationSocket = io(baseUrl, {
+      // 알림 전용 소켓 연결 (/notifications 네임스페이스)
+      const notificationSocket = io(socketUrl, {
         withCredentials: true, // 쿠키 전송 허용 (JWT 토큰 포함)
         autoConnect: true,
         transports: ['websocket', 'polling'],
@@ -67,7 +70,7 @@ export const NotificationProvider: React.FC<NotificationProviderProps> = ({ chil
         console.log('🔔 [NotificationSocket] Socket status:', {
           connected: notificationSocket.connected,
           id: notificationSocket.id,
-          url: baseUrl
+          url: socketUrl
         });
       });
 
@@ -99,7 +102,7 @@ export const NotificationProvider: React.FC<NotificationProviderProps> = ({ chil
           type: (error as any).type,
           description: (error as any).description,
           context: (error as any).context,
-          url: baseUrl
+          url: socketUrl
         });
         
         if (error.message.includes('Unauthorized')) {

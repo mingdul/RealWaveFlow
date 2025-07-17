@@ -41,8 +41,8 @@ const App = () => {
               <Route path="/signup" element={<PublicRoute><SignUpPage /></PublicRoute>} />
               <Route path="/dashboard" element={<DashboardPageV2 />} />
               <Route path="/newdash" element={<DashboardPage />} />
-              <Route path="/track/:trackId" element={<TrackPage />} />
-              <Route path="/project/:trackId" element={<ProjectPage />} />
+              <Route path="/track/:trackId" element={<ProjectPage />} />
+              <Route path="/project/:trackId" element={<TrackPage />} />
               <Route path="/invite/:token" element={<InvitePage />} />
               <Route path="/stage/:stageId" element={<StagePage />} />
               {/* <Route path="/review" element={<StemSetReviewPage />} /> */}
