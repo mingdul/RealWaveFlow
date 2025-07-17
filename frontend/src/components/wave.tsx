@@ -16,6 +16,7 @@ export interface WaveProps {
   isSolo: boolean;
   onSeek?: (time: number, trackId: string) => void;
   peaks?: any; // waveform JSON 데이터
+  isLoading?: boolean; // 로딩 상태 추가
 }
 
 const Wave = ({ 
@@ -30,7 +31,8 @@ const Wave = ({
   onSolo,
   isSolo,
   peaks,
-  onSeek
+  onSeek,
+  isLoading = false
 }: WaveProps) => {
   const waveRef = useRef<HTMLDivElement>(null);
   const timelineRef = useRef<HTMLDivElement>(null);
@@ -211,24 +213,33 @@ const Wave = ({
       className={`w-full bg-gray-900 rounded-md shadow-lg p-3 sm:p-4 space-y-3 sm:space-y-4 ${isActive ? 'border-2 border-blue-500' : ''}`}
       onClick={onClick}
     >
-      <div className="relative border border-gray-700 rounded overflow-hidden">
-        <div id="wave-minimap" ref={minimapRef} className="h-12 sm:h-14 md:h-16" />
-      </div>
-      <div className="relative border border-gray-700 rounded overflow-hidden">
-        <div id="wave-timeline" ref={timelineRef} className="h-8 sm:h-9 md:h-10" />
-        <div id="wave-presentation" ref={waveRef} className="h-48 sm:h-56 md:h-64 lg:h-72" />
-      </div>
-      <button 
-        onClick={onSolo}
-        disabled={!isReady}
-        className={`px-3 py-2 sm:px-4 sm:py-2 rounded transition-all text-sm sm:text-base ${
-          isSolo 
-            ? 'bg-purple-500 text-black' 
-            : 'bg-gray-700 text-white hover:bg-gray-600'
-        } ${!isReady ? 'opacity-50 cursor-not-allowed' : ''}`}
-      >
-        Solo
-      </button>
+      {isLoading ? (
+        <div className="flex items-center justify-center py-8">
+          <div className="mr-3 h-8 w-8 animate-spin rounded-full border-b-2 border-blue-500"></div>
+          <span className="text-white">오디오를 불러오는 중...</span>
+        </div>
+      ) : (
+        <>
+          <div className="relative border border-gray-700 rounded overflow-hidden">
+            <div id="wave-minimap" ref={minimapRef} className="h-12 sm:h-14 md:h-16" />
+          </div>
+          <div className="relative border border-gray-700 rounded overflow-hidden">
+            <div id="wave-timeline" ref={timelineRef} className="h-8 sm:h-9 md:h-10" />
+            <div id="wave-presentation" ref={waveRef} className="h-48 sm:h-56 md:h-64 lg:h-72" />
+          </div>
+          <button 
+            onClick={onSolo}
+            disabled={!isReady}
+            className={`px-3 py-2 sm:px-4 sm:py-2 rounded transition-all text-sm sm:text-base ${
+              isSolo 
+                ? 'bg-purple-500 text-black' 
+                : 'bg-gray-700 text-white hover:bg-gray-600'
+            } ${!isReady ? 'opacity-50 cursor-not-allowed' : ''}`}
+          >
+            Solo
+          </button>
+        </>
+      )}
     </div>
   );
 };
