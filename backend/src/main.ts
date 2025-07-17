@@ -16,6 +16,8 @@ async function bootstrap() {
     console.log('Database User:', process.env.DB_USERNAME);
     
     const app = await NestFactory.create(AppModule);
+
+    const expressApp = app.getHttpAdapter().getInstance();  // express 인스턴스를 얻어서 static 경로 설정하기
     app.use('/assets', express.static(path.join(__dirname, '..', 'public', 'assets')));     // 정적 파일 경로 등록 (이미지 서빙)
 
     app.use(cookieParser());
