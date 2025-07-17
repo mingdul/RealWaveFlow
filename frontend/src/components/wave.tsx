@@ -132,30 +132,28 @@ const Wave = ({
       }
       
       console.log(`🌊 Loading with peaks data for ${id}:`, peaksData);
-      if (wavesurferRef.current) {
-        wavesurferRef.current.load(audioUrl, peaksData).catch((error) => {
-          if (error.name !== 'AbortError') {
-            console.warn('Failed to load audio with peaks:', error);
-            // peaks 로드 실패 시 오디오만 로드
-            if (wavesurferRef.current) {
-              wavesurferRef.current.load(audioUrl).catch((fallbackError) => {
-                if (fallbackError.name !== 'AbortError') {
-                  console.warn('Failed to load audio (fallback):', fallbackError);
-                }
-              });
-            }
+      const wavesurfer = wavesurferRef.current;
+      wavesurfer.load(audioUrl, peaksData).catch((error) => {
+        if (error.name !== 'AbortError') {
+          console.warn('Failed to load audio with peaks:', error);
+          // peaks 로드 실패 시 오디오만 로드
+          if (wavesurferRef.current) {
+            wavesurferRef.current.load(audioUrl).catch((fallbackError) => {
+              if (fallbackError.name !== 'AbortError') {
+                console.warn('Failed to load audio (fallback):', fallbackError);
+              }
+            });
           }
-        });
-      }
+        }
+      });
     } else {
       console.log(`🎵 Loading audio only for ${id}`);
-      if (wavesurferRef.current) {
-        wavesurferRef.current.load(audioUrl).catch((error) => {
-          if (error.name !== 'AbortError') {
-            console.warn('Failed to load audio:', error);
-          }
-        });
-      }
+      const wavesurfer = wavesurferRef.current;
+      wavesurfer.load(audioUrl).catch((error) => {
+        if (error.name !== 'AbortError') {
+          console.warn('Failed to load audio:', error);
+        }
+      });
     }
   }, [audioUrl, peaks, id, isDestroyed]);
 

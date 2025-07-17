@@ -38,12 +38,10 @@ export const NotificationProvider: React.FC<NotificationProviderProps> = ({ chil
 
   const initializeNotificationSocket = () => {
     try {
-      // WebSocket은 기본 도메인에서 실행됩니다 (/api 경로 제외)
+      // Socket.IO는 자동으로 /socket.io/ 경로를 추가하므로 base URL만 사용
       const baseUrl = import.meta.env.VITE_API_URL ? 
         import.meta.env.VITE_API_URL.replace('/api', '') : 
         'https://waveflow.pro';
-      
-      // 알림 전용 네임스페이스 URL 생성
       const socketUrl = `${baseUrl}/notifications`;
       
       console.log('🔔 [NotificationSocket] Base URL:', baseUrl);
@@ -59,7 +57,6 @@ export const NotificationProvider: React.FC<NotificationProviderProps> = ({ chil
         reconnectionDelay: 1000,
         reconnectionDelayMax: 5000,
         reconnectionAttempts: 5,
-        path: '/socket.io/', // 명시적으로 Socket.IO 경로 설정
       });
       
       console.log('🔔 [NotificationSocket] Socket instance created:', notificationSocket);

@@ -3,7 +3,6 @@ import { AppModule } from './app.module';
 import { DocumentBuilder, SwaggerModule } from '@nestjs/swagger';
 import { ValidationPipe } from '@nestjs/common';
 import * as cookieParser from 'cookie-parser';
-import { IoAdapter } from '@nestjs/platform-socket.io';
 
 async function bootstrap() {
   try {
@@ -15,10 +14,6 @@ async function bootstrap() {
     console.log('Database User:', process.env.DB_USERNAME);
     
     const app = await NestFactory.create(AppModule);
-
-    // Socket.IO adapter 설정
-    app.useWebSocketAdapter(new IoAdapter(app));
-    console.log('🔌 Socket.IO adapter initialized');
 
     app.use(cookieParser());
     // src/main.ts
@@ -35,14 +30,13 @@ async function bootstrap() {
         'http://localhost:5173', 
         'http://localhost:3000', 
         'http://127.0.0.1:3000',
-        'https://waveflow.pro', // 프로덕션 프론트엔드
-        'https://waveflow.pro/', // trailing slash 포함
+        'https://waveflow.pro', // 프로덕션 URL 추가
         'http://13.125.231.115:3000',
         'http://13.209.14.85',
       ],
       credentials: true,
       methods: ['GET', 'POST', 'PUT', 'DELETE', 'OPTIONS'],
-      allowedHeaders: ['Content-Type', 'Authorization', 'X-Requested-With', 'Cookie'],
+      allowedHeaders: ['Content-Type', 'Authorization', 'X-Requested-With'],
     });
 
     const config = new DocumentBuilder()
