@@ -11,62 +11,77 @@ interface NotificationProviderProps {
 }
 
 export const NotificationProvider: React.FC<NotificationProviderProps> = ({ children }) => {
+  console.log('🔔 [NotificationProvider] 🎬 COMPONENT MOUNTED');
+  
   const [notifications, setNotifications] = useState<Notification[]>([]);
   const [socket, setSocket] = useState<Socket | null>(null);
 
   
   const { user, logout } = useAuth();
   const { showToast } = useToast();
+  
+  console.log('🔔 [NotificationProvider] 🎭 COMPONENT RENDERED - User:', user ? `${user.id} (${user.email})` : 'null');
 
   // 미읽은 알림 개수 계산
   const unreadCount = notifications.filter(notification => !notification.read).length;
 
-  console.log('🔔 [NotificationProvider] Rendering - User:', user ? `${user.id} (${user.email})` : 'null');
-  console.log('🔔 [NotificationProvider] Socket state:', socket ? 'connected' : 'disconnected');
-  console.log('🔔 [NotificationProvider] Notifications count:', notifications.length);
+  console.log('🔔 [NotificationProvider] 🎯 Rendering - User:', user ? `${user.id} (${user.email})` : 'null');
+  console.log('🔔 [NotificationProvider] 🔌 Socket state:', socket ? `connected (ID: ${socket.id})` : 'disconnected');
+  console.log('🔔 [NotificationProvider] 📊 Notifications count:', notifications.length);
+  console.log('🔔 [NotificationProvider] 🔍 Environment VITE_API_URL:', import.meta.env.VITE_API_URL);
 
   useEffect(() => {
-    console.log('🔔 [NotificationProvider] useEffect triggered - User changed:', user ? `${user.id} (${user.email})` : 'null');
+    console.log('🔔 [NotificationProvider] 🚀 useEffect triggered - User changed:', user ? `${user.id} (${user.email})` : 'null');
+    console.log('🔔 [NotificationProvider] 🚀 Current socket state before cleanup:', socket ? `connected (ID: ${socket.id})` : 'disconnected');
     
     // 기존 소켓이 있다면 정리
-    if (socket) {
-      console.log('🔔 [NotificationProvider] Cleaning up existing socket...');
-      socket.disconnect();
+    const currentSocket = socket;
+    if (currentSocket) {
+      console.log('🔔 [NotificationProvider] 🧹 Cleaning up existing socket...', currentSocket.id);
+      currentSocket.disconnect();
       setSocket(null);
     }
 
     if (user) {
-      console.log('🔔 [NotificationProvider] User found, initializing notification socket...');
-      initializeNotificationSocket();
+      console.log('🔔 [NotificationProvider] 👤 User found, initializing notification socket...');
+      console.log('🔔 [NotificationProvider] 👤 User details:', { id: user.id, email: user.email });
+      
+      // 약간의 지연 후 소켓 연결 (cleanup 완료 보장)
+      const timer = setTimeout(() => {
+        console.log('🔔 [NotificationProvider] ⏰ Timer triggered - calling initializeNotificationSocket');
+        initializeNotificationSocket();
+      }, 100);
+      
+      return () => {
+        console.log('🔔 [NotificationProvider] 🧹 Cleanup: clearing timer and disconnecting socket');
+        clearTimeout(timer);
+        if (currentSocket) {
+          currentSocket.disconnect();
+        }
+      };
     } else {
-      console.log('🔔 [NotificationProvider] No user, clearing notifications...');
+      console.log('🔔 [NotificationProvider] ❌ No user, clearing notifications...');
       setNotifications([]);
     }
-
-    // cleanup function
-    return () => {
-      console.log('🔔 [NotificationProvider] useEffect cleanup - disconnecting socket...');
-      if (socket) {
-        socket.disconnect();
-        setSocket(null);
-      }
-    };
-  }, [user]);
+  }, [user]);  // user만 dependency로 유지
 
   const initializeNotificationSocket = () => {
+    console.log('🔔 [NotificationSocket] 🎬 initializeNotificationSocket CALLED');
     try {
       // Socket.IO는 자동으로 /socket.io/ 경로를 추가하므로 base URL만 사용
       const baseUrl = import.meta.env.VITE_API_URL ? 
         import.meta.env.VITE_API_URL.replace('/api', '') : 
         'https://waveflow.pro';
       
-      console.log('🔔 [NotificationSocket] Base URL:', baseUrl);
-      console.log('🔔 [NotificationSocket] User:', user);
+      console.log('🔔 [NotificationSocket] 🌐 Base URL:', baseUrl);
+      console.log('🔔 [NotificationSocket] 👤 User:', user);
       console.log('🔔 [NotificationSocket] 🎯 User ID for socket auth:', user?.id);
       console.log('🔔 [NotificationSocket] 📧 User email:', user?.email);
-      console.log('🔔 [NotificationSocket] 👤 Full user object:', JSON.stringify(user, null, 2));
+      console.log('🔔 [NotificationSocket] 📄 Full user object:', JSON.stringify(user, null, 2));
+      console.log('🔔 [NotificationSocket] 🔗 Full connection URL:', `${baseUrl}/notifications`);
       
       // 알림 전용 소켓 연결 (/notifications 네임스페이스)
+      console.log('🔔 [NotificationSocket] 🔨 Creating socket instance...');
       const notificationSocket = io(`${baseUrl}/notifications`, {
         withCredentials: true, // 쿠키 전송 허용 (JWT 토큰 포함)
         autoConnect: true,
@@ -80,8 +95,9 @@ export const NotificationProvider: React.FC<NotificationProviderProps> = ({ chil
         timeout: 20000,
       });
       
-      console.log('🔔 [NotificationSocket] Socket instance created:', notificationSocket);
-      console.log('🔔 [NotificationSocket] Initial connection state:', notificationSocket.connected);
+      console.log('🔔 [NotificationSocket] ✅ Socket instance created successfully');
+      console.log('🔔 [NotificationSocket] 🔌 Initial connection state:', notificationSocket.connected);
+      console.log('🔔 [NotificationSocket] 🆔 Socket ID (initial):', notificationSocket.id || 'not assigned yet');
 
       // 🔥 모든 이벤트 리스너 등록 (강화된 로깅)
       notificationSocket.onAny((eventName: string, ...args: any[]) => {
@@ -181,7 +197,12 @@ export const NotificationProvider: React.FC<NotificationProviderProps> = ({ chil
       setSocket(notificationSocket);
       
     } catch (error) {
-      console.error('Failed to initialize notification socket:', error);
+      console.error('🔔 [NotificationSocket] ❌ Failed to initialize notification socket:', error);
+      console.error('🔔 [NotificationSocket] ❌ Error details:', {
+        message: error instanceof Error ? error.message : 'Unknown error',
+        stack: error instanceof Error ? error.stack : 'No stack trace',
+        name: error instanceof Error ? error.name : 'Unknown',
+      });
       showToast('error', '실시간 알림 연결에 실패했습니다.');
     }
   };
