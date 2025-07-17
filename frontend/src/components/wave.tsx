@@ -123,9 +123,16 @@ const Wave = ({
     if (peaks) {
       // peaks 데이터 형태 확인 및 처리
       let peaksData = peaks;
-      if (peaks.data && Array.isArray(peaks.data)) {
-        // WaveformData 타입인 경우
-        peaksData = peaks.data;
+      
+      // 객체 형태인 경우 peaks 배열 추출
+      if (peaks && typeof peaks === 'object' && !Array.isArray(peaks)) {
+        if (peaks.peaks && Array.isArray(peaks.peaks)) {
+          // {peaks: [...], duration: ..., sample_rate: ...} 형태
+          peaksData = peaks.peaks;
+        } else if (peaks.data && Array.isArray(peaks.data)) {
+          // {data: [...]} 형태
+          peaksData = peaks.data;
+        }
       } else if (Array.isArray(peaks)) {
         // 이미 배열 형태인 경우
         peaksData = peaks;
