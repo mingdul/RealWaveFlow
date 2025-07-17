@@ -48,20 +48,17 @@ const OpenStageModal: React.FC<OpenStageModalProps> = ({
       ]);
 
       const users: User[] = [];
+      let ownerId: string | null = null;
       
-      // 트랙 오너 추가
+      // 트랙 오너 ID 저장 (리뷰어 리스트에서 제외하기 위해)
       if (trackResponse.success && trackResponse.data?.owner_id) {
-        users.push({
-          id: trackResponse.data.owner_id.id,
-          username: trackResponse.data.owner_id.username || 'Owner',
-          email: trackResponse.data.owner_id.email || 'owner@example.com'
-        });
+        ownerId = trackResponse.data.owner_id.id;
       }
 
-      // 협업자들 추가
+      // 협업자들만 추가 (오너는 자동으로 리뷰어가 되므로 제외)
       if (collaboratorsResponse.success && collaboratorsResponse.data) {
         collaboratorsResponse.data.forEach((collaborator: TrackCollaborator) => {
-          if (collaborator.user_id && !users.find(u => u.id === collaborator.user_id.id)) {
+          if (collaborator.user_id && collaborator.user_id.id !== ownerId) {
             users.push({
               id: collaborator.user_id.id,
               username: collaborator.user_id.username || 'User',
