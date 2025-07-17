@@ -15,6 +15,7 @@ export interface WaveProps {
   onSolo: () => void;
   isSolo: boolean;
   onSeek?: (time: number, trackId: string) => void;
+  peaks?: any; // waveform JSON 데이터
 }
 
 const Wave = ({ 
@@ -28,6 +29,7 @@ const Wave = ({
   currentTime, 
   onSolo,
   isSolo,
+  peaks,
   onSeek
 }: WaveProps) => {
   const waveRef = useRef<HTMLDivElement>(null);
@@ -102,7 +104,7 @@ const Wave = ({
     };
   }, [waveColor, onReady, id]); // audioUrl 의존성 제거
 
-  // 오디오 URL 변경 시 로드만 다시 실행
+  // 오디오 URL 또는 peaks 변경 시 로드만 다시 실행
   useEffect(() => {
     if (!wavesurferRef.current || !audioUrl || isDestroyed) return;
     
@@ -110,16 +112,28 @@ const Wave = ({
     if (currentAudioUrlRef.current === audioUrl) return;
 
     console.log(`🎵 Loading new audio URL for ${id}:`, audioUrl);
+    if (peaks) {
+      console.log(`🌊 Using peaks data for ${id}:`, peaks);
+    }
+    
     setIsReady(false);
     currentAudioUrlRef.current = audioUrl;
 
-    // 오디오만 다시 로드
-    wavesurferRef.current.load(audioUrl).catch((error) => {
-      if (error.name !== 'AbortError') {
-        console.warn('Failed to load audio:', error);
-      }
-    });
-  }, [audioUrl, id, isDestroyed]);
+    // peaks 데이터가 있으면 함께 로드, 없으면 오디오만 로드
+    if (peaks && peaks.data) {
+      wavesurferRef.current.load(audioUrl, peaks.data).catch((error) => {
+        if (error.name !== 'AbortError') {
+          console.warn('Failed to load audio with peaks:', error);
+        }
+      });
+    } else {
+      wavesurferRef.current.load(audioUrl).catch((error) => {
+        if (error.name !== 'AbortError') {
+          console.warn('Failed to load audio:', error);
+        }
+      });
+    }
+  }, [audioUrl, peaks, id, isDestroyed]);
 
   useEffect(() => {
     if (wavesurferRef.current && isReady && !isDestroyed) {
