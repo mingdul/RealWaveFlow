@@ -2,8 +2,9 @@ import React, { useState, useEffect } from 'react';
 import { X, Users, FileText, CirclePlus, Check, UserCheck } from 'lucide-react';
 import { Button, Input } from './';
 import trackService from '../services/trackService';
-import { createStageReviewer } from '../services/stageReviewerService';
-import { TrackCollaborator, Track } from '../types/api';
+// import { createStageReviewer } from '../services/stageReviewerService';
+import { TrackCollaborator } from '../types/api';
+// import { Track } from '../types/api';
 
 interface User {
   id: string;
