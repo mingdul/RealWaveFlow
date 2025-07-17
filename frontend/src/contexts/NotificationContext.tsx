@@ -3,6 +3,7 @@ import { io, Socket } from 'socket.io-client';
 import { useAuth } from './AuthContext';
 import { useToast } from './ToastContext';
 import { Notification, NotificationContextType } from '../types/notification';
+import notificationService from '../services/notificationService';
 
 const NotificationContext = createContext<NotificationContextType | undefined>(undefined);
 
@@ -25,63 +26,81 @@ export const NotificationProvider: React.FC<NotificationProviderProps> = ({ chil
   // 미읽은 알림 개수 계산
   const unreadCount = notifications.filter(notification => !notification.read).length;
 
-  console.log('🔔 [NotificationProvider] 🎯 Rendering - User:', user ? `${user.id} (${user.email})` : 'null');
-  console.log('🔔 [NotificationProvider] 🔌 Socket state:', socket ? `connected (ID: ${socket.id})` : 'disconnected');
-  console.log('🔔 [NotificationProvider] 📊 Notifications count:', notifications.length);
-  console.log('🔔 [NotificationProvider] 🔍 Environment VITE_API_URL:', import.meta.env.VITE_API_URL);
+  // 알림 시스템 상태 (핵심 정보만)
+  console.log('🔔 [NotificationProvider] User:', user?.email || 'not logged in', '| Notifications:', notifications.length, '| Unread:', unreadCount);
 
   useEffect(() => {
-    console.log('🔔 [NotificationProvider] 🚀 useEffect triggered - User changed:', user ? `${user.id} (${user.email})` : 'null');
-    console.log('🔔 [NotificationProvider] 🚀 Current socket state before cleanup:', socket ? `connected (ID: ${socket.id})` : 'disconnected');
-    
-    // 기존 소켓이 있다면 정리
+        // 기존 소켓이 있다면 정리
     const currentSocket = socket;
     if (currentSocket) {
-      console.log('🔔 [NotificationProvider] 🧹 Cleaning up existing socket...', currentSocket.id);
       currentSocket.disconnect();
       setSocket(null);
     }
 
     if (user) {
-      console.log('🔔 [NotificationProvider] 👤 User found, initializing notification socket...');
-      console.log('🔔 [NotificationProvider] 👤 User details:', { id: user.id, email: user.email });
+      console.log('🔔 [NotificationProvider] Initializing for user:', user.email);
+      
+      // 기존 알림 로드
+      loadExistingNotifications();
       
       // 약간의 지연 후 소켓 연결 (cleanup 완료 보장)
       const timer = setTimeout(() => {
-        console.log('🔔 [NotificationProvider] ⏰ Timer triggered - calling initializeNotificationSocket');
         initializeNotificationSocket();
       }, 100);
       
       return () => {
-        console.log('🔔 [NotificationProvider] 🧹 Cleanup: clearing timer and disconnecting socket');
         clearTimeout(timer);
         if (currentSocket) {
           currentSocket.disconnect();
         }
       };
     } else {
-      console.log('🔔 [NotificationProvider] ❌ No user, clearing notifications...');
       setNotifications([]);
     }
   }, [user]);  // user만 dependency로 유지
 
+  // 서버에서 기존 알림 로드
+  const loadExistingNotifications = async () => {
+    try {
+      const response = await notificationService.getUserNotifications(50);
+      
+      if (response.success && response.data) {
+        const serverNotifications = response.data.notifications.map((notification: any) => ({
+          id: notification.id,
+          type: notification.type,
+          title: notification.title,
+          message: notification.message,
+          data: notification.data,
+          timestamp: notification.created_at,
+          read: notification.read,
+        }));
+        
+        console.log(`📋 [NotificationProvider] Loaded ${serverNotifications.length} notifications`);
+        setNotifications(serverNotifications);
+        
+        if (serverNotifications.length > 0) {
+          showToast('success', `${serverNotifications.length}개의 알림을 불러왔습니다.`, 3000);
+        }
+      } else {
+        setNotifications([]);
+      }
+    } catch (error) {
+      console.error('❌ [NotificationProvider] Failed to load notifications:', error);
+      showToast('error', '기존 알림을 불러오는데 실패했습니다.');
+      setNotifications([]);
+    }
+  };
+
   const initializeNotificationSocket = () => {
-    console.log('🔔 [NotificationSocket] 🎬 initializeNotificationSocket CALLED');
     try {
       // Socket.IO는 자동으로 /socket.io/ 경로를 추가하므로 base URL만 사용
       const baseUrl = import.meta.env.VITE_API_URL ? 
         import.meta.env.VITE_API_URL.replace('/api', '') : 
         'https://waveflow.pro';
       
-      console.log('🔔 [NotificationSocket] 🌐 Base URL:', baseUrl);
-      console.log('🔔 [NotificationSocket] 👤 User:', user);
-      console.log('🔔 [NotificationSocket] 🎯 User ID for socket auth:', user?.id);
-      console.log('🔔 [NotificationSocket] 📧 User email:', user?.email);
-      console.log('🔔 [NotificationSocket] 📄 Full user object:', JSON.stringify(user, null, 2));
-      console.log('🔔 [NotificationSocket] 🔗 Full connection URL:', `${baseUrl}/notifications`);
+      console.log('🔔 [NotificationSocket] Connecting to:', `${baseUrl}/notifications`);
       
       // 알림 전용 소켓 연결 (/notifications 네임스페이스)
-      console.log('🔔 [NotificationSocket] 🔨 Creating socket instance...');
       const notificationSocket = io(`${baseUrl}/notifications`, {
         withCredentials: true, // 쿠키 전송 허용 (JWT 토큰 포함)
         autoConnect: true,
@@ -94,39 +113,10 @@ export const NotificationProvider: React.FC<NotificationProviderProps> = ({ chil
         rememberUpgrade: true,
         timeout: 20000,
       });
-      
-      console.log('🔔 [NotificationSocket] ✅ Socket instance created successfully');
-      console.log('🔔 [NotificationSocket] 🔌 Initial connection state:', notificationSocket.connected);
-      console.log('🔔 [NotificationSocket] 🆔 Socket ID (initial):', notificationSocket.id || 'not assigned yet');
 
-      // 🔥 모든 이벤트 리스너 등록 (강화된 로깅)
-      notificationSocket.onAny((eventName: string, ...args: any[]) => {
-        console.log(`📡 [Socket] Event received: ${eventName}`, args);
-        
-        // 🔥 특별히 인증 관련 이벤트 상세 로깅
-        if (eventName === 'authenticated' || eventName === 'unauthorized') {
-          console.log(`🔐 [Socket] Auth event details:`, {
-            event: eventName,
-            args: args,
-            userId: user?.id,
-            socketId: notificationSocket.id
-          });
-        }
-      });
-
-      // 🔥 연결 성공 (강화된 로깅)
+      // 연결 성공
       notificationSocket.on('connect', () => {
         console.log('🔔 [NotificationSocket] ✅ Connected successfully');
-        console.log('🔔 [NotificationSocket] Socket ID:', notificationSocket.id);
-        console.log('🔔 [NotificationSocket] 🎯 Connected with user ID:', user?.id);
-                  console.log('🔔 [NotificationSocket] Socket status:', {
-            connected: notificationSocket.connected,
-            id: notificationSocket.id,
-            url: `${baseUrl}/notifications`,
-            transport: notificationSocket.io.engine?.transport?.name || 'unknown',
-            userId: user?.id,
-            userEmail: user?.email
-          });
         });
 
       // 연결 해제
@@ -142,27 +132,16 @@ export const NotificationProvider: React.FC<NotificationProviderProps> = ({ chil
 
       // 새 알림 수신
       notificationSocket.on('notification', (notification: Notification) => {
-        console.log('🔔 [NotificationSocket] 🎉 New notification received:', notification);
-        console.log('🔔 [NotificationSocket] Notification type:', notification.type);
-        console.log('🔔 [NotificationSocket] Notification data:', notification.data);
-        
+        console.log('🔔 [NotificationSocket] New notification:', notification.title);
         addNotification(notification);
         
         // 토스트로 알림 표시
         showToast('info', `${notification.title}: ${notification.message}`, 5000);
-        console.log('🔔 [NotificationSocket] ✅ Notification processed and toast shown');
       });
 
       // 연결 오류
       notificationSocket.on('connect_error', (error) => {
-        console.error('🔔 [NotificationSocket] ❌ Connection error:', error);
-        console.error('🔔 [NotificationSocket] Error details:', {
-          message: error.message,
-          type: (error as any).type,
-          description: (error as any).description,
-          context: (error as any).context,
-          url: `${baseUrl}/notifications`
-        });
+        console.error('🔔 [NotificationSocket] Connection error:', error.message);
         
         if (error.message.includes('Unauthorized')) {
           showToast('error', '인증이 만료되었습니다. 다시 로그인해주세요.');
@@ -171,60 +150,112 @@ export const NotificationProvider: React.FC<NotificationProviderProps> = ({ chil
       });
 
       // 인증 실패
-      notificationSocket.on('unauthorized', (data) => {
-        console.log('Notification socket unauthorized:', data);
+      notificationSocket.on('unauthorized', (_data) => {
+        console.log('🔔 [NotificationProvider] WebSocket 인증 실패');
         showToast('error', '인증이 만료되었습니다. 다시 로그인해주세요.');
         logout();
       });
 
-      // 재연결 시도
-      notificationSocket.on('reconnect_attempt', (attemptNumber) => {
-        console.log(`Notification socket reconnection attempt ${attemptNumber}`);
-      });
-
-      // 재연결 성공
-      notificationSocket.on('reconnect', (attemptNumber) => {
-        console.log(`Notification socket reconnected after ${attemptNumber} attempts`);
-        showToast('success', '실시간 알림 연결이 복구되었습니다.');
+      // 재연결 시 기존 알림 다시 로드
+      notificationSocket.on('reconnect', (_attemptNumber) => {
+        console.log('🔔 [NotificationProvider] WebSocket 재연결됨');
+        if (user) {
+          loadExistingNotifications();
+        }
       });
 
       // 재연결 실패
       notificationSocket.on('reconnect_failed', () => {
-        console.log('Notification socket reconnection failed');
+        console.error('🔔 [NotificationSocket] Reconnection failed');
         showToast('warning', '실시간 알림 연결에 실패했습니다.');
       });
 
       setSocket(notificationSocket);
       
     } catch (error) {
-      console.error('🔔 [NotificationSocket] ❌ Failed to initialize notification socket:', error);
-      console.error('🔔 [NotificationSocket] ❌ Error details:', {
-        message: error instanceof Error ? error.message : 'Unknown error',
-        stack: error instanceof Error ? error.stack : 'No stack trace',
-        name: error instanceof Error ? error.name : 'Unknown',
-      });
+      console.error('🔔 [NotificationSocket] Failed to initialize:', error);
       showToast('error', '실시간 알림 연결에 실패했습니다.');
     }
   };
 
   const addNotification = (notification: Notification) => {
-    setNotifications(prev => [notification, ...prev]);
+    setNotifications(prev => {
+      // 중복 알림 방지 (같은 ID가 이미 있다면 무시)
+      const exists = prev.some(n => n.id === notification.id);
+      if (exists) {
+        return prev;
+      }
+      
+      console.log('🔔 [NotificationProvider] New notification added:', notification.title);
+      return [notification, ...prev];
+    });
   };
 
-  const markAsRead = (notificationId: string) => {
-    setNotifications(prev =>
-      prev.map(notification =>
-        notification.id === notificationId
-          ? { ...notification, read: true }
-          : notification
-      )
-    );
+  const markAsRead = async (notificationId: string) => {
+    try {
+      // 로컬 상태 먼저 업데이트 (즉시 반영)
+      setNotifications(prev =>
+        prev.map(notification =>
+          notification.id === notificationId
+            ? { ...notification, read: true }
+            : notification
+        )
+      );
+      
+      // API 호출로 서버에도 반영
+      const response = await notificationService.markAsRead(notificationId);
+      
+      if (!response.success) {
+        console.error('📖 [NotificationProvider] Failed to mark as read:', response.message);
+        // 실패 시 상태 롤백
+        setNotifications(prev =>
+          prev.map(notification =>
+            notification.id === notificationId
+              ? { ...notification, read: false }
+              : notification
+          )
+        );
+        showToast('error', '읽음 처리에 실패했습니다.');
+      }
+    } catch (error) {
+      console.error('📖 [NotificationProvider] Error marking as read:', error);
+      // 에러 시 상태 롤백
+      setNotifications(prev =>
+        prev.map(notification =>
+          notification.id === notificationId
+            ? { ...notification, read: false }
+            : notification
+        )
+      );
+      showToast('error', '읽음 처리 중 오류가 발생했습니다.');
+    }
   };
 
-  const markAllAsRead = () => {
-    setNotifications(prev =>
-      prev.map(notification => ({ ...notification, read: true }))
-    );
+  const markAllAsRead = async () => {
+    try {
+      // 로컬 상태 먼저 업데이트 (즉시 반영)
+      const previousNotifications = [...notifications];
+      setNotifications(prev =>
+        prev.map(notification => ({ ...notification, read: true }))
+      );
+      
+      // API 호출로 서버에도 반영
+      const response = await notificationService.markAllAsRead();
+      
+      if (response.success) {
+        showToast('success', `${response.data?.updatedCount || '모든'} 알림을 읽음 처리했습니다.`);
+      } else {
+        console.error('📖 [NotificationProvider] Failed to mark all as read:', response.message);
+        // 실패 시 상태 롤백
+        setNotifications(previousNotifications);
+        showToast('error', '전체 읽음 처리에 실패했습니다.');
+      }
+    } catch (error) {
+      console.error('📖 [NotificationProvider] Error marking all as read:', error);
+      // 에러 시 상태 롤백 (기존 알림 다시 로드)
+      loadExistingNotifications();
+      showToast('error', '전체 읽음 처리 중 오류가 발생했습니다.');
+    }
   };
 
   const clearNotifications = () => {

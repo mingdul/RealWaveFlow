@@ -415,8 +415,8 @@ export class UpstreamService {
             const notification: NotificationPayload = {
                 id: `upstream_created_${upstream.id}_${Date.now()}`,
                 type: 'upstream_created',
-                title: '새 업스트림이 생성되었습니다',
-                message: `"${stage.title}" 스테이지에 "${upstream.title}" 업스트림이 생성되었습니다. 리뷰를 진행해주세요.`,
+                title: '📁 새 업로드',
+                message: `${upstream.title}`,
                 data: {
                     upstreamId: upstream.id,
                     stageId: stage.id,

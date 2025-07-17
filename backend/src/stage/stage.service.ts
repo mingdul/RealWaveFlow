@@ -211,8 +211,6 @@ export class StageService {
     // 스테이지 생성 알림 전송
     private async sendStageCreatedNotification(stage: Stage) {
         try {
-            this.logger.log(`🔔 [StageService] Starting stage created notification for stage: ${stage.id}`);
-            
             // 트랙 정보와 소유자, 협업자 정보 조회
             const track = await this.trackRepository.findOne({
                 where: { id: stage.track.id },
@@ -220,13 +218,9 @@ export class StageService {
             });
 
             if (!track) {
-                this.logger.error(`🔔 [StageService] ❌ Track not found for stage notification: ${stage.id}`);
+                this.logger.error(`🔔 [StageService] Track not found for notification: ${stage.id}`);
                 return;
             }
-
-            this.logger.log(`🔔 [StageService] Track found: ${track.id} (${track.title})`);
-            this.logger.log(`🔔 [StageService] Track owner: ${track.owner_id?.id}`);
-            this.logger.log(`🔔 [StageService] Collaborators count: ${track.collaborators?.length || 0}`);
 
             // 알림을 받을 사용자 ID 목록 생성 (소유자 + 협업자)
             const userIds: string[] = [track.owner_id.id];
@@ -244,8 +238,8 @@ export class StageService {
             const notification: NotificationPayload = {
                 id: `stage_created_${stage.id}_${Date.now()}`,
                 type: 'stage_created',
-                title: '새 스테이지가 생성되었습니다',
-                message: `"${track.title}" 트랙에 "${stage.title}" 스테이지가 생성되었습니다.`,
+                title: '🎵 새 스테이지',
+                message: `${track.title}`,
                 data: {
                     stageId: stage.id,
                     trackId: track.id,
@@ -257,15 +251,14 @@ export class StageService {
                 read: false,
             };
 
-            this.logger.log(`🔔 [StageService] Notification recipients:`, userIds);
-            this.logger.log(`🔔 [StageService] Notification payload:`, notification);
+            this.logger.log(`🔔 [StageService] Sending stage notification: "${stage.title}" to ${userIds.length} users`);
 
             // 각 사용자에게 알림 전송
-            this.notificationGateway.sendNotificationToUsers(userIds, notification);
+            await this.notificationGateway.sendNotificationToUsers(userIds, notification);
 
-            this.logger.log(`🔔 [StageService] ✅ Stage created notification sent to ${userIds.length} users for stage: ${stage.id}`);
+            this.logger.log(`🔔 [StageService] Stage notification sent successfully`);
         } catch (error) {
-            this.logger.error(`Failed to send stage created notification: ${error.message}`);
+            this.logger.error(`🔔 [StageService] Failed to send stage notification: ${error.message}`);
         }
     }
 }

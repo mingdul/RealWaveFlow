@@ -121,8 +121,8 @@ export class UpstreamCommentService {
             const notification: NotificationPayload = {
                 id: `comment_created_${comment.id}_${Date.now()}`,
                 type: 'upstream_reviewed',
-                title: '새 댓글이 작성되었습니다',
-                message: `"${upstream.title}" 업스트림에 새 댓글이 작성되었습니다.`,
+                title: '💬 새 리뷰',
+                message: `${upstream.title}`,
                 data: {
                     commentId: comment.id,
                     upstreamId: upstream.id,

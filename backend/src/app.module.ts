@@ -1,4 +1,5 @@
 import { Module } from '@nestjs/common';
+import { ScheduleModule } from '@nestjs/schedule';
 import { StemModule } from './stem/stem.module';
 import { StageModule } from './stage/stage.module';
 import { StageReviewerModule } from './stage-reviewer/stage-reviewer.module';
@@ -32,6 +33,7 @@ import { NotificationModule } from './notification/notification.module';
   imports: [
     ConfigModule.forRoot({ isGlobal: true,  envFilePath: '.env' }),
     TypeOrmModule.forRoot(databaseConfig),
+    ScheduleModule.forRoot(),
     StemModule, 
     StageModule, 
     StageReviewerModule, 

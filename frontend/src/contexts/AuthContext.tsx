@@ -62,20 +62,17 @@ export const AuthProvider: React.FC<{ children: ReactNode }> = ({ children }) =>
   // 마운트 시 단 한 번만 실행 (초기 인증 체크)
   useEffect(() => {
     const init = async () => {
-      console.log('🔐 [AuthProvider] ⏰ Initializing auth check...');
       dispatch({ type: 'AUTH_START' });
       try {
         const user = await authService.getCurrentUserFromServer();
-        console.log('🔐 [AuthProvider] 👤 User from server:', user);
         if (user) {
-          console.log('🔐 [AuthProvider] ✅ User authenticated:', user.id, user.email);
+          console.log('🔐 [AuthProvider] User authenticated:', user.email);
           dispatch({ type: 'AUTH_SUCCESS', payload: user });
         } else {
-          console.log('🔐 [AuthProvider] ❌ No user found, logging out');
           dispatch({ type: 'AUTH_LOGOUT' });
         }
       } catch (error) {
-        console.log('🔐 [AuthProvider] ❌ Auth check failed:', error);
+        console.error('🔐 [AuthProvider] Auth check failed:', error);
         dispatch({ type: 'AUTH_LOGOUT' });
       }
     };
