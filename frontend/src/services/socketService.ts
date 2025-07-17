@@ -24,7 +24,15 @@ class SocketService {
       return;
     }
 
-    this.socket = io(import.meta.env.VITE_API_URL || 'https://waveflow.pro/api', {
+    // Socket.IO는 자동으로 /socket.io/ 경로를 추가하므로 base URL만 사용
+    const baseUrl = import.meta.env.VITE_API_URL ? 
+      import.meta.env.VITE_API_URL.replace('/api', '') : 
+      'https://waveflow.pro';
+    
+    console.log('🌐 [SocketService] Base URL:', baseUrl);
+    console.log('🌐 [SocketService] VITE_API_URL:', import.meta.env.VITE_API_URL);
+    
+    this.socket = io(baseUrl, {
       withCredentials: true, // 쿠키 전송 허용 (JWT 토큰 포함)
       autoConnect: false, // 수동으로 연결 제어
       transports: ['websocket', 'polling'],
