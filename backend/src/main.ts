@@ -30,13 +30,14 @@ async function bootstrap() {
         'http://localhost:5173', 
         'http://localhost:3000', 
         'http://127.0.0.1:3000',
-        'https://waveflow.pro', // 프로덕션 URL 추가
+        'https://waveflow.pro', // 프로덕션 프론트엔드
+        'https://waveflow.pro/', // trailing slash 포함
         'http://13.125.231.115:3000',
         'http://13.209.14.85',
       ],
       credentials: true,
       methods: ['GET', 'POST', 'PUT', 'DELETE', 'OPTIONS'],
-      allowedHeaders: ['Content-Type', 'Authorization', 'X-Requested-With'],
+      allowedHeaders: ['Content-Type', 'Authorization', 'X-Requested-With', 'Cookie'],
     });
 
     const config = new DocumentBuilder()
