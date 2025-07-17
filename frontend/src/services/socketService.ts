@@ -25,9 +25,10 @@ class SocketService {
       return;
     }
 
-    // 프로덕션 환경에서는 백엔드 서버 URL 사용
-    // WebSocket은 백엔드와 같은 서버에서 실행되므로 /api 경로 포함해야 함
-    this.currentUrl = import.meta.env.VITE_API_URL || 'https://waveflow.pro/api';
+    // WebSocket은 기본 도메인에서 실행됩니다 (/api 경로 제외)
+    this.currentUrl = import.meta.env.VITE_API_URL ? 
+      import.meta.env.VITE_API_URL.replace('/api', '') : 
+      'https://waveflow.pro';
     
     console.log('🌐 [SocketService] Base URL:', this.currentUrl);
     console.log('🌐 [SocketService] VITE_API_URL:', import.meta.env.VITE_API_URL);
@@ -44,6 +45,7 @@ class SocketService {
       reconnectionAttempts: 5,
       forceNew: true, // 새로운 연결 강제
       timeout: 10000, // 연결 타임아웃 10초
+      path: '/socket.io/', // 명시적으로 Socket.IO 경로 설정
     });
 
     this.setupEventListeners();
