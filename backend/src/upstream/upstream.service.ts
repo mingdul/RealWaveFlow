@@ -43,24 +43,31 @@ export class UpstreamService {
     ) {}
 
         /** 외부에서 호출할 단일 엔드포인트 */
-    async createUpstreamWithStems(dto: StemSetCreateDto) { 
-        // 1) Upstream 생성
-        const { title, description, stage_id, user_id  } = dto.upstream;
-        const upstream = this.upstreamRepository.create({
-            title,
-            description,
-            status: 'ACTIVE', // 기본 상태 설정
-            stage: { id: stage_id },
-            user: { id: user_id },
-        });
+          async createUpstreamWithStems(dto: StemSetCreateDto) { 
+         console.log('🔔 [UpstreamService] CREATE START - 업스트림 생성 시작');
+         console.log('🔔 [UpstreamService] DTO:', dto);
+         
+         // 1) Upstream 생성
+         const { title, description, stage_id, user_id  } = dto.upstream;
+         const upstream = this.upstreamRepository.create({
+             title,
+             description,
+             status: 'ACTIVE', // 기본 상태 설정
+             stage: { id: stage_id },
+             user: { id: user_id },
+         });
 
-        const stage = await this.stageRepository.findOne({
-            where: { id: stage_id },
-            relations: ['track'],      // ← 여기에 track 관계를 로드하도록 명시
-          });
+         const stage = await this.stageRepository.findOne({
+             where: { id: stage_id },
+             relations: ['track'],      // ← 여기에 track 관계를 로드하도록 명시
+           });
 
-        // 2) Upstream 저장
-        const savedUpstream = await this.upstreamRepository.save(upstream);
+         console.log('🔔 [UpstreamService] Stage found:', stage?.id);
+
+         // 2) Upstream 저장
+         const savedUpstream = await this.upstreamRepository.save(upstream);
+         console.log('🔔 [UpstreamService] Upstream saved:', savedUpstream.id);
+
         if (!savedUpstream) {
             throw new BadRequestException('Failed to create upstream');
         }
@@ -138,8 +145,23 @@ export class UpstreamService {
             await this.requestMixing(allFilePaths, savedUpstream.id, stage_id);
         }
 
-        // 6) 알림 전송: 스테이지의 모든 리뷰어에게 새 업스트림 생성 알림
-        await this.sendUpstreamCreatedNotification(savedUpstream, stage);
+                 // 6) 알림 전송: 스테이지의 모든 리뷰어에게 새 업스트림 생성 알림
+         try {
+             console.log('🔔 [UpstreamService] 알림 전송 시작...');
+             console.log('🔔 [UpstreamService] NotificationGateway 존재:', !!this.notificationGateway);
+             console.log('🔔 [UpstreamService] Stage:', stage?.id);
+             console.log('🔔 [UpstreamService] SavedUpstream:', savedUpstream.id);
+             
+             if (this.notificationGateway && stage) {
+                 await this.sendUpstreamCreatedNotification(savedUpstream, stage);
+                 console.log('🔔 [UpstreamService] ✅ 알림 전송 완료');
+             } else {
+                 console.log('🔔 [UpstreamService] ❌ NotificationGateway 또는 Stage가 없습니다!');
+                 console.log('🔔 [UpstreamService] Gateway:', !!this.notificationGateway, 'Stage:', !!stage);
+             }
+         } catch (error) {
+             console.error('🔔 [UpstreamService] ❌ 알림 전송 실패:', error);
+         }
 
         return {
             success: true,
@@ -360,19 +382,34 @@ export class UpstreamService {
     // 업스트림 생성 알림 전송
     private async sendUpstreamCreatedNotification(upstream: Upstream, stage: Stage) {
         try {
+            console.log('🔔 [UpstreamService] sendUpstreamCreatedNotification 시작');
+            console.log('🔔 [UpstreamService] Upstream ID:', upstream.id);
+            console.log('🔔 [UpstreamService] Upstream Title:', upstream.title);
+            console.log('🔔 [UpstreamService] Stage ID:', stage.id);
+            console.log('🔔 [UpstreamService] Stage Title:', stage.title);
+            console.log('🔔 [UpstreamService] Track ID:', stage.track?.id);
+
             // 스테이지의 모든 리뷰어 조회
             const stageReviewers = await this.stageReviewerRepository.find({
                 where: { stage: { id: stage.id } },
                 relations: ['user'],
             });
 
+            console.log('🔔 [UpstreamService] Found reviewers:', stageReviewers.length);
+            console.log('🔔 [UpstreamService] Reviewer details:', stageReviewers.map(r => ({ 
+                reviewerId: r.user?.id, 
+                email: r.user?.email 
+            })));
+
             if (stageReviewers.length === 0) {
+                console.log('🔔 [UpstreamService] ❌ No reviewers found for stage:', stage.id);
                 this.logger.warn(`No reviewers found for stage: ${stage.id}`);
                 return;
             }
 
             // 리뷰어 ID 목록 생성
             const reviewerIds = stageReviewers.map(reviewer => reviewer.user.id);
+            console.log('🔔 [UpstreamService] Reviewer IDs:', reviewerIds);
 
             // 알림 페이로드 생성
             const notification: NotificationPayload = {
@@ -392,11 +429,21 @@ export class UpstreamService {
                 read: false,
             };
 
+            console.log('🔔 [UpstreamService] Notification payload:', notification);
+            console.log('🔔 [UpstreamService] NotificationGateway 존재:', !!this.notificationGateway);
+
             // 각 리뷰어에게 알림 전송
-            this.notificationGateway.sendNotificationToUsers(reviewerIds, notification);
+            if (this.notificationGateway) {
+                console.log('🔔 [UpstreamService] 알림 전송 중...');
+                this.notificationGateway.sendNotificationToUsers(reviewerIds, notification);
+                console.log('🔔 [UpstreamService] ✅ 알림 전송 호출 완료');
+            } else {
+                console.log('🔔 [UpstreamService] ❌ NotificationGateway가 없습니다!');
+            }
 
             this.logger.log(`Upstream created notification sent to ${reviewerIds.length} reviewers for upstream: ${upstream.id}`);
         } catch (error) {
+            console.error('🔔 [UpstreamService] ❌ 알림 전송 실패:', error);
             this.logger.error(`Failed to send upstream created notification: ${error.message}`);
         }
     }
