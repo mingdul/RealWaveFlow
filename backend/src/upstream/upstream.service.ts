@@ -114,10 +114,26 @@ export class UpstreamService {
             }
         }
 
+        if (audioAnalysisRequests.length > 0) { // 오디오 분석 요청
+            for (const analysisRequest of audioAnalysisRequests) {
+                await this.requestAudioAnalysis(
+                    analysisRequest.filePath,
+                    savedUpstream.id,
+                    user_id,
+                    analysisRequest.stemId,
+                    stage.track.id,
+                    analysisRequest.audioHash,
+                    analysisRequest.originalFilename
+                );
+            }
+        }
+
         // 5) 믹싱 요청 (모든 파일 경로들로)
         if (allFilePaths.length > 0) {
             await this.requestMixing(allFilePaths, savedUpstream.id, stage_id);
         }
+
+
 
         return {
             success: true,
@@ -125,6 +141,7 @@ export class UpstreamService {
             data: savedUpstream,
         };
     }
+
 
     async createNewCategoryStem(trackId : string, user_id : string, new_dto : NewCategoryStemDto){
         const category = this.categoryRepository.create({
@@ -243,7 +260,8 @@ export class UpstreamService {
             filepath: filePath,
             audio_hash: audioHash,
             timestamp: new Date().toISOString(),
-            original_filename: originalFilename
+            original_filename: originalFilename,
+            upstreamId
         });
     }
 

@@ -117,7 +117,20 @@ export class StemService {
           data: result, // [{ category, type, stem }, ...]
         };
       }
-      
+
+      // upstream 요청에서 오디오 분석 결과 업데이트
+      async updateStemAudioWavePath(stemId: string, audioWavePath: string): Promise<void> {
+        const stem = await this.stemRepository.findOne({
+          where: { id: stemId }
+        });
+
+        if (!stem) {
+          throw new BadRequestException(`Stem not found: ${stemId}`);
+        }
+
+        stem.audio_wave_path = audioWavePath;
+        await this.stemRepository.save(stem);
+      }
 
 
 }
