@@ -95,7 +95,7 @@ const NotificationBell: React.FC = () => {
       {/* 벨 아이콘 */}
       <button
         onClick={toggleDropdown}
-        className="relative p-2 text-gray-600 hover:text-gray-800 focus:outline-none focus:ring-2 focus:ring-blue-500 focus:ring-offset-2 rounded-lg transition-colors"
+        className="relative p-2 text-white hover:text-gray-300 focus:outline-none focus:ring-2 focus:ring-blue-500 focus:ring-offset-2 rounded-lg transition-colors"
         aria-label="알림 보기"
       >
         {/* 벨 아이콘 (SVG) */}
