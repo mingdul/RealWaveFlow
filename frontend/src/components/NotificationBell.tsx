@@ -22,6 +22,9 @@ const NotificationBell: React.FC = () => {
   }, []);
 
   const toggleDropdown = () => {
+    console.log('🔔 [NotificationBell] Button clicked - Current state:', isOpen);
+    console.log('🔔 [NotificationBell] Notifications:', notifications);
+    console.log('🔔 [NotificationBell] Unread count:', unreadCount);
     setIsOpen(!isOpen);
   };
 

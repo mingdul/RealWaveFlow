@@ -20,11 +20,19 @@ export const NotificationProvider: React.FC<NotificationProviderProps> = ({ chil
   // 미읽은 알림 개수 계산
   const unreadCount = notifications.filter(notification => !notification.read).length;
 
+  console.log('🔔 [NotificationProvider] Rendering - User:', user ? `${user.id} (${user.email})` : 'null');
+  console.log('🔔 [NotificationProvider] Socket state:', socket ? 'connected' : 'disconnected');
+  console.log('🔔 [NotificationProvider] Notifications count:', notifications.length);
+
   useEffect(() => {
+    console.log('🔔 [NotificationProvider] useEffect triggered - User changed:', user ? `${user.id} (${user.email})` : 'null');
+    
     // 사용자가 로그인한 경우에만 알림 소켓 연결 시도
     if (user) {
+      console.log('🔔 [NotificationProvider] User found, initializing notification socket...');
       initializeNotificationSocket();
     } else {
+      console.log('🔔 [NotificationProvider] No user, disconnecting socket and clearing notifications...');
       // 로그아웃 시 소켓 연결 해제 및 알림 초기화
       disconnectNotificationSocket();
       clearNotifications();
@@ -32,6 +40,7 @@ export const NotificationProvider: React.FC<NotificationProviderProps> = ({ chil
 
     // 컴포넌트 언마운트 시 소켓 정리
     return () => {
+      console.log('🔔 [NotificationProvider] useEffect cleanup - disconnecting socket...');
       disconnectNotificationSocket();
     };
   }, [user]);
