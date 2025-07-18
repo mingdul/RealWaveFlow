@@ -7,12 +7,18 @@ const NotificationBell: React.FC = () => {
   const dropdownRef = useRef<HTMLDivElement>(null);
   const { notifications, unreadCount, markAsRead, refreshNotifications } = useNotifications();
 
-  // 알림 상태 변경 시 로그 (개발용)
+  // 알림 상태 변경 시 로그 및 실시간 Badge 업데이트 확인
   useEffect(() => {
+    console.log('🔔 [NotificationBell] 🔄 Badge update triggered!');
+    console.log('🔔 [NotificationBell] Current unreadCount:', unreadCount);
+    console.log('🔔 [NotificationBell] Total notifications:', notifications.length);
+    
     if (unreadCount > 0) {
-      console.log('🔔 [NotificationBell] Unread notifications:', unreadCount);
+      console.log('🔔 [NotificationBell] 🔴 Badge should show:', unreadCount);
+    } else {
+      console.log('🔔 [NotificationBell] ⚪ Badge should be hidden (no unread)');
     }
-  }, [unreadCount]);
+  }, [unreadCount, notifications.length]);
 
   // 외부 클릭 시 드롭다운 닫기
   useEffect(() => {
@@ -29,15 +35,23 @@ const NotificationBell: React.FC = () => {
   }, []);
 
   const toggleDropdown = async () => {
-    // 알림 버튼 클릭 시 최신 알림을 API에서 가져오기
+    console.log('🔔 [NotificationBell] 🖱️ Bell icon clicked!');
+    console.log('🔔 [NotificationBell] Current state - isOpen:', isOpen, ', unreadCount:', unreadCount);
+    
+    // 드롭다운을 열 때만 API에서 최신 알림 목록을 가져옴
+    // (Badge 개수는 소켓 이벤트로 실시간 업데이트됨)
     if (!isOpen) {
-      console.log('🔔 [NotificationBell] Refreshing notifications from API...');
+      console.log('🔔 [NotificationBell] 📋 Opening dropdown - fetching latest notification list from API...');
       try {
         await refreshNotifications();
+        console.log('🔔 [NotificationBell] ✅ Notification list refreshed successfully');
       } catch (error) {
-        console.error('🔔 [NotificationBell] Failed to refresh notifications:', error);
+        console.error('🔔 [NotificationBell] ❌ Failed to refresh notification list:', error);
       }
+    } else {
+      console.log('🔔 [NotificationBell] 📋 Closing dropdown');
     }
+    
     setIsOpen(!isOpen);
   };
 
@@ -110,10 +124,20 @@ const NotificationBell: React.FC = () => {
           <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M12 12V5a3 3 0 116 0v7" />
         </svg>
         
-        {/* 읽지 않은 알림 개수 배지 */}
+        {/* 읽지 않은 알림 개수 배지 - 실시간 업데이트 */}
         {unreadCount > 0 && (
-          <span className="absolute -top-1 -right-1 inline-flex items-center justify-center px-2 py-1 text-xs font-bold leading-none text-white transform translate-x-1/2 -translate-y-1/2 bg-red-600 rounded-full">
+          <span 
+            className="absolute -top-1 -right-1 inline-flex items-center justify-center px-2 py-1 text-xs font-bold leading-none text-white transform translate-x-1/2 -translate-y-1/2 bg-red-600 rounded-full transition-all duration-200 ease-in-out"
+            key={`badge-${unreadCount}`} // key를 통한 강제 리렌더링
+          >
             {unreadCount > 99 ? '99+' : unreadCount}
+          </span>
+        )}
+        
+        {/* 디버그용 - 개발 중에만 표시 */}
+        {import.meta.env.DEV && (
+          <span className="absolute -bottom-6 -right-2 text-xs text-gray-400 bg-gray-100 px-1 rounded">
+            Debug: {unreadCount}
           </span>
         )}
       </button>

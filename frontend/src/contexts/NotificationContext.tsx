@@ -1,4 +1,4 @@
-import React, { createContext, useContext, useEffect, useState, ReactNode } from 'react';
+import React, { createContext, useContext, useEffect, useState, ReactNode, useMemo } from 'react';
 import { io, Socket } from 'socket.io-client';
 import { useAuth } from './AuthContext';
 import { useToast } from './ToastContext';
@@ -23,8 +23,12 @@ export const NotificationProvider: React.FC<NotificationProviderProps> = ({ chil
   
   console.log('🔔 [NotificationProvider] 🎭 COMPONENT RENDERED - User:', user ? `${user.id} (${user.email})` : 'null');
 
-  // 미읽은 알림 개수 계산
-  const unreadCount = notifications.filter(notification => !notification.isRead).length;
+  // 미읽은 알림 개수 계산 (useMemo로 최적화 및 명시적 dependency 관리)
+  const unreadCount = useMemo(() => {
+    const count = notifications.filter(notification => !notification.isRead).length;
+    console.log('🔔 [NotificationProvider] Unread count calculated:', count, 'from', notifications.length, 'total notifications');
+    return count;
+  }, [notifications]);
 
   // 알림 시스템 상태 (핵심 정보만)
   console.log('🔔 [NotificationProvider] User:', user?.email || 'not logged in', '| Notifications:', notifications.length, '| Unread:', unreadCount);
@@ -56,15 +60,17 @@ export const NotificationProvider: React.FC<NotificationProviderProps> = ({ chil
     }
   }, [user]);  // user만 dependency로 유지
 
-  // 서버에서 기존 알림 로드
+  // 서버에서 기존 알림 로드 (API 호출)
   const loadExistingNotifications = async () => {
     try {
+      console.log('📋 [NotificationProvider] 🌐 Calling API to load existing notifications...');
       const notifications = await notificationService.getUserNotifications(50);
       
-      console.log(`📋 [NotificationProvider] Loaded ${notifications.length} notifications`);
+      console.log(`📋 [NotificationProvider] ✅ API returned ${notifications.length} notifications`);
+      console.log(`📋 [NotificationProvider] Setting notifications state (this will trigger unreadCount recalculation)`);
       setNotifications(notifications);
     } catch (error) {
-      console.error('❌ [NotificationProvider] Failed to load notifications:', error);
+      console.error('❌ [NotificationProvider] Failed to load notifications from API:', error);
       
       // 인증 에러인 경우 로그아웃 처리
       if (error instanceof Error && error.message.includes('authentication required')) {
@@ -149,8 +155,19 @@ export const NotificationProvider: React.FC<NotificationProviderProps> = ({ chil
 
       // 새 알림 수신
       notificationSocket.on('notification', (notification: Notification) => {
-        console.log('🔔 [NotificationSocket] 📢 New notification received:', notification.message);
+        console.log('🔔 [NotificationSocket] 📢 New notification received via WebSocket!');
+        console.log('🔔 [NotificationSocket] Notification details:', {
+          id: notification.id,
+          message: notification.message,
+          type: notification.type,
+          isRead: notification.isRead,
+          userId: notification.userId
+        });
+        
+        // 즉시 알림 추가 (Badge 개수 실시간 업데이트)
         addNotification(notification);
+        
+        console.log('🔔 [NotificationSocket] ✅ addNotification called - Badge should update now!');
         
         // 🔥 REMOVED: 토스트 제거 - Bell 아이콘의 개수만 증가
         // showToast('info', `${notification.message}`, 5000);
@@ -199,15 +216,27 @@ export const NotificationProvider: React.FC<NotificationProviderProps> = ({ chil
   };
 
   const addNotification = (notification: Notification) => {
+    console.log('🔔 [NotificationProvider] addNotification called with:', {
+      id: notification.id,
+      message: notification.message,
+      isRead: notification.isRead,
+      type: notification.type
+    });
+
     setNotifications(prev => {
       // 중복 알림 방지 (같은 ID가 이미 있다면 무시)
       const exists = prev.some(n => n.id === notification.id);
       if (exists) {
+        console.log('🔔 [NotificationProvider] Duplicate notification ignored:', notification.id);
         return prev;
       }
       
-      console.log('🔔 [NotificationProvider] New notification added:', notification.message);
-      return [notification, ...prev];
+      const newNotifications = [notification, ...prev];
+      console.log('🔔 [NotificationProvider] ✅ New notification added successfully');
+      console.log('🔔 [NotificationProvider] Previous count:', prev.length, '→ New count:', newNotifications.length);
+      console.log('🔔 [NotificationProvider] New notification isRead:', notification.isRead);
+      
+      return newNotifications;
     });
   };
 
@@ -251,10 +280,12 @@ export const NotificationProvider: React.FC<NotificationProviderProps> = ({ chil
     setNotifications([]);
   };
 
-  // 🔥 NEW: API에서 최신 알림 새로고침
+  // API에서 최신 알림 새로고침 (Bell 클릭 시 호출)
   const refreshNotifications = async () => {
-    console.log('🔔 [NotificationProvider] Manually refreshing notifications...');
+    console.log('🔔 [NotificationProvider] 📋 Manually refreshing notifications from API...');
+    console.log('🔔 [NotificationProvider] This is triggered by Bell icon click, NOT by socket events');
     await loadExistingNotifications();
+    console.log('🔔 [NotificationProvider] ✅ Manual refresh completed');
   };
 
   const value: NotificationContextType = {
