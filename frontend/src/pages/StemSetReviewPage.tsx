@@ -17,6 +17,7 @@ import {
   rejectDropReviewer,
 } from '../services/upstreamReviewService';
 import { useNavigate } from 'react-router-dom';
+import { getDisplayFilename } from '../utils/filenameUtils';
 import {
   createUpstreamComment,
   getUpstreamComments,
@@ -1632,7 +1633,7 @@ const StemSetReviewPage = () => {
                                   {item.type}
                                 </span>
                               </span>
-                              <span className='text-gray-400'>{item.stem.file_name}</span>
+                              <span className='text-gray-400'>{getDisplayFilename(item.stem.file_name)}</span>
                             </div>
                           ))}
                         </div>
@@ -1808,7 +1809,7 @@ const StemSetReviewPage = () => {
                               </span>
                             </div>
                             <div className='mt-2 text-xs text-gray-300'>
-                              📁 {stemData.stem?.file_name || 'Unknown file'}
+                              📁 {getDisplayFilename(stemData.stem?.file_name || 'Unknown file')}
                             </div>
                             <div className='mt-1 text-xs text-gray-400'>
                               🎼 Instrument:{' '}

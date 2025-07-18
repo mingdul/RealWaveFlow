@@ -11,7 +11,7 @@ import s3UploadService from '../services/s3UploadService';
 import { createUpstream } from '../services/upstreamService';
 import versionstemService from '../services/versionstemService';
 import stemJobService from '../services/stemJobService';
-import {getDisplayFilename } from '../utils/filenameUtils';
+import { getDisplayFilename, decodeFilename } from '../utils/filenameUtils';
 // import stemFileService from '../services/stemFileService';
 // import categoryService from '../services/categoryService';
 // import masterStemService from '../services/masterStemService';
@@ -629,19 +629,25 @@ const UploadModal: React.FC<UploadModalProps> = ({
         .then(response => {
           if (response && Array.isArray(response)) {
             // 백엔드 응답을 MasterStem 형태로 변환
-            const stems = response.map((item: any) => ({
-              id: item.stem.id,
-              file_name: item.stem.file_name,
-              file_path: item.stem.file_path,
-              tag: item.category, // category name을 tag로 사용
-              key: item.stem.key || '',
-              description: `${item.category} stem`,
-              track_id: item.stem.track?.id || '',
-              category_id: item.stem.category?.id || '',
-              session_id: item.stem.stage?.id || '',
-              created_at: item.stem.uploaded_at || new Date().toISOString(),
-              updated_at: item.stem.uploaded_at || new Date().toISOString()
-            }));
+            const stems = response.map((item: any) => {
+              console.log('[DEBUG] UploadModal - Raw stem data:', item.stem);
+              console.log('[DEBUG] UploadModal - Original file_name:', item.stem.file_name);
+              console.log('[DEBUG] UploadModal - Decoded file_name:', decodeFilename(item.stem.file_name));
+              
+              return {
+                id: item.stem.id,
+                file_name: item.stem.file_name, // 원본 파일명 유지 (표시할 때 디코딩)
+                file_path: item.stem.file_path,
+                tag: item.category, // category name을 tag로 사용
+                key: item.stem.key || '',
+                description: `${item.category} stem`,
+                track_id: item.stem.track?.id || '',
+                category_id: item.stem.category?.id || '',
+                session_id: item.stem.stage?.id || '',
+                created_at: item.stem.uploaded_at || new Date().toISOString(),
+                updated_at: item.stem.uploaded_at || new Date().toISOString()
+              };
+            });
             dispatch({ type: 'SET_EXISTING_STEMS', payload: stems });
           } else {
             dispatch({ type: 'SET_EXISTING_STEMS', payload: [] });
