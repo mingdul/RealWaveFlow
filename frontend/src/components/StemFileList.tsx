@@ -41,12 +41,7 @@ const StemFileList: React.FC<StemFileListProps> = ({ files, onTrackPlay }) => {
                             </div>
 
                             <div className="stem-info">
-                                <div className="file-name">{(() => {
-                                    console.log('[📋 STEMLIST] Processing file.name:', file.name);
-                                    const displayName = getDisplayFilename(file.name);
-                                    console.log('[📋 STEMLIST] Display name result:', displayName);
-                                    return displayName;
-                                })()}</div>
+                                <div className="file-name">{getDisplayFilename(file.name)}</div>
                                 {file.tag && (
                                     <div className="file-tag">{file.tag}</div>
                                 )}

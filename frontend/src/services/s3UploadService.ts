@@ -268,8 +268,6 @@ class S3UploadService {
     try {
       // 한글 파일명을 안전한 ASCII 형태로 인코딩
       const encodedFilename = encodeFilename(file.name);
-      console.log('[📤 S3UPLOAD] Original filename:', file.name);
-      console.log('[📤 S3UPLOAD] Encoded filename:', encodedFilename);
 
       // 1. 업로드 초기화 (기존 프로젝트에 파일 추가)
       const uploadResponse = await this.addUpload({
@@ -279,11 +277,8 @@ class S3UploadService {
         fileSize: file.size,
       });
 
-      console.log('[DEBUG] uploadResponse:', uploadResponse);
-      
       // 백엔드 응답 형식이 { success: true, data: {...} }로 통일됨
       if (!uploadResponse.success || !uploadResponse.data || !uploadResponse.data.uploadId) {
-        console.log('[ERROR] uploadResponse:', uploadResponse);
         throw new Error('front-end uploadFile 업로드 초기화에 실패했습니다.');
       }
 
@@ -341,9 +336,6 @@ class S3UploadService {
         const presignedUrl = presignedResponse.data!.urls.find(
           (url) => url.partNumber === partNumber
         );
-
-        console.log('[DEBUG] Looking for partNumber:', partNumber);
-        console.log('[DEBUG] Available URLs:', presignedResponse.data!.urls.map(u => ({ partNumber: u.partNumber, hasUrl: !!u.url })));
 
         if (!presignedUrl) {
           throw new Error(`Part ${partNumber}에 대한 URL을 찾을 수 없습니다.`);

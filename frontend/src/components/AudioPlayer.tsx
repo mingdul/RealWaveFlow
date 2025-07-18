@@ -173,12 +173,7 @@ return (
 
       <div className="flex-1 min-w-0">
         <div className="text-sm font-medium text-white truncate mb-1">
-          {(() => {
-            console.log('[🔊 AUDIO] AudioPlayer displaying fileName:', fileName);
-            const displayName = getDisplayFilename(fileName);
-            console.log('[🔊 AUDIO] AudioPlayer final display name:', displayName);
-            return displayName;
-          })()}
+          {getDisplayFilename(fileName)}
         </div>
         <div className="text-xs text-gray-400">
           {loading ? 'Loading...' : `${formatTime(currentTime)} / ${formatTime(duration)}`}
