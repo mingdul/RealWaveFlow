@@ -23,6 +23,7 @@ export class NotificationService {
         message: notificationPayload.message,
         data: notificationPayload.data,
         read: notificationPayload.read,
+        // delivered: false, // 🔥 TEMP: delivered 필드는 마이그레이션 완료 후 사용
         user_id: userId,
       });
 
