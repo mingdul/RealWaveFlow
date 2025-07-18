@@ -21,8 +21,9 @@ export class Notification {
   @Column({ type: 'boolean', default: false })
   read: boolean;
 
-  @Column({ type: 'boolean', default: false })
-  delivered: boolean; // 소켓으로 전송되었는지 여부
+  // 🔥 TEMP: delivered 필드는 마이그레이션 완료 후 활성화
+  // @Column({ type: 'boolean', default: false })
+  // delivered: boolean; // 소켓으로 전송되었는지 여부
 
   @Column({ type: 'uuid' })
   user_id: string;

@@ -211,9 +211,25 @@ export class StageService {
     // 스테이지 생성 알림 전송
     private async sendStageCreatedNotification(stage: Stage) {
         try {
+            this.logger.log(`🔔 [StageService] Starting stage notification for stage: ${stage.id}`);
+            this.logger.log(`🔔 [StageService] Stage track ID: ${stage.track?.id}`);
+            
+            // 🔥 FIX: stage와 함께 track 정보를 다시 조회하여 확실한 track.id 확보
+            const stageWithTrack = await this.stageRepository.findOne({
+                where: { id: stage.id },
+                relations: ['track'],
+            });
+
+            if (!stageWithTrack || !stageWithTrack.track) {
+                this.logger.error(`🔔 [StageService] Stage or track not found: ${stage.id}`);
+                return;
+            }
+
+            this.logger.log(`🔔 [StageService] Found track: ${stageWithTrack.track.id}`);
+
             // 트랙 정보와 소유자, 협업자 정보 조회
             const track = await this.trackRepository.findOne({
-                where: { id: stage.track.id },
+                where: { id: stageWithTrack.track.id },
                 relations: ['owner_id', 'collaborators', 'collaborators.user_id'],
             });
 
@@ -251,11 +267,16 @@ export class StageService {
             };
 
             this.logger.log(`🔔 [StageService] Sending stage notification: "${stage.title}" to ${userIds.length} users`);
+            this.logger.log(`🔔 [StageService] User IDs: [${userIds.join(', ')}]`);
+            this.logger.log(`🔔 [StageService] Notification payload:`, JSON.stringify(notification, null, 2));
 
             // 각 사용자에게 알림 전송
-            await this.notificationGateway.sendNotificationToUsers(userIds, notification);
-
-            this.logger.log(`🔔 [StageService] Stage notification sent successfully`);
+            if (this.notificationGateway) {
+                await this.notificationGateway.sendNotificationToUsers(userIds, notification);
+                this.logger.log(`🔔 [StageService] ✅ Stage notification sent successfully`);
+            } else {
+                this.logger.error(`🔔 [StageService] ❌ NotificationGateway is null!`);
+            }
         } catch (error) {
             this.logger.error(`🔔 [StageService] Failed to send stage notification: ${error.message}`);
         }
