@@ -52,7 +52,7 @@ export class UpstreamService {
          const title = await this.upstreamRepository.findOne(
             {
              where: { stage: { id: stage_id } },
-             order: { id: 'DESC' },
+             order: { title: 'DESC' },
          })
          
          const upstream = this.upstreamRepository.create({
