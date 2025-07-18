@@ -1,5 +1,6 @@
 import React from 'react';
 import { UploadProgress, ChunkProgress } from '../types/api';
+import { getDisplayFilename } from '../utils/filenameUtils';
 
 interface S3UploadProgressProps {
   progress: UploadProgress;
@@ -92,7 +93,7 @@ export const S3UploadProgress: React.FC<S3UploadProgressProps> = ({
       <div className="flex items-center justify-between mb-4">
         <div className="flex items-center space-x-3">
           <div className="text-lg font-semibold text-gray-800 truncate">
-            {progress.fileName}
+            {getDisplayFilename(progress.fileName)}
           </div>
           <div className="text-sm text-gray-500">
             {formatFileSize(progress.totalSize)}

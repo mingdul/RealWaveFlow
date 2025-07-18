@@ -1,5 +1,6 @@
 import React, { useRef, useEffect, useState } from 'react';
 import { Play, Pause, Volume2, VolumeX } from 'lucide-react';
+import { getDisplayFilename } from '../utils/filenameUtils';
 
 interface AudioPlayerProps {
   src: string;
@@ -172,7 +173,7 @@ return (
 
       <div className="flex-1 min-w-0">
         <div className="text-sm font-medium text-white truncate mb-1">
-          {fileName}
+          {getDisplayFilename(fileName)}
         </div>
         <div className="text-xs text-gray-400">
           {loading ? 'Loading...' : `${formatTime(currentTime)} / ${formatTime(duration)}`}

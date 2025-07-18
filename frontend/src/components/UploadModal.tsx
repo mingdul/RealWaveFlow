@@ -11,6 +11,7 @@ import s3UploadService from '../services/s3UploadService';
 import { createUpstream } from '../services/upstreamService';
 import versionstemService from '../services/versionstemService';
 import stemJobService from '../services/stemJobService';
+import { encodeFilename, getDisplayFilename } from '../utils/filenameUtils';
 // import stemFileService from '../services/stemFileService';
 // import categoryService from '../services/categoryService';
 // import masterStemService from '../services/masterStemService';
@@ -161,7 +162,7 @@ const StemListPanel: React.FC<{
                       <Play size={16} />
                     </button>
                     <div>
-                      <div className="text-white font-medium">{stem.file_name}</div>
+                      <div className="text-white font-medium">{getDisplayFilename(stem.file_name)}</div>
                       <div className="flex items-center space-x-2 mt-1">
                         {stem.tag && (
                           <span className="bg-purple-900 text-purple-300 px-2 py-1 rounded text-xs">
@@ -701,7 +702,7 @@ const UploadModal: React.FC<UploadModalProps> = ({
           // stem-job/create 호출하여 실제 stem job 생성
           try {
             const stemJobRequest = {
-              file_name: uploadResult.fileName,
+              file_name: uploadResult.fileName, // 이미 인코딩된 파일명이 uploadResult에 포함됨
               file_path: uploadResult.key,
               key: file.key || '',
               bpm: file.bpm || '',
