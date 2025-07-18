@@ -15,7 +15,7 @@ import { Category } from 'src/category/category.entity';
 import { Stage } from 'src/stage/stage.entity';
 import { StageReviewer } from '../stage-reviewer/stage-reviewer.entity';
 import { SqsService } from '../sqs/service/sqs.service';
-import { NotificationGateway, NotificationPayload } from '../notification/notification.gateway';
+import { NotificationGateway } from '../notification/notification.gateway';
 
 @Injectable()
 export class UpstreamService {
@@ -412,30 +412,25 @@ export class UpstreamService {
             const reviewerIds = stageReviewers.map(reviewer => reviewer.user.id);
             console.log('🔔 [UpstreamService] Reviewer IDs:', reviewerIds);
 
-            // 알림 페이로드 생성
-            const notification: NotificationPayload = {
-                type: 'upstream_created',
-                title: '📁 새 업로드',
-                message: `${upstream.title}`,
-                data: {
-                    upstreamId: upstream.id,
-                    stageId: stage.id,
-                    trackId: stage.track?.id,
-                    upstreamTitle: upstream.title,
-                    stageTitle: stage.title,
-                    uploader: upstream.user?.id,
-                },
-                timestamp: new Date().toISOString(),
-                read: false,
+            // 알림 데이터 준비
+            const type = 'upstream_created';
+            const message = `📁 새 업로드: ${upstream.title}`;
+            const data = {
+                upstreamId: upstream.id,
+                stageId: stage.id,
+                trackId: stage.track?.id,
+                upstreamTitle: upstream.title,
+                stageTitle: stage.title,
+                uploader: upstream.user?.id,
             };
 
-            console.log('🔔 [UpstreamService] Notification payload:', notification);
+            console.log('🔔 [UpstreamService] Notification data:', { type, message, data });
             console.log('🔔 [UpstreamService] NotificationGateway 존재:', !!this.notificationGateway);
 
             // 각 리뷰어에게 알림 전송
             if (this.notificationGateway) {
                 console.log('🔔 [UpstreamService] 알림 전송 중...');
-                this.notificationGateway.sendNotificationToUsers(reviewerIds, notification);
+                this.notificationGateway.sendNotificationToUsers(reviewerIds, type, message, data);
                 console.log('🔔 [UpstreamService] ✅ 알림 전송 호출 완료');
             } else {
                 console.log('🔔 [UpstreamService] ❌ NotificationGateway가 없습니다!');
