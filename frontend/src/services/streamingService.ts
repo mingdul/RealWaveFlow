@@ -127,10 +127,16 @@ class StreamingService {
       // 파일명 디코딩 적용
       const data = response.data;
       if (data.success && data.data && data.data.stems) {
-        data.data.stems = data.data.stems.map((stem: any) => ({
-          ...stem,
-          fileName: stem.fileName ? getDisplayFilename(stem.fileName) : stem.fileName
-        }));
+        console.log('[🎵 STREAMING] getTrackStems - Processing', data.data.stems.length, 'stems');
+        data.data.stems = data.data.stems.map((stem: any, index: number) => {
+          if (stem.fileName) {
+            console.log(`[🎵 STREAMING] getTrackStems[${index}] - Original fileName:`, stem.fileName);
+            const decodedFileName = getDisplayFilename(stem.fileName);
+            console.log(`[🎵 STREAMING] getTrackStems[${index}] - Decoded fileName:`, decodedFileName);
+            return { ...stem, fileName: decodedFileName };
+          }
+          return stem;
+        });
       }
       
       return data;
@@ -195,10 +201,16 @@ async getGuidePresignedUrlByStageId(stageId: string): Promise<StreamingResponse<
       // 파일명 디코딩 적용
       const data = response.data;
       if (data.success && data.data && data.data.stems) {
-        data.data.stems = data.data.stems.map((stem: any) => ({
-          ...stem,
-          fileName: stem.fileName ? getDisplayFilename(stem.fileName) : stem.fileName
-        }));
+        console.log('[🎵 STREAMING] getMasterStemStreams - Processing', data.data.stems.length, 'stems');
+        data.data.stems = data.data.stems.map((stem: any, index: number) => {
+          if (stem.fileName) {
+            console.log(`[🎵 STREAMING] getMasterStemStreams[${index}] - Original fileName:`, stem.fileName);
+            const decodedFileName = getDisplayFilename(stem.fileName);
+            console.log(`[🎵 STREAMING] getMasterStemStreams[${index}] - Decoded fileName:`, decodedFileName);
+            return { ...stem, fileName: decodedFileName };
+          }
+          return stem;
+        });
       }
       
       return data;
@@ -227,7 +239,9 @@ async getGuidePresignedUrlByStageId(stageId: string): Promise<StreamingResponse<
       // 파일명 디코딩 적용
       const data = response.data;
       if (data.fileName) {
+        console.log('[🎵 STREAMING] getStemStreamingUrl - Original fileName:', data.fileName);
         data.fileName = getDisplayFilename(data.fileName);
+        console.log('[🎵 STREAMING] getStemStreamingUrl - Decoded fileName:', data.fileName);
       }
       
       // 백엔드가 직접 데이터 객체를 반환하므로 success wrapper로 감싸서 반환
@@ -260,7 +274,9 @@ async getGuidePresignedUrlByStageId(stageId: string): Promise<StreamingResponse<
       // 파일명 디코딩 적용
       const data = response.data;
       if (data.fileName) {
+        console.log('[🎵 STREAMING] getVersionStemStreamingUrl - Original fileName:', data.fileName);
         data.fileName = getDisplayFilename(data.fileName);
+        console.log('[🎵 STREAMING] getVersionStemStreamingUrl - Decoded fileName:', data.fileName);
       }
       
       // 백엔드가 직접 데이터 객체를 반환하므로 success wrapper로 감싸서 반환

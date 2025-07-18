@@ -268,8 +268,8 @@ class S3UploadService {
     try {
       // 한글 파일명을 안전한 ASCII 형태로 인코딩
       const encodedFilename = encodeFilename(file.name);
-      console.log('[DEBUG] Original filename:', file.name);
-      console.log('[DEBUG] Encoded filename:', encodedFilename);
+      console.log('[📤 S3UPLOAD] Original filename:', file.name);
+      console.log('[📤 S3UPLOAD] Encoded filename:', encodedFilename);
 
       // 1. 업로드 초기화 (기존 프로젝트에 파일 추가)
       const uploadResponse = await this.addUpload({

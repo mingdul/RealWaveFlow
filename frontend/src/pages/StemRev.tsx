@@ -18,6 +18,7 @@ import {
   approveDropReviewer,
   rejectDropReviewer,
 } from '../services/upstreamReviewService';
+import { getDisplayFilename } from '../utils/filenameUtils';
 import { useNavigate } from 'react-router-dom';
 import {
   createUpstreamComment,
@@ -1165,7 +1166,7 @@ const StemRev = () => {
                               </span>
                             </div>
                             <div className="text-sm text-white/70 mb-2">
-                              📁 {stemData.stem?.file_name || 'Unknown file'}
+                              📁 {getDisplayFilename(stemData.stem?.file_name || 'Unknown file')}
                             </div>
                             <div className="text-xs text-white/50">
                               🎼 {stemData.category?.instrument || 'Unknown'} • 
