@@ -171,25 +171,10 @@ const StemSetReviewPage = () => {
         const cachedAudioUrl = sessionStorage.getItem(`audio-${cacheKey}`);
         const cachedPeaks = sessionStorage.getItem(`peaks-${cacheKey}`);
         
-        // 캐시된 데이터가 있으면 사용
-        if (cachedAudioUrl) {
-          console.log('📦 [fetchGuideUrl] Using cached guide audio URL');
-          setGuideAudioUrl(cachedAudioUrl);
-          
-          if (cachedPeaks) {
-            try {
-              const parsedPeaks = JSON.parse(cachedPeaks);
-              console.log('📦 [fetchGuideUrl] Using cached guide peaks data');
-              setGuidePeaks(parsedPeaks);
-              clearTimeout(timeoutId);
-              setGuideLoading(false);
-              return;
-            } catch (parseError) {
-              console.warn('⚠️ [fetchGuideUrl] Failed to parse cached peaks data:', parseError);
-              sessionStorage.removeItem(`peaks-${cacheKey}`);
-            }
-          }
-        }
+        // 임시: 항상 새로운 데이터를 가져오도록 캐시 클리어 (presigned URL 만료 문제 해결)
+        console.log('🔄 [fetchGuideUrl] Clearing cache and fetching fresh presigned URLs');
+        sessionStorage.removeItem(`audio-${cacheKey}`);
+        sessionStorage.removeItem(`peaks-${cacheKey}`);
 
         // 1. 현재 스테이지 정보 가져오기
         console.log('🔍 [fetchGuideUrl] Fetching stage details...');
@@ -213,13 +198,13 @@ const StemSetReviewPage = () => {
         // 2. guide audio URL 및 waveform 데이터 가져오기 (병렬 처리)
         console.log('🔍 [fetchGuideUrl] Fetching guide audio and waveform data...');
         
-        const [audioResponse, waveformResponse] = await Promise.all([
-          streamingService.getGuidePresignedUrlbyUpstream(upstreamId),
-          streamingService.getGuideWaveformData(upstreamId),
+        const [audioResponse, waveformUrlResponse] = await Promise.all([
+          streamingService.getUpstreamGuideStreamingUrl(upstreamId),
+          streamingService.getGuideWaveformPresignedUrl(upstreamId),
         ]);
 
         console.log('📦 [fetchGuideUrl] Audio response:', audioResponse?.success ? '✅ Success' : '❌ Failed');
-        console.log('📦 [fetchGuideUrl] Waveform response:', waveformResponse?.success ? '✅ Success' : '❌ Failed');
+        console.log('📦 [fetchGuideUrl] Waveform URL response:', waveformUrlResponse?.success ? '✅ Success' : '❌ Failed');
 
         // 오디오 URL 처리 - 응답 구조 검증 강화
         if (audioResponse?.success && audioResponse.data?.presignedUrl) {
@@ -237,21 +222,30 @@ const StemSetReviewPage = () => {
           showWarning('가이드 오디오를 불러올 수 없어 기본 오디오를 사용합니다.');
         }
 
-        // 파형 데이터 처리 - 응답 구조 검증 강화
-        if (waveformResponse?.success && waveformResponse.data) {
-          const waveformData = waveformResponse.data;
+        // 파형 데이터 처리 - presigned URL로 실제 JSON 데이터 다운로드
+        if (waveformUrlResponse?.success && waveformUrlResponse.data?.presignedUrl) {
+          console.log('🔍 [fetchGuideUrl] Downloading waveform data from presigned URL...');
+          const waveformDataResponse = await streamingService.downloadWaveformData(waveformUrlResponse.data.presignedUrl);
           
-          // 파형 데이터 유효성 검사
-          if (Array.isArray(waveformData) || (waveformData.data && Array.isArray(waveformData.data))) {
-            setGuidePeaks(waveformData);
-            sessionStorage.setItem(`peaks-${cacheKey}`, JSON.stringify(waveformData));
-            console.log('🌊 [fetchGuideUrl] Guide waveform data set successfully');
+          if (waveformDataResponse?.success && waveformDataResponse.data) {
+            const waveformData = waveformDataResponse.data;
+            
+            // 파형 데이터 유효성 검사 - peaks 배열이나 {peaks: array} 구조 확인
+            if (Array.isArray(waveformData) || 
+                (waveformData.peaks && Array.isArray(waveformData.peaks))) {
+              setGuidePeaks(waveformData);
+              sessionStorage.setItem(`peaks-${cacheKey}`, JSON.stringify(waveformData));
+              console.log('🌊 [fetchGuideUrl] Guide waveform data downloaded and set successfully');
+            } else {
+              console.warn('⚠️ [fetchGuideUrl] Invalid waveform data structure:', waveformData);
+              setGuidePeaks(null);
+            }
           } else {
-            console.warn('⚠️ [fetchGuideUrl] Invalid waveform data structure');
+            console.warn('⚠️ [fetchGuideUrl] Failed to download waveform data');
             setGuidePeaks(null);
           }
         } else {
-          console.warn('⚠️ [fetchGuideUrl] Guide waveform data not available');
+          console.warn('⚠️ [fetchGuideUrl] Guide waveform presigned URL not available');
           setGuidePeaks(null);
         }
 
@@ -975,12 +969,15 @@ const StemSetReviewPage = () => {
         if (waveformResponse?.success && waveformResponse.data) {
           const waveformData = waveformResponse.data;
           
-          if (Array.isArray(waveformData) || (waveformData.data && Array.isArray(waveformData.data))) {
+          // 파형 데이터 유효성 검사 - peaks 배열이나 {peaks: array} 구조 확인
+          if (Array.isArray(waveformData) || 
+              (waveformData.peaks && Array.isArray(waveformData.peaks)) ||
+              (waveformData.data && Array.isArray(waveformData.data))) {
             setExtraPeaks(waveformData);
             sessionStorage.setItem(`peaks-${cacheKey}`, JSON.stringify(waveformData));
             console.log('🌊 [handleIndividualStemClick] Waveform data set successfully');
           } else {
-            console.warn('⚠️ [handleIndividualStemClick] Invalid waveform structure');
+            console.warn('⚠️ [handleIndividualStemClick] Invalid waveform structure:', waveformData);
             setExtraPeaks(null);
           }
         } else {
