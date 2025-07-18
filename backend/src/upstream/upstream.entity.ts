@@ -12,7 +12,7 @@ export class Upstream {
     @PrimaryGeneratedColumn('uuid')
     id : string;
 
-    @Column({ type: 'number' })
+    @Column({ type: 'int' })
     title : number;
 
     @Column({ type: 'text' })
