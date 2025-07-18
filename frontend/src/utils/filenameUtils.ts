@@ -184,7 +184,7 @@ export const testFilenameEncoding = () => {
 };
 
 // 전역 스코프에 테스트 함수 노출 (개발 환경에서만)
-if (typeof window !== 'undefined' && process.env.NODE_ENV === 'development') {
+if (typeof window !== 'undefined' && import.meta.env.MODE === 'development') {
   (window as any).testFilenameEncoding = testFilenameEncoding;
   console.log('🧪 [DEV] 콘솔에서 testFilenameEncoding() 함수를 실행하여 테스트할 수 있습니다.');
 } 
