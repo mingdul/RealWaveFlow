@@ -51,9 +51,37 @@ interface Comment {
 }
 
 const StemSetReviewPage = () => {
+  console.log('🎬 [StemSetReviewPage] Component initializing...');
+  
   const { user } = useAuth();
   const { showError, showSuccess, showWarning } = useToast();
   const navigate = useNavigate();
+  
+  console.log('🔍 [StemSetReviewPage] Initial user:', user?.username || 'No user');
+  
+  // 전역 에러 핸들러 설정
+  useEffect(() => {
+    const handleError = (event: ErrorEvent) => {
+      console.error('🚨 [Global Error Handler] Uncaught error:', event.error);
+      console.error('🚨 [Global Error Handler] Error message:', event.message);
+      console.error('🚨 [Global Error Handler] Error filename:', event.filename);
+      console.error('🚨 [Global Error Handler] Error line:', event.lineno);
+      console.error('🚨 [Global Error Handler] Error column:', event.colno);
+    };
+    
+    const handleUnhandledRejection = (event: PromiseRejectionEvent) => {
+      console.error('🚨 [Global Promise Rejection] Unhandled rejection:', event.reason);
+      console.error('🚨 [Global Promise Rejection] Promise:', event.promise);
+    };
+    
+    window.addEventListener('error', handleError);
+    window.addEventListener('unhandledrejection', handleUnhandledRejection);
+    
+    return () => {
+      window.removeEventListener('error', handleError);
+      window.removeEventListener('unhandledrejection', handleUnhandledRejection);
+    };
+  }, []);
   // const wavesurferRef = useRef<any>(null);
   const [volume, setVolume] = useState(1);
   const [currentTime, setCurrentTime] = useState(0);
@@ -84,12 +112,19 @@ const StemSetReviewPage = () => {
   const [readyStates, setReadyStates] = useState<{ [id: string]: boolean }>({});
 
   const isSeeking = useRef(false); // 무한 루프 방지용 플래그
+  const debugRef = useRef({ lastLog: 0, lastState: '' }); // 렌더링 로그 최적화용
   const { upstreamId } = useParams<{
     upstreamId: string;
   }>();
   const [searchParams] = useSearchParams();
   const urlStageId = searchParams.get('stageId');
   const [stageId, setStageId] = useState<string | undefined>(urlStageId || undefined);
+
+  console.log('🔍 [StemSetReviewPage] Initial params:', {
+    upstreamId,
+    urlStageId,
+    stageId
+  });
 
   // stageId 결정 로직 (쿼리 파라미터 우선, 없으면 upstream API 사용)
   useEffect(() => {
@@ -206,6 +241,25 @@ const StemSetReviewPage = () => {
   }, [upstreamId, urlStageId]);
 
   // 상태 변경 추적을 위한 로그
+  useEffect(() => {
+    console.log('📊 [State Change] showHistory:', showHistory);
+  }, [showHistory]);
+
+  useEffect(() => {
+    console.log('📊 [State Change] showCommentList:', showCommentList);
+  }, [showCommentList]);
+
+  useEffect(() => {
+    console.log('📊 [State Change] selectedUpstream:', selectedUpstream?.id || 'null');
+  }, [selectedUpstream]);
+
+  useEffect(() => {
+    console.log('📊 [State Change] stageId:', stageId);
+  }, [stageId]);
+
+  useEffect(() => {
+    console.log('📊 [State Change] stemsLoading:', stemsLoading);
+  }, [stemsLoading]);
 
   useEffect(() => {
     console.log('📊 [State] UpstreamStems data:', upstreamStems);
@@ -558,42 +612,51 @@ const StemSetReviewPage = () => {
 
   const handleReady = useCallback(
     (ws: WaveSurfer, id: string) => {
-      console.log(`🎯 [handleReady] Ready callback for ${id}`);
-      wavesurferRefs.current[id] = ws;
+      try {
+        console.log(`🎯 [handleReady] Ready callback for ${id} START`);
+        console.log(`🎯 [handleReady] WaveSurfer instance:`, ws ? 'valid' : 'null');
+        
+        wavesurferRefs.current[id] = ws;
 
-      // ready 상태 업데이트
-      setReadyStates((prev) => {
-        if (prev[id] === true) {
-          console.log(`⚠️ [handleReady] ${id} already ready, skipping`);
-          return prev;
+        // ready 상태 업데이트
+        setReadyStates((prev) => {
+          if (prev[id] === true) {
+            console.log(`⚠️ [handleReady] ${id} already ready, skipping`);
+            return prev;
+          }
+          console.log(`✅ [handleReady] Setting ${id} ready state`);
+          return { ...prev, [id]: true };
+        });
+
+        // main 파형이 ready 되었을 때 이벤트 리스너 추가 (한 번만)
+        if (id === 'main') {
+          ws.on('audioprocess', (time: number) => {
+            setCurrentTime(time);
+          });
+
+          ws.on('play', () => {
+            setIsPlaying(true);
+          });
+
+          ws.on('pause', () => {
+            setIsPlaying(false);
+          });
+
+          ws.on('finish', () => {
+            setIsPlaying(false);
+          });
+
+          // duration 설정 (즉시)
+          const duration = ws.getDuration();
+          if (duration > 0) {
+            setDuration(duration);
+          }
         }
-        console.log(`✅ [handleReady] Setting ${id} ready state`);
-        return { ...prev, [id]: true };
-      });
-
-      // main 파형이 ready 되었을 때 이벤트 리스너 추가 (한 번만)
-      if (id === 'main') {
-        ws.on('audioprocess', (time: number) => {
-          setCurrentTime(time);
-        });
-
-        ws.on('play', () => {
-          setIsPlaying(true);
-        });
-
-        ws.on('pause', () => {
-          setIsPlaying(false);
-        });
-
-        ws.on('finish', () => {
-          setIsPlaying(false);
-        });
-
-        // duration 설정 (즉시)
-        const duration = ws.getDuration();
-        if (duration > 0) {
-          setDuration(duration);
-        }
+        
+        console.log(`🎯 [handleReady] Ready callback for ${id} END`);
+      } catch (error: any) {
+        console.error(`❌ [handleReady] Error in ${id} ready callback:`, error);
+        console.error(`❌ [handleReady] Error stack:`, error?.stack);
       }
     },
     [] // dependencies 제거로 재생성 방지
@@ -1349,10 +1412,17 @@ const StemSetReviewPage = () => {
 
   // 컴포넌트 언마운트 시 정리
   useEffect(() => {
+    console.log('🎬 [StemSetReviewPage] Component mounted, setting up cleanup');
+    
     return () => {
-      console.log(
-        '🧹 [Cleanup] Component unmounting, cleaning up resources...'
-      );
+      console.log('🧹 [Cleanup] Component unmounting, cleaning up resources...');
+      console.log('🧹 [Cleanup] Final state:', {
+        stageId,
+        upstreamId,
+        selectedUpstream: selectedUpstream?.id || 'null',
+        showHistory,
+        upstreamStemsCount: upstreamStems.length
+      });
 
       // WaveSurfer 인스턴스 정리
       Object.values(wavesurferRefs.current).forEach((ws) => {
@@ -1375,6 +1445,18 @@ const StemSetReviewPage = () => {
       console.log('✅ [Cleanup] Component cleanup completed');
     };
   }, []);
+
+  console.log('🎨 [StemSetReviewPage] Starting render, current state:', {
+    stageId,
+    upstreamId,
+    selectedUpstream: selectedUpstream?.id || 'null',
+    showHistory,
+    showCommentList,
+    stemsLoading,
+    guideLoading,
+    upstreamStemsCount: upstreamStems.length,
+    isReady: readyStates
+  });
 
   return (
     <div
@@ -1431,19 +1513,26 @@ const StemSetReviewPage = () => {
         <div className='mt-4 flex justify-end space-x-4'>
           <button
             onClick={() => {
-              console.log('🔍 [Show History] Button clicked. Current state:', {
-                showHistory,
-                upstreamStems: upstreamStems.length,
-                upstreamStemsData: upstreamStems,
-                stageId,
-                selectedUpstream,
-                stemsLoading,
-              });
-              console.log(
-                '🔍 [Show History] UpstreamStems detailed:',
-                upstreamStems
-              );
-              setShowHistory(!showHistory);
+              try {
+                console.log('🔍 [Show History] Button clicked START');
+                console.log('🔍 [Show History] Current state BEFORE:', {
+                  showHistory,
+                  upstreamStems: upstreamStems.length,
+                  upstreamStemsData: upstreamStems,
+                  stageId,
+                  selectedUpstream: selectedUpstream?.id || 'null',
+                  stemsLoading,
+                });
+                console.log('🔍 [Show History] UpstreamStems detailed:', upstreamStems);
+                console.log('🔍 [Show History] About to toggle showHistory from', showHistory, 'to', !showHistory);
+                
+                setShowHistory(!showHistory);
+                
+                console.log('🔍 [Show History] Button clicked END - setShowHistory called');
+              } catch (error: any) {
+                console.error('❌ [Show History] Error in button click handler:', error);
+                console.error('❌ [Show History] Error stack:', error?.stack);
+              }
             }}
             className={`self-start rounded px-3 py-1 text-sm transition-colors ${
               showHistory
@@ -1553,22 +1642,36 @@ const StemSetReviewPage = () => {
                 })}  */}
 
                   {(() => {
-                    // Reduce excessive logging (only log once per state change)
-                    const debugRef = useRef({ lastLog: 0, lastState: '' });
-                    const currentState = `${showHistory}-${stemsLoading}-${upstreamStems.length}`;
-                    const now = Date.now();
-                    
-                    if (currentState !== debugRef.current.lastState || now - debugRef.current.lastLog > 2000) {
-                      console.log('🎨 [Render] State:', {
+                    try {
+                      console.log('🎨 [Render IIFE] Starting render function');
+                      
+                      // Reduce excessive logging (only log once per state change)
+                      const currentState = `${showHistory}-${stemsLoading}-${upstreamStems.length}`;
+                      const now = Date.now();
+                      
+                      console.log('🎨 [Render IIFE] Current state:', {
+                        currentState,
                         showHistory,
                         stemsLoading,
-                        stemsCount: upstreamStems.length,
+                        upstreamStemsLength: upstreamStems.length,
                         stageId,
-                        selectedUpstreamId: selectedUpstream?.id
+                        selectedUpstreamId: selectedUpstream?.id,
+                        debugRefState: debugRef.current.lastState
                       });
-                      debugRef.current.lastLog = now;
-                      debugRef.current.lastState = currentState;
-                    }
+                      
+                      if (currentState !== debugRef.current.lastState || now - debugRef.current.lastLog > 2000) {
+                        console.log('🎨 [Render] State:', {
+                          showHistory,
+                          stemsLoading,
+                          stemsCount: upstreamStems.length,
+                          stageId,
+                          selectedUpstreamId: selectedUpstream?.id
+                        });
+                        debugRef.current.lastLog = now;
+                        debugRef.current.lastState = currentState;
+                      }
+                      
+                      console.log('🎨 [Render IIFE] About to check loading state');
 
                     if (stemsLoading) {
                       console.log('🎨 [Render] Showing loading state');
@@ -1719,6 +1822,17 @@ const StemSetReviewPage = () => {
                         </div>
                       );
                     });
+                    
+                    } catch (error: any) {
+                      console.error('❌ [Render IIFE] Error in render function:', error);
+                      console.error('❌ [Render IIFE] Error stack:', error?.stack);
+                      return (
+                        <div className='py-8 text-center text-red-400'>
+                          <div>렌더링 중 오류가 발생했습니다.</div>
+                          <div className='text-xs mt-2'>{error?.message || 'Unknown error'}</div>
+                        </div>
+                      );
+                    }
                   })()}
                 </div>
               )}
