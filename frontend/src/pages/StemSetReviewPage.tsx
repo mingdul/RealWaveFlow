@@ -8,7 +8,7 @@ import {
 } from '../services/upstreamService';
 import { getStageDetail } from '../services/stageService';
 import streamingService from '../services/streamingService';
-import { useParams } from 'react-router-dom';
+import { useParams, useSearchParams } from 'react-router-dom';
 import { useAuth } from '../contexts/AuthContext';
 import { useToast } from '../contexts/ToastContext';
 import Button from '../components/Button';
@@ -84,17 +84,27 @@ const StemSetReviewPage = () => {
   const [readyStates, setReadyStates] = useState<{ [id: string]: boolean }>({});
 
   const isSeeking = useRef(false); // 무한 루프 방지용 플래그
-  const { upstreamId, stageId: urlStageId } = useParams<{
+  const { upstreamId } = useParams<{
     upstreamId: string;
-    stageId: string;
   }>();
-  const [stageId, setStageId] = useState<string | undefined>(urlStageId);
+  const [searchParams] = useSearchParams();
+  const urlStageId = searchParams.get('stageId');
+  const [stageId, setStageId] = useState<string | undefined>(urlStageId || undefined);
 
   // stageId 결정 로직 (쿼리 파라미터 우선, 없으면 upstream API 사용)
   useEffect(() => {
     const determineStageId = async () => {
+      console.log('🔍 [determineStageId] Starting with:', { upstreamId, urlStageId });
+      
+      // 쿼리 파라미터에 stageId가 있으면 바로 사용
+      if (urlStageId) {
+        console.log('✅ [determineStageId] Using stageId from query params:', urlStageId);
+        setStageId(urlStageId);
+        return;
+      }
+      
       // URL에서 stageId가 없는 경우에만 upstream에서 추출
-      if (upstreamId && !urlStageId) {
+      if (upstreamId) {
         try {
           console.log(
             '🔍 [determineStageId] Found upstreamId in URL params, fetching upstream details:',
