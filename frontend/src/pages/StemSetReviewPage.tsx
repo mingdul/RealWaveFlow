@@ -167,10 +167,6 @@ const StemSetReviewPage = () => {
         // 캐시 키 생성
         const cacheKey = `guide-${upstreamId}`;
         
-        // 캐시에서 오디오 URL과 파형 데이터 확인
-        const cachedAudioUrl = sessionStorage.getItem(`audio-${cacheKey}`);
-        const cachedPeaks = sessionStorage.getItem(`peaks-${cacheKey}`);
-        
         // 임시: 항상 새로운 데이터를 가져오도록 캐시 클리어 (presigned URL 만료 문제 해결)
         console.log('🔄 [fetchGuideUrl] Clearing cache and fetching fresh presigned URLs');
         sessionStorage.removeItem(`audio-${cacheKey}`);
