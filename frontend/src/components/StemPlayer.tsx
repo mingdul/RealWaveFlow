@@ -1,5 +1,5 @@
 import React, { useState, useEffect, useRef } from 'react';
-import { Play, Pause, Square, Volume2, VolumeX, Download, Check } from 'lucide-react';
+import { Play, Pause, Square, Volume2, VolumeX, Download } from 'lucide-react';
 import AudioPlayer from './AudioPlayer';
 import { StemStreamingInfo } from '../services/streamingService';
 import streamingService from '../services/streamingService';
