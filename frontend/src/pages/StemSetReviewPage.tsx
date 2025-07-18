@@ -1957,7 +1957,15 @@ const StemSetReviewPage = () => {
         {/* Waveform */}
         <div className='space-y-6'>
           {(() => {
+            console.log('🎨 [Waveform Render] Checking conditions:', {
+              guideLoading,
+              guideLoadAttempted,
+              guideAudioUrl: !!guideAudioUrl,
+              guidePeaks: !!guidePeaks
+            });
+            
             if (guideLoading) {
+              console.log('🎨 [Waveform Render] Showing loading state');
               return (
                 <div className='flex flex-col items-center justify-center rounded-md bg-gray-900/30 p-6 py-8'>
                   <div className='mb-3 h-10 w-10 animate-spin rounded-full border-b-2 border-t-2 border-red-400'></div>
@@ -1970,6 +1978,12 @@ const StemSetReviewPage = () => {
                 </div>
               );
             } else if (guideLoadAttempted && guideAudioUrl) {
+              console.log('🎨 [Waveform Render] Rendering Wave component with props:', {
+                audioUrl: !!guideAudioUrl,
+                peaks: !!guidePeaks,
+                id: 'main'
+              });
+              
               const mainWaveProps = {
                 onReady: handleReady,
                 audioUrl: guideAudioUrl,
@@ -1989,6 +2003,7 @@ const StemSetReviewPage = () => {
                 </>
               );
             } else {
+              console.log('🎨 [Waveform Render] Showing fallback message');
               return (
                 <div className='flex items-center justify-center rounded-md bg-gray-900/30 p-6 py-8'>
                   <span className='text-sm text-white'>

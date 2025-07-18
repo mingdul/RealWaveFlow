@@ -186,26 +186,18 @@ const Wave = memo(({
 
     // peaks 데이터가 있으면 함께 로드, 없으면 오디오만 로드
     if (peaks) {
-      console.log(`🌊 [${id}] Processing peaks data:`, peaks);
-      
       // peaks 데이터 형태 확인 및 처리
       let peaksData = peaks;
       
       // 객체 형태인 경우 peaks 배열 추출
       if (peaks && typeof peaks === 'object' && !Array.isArray(peaks)) {
-        console.log(`🔍 [${id}] Peaks is object, extracting array...`);
         if (peaks.peaks && Array.isArray(peaks.peaks)) {
           peaksData = peaks.peaks;
-          console.log(`✅ [${id}] Extracted peaks.peaks array, length: ${peaksData.length}`);
         } else if (peaks.data && Array.isArray(peaks.data)) {
           peaksData = peaks.data;
-          console.log(`✅ [${id}] Extracted peaks.data array, length: ${peaksData.length}`);
-        } else {
-          console.warn(`⚠️ [${id}] Peaks object has no valid array property`);
         }
       } else if (Array.isArray(peaks)) {
         peaksData = peaks;
-        console.log(`✅ [${id}] Peaks is already array, length: ${peaksData.length}`);
       }
       
       // WaveSurfer가 기대하는 형식으로 변환
@@ -213,9 +205,7 @@ const Wave = memo(({
         console.log(`🌊 [${id}] Loading with peaks data, length: ${peaksData.length}`);
         
         try {
-          console.log(`🔄 [${id}] Calling wavesurfer.load with peaks...`);
           wavesurfer.load(audioUrl, peaksData);
-          console.log(`✅ [${id}] Wavesurfer.load called successfully with peaks`);
         } catch (error: any) {
           console.warn(`❌ [${id}] Failed to load audio with peaks:`, error);
           // 실패 시 오디오만 로드 시도
@@ -229,7 +219,6 @@ const Wave = memo(({
         }
       } else {
         console.warn(`⚠️ [${id}] Invalid peaks data, loading audio only`);
-        console.log(`🎵 [${id}] Loading audio only (invalid peaks)`);
         wavesurfer.load(audioUrl).catch((error) => {
           if (error.name !== 'AbortError') {
             console.warn('Failed to load audio:', error);
@@ -239,14 +228,12 @@ const Wave = memo(({
       }
     } else {
       console.log(`🎵 [${id}] Loading audio only (no peaks)`);
-      console.log(`🔄 [${id}] Calling wavesurfer.load without peaks...`);
       wavesurfer.load(audioUrl).catch((error) => {
         if (error.name !== 'AbortError') {
           console.warn(`❌ [${id}] Failed to load audio:`, error);
         }
         setIsAudioLoading(false);
       });
-      console.log(`✅ [${id}] Wavesurfer.load called successfully without peaks`);
     }
   }, [audioUrl, peaks, id, isDestroyed, isReady]);
 
@@ -325,54 +312,56 @@ const Wave = memo(({
       className={`w-full bg-gray-900 rounded-md shadow-lg p-3 sm:p-4 space-y-3 sm:space-y-4 ${isActive ? 'border-2 border-blue-500' : ''}`}
       onClick={onClick}
     >
-      {isActuallyLoading ? (
-        <div className="flex flex-col items-center justify-center py-8">
+      {/* 로딩 오버레이 - DOM refs는 항상 존재하고 로딩 상태에 따라 가시성만 조절 */}
+      {isActuallyLoading && (
+        <div className="absolute inset-0 z-10 flex flex-col items-center justify-center bg-gray-900/90 rounded-md">
           <div className="mb-3 h-10 w-10 animate-spin rounded-full border-b-2 border-t-2 border-blue-500"></div>
           <span className="text-white font-medium">오디오를 불러오는 중...</span>
           <span className="text-gray-400 text-sm mt-2">잠시만 기다려주세요</span>
         </div>
-      ) : !isReady ? (
-        <div className="flex flex-col items-center justify-center py-8">
+      )}
+
+      {!isReady && !isActuallyLoading && (
+        <div className="absolute inset-0 z-10 flex flex-col items-center justify-center bg-gray-900/90 rounded-md">
           <div className="mb-3 h-8 w-8 animate-spin rounded-full border-b-2 border-blue-300"></div>
           <span className="text-white">파형을 준비하는 중...</span>
         </div>
-      ) : (
-        <>
-          <div className="relative border border-gray-700 rounded overflow-hidden">
-            <div id="wave-minimap" ref={minimapRef} className="h-12 sm:h-14 md:h-16" />
-          </div>
-          <div className="relative border border-gray-700 rounded overflow-hidden">
-            <div id="wave-timeline" ref={timelineRef} className="h-8 sm:h-9 md:h-10" />
-            <div id="wave-presentation" ref={waveRef} className="h-48 sm:h-56 md:h-64 lg:h-72" />
-          </div>
-          <div className="flex justify-between items-center">
-            <button 
-              onClick={onSolo}
-              disabled={!isReady}
-              className={`px-3 py-2 sm:px-4 sm:py-2 rounded-lg transition-all duration-200 text-sm sm:text-base font-medium ${
-                isSolo 
-                  ? 'bg-gradient-to-r from-green-500 to-green-600 text-white shadow-lg shadow-green-500/30 border border-green-400 ring-2 ring-green-300/50' 
-                  : 'bg-gray-700 text-gray-200 hover:bg-gray-600 border border-gray-600 hover:border-gray-500'
-              } ${!isReady ? 'opacity-50 cursor-not-allowed' : 'transform hover:scale-105'}`}
-            >
-              <span className="flex items-center gap-1">
-                {isSolo ? (
-                  <>
-                    <span className="animate-pulse">🎵</span>
-                    <span>SOLO</span>
-                  </>
-                ) : (
-                  <>
-                    <span>🔇</span>
-                    <span>뮤트</span>
-                  </>
-                )}
-              </span>
-            </button>
-            {isReady && <span className="text-green-400 text-xs">✓ 준비 완료</span>}
-          </div>
-        </>
       )}
+
+      {/* DOM refs - 항상 렌더링되어야 함 */}
+      <div className="relative border border-gray-700 rounded overflow-hidden">
+        <div id="wave-minimap" ref={minimapRef} className="h-12 sm:h-14 md:h-16" />
+      </div>
+      <div className="relative border border-gray-700 rounded overflow-hidden">
+        <div id="wave-timeline" ref={timelineRef} className="h-8 sm:h-9 md:h-10" />
+        <div id="wave-presentation" ref={waveRef} className="h-48 sm:h-56 md:h-64 lg:h-72" />
+      </div>
+      <div className="flex justify-between items-center">
+        <button 
+          onClick={onSolo}
+          disabled={!isReady}
+          className={`px-3 py-2 sm:px-4 sm:py-2 rounded-lg transition-all duration-200 text-sm sm:text-base font-medium ${
+            isSolo 
+              ? 'bg-gradient-to-r from-green-500 to-green-600 text-white shadow-lg shadow-green-500/30 border border-green-400 ring-2 ring-green-300/50' 
+              : 'bg-gray-700 text-gray-200 hover:bg-gray-600 border border-gray-600 hover:border-gray-500'
+          } ${!isReady ? 'opacity-50 cursor-not-allowed' : 'transform hover:scale-105'}`}
+        >
+          <span className="flex items-center gap-1">
+            {isSolo ? (
+              <>
+                <span className="animate-pulse">🎵</span>
+                <span>SOLO</span>
+              </>
+            ) : (
+              <>
+                <span>🔇</span>
+                <span>뮤트</span>
+              </>
+            )}
+          </span>
+        </button>
+        {isReady && <span className="text-green-400 text-xs">✓ 준비 완료</span>}
+      </div>
     </div>
   );
 });
