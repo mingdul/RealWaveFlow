@@ -55,11 +55,9 @@ export const decodeFilename = (encodedFilename: string): string => {
     // 확장자 분리
     const lastDotIndex = withoutPrefix.lastIndexOf('.');
     let encoded: string;
-    let extension = '';
     
     if (lastDotIndex !== -1) {
       encoded = withoutPrefix.substring(0, lastDotIndex);
-      extension = withoutPrefix.substring(lastDotIndex);
     } else {
       encoded = withoutPrefix;
     }

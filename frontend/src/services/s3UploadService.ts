@@ -11,7 +11,7 @@ import {
   UploadedPart,
   PresignedImageUrl,
 } from '../types/api';
-import { encodeFilename, getDisplayFilename } from '../utils/filenameUtils';
+import { encodeFilename} from '../utils/filenameUtils';
 
 class S3UploadService {
   private activeUploads: Map<string, UploadProgress> = new Map();
