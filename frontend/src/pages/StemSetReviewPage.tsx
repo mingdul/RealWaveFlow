@@ -1447,17 +1447,21 @@ const StemSetReviewPage = () => {
     };
   }, []);
 
-  console.log('🎨 [StemSetReviewPage] Starting render, current state:', {
-    stageId,
-    upstreamId,
-    selectedUpstream: selectedUpstream?.id || 'null',
-    showHistory,
-    showCommentList,
-    stemsLoading,
-    guideLoading,
-    upstreamStemsCount: upstreamStems.length,
-    isReady: readyStates
-  });
+  // 렌더링 로그 최적화 (무한 리렌더링 방지)
+  if (debugRef.current.lastState !== `${showHistory}-${stemsLoading}-${upstreamStems.length}`) {
+    console.log('🎨 [StemSetReviewPage] Starting render, current state:', {
+      stageId,
+      upstreamId,
+      selectedUpstream: selectedUpstream?.id || 'null',
+      showHistory,
+      showCommentList,
+      stemsLoading,
+      guideLoading,
+      upstreamStemsCount: upstreamStems.length,
+      isReady: readyStates
+    });
+    debugRef.current.lastState = `${showHistory}-${stemsLoading}-${upstreamStems.length}`;
+  }
 
   return (
     <div
@@ -1514,15 +1518,7 @@ const StemSetReviewPage = () => {
                 <div className='mt-4 flex justify-end space-x-4'>
           <button
             onClick={() => {
-              console.log('🔍 [Show History] Button clicked. Current state:', { 
-                showHistory, 
-                upstreamStems: upstreamStems.length,
-                upstreamStemsData: upstreamStems,
-                stageId,
-                selectedUpstream,
-                stemsLoading
-              });
-              console.log('🔍 [Show History] UpstreamStems detailed:', upstreamStems);
+              console.log('🔍 [Show History] Button clicked, toggling from', showHistory, 'to', !showHistory);
               setShowHistory(!showHistory);
             }}
             className={`self-start rounded px-3 py-1 text-sm transition-colors ${
