@@ -100,6 +100,38 @@ const StemSetReviewPage = () => {
       if (urlStageId) {
         console.log('✅ [determineStageId] Using stageId from query params:', urlStageId);
         setStageId(urlStageId);
+        
+        // stageId가 있어도 upstreamId로 upstream 정보를 가져와서 selectedUpstream 설정
+        if (upstreamId) {
+          try {
+            console.log(
+              '🔍 [determineStageId] Fetching upstream details for selectedUpstream:',
+              upstreamId
+            );
+            const upstreamData = await getUpstreamByUpstreamId(upstreamId);
+            console.log(
+              '📦 [determineStageId] Upstream data response:',
+              upstreamData
+            );
+
+            if (upstreamData.success && upstreamData.data?.upstream) {
+              console.log(
+                '✅ [determineStageId] Setting selected upstream:',
+                upstreamData.data.upstream
+              );
+              setSelectedUpstream(upstreamData.data.upstream);
+            } else {
+              console.error(
+                '❌ [determineStageId] No upstream data found in response'
+              );
+            }
+          } catch (error) {
+            console.error(
+              '❌ [determineStageId] Error fetching upstream details:',
+              error
+            );
+          }
+        }
         return;
       }
       
