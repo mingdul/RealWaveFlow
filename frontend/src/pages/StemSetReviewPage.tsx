@@ -1331,6 +1331,17 @@ const StemSetReviewPage = () => {
           </div>
         )}
 
+        {/* 🔍 디버깅: 모든 상태 출력 */}
+        {(() => {
+          console.log('🎨🎨🎨 [RENDER DEBUG] ===================');
+          console.log('🎨 guideLoading:', guideLoading);
+          console.log('🎨 guideLoadAttempted:', guideLoadAttempted);
+          console.log('🎨 guideAudioUrl:', !!guideAudioUrl, guideAudioUrl?.substring(0, 50));
+          console.log('🎨 guidePeaks:', !!guidePeaks, guidePeaks ? Object.keys(guidePeaks) : null);
+          console.log('🎨🎨🎨 ====================================');
+          return null;
+        })()}
+
         {/* Waveform */}
         <div className='space-y-6'>
           {(() => {
