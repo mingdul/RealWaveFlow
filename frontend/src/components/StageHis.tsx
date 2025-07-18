@@ -273,7 +273,7 @@ const StageHis: React.FC<StageHisProps> = ({
                       className={`
                         group relative overflow-hidden rounded-2xl border transition-all duration-300 cursor-pointer flex-shrink-0 w-72
                         ${isSelected 
-                          ? 'border-purple-400 shadow-lg shadow-purple-500/25 scale-105' 
+                          ? `border-${statusConfig.color} shadow-lg shadow-${statusConfig.color}/25 scale-105`
                           : 'border-white/10 hover:border-white/20'
                         }
                         ${stage.status === 'active' 
@@ -294,7 +294,7 @@ const StageHis: React.FC<StageHisProps> = ({
                             <div className={`p-2 rounded-lg ${statusConfig.bgColor}`}>
                               {statusConfig.icon}
                             </div>
-                            <div className='flex items-center'>
+                            <div className='flex items-center space-x-2'>
                               <h3 className="flex items-center font-semibold text-white text-2xl">
                                 Version {stage.version}
                               </h3>

@@ -25,7 +25,7 @@ const Button: React.FC<ButtonProps> = ({
     outline: 'border border-[#595959] text-[#D9D9D9] hover:bg-[#595959] focus:ring-[#BFBFBF]',  
     ghost: 'text-[#BFBFBF] hover:text-[#D9D9D9] hover:bg-[#595959]/50 focus:ring-[#BFBFBF]',
     waveflowbtn: 'bg-[#1F2325] text-[#ffffff] hover:bg-[#40413E] focus:bg-white focus:text-black',
-    waveflowbtn2: 'text-purple-700 hover:text-white border border-purple-700 hover:bg-gradient-to-br from-blue-900/20 to-purple-900/20 focus:ring-4 focus:outline-none focus:ring-purple-300 font-medium rounded-lg text-sm px-5 py-2.5 text-center me-2 mb-2',
+    waveflowbtn2: 'text-white bg-gradient-to-br from-blue-900/20 to-purple-900/20 focus:ring-4 focus:outline-none focus:ring-purple-300 font-medium rounded-lg text-sm px-5 py-2.5 text-center me-2 mb-2',
   };
   
   const sizeClasses = {
