@@ -134,8 +134,8 @@ export const NotificationProvider: React.FC<NotificationProviderProps> = ({ chil
         console.log('🔔 [NotificationSocket] Notification service connected:', data);
         showToast('success', '알림 서비스가 활성화되었습니다.', 3000);
         
-        // 🔥 NEW: 연결 확인 후 기존 알림 로드
-        loadExistingNotifications();
+        // 🔥 REMOVED: 중복 로딩 방지 - 서버에서 pending 알림을 자동으로 전송함
+        // loadExistingNotifications();
       });
 
       // 🔥 NEW: 룸 조인 성공 이벤트
@@ -284,6 +284,12 @@ export const NotificationProvider: React.FC<NotificationProviderProps> = ({ chil
     setNotifications([]);
   };
 
+  // 🔥 NEW: API에서 최신 알림 새로고침
+  const refreshNotifications = async () => {
+    console.log('🔔 [NotificationProvider] Manually refreshing notifications...');
+    await loadExistingNotifications();
+  };
+
   const value: NotificationContextType = {
     notifications,
     unreadCount,
@@ -291,6 +297,7 @@ export const NotificationProvider: React.FC<NotificationProviderProps> = ({ chil
     markAsRead,
     markAllAsRead,
     clearNotifications,
+    refreshNotifications,
   };
 
   return (

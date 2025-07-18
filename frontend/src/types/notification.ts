@@ -15,4 +15,5 @@ export interface NotificationContextType {
   markAsRead: (notificationId: string) => void;
   markAllAsRead: () => void;
   clearNotifications: () => void;
+  refreshNotifications: () => Promise<void>; // 🔥 NEW: API에서 최신 알림 가져오기
 } 

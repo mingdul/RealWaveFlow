@@ -249,13 +249,13 @@ export class NotificationGateway
     this.logger.log(`🔔 [NotificationGateway] Connected users: [${connectedUserIds.join(', ')}]`);
     this.logger.log(`🔔 [NotificationGateway] Sending "${notification.title}" to user ${userId} (connected: ${isUserConnected})`);
     
-    // 💾 DB에 알림 저장
+    // 💾 DB에 pending 알림으로 저장
     let savedNotification: any;
     try {
-      savedNotification = await this.notificationService.createNotification(userId, notification);
-      this.logger.log(`🔔 [NotificationGateway] Notification saved to DB with ID: ${savedNotification.id}`);
+      savedNotification = await this.notificationService.createPendingNotification(userId, notification);
+      this.logger.log(`📦 [NotificationGateway] Pending notification saved to DB with ID: ${savedNotification.id}`);
     } catch (error) {
-      this.logger.error(`🔔 [NotificationGateway] Failed to save to DB: ${error.message}`);
+      this.logger.error(`📦 [NotificationGateway] Failed to save pending notification to DB: ${error.message}`);
       return; // DB 저장 실패 시 웹소켓 전송도 하지 않음
     }
     
@@ -269,13 +269,18 @@ export class NotificationGateway
       // 🔥 연결된 사용자에게 즉시 전송
       try {
         this.server.to(userRoom).emit('notification', notificationWithId);
-        this.logger.log(`🔔 [NotificationGateway] ✅ Notification sent via websocket to room: ${userRoom}`);
+        
+        // 🔥 NEW: 전송 성공 시 delivered=true로 업데이트
+        await this.notificationService.markAsDelivered([savedNotification.id]);
+        
+        this.logger.log(`📦 [NotificationGateway] ✅ Notification sent via websocket to room: ${userRoom} and marked as delivered`);
       } catch (error) {
-        this.logger.error(`🔔 [NotificationGateway] Websocket send error: ${error.message}`);
+        this.logger.error(`📦 [NotificationGateway] Websocket send error: ${error.message}`);
+        // 전송 실패 시에는 delivered=false로 유지 (나중에 재전송 가능)
       }
     } else {
-      // 🔥 연결되지 않은 사용자의 경우 DB에 저장됨 (나중에 로그인 시 조회 가능)
-      this.logger.log(`🔔 [NotificationGateway] ⏳ User not connected, notification saved to DB: ${userId}`);
+      // 🔥 연결되지 않은 사용자의 경우 DB에 pending으로 남겨둠
+      this.logger.log(`📦 [NotificationGateway] ⏳ User not connected, notification remains pending in DB: ${userId}`);
     }
   }
 
@@ -319,16 +324,18 @@ export class NotificationGateway
     }
   }
 
-  // 🔥 NEW: DB에서 미읽은 알림 조회 및 전송 (임시로 기존 방식 사용)
+  // 🔥 NEW: DB에서 pending 알림 조회 및 전송
   private async sendPendingNotificationsFromDB(userId: string, client: Socket) {
     try {
-      // DB에서 미읽은 알림 조회 (임시로 기존 방식 사용)
-      const unreadNotifications = await this.notificationService.getUserUnreadNotifications(userId);
+      // DB에서 미전송(pending) 알림 조회
+      const pendingNotifications = await this.notificationService.getPendingNotifications(userId);
       
-      if (unreadNotifications && unreadNotifications.length > 0) {
-        this.logger.log(`🔔 [NotificationGateway] Sending ${unreadNotifications.length} unread notifications from DB to user ${userId}`);
+      if (pendingNotifications && pendingNotifications.length > 0) {
+        this.logger.log(`📦 [NotificationGateway] Sending ${pendingNotifications.length} pending notifications from DB to user ${userId}`);
         
-        for (const notification of unreadNotifications) {
+        const sentNotificationIds: string[] = [];
+        
+        for (const notification of pendingNotifications) {
           const notificationPayload: NotificationPayload = {
             id: notification.id,
             type: notification.type as any,
@@ -341,16 +348,23 @@ export class NotificationGateway
           
           try {
             client.emit('notification', notificationPayload);
-            this.logger.log(`🔔 [NotificationGateway] ✅ Sent unread notification: ${notification.id}`);
+            sentNotificationIds.push(notification.id);
+            this.logger.log(`📦 [NotificationGateway] ✅ Sent pending notification: ${notification.id}`);
           } catch (emitError) {
-            this.logger.error(`🔔 [NotificationGateway] ❌ Failed to emit notification ${notification.id}: ${emitError.message}`);
+            this.logger.error(`📦 [NotificationGateway] ❌ Failed to emit notification ${notification.id}: ${emitError.message}`);
           }
         }
+        
+        // 성공적으로 전송된 알림들을 delivered=true로 업데이트
+        if (sentNotificationIds.length > 0) {
+          await this.notificationService.markAsDelivered(sentNotificationIds);
+          this.logger.log(`📦 [NotificationGateway] ✅ Marked ${sentNotificationIds.length} notifications as delivered`);
+        }
       } else {
-        this.logger.log(`🔔 [NotificationGateway] No unread notifications for user ${userId}`);
+        this.logger.log(`📦 [NotificationGateway] No pending notifications for user ${userId}`);
       }
     } catch (error) {
-      this.logger.error(`🔔 [NotificationGateway] Error sending unread notifications from DB: ${error.message}`);
+      this.logger.error(`📦 [NotificationGateway] Error sending pending notifications from DB: ${error.message}`);
     }
   }
 
