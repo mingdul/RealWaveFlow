@@ -4,6 +4,7 @@ import { ToastProvider } from './contexts/ToastContext';
 import { SocketProvider } from './contexts/SocketContext';
 import { NotificationProvider } from './contexts/NotificationContext';
 import './App.css';
+import './styles/animations.css';
 
 import LandingPage2 from './pages/LandingPage2.tsx';
 import LoginPage from './pages/LoginPage.tsx';
