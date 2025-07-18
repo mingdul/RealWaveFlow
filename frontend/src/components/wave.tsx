@@ -34,6 +34,15 @@ const Wave = ({
   onSeek,
   isLoading = false
 }: WaveProps) => {
+  console.log(`🌊🌊 [Wave ${id}] Component rendered with:`, {
+    audioUrl: !!audioUrl,
+    audioUrlPreview: audioUrl?.substring(0, 50),
+    peaks: !!peaks,
+    peaksType: typeof peaks,
+    peaksKeys: peaks && typeof peaks === 'object' ? Object.keys(peaks) : null,
+    isLoading
+  });
+
   const waveRef = useRef<HTMLDivElement>(null);
   const timelineRef = useRef<HTMLDivElement>(null);
   const minimapRef = useRef<HTMLDivElement>(null);
