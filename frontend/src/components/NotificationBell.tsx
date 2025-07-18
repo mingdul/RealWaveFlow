@@ -5,7 +5,7 @@ import { Notification } from '../types/notification';
 const NotificationBell: React.FC = () => {
   const [isOpen, setIsOpen] = useState(false);
   const dropdownRef = useRef<HTMLDivElement>(null);
-  const { notifications, unreadCount, markAsRead, markAllAsRead } = useNotifications();
+  const { notifications, unreadCount, markAsRead, markAllAsRead, refreshNotifications } = useNotifications();
 
   // 알림 상태 변경 시 로그 (개발용)
   useEffect(() => {
@@ -28,7 +28,16 @@ const NotificationBell: React.FC = () => {
     };
   }, []);
 
-  const toggleDropdown = () => {
+  const toggleDropdown = async () => {
+    // 🔥 NEW: 알림 버튼 클릭 시 최신 알림을 API에서 가져오기
+    if (!isOpen) {
+      console.log('🔔 [NotificationBell] Refreshing notifications from API...');
+      try {
+        await refreshNotifications();
+      } catch (error) {
+        console.error('🔔 [NotificationBell] Failed to refresh notifications:', error);
+      }
+    }
     setIsOpen(!isOpen);
   };
 

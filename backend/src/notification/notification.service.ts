@@ -23,11 +23,11 @@ export class NotificationService {
         message: notificationPayload.message,
         data: notificationPayload.data,
         read: notificationPayload.read,
-        // delivered: false, // 🔥 TEMP: delivered 필드는 마이그레이션 완료 후 사용
+        delivered: false, // 🔥 NEW: delivered 필드 활성화
         user_id: userId,
       });
 
-      const savedNotification = await this.notificationRepository.save(notification);
+      const savedNotification = await this.notificationRepository.save(notification) as Notification;
       this.logger.log(`💾 [NotificationService] 알림 저장 완료: ${savedNotification.id} for user ${userId}`);
       
       return savedNotification;
@@ -230,7 +230,7 @@ export class NotificationService {
         user_id: userId,
       });
 
-      const savedNotification = await this.notificationRepository.save(notification);
+      const savedNotification = await this.notificationRepository.save(notification) as Notification;
       this.logger.log(`📦 [NotificationService] Pending 알림 생성 완료: ${savedNotification.id} for user ${userId}`);
       
       return savedNotification;
