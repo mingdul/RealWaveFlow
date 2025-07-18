@@ -12,6 +12,8 @@ import { createUpstream } from '../services/upstreamService';
 import versionstemService from '../services/versionstemService';
 import stemJobService from '../services/stemJobService';
 import { getDisplayFilename, decodeFilename } from '../utils/filenameUtils';
+import { useSocket } from '../contexts/SocketContext';
+import socketService from '../services/socketService';
 // import stemFileService from '../services/stemFileService';
 // import categoryService from '../services/categoryService';
 // import masterStemService from '../services/masterStemService';
@@ -94,6 +96,15 @@ const uploadReducer = (state: UploadState, action: any): UploadState => {
       return { ...state, isLoadingStems: action.payload };
     case 'SET_DESCRIPTION':
       return { ...state, description: action.payload };
+    case 'RESET_UPLOAD':
+      return {
+        uploadedFiles: [],
+        existingStems: [],
+        isUploading: false,
+        currentUploadIndex: 0,
+        isLoadingStems: false,
+        description: ''
+      };
     default:
       return state;
   }
@@ -607,6 +618,7 @@ const UploadModal: React.FC<UploadModalProps> = ({
 }) => {
   const { user } = useAuth();
   const { showError, showSuccess } = useToast();
+  const { isConnected } = useSocket();
   const [state, dispatch] = useReducer(uploadReducer, {
     uploadedFiles: [],
     existingStems: [],
@@ -616,9 +628,11 @@ const UploadModal: React.FC<UploadModalProps> = ({
     description: ''
   });
 
-  // Load existing stems
+  // 모달 상태 초기화 및 기존 스템 로드
   useEffect(() => {
     if (isOpen && projectId && stageId) {
+      // 모달 열릴 때 상태 초기화
+      dispatch({ type: 'RESET_UPLOAD' });
       dispatch({ type: 'SET_LOADING_STEMS', payload: true });
       
       // projectId is the track_id, and we need to get stage info to get version
@@ -662,7 +676,83 @@ const UploadModal: React.FC<UploadModalProps> = ({
           dispatch({ type: 'SET_LOADING_STEMS', payload: false });
         });
     }
-  }, [isOpen, projectId, stageId, showError]);
+  }, [isOpen, projectId, stageId, stageVersion, showError]);
+
+  // 중복 파일 감지 소켓 이벤트 리스너
+  useEffect(() => {
+    if (!isConnected || !isOpen) return;
+
+    // 중복 파일 감지 이벤트 핸들러
+    const handleDuplicateCheck = (data: {
+      stemJobId: string;
+      isDuplicate: boolean;
+      fileName?: string;
+      trackId?: string;
+      stageId?: string;
+      timestamp: string;
+      message: string;
+    }) => {
+      console.log('Duplicate check result received:', data);
+
+      if (data.isDuplicate && data.fileName) {
+        // 중복 파일 토스트 메시지 표시
+        showError(`중복된 파일이 감지되었습니다: ${data.fileName}`);
+        
+        // 중복 파일을 업로드된 파일 목록에서 제거
+        const duplicateFile = state.uploadedFiles.find(file => 
+          file.name === data.fileName || file.name.includes(data.fileName || '')
+        );
+        
+        if (duplicateFile) {
+          dispatch({ type: 'REMOVE_FILE', payload: duplicateFile.id });
+          console.log(`Removed duplicate file: ${duplicateFile.name}`);
+        }
+      }
+    };
+
+    // 파일 처리 완료 이벤트 핸들러 (중복 검사 포함)
+    const handleFileProcessingCompleted = (data: {
+      trackId: string;
+      fileName: string;
+      result: any;
+      processingTime: number;
+      timestamp: string;
+      message: string;
+    }) => {
+      console.log('File processing completed:', data);
+      
+      // 결과에 중복 정보가 포함되어 있는지 확인
+      if (data.result && data.result.isDuplicate) {
+        showError(`중복된 파일이 감지되었습니다: ${data.fileName}`);
+        
+        const duplicateFile = state.uploadedFiles.find(file => 
+          file.name === data.fileName || file.name.includes(data.fileName)
+        );
+        
+        if (duplicateFile) {
+          dispatch({ type: 'REMOVE_FILE', payload: duplicateFile.id });
+        }
+      }
+    };
+
+    // 소켓 이벤트 리스너 등록
+    socketService.on('dub-check-result', handleDuplicateCheck);
+    socketService.on('file-processing-completed', handleFileProcessingCompleted);
+
+    // 에러 핸들링
+    const handleSocketError = (error: any) => {
+      console.error('Socket error in UploadModal:', error);
+    };
+
+    socketService.on('error', handleSocketError);
+
+    // Cleanup 함수
+    return () => {
+      socketService.off('dub-check-result', handleDuplicateCheck);
+      socketService.off('file-processing-completed', handleFileProcessingCompleted);
+      socketService.off('error', handleSocketError);
+    };
+  }, [isConnected, isOpen, state.uploadedFiles, showError]);
 
   const handleMatchStem = (fileId: string, stemId: string) => {
     // Remove any existing match for this stem
@@ -771,6 +861,10 @@ const UploadModal: React.FC<UploadModalProps> = ({
     // 완료된 파일이 없는 경우
     if (allCompletedFiles.length === 0) {
       showSuccess('All uploads completed successfully!');
+      
+      // 업로드 완료 후 모달 상태 초기화
+      dispatch({ type: 'RESET_UPLOAD' });
+      
       onComplete();
       onClose();
       return;
@@ -832,6 +926,10 @@ const UploadModal: React.FC<UploadModalProps> = ({
       // 처리할 스템이 없는 경우
       if (stemSet.length === 0 && newCategoryStems.length === 0) {
         showSuccess('All uploads completed successfully!');
+        
+        // 업로드 완료 후 모달 상태 초기화
+        dispatch({ type: 'RESET_UPLOAD' });
+        
         onComplete();
         onClose();
         return;
@@ -855,6 +953,10 @@ const UploadModal: React.FC<UploadModalProps> = ({
       const response = await createUpstream(upstreamData);
       if (response.success) {
         showSuccess('Stem set update completed successfully!');
+        
+        // 업로드 완료 후 모달 상태 초기화
+        dispatch({ type: 'RESET_UPLOAD' });
+        
         onComplete();
         onClose();
       } else {

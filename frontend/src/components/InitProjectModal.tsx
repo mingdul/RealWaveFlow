@@ -115,6 +115,13 @@ const commitReducer = (state: CommitState, action: any): CommitState => {
       return { ...state, isUploading: action.payload };
     case 'SET_CURRENT_UPLOAD_INDEX':
       return { ...state, currentUploadIndex: action.payload };
+    case 'RESET_FILES':
+      return {
+        ...state,
+        uploadedFiles: [],
+        isUploading: false,
+        currentUploadIndex: 0,
+      };
     default:
       return state;
   }
@@ -615,6 +622,11 @@ const InitProjectModal: React.FC<InitProjectModalProps> = ({
       );
       await trackService.updateTrackStatus(projectId, 'producing');
       showSuccess('프로젝트 초기화 완료!');
+      
+      // Complete 완료 후 모달 상태 초기화
+      setCompletedStemCount(0);
+      dispatch({ type: 'RESET_FILES' });
+      
       onComplete();
     } catch (error: any) {
       console.error('[ERROR] InitProjectModal - Mixing init failed:', error);
@@ -692,6 +704,11 @@ const InitProjectModal: React.FC<InitProjectModalProps> = ({
   useEffect(() => {
     if (isOpen) {
       setCompletedStemCount(0);
+      // 모달 상태 완전 초기화
+      dispatch({ type: 'SET_UPLOADING', payload: false });
+      dispatch({ type: 'SET_CURRENT_UPLOAD_INDEX', payload: 0 });
+      // 업로드된 파일 리스트 초기화
+      dispatch({ type: 'RESET_FILES' });
     }
   }, [isOpen]);
 
