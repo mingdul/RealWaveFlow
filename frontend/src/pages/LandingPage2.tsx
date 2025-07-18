@@ -3,6 +3,7 @@ import { Link } from 'react-router-dom';
 import { motion, useScroll, useTransform } from 'framer-motion';
 import { useInView } from 'react-intersection-observer';
 import { ArrowRight, Play, Zap, Users, Clock } from 'lucide-react';
+import { useNavigate } from 'react-router-dom';
 
 interface QItem {
   question: string;
@@ -171,6 +172,7 @@ const FeatureCard = ({
 
 const LandingPage2: React.FC = () => {
   const ref = useRef(null);
+  const navigate = useNavigate();
   const { scrollYProgress } = useScroll({
     target: ref,
     offset: ['start start', 'end start'],
@@ -187,16 +189,17 @@ const LandingPage2: React.FC = () => {
             WavefloW
           </div>
         </div>
-        <Link to='/signup'>
+
           <motion.button
             whileHover={{ scale: 1.05 }}
             whileTap={{ scale: 0.95 }}
             className='group flex items-center gap-2 rounded-full bg-gradient-to-r px-6 py-2.5 text-sm font-medium text-white transition-all hover:shadow-lg hover:shadow-violet-500/25'
+            onClick={() => navigate('/signup')}
           >
             Sign Up
             <ArrowRight className='h-4 w-4 transition-transform group-hover:translate-x-1' />
           </motion.button>
-        </Link>
+
       </header>
 
       {/* Hero Section */}
@@ -253,16 +256,17 @@ const LandingPage2: React.FC = () => {
               transition={{ duration: 1, delay: 0.8 }}
               className='flex flex-col items-center justify-center gap-4 sm:flex-row'
             >
-              <Link to='/signup'>
+
                 <motion.button
                   whileHover={{ scale: 1.05 }}
                   whileTap={{ scale: 0.95 }}
                   className='group flex items-center gap-3 rounded-full bg-gradient-to-r px-8 py-4 text-lg font-semibold text-white shadow-xl shadow-violet-500/25 transition-all hover:shadow-2xl hover:shadow-violet-500/40'
+                  onClick={() => navigate('/signup')}
                 >
                   무료로 시작하기
                   <ArrowRight className='h-5 w-5 transition-transform group-hover:translate-x-1' />
                 </motion.button>
-              </Link>
+
             </motion.div>
           </div>
         </div>
