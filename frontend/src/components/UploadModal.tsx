@@ -704,7 +704,15 @@ const UploadModal: React.FC<UploadModalProps> = ({
         );
         
         if (duplicateFile) {
-          dispatch({ type: 'REMOVE_FILE', payload: duplicateFile.id });
+          // 매칭된 스템이 있는 경우, 해당 스템의 매칭을 해제
+          if (duplicateFile.matchedStemId) {
+            console.log(`Removing duplicate file from matched stem: ${duplicateFile.matchedStemId}`);
+            // 매칭된 스템에서 파일을 제거하기 위해 파일 삭제
+            dispatch({ type: 'REMOVE_FILE', payload: duplicateFile.id });
+          } else {
+            // 일반 업로드 파일인 경우에도 삭제
+            dispatch({ type: 'REMOVE_FILE', payload: duplicateFile.id });
+          }
           console.log(`Removed duplicate file: ${duplicateFile.name}`);
         }
       }
@@ -730,6 +738,10 @@ const UploadModal: React.FC<UploadModalProps> = ({
         );
         
         if (duplicateFile) {
+          // 매칭된 스템이 있는 경우, 해당 스템의 매칭을 해제
+          if (duplicateFile.matchedStemId) {
+            console.log(`Removing duplicate file from matched stem: ${duplicateFile.matchedStemId}`);
+          }
           dispatch({ type: 'REMOVE_FILE', payload: duplicateFile.id });
         }
       }
@@ -1065,16 +1077,7 @@ const UploadModal: React.FC<UploadModalProps> = ({
             />
           )}
 
-          {/* Upload Complete */}
-          {state.uploadedFiles.filter(f => f.isComplete).length > 0 && !state.isUploading && (
-            <div className="text-center py-8 bg-green-900/20 rounded-lg border border-green-500/30 mt-6">
-              <Check size={48} className="text-green-400 mx-auto mb-4" />
-              <h3 className="text-white text-xl font-semibold mb-2">Upload Complete!</h3>
-              <p className="text-gray-300 mb-4">
-                Successfully uploaded {state.uploadedFiles.filter(f => f.isComplete).length} file(s).
-              </p>
-            </div>
-          )}
+          {/* Upload Complete - 이 메시지를 표시하지 않음 (요구사항에 따라 제거) */}
         </div>
 
         {/* Footer */}
