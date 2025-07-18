@@ -392,25 +392,62 @@ const StemPlayer: React.FC<StemPlayerProps> = ({ stems, className = '', stageId}
           <h3 className="text-lg font-semibold text-white">
             {stageId && stageInfo ? `스테이지 컨트롤 (V${stageInfo.version})` : '마스터 컨트롤'}
           </h3>
-          <div className="flex items-center gap-2">
+          <div className="flex items-center gap-3">
             <button
               onClick={handleMasterMuteToggle}
-              className="p-2 text-gray-400 hover:text-white transition-colors"
+              className={`group relative p-2.5 rounded-lg transition-all duration-200 transform hover:scale-105 ${
+                masterMuted 
+                  ? 'bg-gradient-to-br from-red-500 to-red-600 text-white shadow-md hover:shadow-lg' 
+                  : 'bg-gradient-to-br from-gray-600 to-gray-700 hover:from-gray-500 hover:to-gray-600 text-gray-300 hover:text-white shadow-sm hover:shadow-md'
+              }`}
             >
-              {masterMuted ? <VolumeX size={20} /> : <Volume2 size={20} />}
+              {masterMuted ? <VolumeX size={20} className="drop-shadow-sm" /> : <Volume2 size={20} className="drop-shadow-sm" />}
+              <div className="absolute inset-0 rounded-lg bg-white opacity-0 group-hover:opacity-10 transition-opacity duration-200"></div>
             </button>
-            <input
-              type="range"
-              min="0"
-              max="1"
-              step="0.1"
-              value={masterMuted ? 0 : masterVolume}
-              onChange={(e) => handleMasterVolumeChange(parseFloat(e.target.value))}
-              className="w-24 h-2 bg-gray-600 rounded-lg appearance-none cursor-pointer"
-              style={{
-                background: `linear-gradient(to right, #8b5cf6 0%, #8b5cf6 ${(masterMuted ? 0 : masterVolume) * 100}%, #4b5563 ${(masterMuted ? 0 : masterVolume) * 100}%, #4b5563 100%)`
-              }}
-            />
+            
+            <div className="relative">
+              <input
+                type="range"
+                min="0"
+                max="1"
+                step="0.1"
+                value={masterMuted ? 0 : masterVolume}
+                onChange={(e) => handleMasterVolumeChange(parseFloat(e.target.value))}
+                className="w-28 h-2 bg-gray-700 rounded-full appearance-none cursor-pointer"
+                style={{
+                  background: `linear-gradient(to right, #10b981 0%, #10b981 ${(masterMuted ? 0 : masterVolume) * 100}%, #374151 ${(masterMuted ? 0 : masterVolume) * 100}%, #374151 100%)`
+                }}
+              />
+              <style dangerouslySetInnerHTML={{
+                __html: `
+                  input[type="range"]::-webkit-slider-thumb {
+                    appearance: none;
+                    width: 16px;
+                    height: 16px;
+                    border-radius: 50%;
+                    background: linear-gradient(to bottom, #ffffff, #e5e7eb);
+                    border: 2px solid #10b981;
+                    cursor: pointer;
+                    box-shadow: 0 2px 4px rgba(0, 0, 0, 0.2);
+                    transition: all 0.2s ease;
+                  }
+                  input[type="range"]::-webkit-slider-thumb:hover {
+                    transform: scale(1.1);
+                    box-shadow: 0 4px 8px rgba(0, 0, 0, 0.3);
+                  }
+                  input[type="range"]::-moz-range-thumb {
+                    width: 16px;
+                    height: 16px;
+                    border-radius: 50%;
+                    background: linear-gradient(to bottom, #ffffff, #e5e7eb);
+                    border: 2px solid #10b981;
+                    cursor: pointer;
+                    box-shadow: 0 2px 4px rgba(0, 0, 0, 0.2);
+                    border: none;
+                  }
+                `
+              }} />
+            </div>
           </div>
         </div>
 
@@ -418,44 +455,52 @@ const StemPlayer: React.FC<StemPlayerProps> = ({ stems, className = '', stageId}
           <button
             onClick={handleMasterPlayPause}
             disabled={guideLoading}
-            className="flex items-center justify-center w-12 h-12 bg-purple-600 hover:bg-purple-700 disabled:bg-gray-600 rounded-full transition-colors"
+            className="group relative flex items-center justify-center w-14 h-14 bg-gradient-to-br from-emerald-500 to-emerald-600 hover:from-emerald-400 hover:to-emerald-500 disabled:from-gray-500 disabled:to-gray-600 rounded-full shadow-lg hover:shadow-xl transition-all duration-200 transform hover:scale-105 disabled:hover:scale-100 disabled:cursor-not-allowed"
           >
             {guideLoading ? (
-              <div className="w-5 h-5 border-2 border-white border-t-transparent rounded-full animate-spin" />
+              <div className="w-6 h-6 border-2 border-white border-t-transparent rounded-full animate-spin" />
             ) : isPlaying ? (
-              <Pause size={20} className="text-white" />
+              <Pause size={24} className="text-white drop-shadow-sm" />
             ) : (
-              <Play size={20} className="text-white ml-0.5" />
+              <Play size={24} className="text-white ml-0.5 drop-shadow-sm" />
             )}
+            <div className="absolute inset-0 rounded-full bg-white opacity-0 group-hover:opacity-10 transition-opacity duration-200"></div>
           </button>
+          
           <button
             onClick={handleMasterStop}
-            className="flex items-center justify-center w-12 h-12 bg-gray-600 hover:bg-gray-700 rounded-full transition-colors"
+            className="group relative flex items-center justify-center w-12 h-12 bg-gradient-to-br from-slate-600 to-slate-700 hover:from-slate-500 hover:to-slate-600 rounded-full shadow-md hover:shadow-lg transition-all duration-200 transform hover:scale-105"
           >
-            <Square size={20} className="text-white" />
+            <Square size={18} className="text-white drop-shadow-sm" />
+            <div className="absolute inset-0 rounded-full bg-white opacity-0 group-hover:opacity-10 transition-opacity duration-200"></div>
           </button>
-          <div className="text-sm text-gray-400">
+          
+          <div className="text-sm text-gray-400 font-medium">
             {formatTime(currentTime)} / {formatTime(maxDuration)}
           </div>
           {stageId && (
-            <div className="text-xs text-purple-400 ml-2">
-              {guideLoading ? '가이드 로딩 중...' : 
-               guideUrl ? '가이드 재생 가능' : '가이드 없음'}
+            <div className="flex items-center gap-2 text-xs ml-2">
+              <div className={`w-2 h-2 rounded-full ${guideLoading ? 'bg-yellow-400 animate-pulse' : guideUrl ? 'bg-emerald-400' : 'bg-gray-500'}`}></div>
+              <span className={`${guideLoading ? 'text-yellow-400' : guideUrl ? 'text-emerald-400' : 'text-gray-400'} font-medium`}>
+                {guideLoading ? '가이드 로딩 중...' : 
+                 guideUrl ? '가이드 재생 가능' : '가이드 없음'}
+              </span>
             </div>
           )}
         </div>
 
         {/* 프로그레스 바 */}
         <div
-          className="w-full h-2 bg-gray-700 rounded-full cursor-pointer"
+          className="relative w-full h-3 bg-gray-700 rounded-full cursor-pointer overflow-hidden shadow-inner group"
           onClick={handleProgressBarClick}
         >
           <div
-            className="h-full bg-purple-600 rounded-full transition-all duration-100"
+            className="h-full bg-gradient-to-r from-emerald-400 to-emerald-500 rounded-full transition-all duration-100 shadow-sm"
             style={{
               width: `${maxDuration > 0 ? (currentTime / maxDuration) * 100 : 0}%`
             }}
           />
+          <div className="absolute inset-0 bg-white opacity-0 group-hover:opacity-5 transition-opacity duration-200 rounded-full"></div>
         </div>
       </div>
 
