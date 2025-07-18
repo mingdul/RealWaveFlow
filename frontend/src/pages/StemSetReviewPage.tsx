@@ -36,7 +36,16 @@ import {
   Edit2,
   Square,
   ChevronLeft,
+  Check,
+  X,
+  MoreVertical,
+  Eye,
+  MessageCircle,
+  VolumeX,
+  Volume2,
 } from 'lucide-react';
+import { ActionButton, ToggleButton, StatusBadge } from '../components/ui';
+import { theme } from '../styles/theme';
 
 // Comment interface updated to match backend response
 interface Comment {
@@ -91,6 +100,8 @@ const StemSetReviewPage = () => {
   const [soloTrack, setSoloTrack] = useState<'main' | 'extra'>('main'); // 초기에는 guide(main)만 소리 나게
   const [showHistory, setShowHistory] = useState(false);
   const [showCommentList, setShowCommentList] = useState(false);
+  const [showSidebar, setShowSidebar] = useState(true);
+  const [sidebarWidth, setSidebarWidth] = useState(320);
   const [commentInput, setCommentInput] = useState('');
   const [comments, setComments] = useState<Comment[]>([]);
   const [selectedUpstream, setSelectedUpstream] = useState<any>(null);
@@ -1470,121 +1481,176 @@ const StemSetReviewPage = () => {
     >
       <div className='absolute inset-0 bg-black bg-opacity-80'>
         {/* Header */}
-        <div className='flex items-center justify-between bg-black px-6 py-4'>
+        <header className='flex items-center justify-between bg-black border-b border-gray-800 px-6 py-4'>
+          {/* Left section - Navigation & Logo */}
+          <div className='flex items-center space-x-4'>
+            <ActionButton
+              icon={<ChevronLeft size={20} />}
+              label='뒤로가기'
+              onClick={() => navigate(`/stage/${stageId}`)}
+              variant='secondary'
+              className='px-3 py-2'
+            />
+            <Logo />
+          </div>
+
+          {/* Center section - Primary Actions */}
+          <div className='flex items-center space-x-4'>
+            <ActionButton
+              icon={<Check size={20} />}
+              label='승인'
+              onClick={handleApprove}
+              variant='success'
+              className='px-6 py-3 font-semibold'
+            />
+            <ActionButton
+              icon={<X size={20} />}
+              label='거절'
+              onClick={handleReject}
+              variant='danger'
+              className='px-6 py-3 font-semibold'
+            />
+          </div>
+
+          {/* Right section - Secondary Actions */}
+          <div className='flex items-center space-x-2'>
+            <ToggleButton
+              iconOn={<Eye size={18} />}
+              iconOff={<Eye size={18} />}
+              isOn={showSidebar}
+              onToggle={() => setShowSidebar(!showSidebar)}
+              label='사이드바'
+            />
+            <div className='flex items-center space-x-1 rounded bg-gray-800 p-1'>
+              <button
+                className='rounded p-2 text-gray-300 hover:bg-gray-700 hover:text-white transition-colors'
+                title='알림'
+              >
+                <Bell size={18} />
+              </button>
+              <button
+                className='rounded p-2 text-gray-300 hover:bg-gray-700 hover:text-white transition-colors'
+                title='설정'
+              >
+                <Settings size={18} />
+              </button>
+              <button
+                className='rounded p-2 text-gray-300 hover:bg-gray-700 hover:text-white transition-colors'
+                title='더보기'
+              >
+                <MoreVertical size={18} />
+              </button>
+            </div>
+          </div>
+        </header>
+
+        {/* Secondary Actions Bar */}
+        <div className='bg-gray-900/50 border-b border-gray-800 px-6 py-3'>
           <div className='flex items-center justify-between'>
-            {/* 로고 */}
             <div className='flex items-center space-x-4'>
-              <div className='flex items-center space-x-2'>
-                <Button
-                  size='sm'
-                  className='bg-black p-2 text-white'
-                  onClick={() => navigate(`/stage/${stageId}`)}
-                >
-                  <ChevronLeft size={20} />
-                </Button>
-                <Logo />
-              </div>
+              {selectedUpstream && (
+                <StatusBadge status='pending' />
+              )}
+              {selectedUpstream && (
+                <div className='text-sm text-gray-300'>
+                  검토 중: <span className='text-white font-medium'>{selectedUpstream.title}</span>
+                </div>
+              )}
             </div>
-
-            {/* 탭 버튼 */}
-            <div className='flex items-center space-x-4'>
-              <button
-                onClick={handleApprove}
-                className='border-b-2 border-white bg-yellow-500 pb-1 text-gray-300 hover:text-white'
-              >
-                APPROVE
-              </button>
-              <button
-                onClick={handleReject}
-                className='border-b-2 border-white bg-red-500 pb-1 text-gray-300 hover:text-white'
-              >
-                REJECT
-              </button>
-            </div>
-
-            {/* 알림/설정 버튼 가로 정렬 */}
-            <div className='flex items-center gap-4'>
-              <Button size='sm' className='bg-black p-2 text-white'>
-                <Bell size={20} />
-              </Button>
-              <Button size='sm' className='bg-black p-2 text-white'>
-                <Settings size={20} />
-              </Button>
+            
+            <div className='flex items-center space-x-3'>
+              <ToggleButton
+                iconOn={<Eye size={16} />}
+                iconOff={<Eye size={16} />}
+                isOn={showHistory}
+                onToggle={() => {
+                  console.log('🔍 [Show History] Button clicked, toggling from', showHistory, 'to', !showHistory);
+                  setShowHistory(!showHistory);
+                }}
+                label={`스템 목록 ${upstreamStems.length > 0 ? `(${upstreamStems.length})` : ''}`}
+                disabled={upstreamStems.length === 0}
+                className='text-xs'
+              />
+              <ToggleButton
+                iconOn={<MessageCircle size={16} />}
+                iconOff={<MessageCircle size={16} />}
+                isOn={showCommentList}
+                onToggle={() => setShowCommentList(!showCommentList)}
+                label='댓글'
+                className='text-xs'
+              />
             </div>
           </div>
         </div>
 
-                {/* 🔽 Header 아래로 이동된 버튼들 */}
-                <div className='mt-4 flex justify-end space-x-4'>
-          <button
-            onClick={() => {
-              console.log('🔍 [Show History] Button clicked, toggling from', showHistory, 'to', !showHistory);
-              setShowHistory(!showHistory);
+        {/* Enhanced Sidebar with resize functionality */}
+        {showSidebar && showHistory && (
+          <div 
+            className='fixed right-0 top-0 z-40 h-full bg-gray-900/95 backdrop-blur-sm border-l border-gray-700 shadow-2xl transition-all duration-300 ease-in-out'
+            style={{ 
+              width: `${sidebarWidth}px`,
+              minWidth: '300px',
+              maxWidth: '500px'
             }}
-            className={`self-start rounded px-3 py-1 text-sm transition-colors ${
-              showHistory 
-                ? 'bg-blue-600 text-white hover:bg-blue-700' 
-                : 'bg-[#3a3a3a] text-white hover:bg-[#555]'
-            } ${upstreamStems.length === 0 ? 'opacity-50' : ''}`}
           >
-            Show History {upstreamStems.length > 0 && `(${upstreamStems.length})`}
-          </button>
-          
-          <button
-            onClick={() => setShowCommentList(!showCommentList)}
-            className='self-start rounded bg-[#3a3a3a] px-3 py-1 text-sm hover:bg-[#555]'
-          >
-            Comments
-          </button>
-        </div>
-
-        {/* Sidebars*/}
-        {showHistory && (
-          <div className='fixed right-0 top-0 z-40 h-full w-64 bg-[#2a2a2a] px-4 py-6 shadow-lg'>
-            {/* Close Button */}
-            <div className='mb-4 flex items-center justify-between'>
-              <h2 className='text-lg font-bold text-white'>
-                Streaming Audio Files
-              </h2>
-              <button
-                onClick={() => setShowHistory(false)}
-                className='rounded-full p-1 text-gray-300 transition-all duration-200 hover:text-white'
-                style={{ backgroundColor: 'transparent' }}
-                onMouseEnter={(e) =>
-                  (e.currentTarget.style.backgroundColor = '#ffffff')
-                }
-                onMouseLeave={(e) =>
-                  (e.currentTarget.style.backgroundColor = 'transparent')
-                }
-              >
-                <svg
-                  className='h-5 w-5'
-                  fill='none'
-                  stroke='currentColor'
-                  viewBox='0 0 24 24'
-                >
-                  <path
-                    strokeLinecap='round'
-                    strokeLinejoin='round'
-                    strokeWidth={2}
-                    d='M6 18L18 6M6 6l12 12'
-                  />
-                </svg>
-              </button>
-            </div>
-
-            {/* Audio Files List */}
-            <div className='mb-6'>
-              <h3 className='mb-3 text-sm font-semibold text-white'>
-                Available Stem Files
-              </h3>
-              {stemsLoading ? (
-                <div className='flex justify-center py-8'>
-                  <div className='h-8 w-8 animate-spin rounded-full border-b-2 border-white'></div>
-                  <span className='ml-2 text-white'>Loading stems...</span>
+            {/* Resize Handle */}
+            <div
+              className='absolute left-0 top-0 w-1 h-full bg-gray-600 hover:bg-blue-500 cursor-col-resize transition-colors'
+              onMouseDown={(e) => {
+                const startX = e.clientX;
+                const startWidth = sidebarWidth;
+                
+                const handleMouseMove = (e: MouseEvent) => {
+                  const newWidth = startWidth - (e.clientX - startX);
+                  if (newWidth >= 300 && newWidth <= 500) {
+                    setSidebarWidth(newWidth);
+                  }
+                };
+                
+                const handleMouseUp = () => {
+                  document.removeEventListener('mousemove', handleMouseMove);
+                  document.removeEventListener('mouseup', handleMouseUp);
+                };
+                
+                document.addEventListener('mousemove', handleMouseMove);
+                document.addEventListener('mouseup', handleMouseUp);
+              }}
+            />
+            
+            <div className='px-6 py-6 h-full flex flex-col'>
+              {/* Header */}
+              <div className='mb-6 flex items-center justify-between'>
+                <div>
+                  <h2 className='text-xl font-bold text-white mb-1'>
+                    스템 파일 목록
+                  </h2>
+                  <p className='text-sm text-gray-400'>
+                    사용 가능한 오디오 파일들
+                  </p>
                 </div>
-              ) : (
-                <div className='max-h-96 space-y-2 overflow-y-auto'>
+                <button
+                  onClick={() => setShowHistory(false)}
+                  className='rounded-lg p-2 text-gray-400 hover:bg-gray-800 hover:text-white transition-all duration-200'
+                  title='닫기'
+                >
+                  <X size={20} />
+                </button>
+              </div>
+
+              {/* Stem Files List */}
+              <div className='flex-1 overflow-hidden'>
+                <h3 className='mb-4 text-lg font-semibold text-white flex items-center gap-2'>
+                  <Volume2 size={20} className='text-blue-400' />
+                  오디오 파일들
+                </h3>
+                {stemsLoading ? (
+                  <div className='flex flex-col items-center justify-center py-12'>
+                    <div className='h-10 w-10 animate-spin rounded-full border-3 border-blue-400 border-t-transparent mb-4'></div>
+                    <span className='text-white font-medium'>스템 로딩 중...</span>
+                    <span className='text-sm text-gray-400 mt-1'>잠시만 기다려주세요</span>
+                  </div>
+                ) : (
+                  <div className='space-y-3 overflow-y-auto pr-2' style={{ maxHeight: 'calc(100vh - 240px)' }}>
                   {/* {upstreams.map((upstream, index) => {
                   // 해당 upstream의 stem 정보 찾기
                   const stemInfo = upstreamStems.find(s => s.upstreamId === upstream.id);
@@ -1820,80 +1886,74 @@ const StemSetReviewPage = () => {
                       );
                     }
                   })()}
-                </div>
-              )}
+                  </div>
+                )}
+              </div>
             </div>
           </div>
         )}
 
-        {showCommentList && (
-          <div className='fixed right-0 top-0 z-40 h-full w-64 bg-[#2a2a2a] px-4 py-6 shadow-lg'>
-            {/* Close Button */}
-            <div className='mb-4 flex items-center justify-between'>
-              <h2 className='text-lg font-bold text-white'>Comments</h2>
-              <button
-                onClick={() => setShowCommentList(false)}
-                className='rounded-full p-1 text-gray-300 transition-all duration-200 hover:text-white'
-                style={{ backgroundColor: 'transparent' }}
-                onMouseEnter={(e) =>
-                  (e.currentTarget.style.backgroundColor = '#ffffff')
-                }
-                onMouseLeave={(e) =>
-                  (e.currentTarget.style.backgroundColor = 'transparent')
-                }
-              >
-                <svg
-                  className='h-5 w-5'
-                  fill='none'
-                  stroke='currentColor'
-                  viewBox='0 0 24 24'
+        {showSidebar && showCommentList && (
+          <div className='fixed right-0 top-0 z-40 h-full w-80 bg-gray-900/95 backdrop-blur-sm border-l border-gray-700 shadow-2xl transition-all duration-300 ease-in-out'>
+            <div className='px-6 py-6 h-full flex flex-col'>
+              {/* Header */}
+              <div className='mb-6 flex items-center justify-between'>
+                <div>
+                  <h2 className='text-xl font-bold text-white mb-1 flex items-center gap-2'>
+                    <MessageCircle size={20} className='text-blue-400' />
+                    댓글
+                  </h2>
+                  <p className='text-sm text-gray-400'>
+                    타임스탬프 기반 댓글들
+                  </p>
+                </div>
+                <button
+                  onClick={() => setShowCommentList(false)}
+                  className='rounded-lg p-2 text-gray-400 hover:bg-gray-800 hover:text-white transition-all duration-200'
+                  title='닫기'
                 >
-                  <path
-                    strokeLinecap='round'
-                    strokeLinejoin='round'
-                    strokeWidth={2}
-                    d='M6 18L18 6M6 6l12 12'
-                  />
-                </svg>
-              </button>
-            </div>
-
-            {/* Selected Upstream Info */}
-            {selectedUpstream && (
-              <div className='mb-4 rounded bg-[#3a3a3a] p-3'>
-                <div className='text-sm font-medium text-white'>
-                  {selectedUpstream.title}
-                </div>
-                <div className='text-xs text-gray-400'>
-                  {selectedUpstream.description}
-                </div>
-                <div className='mt-1 text-xs text-blue-400'>
-                  by {selectedUpstream.user?.username}
-                </div>
+                  <X size={20} />
+                </button>
               </div>
-            )}
 
-            {!selectedUpstream && (
-              <div className='mb-4 rounded bg-[#4a4a4a] p-3 text-center'>
-                <div className='text-sm text-gray-300'>
-                  Select an audio file to view comments
+              {/* Selected Upstream Info */}
+              {selectedUpstream && (
+                <div className='mb-6 rounded-lg bg-gray-800/50 border border-gray-700 p-4'>
+                  <div className='text-sm font-semibold text-white mb-2'>
+                    {selectedUpstream.title}
+                  </div>
+                  <div className='text-xs text-gray-300 mb-2'>
+                    {selectedUpstream.description}
+                  </div>
+                  <div className='flex items-center gap-2 text-xs'>
+                    <span className='text-blue-400'>작성자:</span>
+                    <span className='text-white font-medium'>{selectedUpstream.user?.username}</span>
+                  </div>
                 </div>
-              </div>
-            )}
+              )}
 
-            {/* Comments List */}
-            {commentsLoading ? (
-              <div className='flex justify-center py-8'>
-                <div className='h-6 w-6 animate-spin rounded-full border-b-2 border-white'></div>
-                <span className='ml-2 text-white'>Loading comments...</span>
-              </div>
-            ) : (
-              <ul className='space-y-2 text-sm text-white'>
-                {comments.map((comment) => (
-                  <li
-                    key={comment.id}
-                    className='rounded p-2 hover:bg-[#3a3a3a]'
-                  >
+              {!selectedUpstream && (
+                <div className='mb-6 rounded-lg bg-gray-800/30 border border-gray-700 p-4 text-center'>
+                  <div className='text-sm text-gray-300'>
+                    오디오 파일을 선택하여 댓글을 확인하세요
+                  </div>
+                </div>
+              )}
+
+              {/* Comments List */}
+              <div className='flex-1 overflow-hidden'>
+                {commentsLoading ? (
+                  <div className='flex flex-col items-center justify-center py-12'>
+                    <div className='h-8 w-8 animate-spin rounded-full border-3 border-blue-400 border-t-transparent mb-3'></div>
+                    <span className='text-white font-medium'>댓글 로딩 중...</span>
+                  </div>
+                ) : (
+                  <div className='space-y-3 overflow-y-auto pr-2' style={{ maxHeight: 'calc(100vh - 280px)' }}>
+                    {comments.map((comment) => (
+                      <div
+                        key={comment.id}
+                        className='rounded-lg bg-gray-800/50 border border-gray-700 p-3 hover:bg-gray-800/70 transition-all duration-200'
+                      >
                     <div className='flex items-center justify-between'>
                       <div
                         className='flex flex-1 cursor-pointer items-center space-x-2'
@@ -1920,250 +1980,357 @@ const StemSetReviewPage = () => {
                           </button>
                         </div>
                       )}
-                    </div>
-                    {editingComment === comment.id ? (
-                      <div className='ml-6 mt-2'>
-                        <input
-                          type='text'
-                          value={editCommentText}
-                          onChange={(e) => setEditCommentText(e.target.value)}
-                          className='w-full rounded bg-[#1a1a1a] px-2 py-1 text-xs text-white'
-                          onKeyPress={(e) => {
-                            if (e.key === 'Enter') {
-                              handleSaveComment(comment.id);
-                            }
-                          }}
-                          onBlur={() => handleSaveComment(comment.id)}
-                          autoFocus
-                        />
-                      </div>
-                    ) : (
-                      <div className='ml-6 text-gray-300'>
-                        {comment.comment}
-                        {comment.user && (
-                          <div className='mt-1 text-xs text-gray-500'>
-                            by {comment.user.username}
+                        </div>
+                        {editingComment === comment.id ? (
+                          <div className='mt-3'>
+                            <input
+                              type='text'
+                              value={editCommentText}
+                              onChange={(e) => setEditCommentText(e.target.value)}
+                              className='w-full rounded-lg bg-gray-900 border border-gray-600 px-3 py-2 text-sm text-white focus:border-blue-500 focus:outline-none'
+                              onKeyPress={(e) => {
+                                if (e.key === 'Enter') {
+                                  handleSaveComment(comment.id);
+                                }
+                              }}
+                              onBlur={() => handleSaveComment(comment.id)}
+                              autoFocus
+                            />
+                          </div>
+                        ) : (
+                          <div className='mt-2 text-gray-300'>
+                            {comment.comment}
+                            {comment.user && (
+                              <div className='mt-2 text-xs text-gray-400 flex items-center gap-1'>
+                                <span>작성자:</span>
+                                <span className='font-medium'>{comment.user.username}</span>
+                              </div>
+                            )}
                           </div>
                         )}
                       </div>
-                    )}
-                  </li>
-                ))}
-              </ul>
-            )}
+                    ))}
+                  </div>
+                )}
+              </div>
+            </div>
           </div>
         )}
 
-        {/* Waveform */}
-        <div className='space-y-6'>
-          {(() => {
-            console.log('🎨 [Waveform Render] Checking conditions:', {
-              guideLoading,
-              guideLoadAttempted,
-              guideAudioUrl: !!guideAudioUrl,
-              guidePeaks: !!guidePeaks
-            });
-            
-            if (guideLoading) {
-              console.log('🎨 [Waveform Render] Showing loading state');
-              return (
-                <div className='flex flex-col items-center justify-center rounded-md bg-gray-900/30 p-6 py-8'>
-                  <div className='mb-3 h-10 w-10 animate-spin rounded-full border-b-2 border-t-2 border-red-400'></div>
-                  <span className='font-medium text-white'>
-                    파형을 준비하는 중...
-                  </span>
-                  <span className='mt-2 text-sm text-gray-400'>
-                    잠시만 기다려주세요
-                  </span>
-                </div>
-              );
-            } else if (guideLoadAttempted && guideAudioUrl) {
-              console.log('🎨 [Waveform Render] Rendering Wave component with props:', {
-                audioUrl: !!guideAudioUrl,
-                peaks: !!guidePeaks,
-                id: 'main'
-              });
-              
-              const mainWaveProps = {
-                onReady: handleReady,
-                audioUrl: guideAudioUrl,
-                peaks: guidePeaks,
-                waveColor: '#f87171',
-                id: 'main',
-                isPlaying: isPlaying,
-                currentTime: currentTime,
-                onSolo: handleMainSolo,
-                isSolo: soloTrack === 'main',
-                onSeek: handleSeek,
-              };
-
-              return (
-                <>
-                  <Wave {...mainWaveProps} />
-                </>
-              );
-            } else {
-              console.log('🎨 [Waveform Render] Showing fallback message');
-              return (
-                <div className='flex items-center justify-center rounded-md bg-gray-900/30 p-6 py-8'>
-                  <span className='text-sm text-white'>
-                    이 스테이지에 사용 가능한 가이드 오디오가 없습니다.
-                  </span>
-                </div>
-              );
-            }
-          })()}
-
-          {/* Extra waveform */}
-          {showExtraWaveform && extraAudio && (
-            <>
-              {stemLoading ? (
-                <div className='flex flex-col items-center justify-center rounded-md bg-gray-900/30 p-6 py-8'>
-                  <div className='mb-3 h-10 w-10 animate-spin rounded-full border-b-2 border-t-2 border-blue-400'></div>
-                  <span className='font-medium text-white'>
-                    오디오 파일을 불러오는 중...
-                  </span>
-                  <span className='mt-2 text-sm text-gray-400'>
-                    잠시만 기다려주세요
-                  </span>
-                </div>
-              ) : waveformLoading ? (
-                <div className='flex flex-col items-center justify-center rounded-md bg-gray-900/30 p-6 py-8'>
-                  <div className='mb-3 h-10 w-10 animate-spin rounded-full border-b-2 border-t-2 border-blue-400'></div>
-                  <span className='font-medium text-white'>
-                    파형 데이터를 불러오는 중...
-                  </span>
-                  <span className='mt-2 text-sm text-gray-400'>
-                    잠시만 기다려주세요
-                  </span>
-                  <div className='mt-4 text-xs text-gray-500'>
-                    파형 데이터가 없으면 오디오만 로드됩니다.
+        {/* Main Content Area */}
+        <main className={`transition-all duration-300 ${showSidebar ? 'mr-80' : ''} px-6`}>
+          {/* Waveform Cards */}
+          <div className='space-y-6'>
+            {/* Guide Waveform Card */}
+            <div className='rounded-xl bg-gray-900/60 backdrop-blur-sm border border-gray-700 overflow-hidden shadow-2xl'>
+              {/* Card Header */}
+              <div className='bg-gray-800/80 border-b border-gray-700 px-6 py-4'>
+                <div className='flex items-center justify-between'>
+                  <div className='flex items-center gap-3'>
+                    <div className='w-3 h-3 rounded-full bg-red-400'></div>
+                    <h3 className='text-lg font-semibold text-white'>가이드 트랙</h3>
+                    <StatusBadge status='in_progress' />
+                  </div>
+                  <div className='flex items-center gap-2'>
+                    <ToggleButton
+                      iconOn={<Volume2 size={16} />}
+                      iconOff={<VolumeX size={16} />}
+                      isOn={soloTrack === 'main'}
+                      onToggle={handleMainSolo}
+                      className='text-xs'
+                    />
                   </div>
                 </div>
-              ) : (
-                <>
-                  <Wave
-                    onReady={handleReady}
-                    audioUrl={extraAudio}
-                    peaks={extraPeaks}
-                    waveColor='#60a5fa'
-                    id='extra'
-                    isPlaying={isPlaying}
-                    currentTime={currentTime}
-                    onSolo={handleExtraSolo}
-                    isSolo={soloTrack === 'extra'}
-                    onSeek={handleSeek}
-                  />
-                </>
-              )}
-            </>
-          )}
-        </div>
+              </div>
+              
+              {/* Waveform Content */}
+              <div className='p-6'>
+                {(() => {
+                  console.log('🎨 [Waveform Render] Checking conditions:', {
+                    guideLoading,
+                    guideLoadAttempted,
+                    guideAudioUrl: !!guideAudioUrl,
+                    guidePeaks: !!guidePeaks
+                  });
+                  
+                  if (guideLoading) {
+                    console.log('🎨 [Waveform Render] Showing loading state');
+                    return (
+                      <div className='flex flex-col items-center justify-center py-12'>
+                        <div className='mb-4 h-12 w-12 animate-spin rounded-full border-3 border-red-400 border-t-transparent'></div>
+                        <span className='font-medium text-white text-lg'>
+                          파형을 준비하는 중...
+                        </span>
+                        <span className='mt-2 text-sm text-gray-400'>
+                          잠시만 기다려주세요
+                        </span>
+                      </div>
+                    );
+                  } else if (guideLoadAttempted && guideAudioUrl) {
+                    console.log('🎨 [Waveform Render] Rendering Wave component with props:', {
+                      audioUrl: !!guideAudioUrl,
+                      peaks: !!guidePeaks,
+                      id: 'main'
+                    });
+                    
+                    const mainWaveProps = {
+                      onReady: handleReady,
+                      audioUrl: guideAudioUrl,
+                      peaks: guidePeaks,
+                      waveColor: theme.colors.waveform.main,
+                      id: 'main',
+                      isPlaying: isPlaying,
+                      currentTime: currentTime,
+                      onSolo: handleMainSolo,
+                      isSolo: soloTrack === 'main',
+                      onSeek: handleSeek,
+                    };
 
-        {/* Control Bar */}
-        <div className='flex items-center rounded bg-[#2b2b2b] px-6 py-3 text-sm shadow'>
-          <button
-            onClick={memoizedStopPlayback}
-            className='ml-6 text-white hover:text-gray-300'
-          >
-            <Square size={20} />
-          </button>
-          <button
-            onClick={memoizedTogglePlay}
-            className='ml-3 text-white hover:text-gray-300'
-          >
-            {isPlaying ? <Pause size={20} /> : <Play size={20} />}
-          </button>
-          <button className='ml-2 text-white hover:text-gray-300'>
-            <svg viewBox='0 0 16 16' height='16'>
-              <use xlinkHref='#repeatall' />
-            </svg>
-          </button>
-          <div className='ml-4 flex items-center'>
-            <span className='material-icons mr-2 text-white'>
-              <Volume size={20} />
-            </span>
-            <input
-              type='range'
-              min='0'
-              max='1'
-              step='0.01'
-              value={volume}
-              onChange={memoizedVolumeChange}
-              className='w-24 accent-blue-500'
-            />
-          </div>
-          <div className='ml-5 text-white'>
-            <span>
-              {Math.floor(currentTime / 60)}:
-              {String(Math.floor(currentTime % 60)).padStart(2, '0')} /{' '}
-              {Math.floor(duration / 60)}:
-              {String(Math.floor(duration % 60)).padStart(2, '0')}
-            </span>
-          </div>
-          <div className='ml-auto mr-5'>
-            <button className='rounded bg-[#3a3a3a] px-3 py-1 text-sm hover:bg-[#4a4a4a]'>
-              1x
-            </button>
-          </div>
-          <button className='material-icons mr-3 text-white hover:text-gray-300'>
-            <ZoomIn size={20} />
-          </button>
-          <button className='material-icons mr-5 text-white hover:text-gray-300'>
-            <ZoomOut size={20} />
-          </button>
-        </div>
-
-        {/* Comment Input */}
-        <div className='flex justify-center'>
-          <div className='flex w-full max-w-3xl items-center gap-3 rounded-md bg-[#2c2c2c] px-4 py-3 shadow'>
-            <span className='rounded bg-gray-700 px-2 py-1 text-sm'>
-              {String(Math.floor(currentTime / 60)).padStart(2, '0')}:
-              {String(Math.floor(currentTime % 60)).padStart(2, '0')}
-            </span>
-            <input
-              type='checkbox'
-              checked
-              className='accent-green-500'
-              readOnly
-            />
-            <span className='rounded bg-gray-600 px-2 py-1 text-xs text-white'>
-              장
-            </span>
-            <input
-              type='text'
-              placeholder={
-                selectedUpstream
-                  ? 'Leave your comment...'
-                  : 'Select an audio file to comment'
-              }
-              className='flex-1 bg-transparent text-white placeholder-gray-400 outline-none'
-              value={commentInput}
-              onChange={(e) => setCommentInput(e.target.value)}
-              disabled={!selectedUpstream}
-              onKeyPress={(e) => {
-                if (e.key === 'Enter' && selectedUpstream) {
-                  handleAddComment();
-                }
-              }}
-            />
-            <button
-              className={`${
-                selectedUpstream && commentInput.trim()
-                  ? 'text-blue-400 hover:text-blue-300'
-                  : 'cursor-not-allowed text-gray-600'
-              }`}
-              onClick={handleAddComment}
-              disabled={!selectedUpstream || !commentInput.trim()}
-            >
-              <Play size={20} />
-            </button>
-          </div>
-          {selectedUpstream && (
-            <div className='mt-2 text-center text-sm text-gray-400'>
-              Commenting on: {selectedUpstream.title}
+                    return <Wave {...mainWaveProps} />;
+                  } else {
+                    console.log('🎨 [Waveform Render] Showing fallback message');
+                    return (
+                      <div className='flex items-center justify-center py-12'>
+                        <span className='text-gray-400'>
+                          이 스테이지에 사용 가능한 가이드 오디오가 없습니다.
+                        </span>
+                      </div>
+                    );
+                  }
+                })()}
+              </div>
             </div>
-          )}
+
+            {/* Extra Waveform Card */}
+            {showExtraWaveform && extraAudio && (
+              <div className='rounded-xl bg-gray-900/60 backdrop-blur-sm border border-gray-700 overflow-hidden shadow-2xl'>
+                {/* Card Header */}
+                <div className='bg-gray-800/80 border-b border-gray-700 px-6 py-4'>
+                  <div className='flex items-center justify-between'>
+                    <div className='flex items-center gap-3'>
+                      <div className='w-3 h-3 rounded-full bg-blue-400'></div>
+                      <h3 className='text-lg font-semibold text-white'>선택된 스템</h3>
+                      <StatusBadge status='pending' />
+                    </div>
+                    <div className='flex items-center gap-2'>
+                      <ToggleButton
+                        iconOn={<Volume2 size={16} />}
+                        iconOff={<VolumeX size={16} />}
+                        isOn={soloTrack === 'extra'}
+                        onToggle={handleExtraSolo}
+                        className='text-xs'
+                      />
+                    </div>
+                  </div>
+                </div>
+                
+                {/* Waveform Content */}
+                <div className='p-6'>
+                  {stemLoading ? (
+                    <div className='flex flex-col items-center justify-center py-12'>
+                      <div className='mb-4 h-12 w-12 animate-spin rounded-full border-3 border-blue-400 border-t-transparent'></div>
+                      <span className='font-medium text-white text-lg'>
+                        오디오 파일을 불러오는 중...
+                      </span>
+                      <span className='mt-2 text-sm text-gray-400'>
+                        잠시만 기다려주세요
+                      </span>
+                    </div>
+                  ) : waveformLoading ? (
+                    <div className='flex flex-col items-center justify-center py-12'>
+                      <div className='mb-4 h-12 w-12 animate-spin rounded-full border-3 border-blue-400 border-t-transparent'></div>
+                      <span className='font-medium text-white text-lg'>
+                        파형 데이터를 불러오는 중...
+                      </span>
+                      <span className='mt-2 text-sm text-gray-400'>
+                        잠시만 기다려주세요
+                      </span>
+                      <div className='mt-4 text-xs text-gray-500'>
+                        파형 데이터가 없으면 오디오만 로드됩니다.
+                      </div>
+                    </div>
+                  ) : (
+                    <Wave
+                      onReady={handleReady}
+                      audioUrl={extraAudio}
+                      peaks={extraPeaks}
+                      waveColor={theme.colors.waveform.extra}
+                      id='extra'
+                      isPlaying={isPlaying}
+                      currentTime={currentTime}
+                      onSolo={handleExtraSolo}
+                      isSolo={soloTrack === 'extra'}
+                      onSeek={handleSeek}
+                    />
+                  )}
+                </div>
+              </div>
+            )}
+          </div>
+        </main>
+
+        {/* Enhanced Control Bar */}
+        <div className={`transition-all duration-300 ${showSidebar ? 'mr-80' : ''} px-6`}>
+          <div className='rounded-xl bg-gray-900/80 backdrop-blur-sm border border-gray-700 shadow-2xl overflow-hidden'>
+            <div className='flex items-center justify-between px-6 py-4'>
+              {/* Left Controls */}
+              <div className='flex items-center gap-3'>
+                <ActionButton
+                  icon={<Square size={18} />}
+                  label='정지'
+                  onClick={memoizedStopPlayback}
+                  variant='secondary'
+                  className='px-3 py-2'
+                />
+                <ActionButton
+                  icon={isPlaying ? <Pause size={20} /> : <Play size={20} />}
+                  label={isPlaying ? '일시정지' : '재생'}
+                  onClick={memoizedTogglePlay}
+                  variant='primary'
+                  className='px-4 py-2'
+                />
+              </div>
+
+              {/* Center - Time Display */}
+              <div className='flex items-center gap-4'>
+                <div className='text-white font-mono text-lg'>
+                  <span className='text-blue-400'>
+                    {Math.floor(currentTime / 60)}:
+                    {String(Math.floor(currentTime % 60)).padStart(2, '0')}
+                  </span>
+                  <span className='text-gray-400 mx-2'>/</span>
+                  <span className='text-gray-300'>
+                    {Math.floor(duration / 60)}:
+                    {String(Math.floor(duration % 60)).padStart(2, '0')}
+                  </span>
+                </div>
+              </div>
+
+              {/* Right Controls */}
+              <div className='flex items-center gap-4'>
+                {/* Volume Control */}
+                <div className='flex items-center gap-2'>
+                  <Volume size={18} className='text-gray-400' />
+                  <input
+                    type='range'
+                    min='0'
+                    max='1'
+                    step='0.01'
+                    value={volume}
+                    onChange={memoizedVolumeChange}
+                    className='w-20 h-2 bg-gray-700 rounded-lg appearance-none cursor-pointer accent-blue-500'
+                    title={`볼륨: ${Math.round(volume * 100)}%`}
+                  />
+                  <span className='text-xs text-gray-400 w-8'>
+                    {Math.round(volume * 100)}%
+                  </span>
+                </div>
+
+                {/* Playback Speed */}
+                <button 
+                  className='rounded-lg bg-gray-800 hover:bg-gray-700 px-3 py-2 text-sm transition-colors'
+                  title='재생 속도'
+                >
+                  1x
+                </button>
+
+                {/* Zoom Controls */}
+                <div className='flex items-center gap-1'>
+                  <button 
+                    className='rounded p-2 text-gray-400 hover:bg-gray-800 hover:text-white transition-all'
+                    title='확대'
+                  >
+                    <ZoomIn size={16} />
+                  </button>
+                  <button 
+                    className='rounded p-2 text-gray-400 hover:bg-gray-800 hover:text-white transition-all'
+                    title='축소'
+                  >
+                    <ZoomOut size={16} />
+                  </button>
+                </div>
+              </div>
+            </div>
+
+            {/* Keyboard Shortcuts Info */}
+            <div className='bg-gray-800/50 border-t border-gray-700 px-6 py-2'>
+              <div className='flex items-center justify-center text-xs text-gray-400'>
+                <span className='mr-4'>␣ Space: 재생/일시정지</span>
+                <span className='mr-4'>←/→: 5초 이동</span>
+                <span>↑/↓: 볼륨 조절</span>
+              </div>
+            </div>
+          </div>
+        </div>
+
+        {/* Enhanced Comment Input */}
+        <div className={`transition-all duration-300 ${showSidebar ? 'mr-80' : ''} px-6`}>
+          <div className='rounded-xl bg-gray-900/80 backdrop-blur-sm border border-gray-700 shadow-2xl overflow-hidden'>
+            {/* Comment Input Header */}
+            {selectedUpstream && (
+              <div className='bg-gray-800/50 border-b border-gray-700 px-6 py-3'>
+                <div className='flex items-center gap-2 text-sm'>
+                  <MessageCircle size={16} className='text-blue-400' />
+                  <span className='text-gray-400'>댓글 대상:</span>
+                  <span className='text-white font-medium'>{selectedUpstream.title}</span>
+                </div>
+              </div>
+            )}
+            
+            {/* Comment Input Area */}
+            <div className='p-6'>
+              <div className='flex items-center gap-4'>
+                {/* Timestamp */}
+                <div className='flex items-center gap-2'>
+                  <span className='text-xs text-gray-400'>시간:</span>
+                  <span className='rounded-lg bg-blue-600 px-3 py-1 text-sm font-mono text-white'>
+                    {String(Math.floor(currentTime / 60)).padStart(2, '0')}:
+                    {String(Math.floor(currentTime % 60)).padStart(2, '0')}
+                  </span>
+                </div>
+                
+                {/* Comment Input */}
+                <div className='flex-1 flex items-center gap-3'>
+                  <input
+                    type='text'
+                    placeholder={
+                      selectedUpstream
+                        ? '이 시점에 대한 댓글을 작성하세요...'
+                        : '오디오 파일을 선택하여 댓글을 작성하세요'
+                    }
+                    className='flex-1 bg-gray-800 border border-gray-600 rounded-lg px-4 py-3 text-white placeholder-gray-400 focus:border-blue-500 focus:outline-none transition-colors'
+                    value={commentInput}
+                    onChange={(e) => setCommentInput(e.target.value)}
+                    disabled={!selectedUpstream}
+                    onKeyPress={(e) => {
+                      if (e.key === 'Enter' && selectedUpstream && commentInput.trim()) {
+                        handleAddComment();
+                      }
+                    }}
+                  />
+                  
+                  {/* Send Button */}
+                  <ActionButton
+                    icon={<MessageCircle size={18} />}
+                    label='댓글 작성'
+                    onClick={handleAddComment}
+                    disabled={!selectedUpstream || !commentInput.trim()}
+                    variant={selectedUpstream && commentInput.trim() ? 'primary' : 'secondary'}
+                    className='px-4 py-3'
+                  />
+                </div>
+              </div>
+              
+              {/* Comment Status */}
+              {!selectedUpstream && (
+                <div className='mt-4 text-center'>
+                  <p className='text-sm text-gray-400'>
+                    사이드바에서 오디오 파일을 선택하면 해당 시점에 댓글을 남길 수 있습니다.
+                  </p>
+                </div>
+              )}
+            </div>
+          </div>
         </div>
       </div>
     </div>
