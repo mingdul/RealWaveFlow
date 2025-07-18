@@ -1,6 +1,6 @@
 import React, { useState, useEffect, useRef } from 'react';
 import { useParams } from 'react-router-dom';
-import { Upload, Users, Music, Clock, Star, Award, Play, Pause, Eye, CheckCircle, XCircle } from 'lucide-react';
+import { Upload, Users, Music, Clock, Award, Play, Pause, Eye, CheckCircle, XCircle } from 'lucide-react';
 // import Logo from '../components/Logo';
 import UploadModal from '../components/UploadModal';
 import trackService from '../services/trackService';
