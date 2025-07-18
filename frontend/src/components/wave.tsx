@@ -208,19 +208,23 @@ const Wave = ({
     }
   }, [audioUrl, peaks, id, isDestroyed]);
 
-  // 강제 ready 상태 설정 - audioUrl과 peaks가 있으면 준비된 것으로 간주
+  // 강제 ready 상태 설정 - audioUrl과 peaks가 있으면 즉시 준비된 것으로 간주
   useEffect(() => {
-    // 타이머를 사용해 WaveSurfer ready 이벤트를 기다린 후 강제 설정
     if (audioUrl && peaks && !isReady && wavesurferRef.current) {
-      console.log(`🔧 [${id}] Waiting for WaveSurfer ready or forcing ready state...`);
-      
+      console.log(`🔧 [${id}] Force setting ready state immediately - audioUrl and peaks available`);
+      setIsReady(true);
+      setIsAudioLoading(false);
+    }
+  }, [audioUrl, peaks, isReady, id]);
+
+  // 백업 타이머 - 1초 후에도 ready 상태가 아니면 강제 설정
+  useEffect(() => {
+    if (audioUrl && peaks && !isReady) {
       const forceReadyTimer = setTimeout(() => {
-        if (!isReady && wavesurferRef.current) {
-          console.log(`🔧 [${id}] Force setting ready state - audioUrl and peaks available, WaveSurfer ready event didn't fire`);
-          setIsReady(true);
-          setIsAudioLoading(false);
-        }
-      }, 2000); // 2초 후 강제 설정
+        console.log(`🔧 [${id}] Backup timer: Force setting ready state after 1 second`);
+        setIsReady(true);
+        setIsAudioLoading(false);
+      }, 1000);
       
       return () => clearTimeout(forceReadyTimer);
     }
@@ -282,7 +286,7 @@ const Wave = ({
           <span className="text-white font-medium">오디오를 불러오는 중...</span>
           <span className="text-gray-400 text-sm mt-2">잠시만 기다려주세요</span>
         </div>
-      ) : !isReady ? (
+      ) : !isReady && (!audioUrl || !peaks) ? (
         <div className="flex flex-col items-center justify-center py-8">
           <div className="mb-3 h-8 w-8 animate-spin rounded-full border-b-2 border-blue-300"></div>
           <span className="text-white">파형을 준비하는 중...</span>
