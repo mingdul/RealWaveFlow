@@ -864,8 +864,8 @@ const StemRev = () => {
                     </div>
                   </div>
                 ) : guideLoadAttempted && guideAudioUrl ? (
-                  <>
-                    {console.log('DEBUG: Guide Wave Component Props - audioUrl:', guideAudioUrl, 'peaks:', guidePeaks)}
+                  <div className='transform rounded-2xl border border-white/10 bg-white/5 p-6 shadow-2xl backdrop-blur-lg transition-all duration-300 hover:scale-[1.01]'>
+                    
                     <Wave
                       onReady={handleReady}
                       audioUrl={guideAudioUrl}
@@ -878,7 +878,7 @@ const StemRev = () => {
                       isSolo={soloTrack === 'main'}
                       onSeek={handleSeek}
                     />
-                  </>
+                  </div>
                 ) : (
                   <div className="flex items-center justify-center py-12">
                     <div className="text-center">
