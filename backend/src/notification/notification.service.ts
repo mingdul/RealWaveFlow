@@ -49,6 +49,23 @@ export class NotificationService {
     }
   }
 
+  // 사용자의 알림 조회 (limit 지원)
+  async getUserNotifications(userId: string, limit: number): Promise<Notification[]> {
+    try {
+      const notifications = await this.notificationRepository.find({
+        where: { userId },
+        order: { createdAt: 'DESC' },
+        take: limit,
+      });
+
+      this.logger.log(`📋 [NotificationService] 사용자 ${userId}의 알림 ${notifications.length}개 조회 완료 (limit: ${limit})`);
+      return notifications;
+    } catch (error) {
+      this.logger.error(`❌ [NotificationService] 알림 조회 실패: ${error.message}`);
+      throw error;
+    }
+  }
+
   // 특정 알림을 읽음으로 표시
   async markRead(id: string): Promise<UpdateResult> {
     try {

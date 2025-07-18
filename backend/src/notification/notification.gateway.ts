@@ -117,6 +117,9 @@ export class NotificationGateway
         joinedRoom: `user_${userId}`,
         silent: true,
       });
+
+      // DB에서 pending 알림 조회 및 전송
+      await this.sendPendingNotifications(userId, client);
       
     } catch (error) {
       this.logger.error('🔔 [NotificationGateway] Connection error:', error.message);
@@ -282,5 +285,44 @@ export class NotificationGateway
   // 특정 사용자 연결 상태 확인
   isUserConnected(userId: string): boolean {
     return this.connectedUsers.has(userId);
+  }
+
+  // DB에서 pending 알림 조회 및 클라이언트에 전송
+  private async sendPendingNotifications(userId: string, client: Socket) {
+    try {
+      this.logger.log(`🔔 [NotificationGateway] Checking pending notifications for user: ${userId}`);
+      
+      // DB에서 사용자의 모든 알림 조회 (최근 100개로 제한)
+      const pendingNotifications = await this.notificationService.getUserNotifications(userId, 100);
+      
+      if (pendingNotifications && pendingNotifications.length > 0) {
+        this.logger.log(`🔔 [NotificationGateway] Sending ${pendingNotifications.length} pending notifications to user ${userId}`);
+        
+        for (const notification of pendingNotifications) {
+          const payload = {
+            id: notification.id,
+            userId: notification.userId,
+            type: notification.type,
+            message: notification.message,
+            data: notification.data,
+            isRead: notification.isRead,
+            createdAt: notification.createdAt,
+          };
+          
+          try {
+            client.emit('notification', payload);
+            this.logger.log(`🔔 [NotificationGateway] ✅ Sent pending notification: ${notification.id}`);
+          } catch (emitError) {
+            this.logger.error(`🔔 [NotificationGateway] ❌ Failed to emit notification ${notification.id}: ${emitError.message}`);
+          }
+        }
+        
+        this.logger.log(`🔔 [NotificationGateway] ✅ All ${pendingNotifications.length} pending notifications sent to user ${userId}`);
+      } else {
+        this.logger.log(`🔔 [NotificationGateway] No pending notifications for user ${userId}`);
+      }
+    } catch (error) {
+      this.logger.error(`🔔 [NotificationGateway] Error sending pending notifications: ${error.message}`);
+    }
   }
 } 

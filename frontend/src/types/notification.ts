@@ -1,11 +1,11 @@
 export interface Notification {
   id: string;
-  type: 'stage_created' | 'upstream_created' | 'upstream_completed' | 'upstream_reviewed' | 'track_approved';
-  title: string;
+  userId: string;
+  type: string;
   message: string;
   data?: any;
-  timestamp: string;
-  read: boolean;
+  isRead: boolean;
+  createdAt: string;
 }
 
 export interface NotificationContextType {
@@ -13,7 +13,6 @@ export interface NotificationContextType {
   unreadCount: number;
   addNotification: (notification: Notification) => void;
   markAsRead: (notificationId: string) => void;
-  markAllAsRead: () => void;
   clearNotifications: () => void;
-  refreshNotifications: () => Promise<void>; // 🔥 NEW: API에서 최신 알림 가져오기
+  refreshNotifications: () => Promise<void>; // API에서 최신 알림 가져오기
 } 
