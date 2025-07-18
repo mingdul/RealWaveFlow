@@ -847,37 +847,69 @@ const StemSetReviewPage = () => {
     setNewCommentText('');
   }, []);
 
-  // 재생 중 댓글 표시 로직 - 프로그레스바가 댓글 지점을 지날 때
+  // 재생 중 댓글 표시 로직 - SoundCloud 스타일 프로그레스바 기반
   useEffect(() => {
-    if (!isPlaying || comments.length === 0) {
+    console.log('💬 [Comment Effect] State check:', {
+      isPlaying,
+      commentsCount: comments.length,
+      currentTime: currentTime.toFixed(2),
+      duration: duration.toFixed(2)
+    });
+
+    if (!isPlaying) {
+      console.log('💬 [Comment Effect] Not playing, clearing comments');
       setFloatingComments([]);
       return;
     }
 
-    // 현재 시간 근처의 댓글들을 찾기 (더 정확한 타이밍)
-    const activeComments = comments.filter(comment => {
+    if (comments.length === 0) {
+      console.log('💬 [Comment Effect] No comments available');
+      setFloatingComments([]);
+      return;
+    }
+
+    // SoundCloud 스타일: 프로그레스바가 댓글 위치에 도달할 때 표시
+    const triggeredComments = comments.filter(comment => {
       const timeDiff = currentTime - comment.timeNumber;
-      // 댓글 시간을 막 지나쳤거나 정확히 일치할 때 (0.2초 범위)
-      return timeDiff >= -0.1 && timeDiff <= 0.3;
+      const shouldShow = timeDiff >= -0.2 && timeDiff <= 0.5;
+      
+      if (shouldShow) {
+        console.log('💬 [Comment Match] Found comment to show:', {
+          comment: comment.comment.substring(0, 30),
+          commentTime: comment.timeNumber.toFixed(2),
+          currentTime: currentTime.toFixed(2),
+          timeDiff: timeDiff.toFixed(2)
+        });
+      }
+      
+      return shouldShow;
     });
 
-    if (activeComments.length > 0) {
-      console.log('🎵 [Comment Display] Showing comments at time:', currentTime, activeComments);
-      setFloatingComments(activeComments.map(comment => ({
+    if (triggeredComments.length > 0) {
+      console.log('💬 [SoundCloud Style] 🎉 SHOWING COMMENTS at time:', currentTime.toFixed(2), 
+        'Total triggered:', triggeredComments.length);
+      
+      setFloatingComments(triggeredComments.map((comment, index) => ({
         ...comment,
-        id: `floating-${comment.id}-${currentTime}`, // 시간 기반 유니크 ID
+        id: `floating-${comment.id}-${Math.floor(currentTime * 10)}`,
         position: duration > 0 ? comment.timeNumber / duration : 0,
+        delay: index * 100,
       })));
 
-      // 3초 후 자동 제거 (페이드아웃 애니메이션)
+      // SoundCloud 스타일: 4초 후 자동 제거
       const timer = setTimeout(() => {
+        console.log('💬 [SoundCloud Style] ⏰ Hiding comments after 4 seconds');
         setFloatingComments([]);
-      }, 3000);
+      }, 4000);
 
       return () => clearTimeout(timer);
     } else {
-      // 활성 댓글이 없으면 기존 댓글들 제거
-      setFloatingComments([]);
+      // 활성 댓글이 없는 경우에만 로그
+      const hasNearComments = comments.some(c => Math.abs(currentTime - c.timeNumber) <= 1);
+      if (hasNearComments && Math.floor(currentTime * 4) % 4 === 0) { // 0.25초마다 한 번씩만 로그
+        console.log('💬 [Comment Effect] No active comments at time:', currentTime.toFixed(2), 
+          'Available comments:', comments.map(c => c.timeNumber.toFixed(2)));
+      }
     }
   }, [currentTime, isPlaying, comments, duration]);
 
@@ -2254,34 +2286,43 @@ const StemSetReviewPage = () => {
                           </div>
                         )}
                         
-                        {/* 플로팅 댓글 버블들 - 마커와 연결된 말풍선 */}
+                        {/* SoundCloud 스타일 플로팅 댓글 버블들 */}
                         {floatingComments.map((comment) => {
                           const position = comment.position * 100;
                           return (
                             <div
                               key={comment.id}
-                              className='absolute z-30'
+                              className='absolute z-30 animate-fade-in-up'
                               style={{
                                 left: `${position}%`,
-                                top: '35px', // 마커 바로 아래에 위치
+                                top: '20px', // 마커 위쪽에 배치 (SoundCloud 스타일)
                                 transform: 'translateX(-50%)',
+                                animationDelay: `${comment.delay || 0}ms`,
                               }}
                             >
-                              {/* 연결선 */}
-                              <div className='w-0.5 h-6 bg-blue-400 mx-auto mb-1'></div>
-                              
-                              {/* 말풍선 */}
-                              <div className='bg-gradient-to-br from-blue-900/95 to-blue-800/95 backdrop-blur-sm text-white px-4 py-3 rounded-lg shadow-2xl max-w-xs border border-blue-500/30 comment-bubble'>
-                                <div className='flex items-center gap-2 mb-2'>
-                                  <div className='w-2 h-2 bg-blue-400 rounded-full'></div>
-                                  <div className='text-xs text-blue-300 font-medium'>
-                                    {comment.user?.username}
+                              {/* SoundCloud 스타일 댓글 버블 */}
+                              <div className='relative'>
+                                {/* 말풍선 */}
+                                <div className='bg-orange-500 text-white px-3 py-2 rounded-lg shadow-xl max-w-xs relative comment-bubble'>
+                                  <div className='flex items-center gap-2 mb-1'>
+                                    <div className='w-6 h-6 bg-orange-600 rounded-full flex items-center justify-center text-xs font-bold'>
+                                      {comment.user?.username?.charAt(0).toUpperCase() || 'U'}
+                                    </div>
+                                    <div className='text-xs font-medium opacity-90'>
+                                      {comment.user?.username}
+                                    </div>
+                                    <div className='text-xs opacity-75'>
+                                      {Math.floor(comment.timeNumber / 60)}:{String(Math.floor(comment.timeNumber % 60)).padStart(2, '0')}
+                                    </div>
                                   </div>
+                                  <div className='text-sm font-medium leading-tight'>{comment.comment}</div>
+                                  
+                                  {/* 아래쪽 삼각형 (SoundCloud 스타일) */}
+                                  <div className='absolute top-full left-6 w-0 h-0 border-l-4 border-r-4 border-t-4 border-transparent border-t-orange-500'></div>
                                 </div>
-                                <div className='text-sm leading-relaxed'>{comment.comment}</div>
                                 
-                                {/* 위쪽 삼각형 (마커 쪽으로) */}
-                                <div className='absolute bottom-full left-1/2 transform -translate-x-1/2 w-0 h-0 border-l-4 border-r-4 border-b-4 border-transparent border-b-blue-800/95'></div>
+                                {/* 연결선 (버블에서 마커로) */}
+                                <div className='absolute top-full left-6 w-0.5 h-4 bg-orange-400 mx-auto'></div>
                               </div>
                             </div>
                           );
@@ -2304,7 +2345,16 @@ const StemSetReviewPage = () => {
             </div>
 
             {/* Extra Waveform Card */}
-            {showExtraWaveform && extraAudio && (
+            {(() => {
+              console.log('🎨 [Extra Waveform Check] Conditions:', {
+                showExtraWaveform,
+                hasExtraAudio: !!extraAudio,
+                extraAudioUrl: extraAudio,
+                stemLoading,
+                waveformLoading
+              });
+              return showExtraWaveform && extraAudio;
+            })() && (
               <div className='rounded-xl bg-gray-900/60 backdrop-blur-sm border border-gray-700 overflow-hidden shadow-2xl'>
                 {/* Card Header */}
                 <div className='bg-gray-800/80 border-b border-gray-700 px-6 py-4'>
