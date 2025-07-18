@@ -13,20 +13,22 @@
 @keyframes fade-in-up {
   from {
     opacity: 0;
-    transform: translateY(20px);
+    transform: translateY(20px) scale(0.8);
   }
   to {
     opacity: 1;
-    transform: translateY(0);
+    transform: translateY(0) scale(1);
   }
 }
 
 @keyframes fade-out {
   from {
     opacity: 1;
+    transform: translateY(0) scale(1);
   }
   to {
     opacity: 0;
+    transform: translateY(-10px) scale(0.9);
   }
 }
 
@@ -44,5 +46,26 @@
 
 /* 댓글 버블 스타일 */
 .comment-bubble {
-  animation: fade-in-up 0.3s ease-out, fade-out 0.3s ease-out 2.7s forwards;
+  animation: fade-in-up 0.4s cubic-bezier(0.175, 0.885, 0.32, 1.275) forwards,
+             fade-out 0.4s ease-in 2.6s forwards;
+}
+
+.comment-bubble-exit {
+  animation: fade-out 0.4s ease-in forwards;
+}
+
+/* SoundCloud 스타일 슬라이드 인 애니메이션 */
+@keyframes slide-in-right {
+  from {
+    opacity: 0;
+    transform: translateX(50px) translateY(20px) scale(0.8);
+  }
+  to {
+    opacity: 1;
+    transform: translateX(0) translateY(0) scale(1);
+  }
+}
+
+.animate-slide-in-right {
+  animation: slide-in-right 0.4s cubic-bezier(0.175, 0.885, 0.32, 1.275);
 }
