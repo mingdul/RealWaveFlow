@@ -53,27 +53,48 @@ export const encodeFilename = (originalFilename: string): string => {
 export const decodeFilename = (encodedFilename: string): string => {
   console.log('[🔓 DECODE] Input filename:', encodedFilename);
   
-  if (!encodedFilename.startsWith(ENCODED_PREFIX)) {
+  // enc_ 접두사가 있는지 확인 (타임스탬프가 앞에 있을 수 있음)
+  const encIndex = encodedFilename.indexOf(`_${ENCODED_PREFIX}`);
+  const directEncIndex = encodedFilename.indexOf(ENCODED_PREFIX);
+  
+  let prefixStart = -1;
+  let prefix = '';
+  
+  if (encIndex !== -1) {
+    // _enc_ 패턴을 찾은 경우 (타임스탬프_enc_...)
+    prefixStart = encIndex + 1; // '_' 다음부터
+    prefix = encodedFilename.substring(0, encIndex + 1); // 타임스탬프_ 부분 보존
+    console.log('[🔓 DECODE] Found _enc_ pattern, prefix:', prefix);
+  } else if (directEncIndex === 0) {
+    // enc_로 직접 시작하는 경우
+    prefixStart = 0;
+    prefix = '';
+    console.log('[🔓 DECODE] Found direct enc_ pattern');
+  } else {
     console.log('[🔓 DECODE] Not encoded, returning original:', encodedFilename);
     return encodedFilename;
   }
 
   try {
-    // 접두사 제거
-    const withoutPrefix = encodedFilename.substring(ENCODED_PREFIX.length);
-    console.log('[🔓 DECODE] Without prefix:', withoutPrefix);
+    // 접두사 제거 (enc_ 부분부터)
+    const afterPrefix = encodedFilename.substring(prefixStart);
+    const withoutPrefix = afterPrefix.substring(ENCODED_PREFIX.length);
+    console.log('[🔓 DECODE] Without enc_ prefix:', withoutPrefix);
     
     // 확장자 분리
     const lastDotIndex = withoutPrefix.lastIndexOf('.');
     let encoded: string;
+    let extension = '';
     
     if (lastDotIndex !== -1) {
       encoded = withoutPrefix.substring(0, lastDotIndex);
+      extension = withoutPrefix.substring(lastDotIndex);
     } else {
       encoded = withoutPrefix;
     }
 
     console.log('[🔓 DECODE] Base64 part:', encoded);
+    console.log('[🔓 DECODE] Extension:', extension);
 
     // URL-safe Base64를 일반 Base64로 복원
     const padded = encoded.replace(/-/g, '+').replace(/_/g, '/');
@@ -86,6 +107,8 @@ export const decodeFilename = (encodedFilename: string): string => {
     // Base64 디코딩 후 URI 디코딩
     const decoded = decodeURIComponent(atob(base64));
     console.log('[🔓 DECODE] Decoded result:', decoded);
+    
+    // 타임스탬프 접두사가 있었다면 디코딩된 파일명에 추가하지 않고 원본 파일명만 반환
     return decoded;
   } catch (error) {
     console.error('[❌ DECODE] Failed to decode filename:', error);
@@ -107,7 +130,7 @@ export const getFileExtension = (filename: string): string => {
  * 파일명이 인코딩된 것인지 확인
  */
 export const isEncodedFilename = (filename: string): boolean => {
-  return filename.startsWith(ENCODED_PREFIX);
+  return filename.includes(`_${ENCODED_PREFIX}`) || filename.startsWith(ENCODED_PREFIX);
 };
 
 /**
@@ -169,16 +192,36 @@ export const testFilenameEncoding = () => {
     const encoded = encodeFilename(filename);
     console.log(`🧪 [TEST ${index + 1}] 인코딩 결과: "${encoded}"`);
     
+    // 타임스탬프가 포함된 파일명도 테스트
+    const timestampedFilename = `20250718_135733_${encoded}`;
+    console.log(`🧪 [TEST ${index + 1}] 타임스탬프 포함: "${timestampedFilename}"`);
+    
     const decoded = decodeFilename(encoded);
-    console.log(`🧪 [TEST ${index + 1}] 디코딩 결과: "${decoded}"`);
+    const timestampedDecoded = decodeFilename(timestampedFilename);
+    
+    console.log(`🧪 [TEST ${index + 1}] 일반 디코딩 결과: "${decoded}"`);
+    console.log(`🧪 [TEST ${index + 1}] 타임스탬프 디코딩 결과: "${timestampedDecoded}"`);
     
     const isCorrect = decoded === filename;
-    console.log(`🧪 [TEST ${index + 1}] 테스트 ${isCorrect ? '✅ 성공' : '❌ 실패'}`);
+    const isTimestampedCorrect = timestampedDecoded === filename;
+    
+    console.log(`🧪 [TEST ${index + 1}] 일반 테스트 ${isCorrect ? '✅ 성공' : '❌ 실패'}`);
+    console.log(`🧪 [TEST ${index + 1}] 타임스탬프 테스트 ${isTimestampedCorrect ? '✅ 성공' : '❌ 실패'}`);
     
     if (!isCorrect) {
-      console.error(`🧪 [TEST ${index + 1}] 원본: "${filename}", 결과: "${decoded}"`);
+      console.error(`🧪 [TEST ${index + 1}] 일반 - 원본: "${filename}", 결과: "${decoded}"`);
+    }
+    if (!isTimestampedCorrect) {
+      console.error(`🧪 [TEST ${index + 1}] 타임스탬프 - 원본: "${filename}", 결과: "${timestampedDecoded}"`);
     }
   });
+  
+  // 실제 로그에 나온 파일명으로 테스트
+  console.log('\n🧪 [REAL TEST] 실제 로그 파일명 테스트');
+  const realFilename = '20250718_135733_enc_UVdFUiUyMC0lMjAlRUElQjMlQTAlRUIlQUYlQkMlRUMlQTQlOTElRUIlOEYlODUlMjAlNUIlRUElQjAlODAlRUMlODIlQUNfTHlyaWNzJTVEJTIwJTVCaEZUczZIYnR4YkUlNUQtZ3VpdGFyLm1wMw.mp3';
+  console.log(`🧪 [REAL TEST] 입력: "${realFilename}"`);
+  const realDecoded = decodeFilename(realFilename);
+  console.log(`🧪 [REAL TEST] 디코딩 결과: "${realDecoded}"`);
   
   console.log('\n🧪 [TEST] 파일명 인코딩/디코딩 테스트 완료');
 };
