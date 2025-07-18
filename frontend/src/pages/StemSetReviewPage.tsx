@@ -61,7 +61,7 @@ const StemSetReviewPage = () => {
   const [currentTime, setCurrentTime] = useState(0);
   const [duration, setDuration] = useState(0);
   const [isPlaying, setIsPlaying] = useState(false);
-  const [soloTrack, setSoloTrack] = useState<'main' | 'extra' | 'selected-stem' | null>('main'); // 초기에는 guide(main)만 소리 나게
+  const [soloTrack, setSoloTrack] = useState<'main' | 'extra' | 'selected-stem'>('main'); // 초기에는 guide(main)만 소리 나게
   const [showHistory, setShowHistory] = useState(false);
   const [showCommentList, setShowCommentList] = useState(false);
   const [commentInput, setCommentInput] = useState('');
@@ -495,64 +495,67 @@ const StemSetReviewPage = () => {
     setIsPlaying(false);
   }, []);
 
-  // 볼륨 적용 헬퍼 함수
-  const applyVolumeSettings = useCallback((targetSoloTrack: 'main' | 'extra' | 'selected-stem' | null) => {
+  // 볼륨 적용 헬퍼 함수 - 안전한 볼륨 조절
+  const applyVolumeSettings = useCallback(async (targetSoloTrack: 'main' | 'extra' | 'selected-stem') => {
     const mainPlayer = wavesurferRefs.current['main'];
     const extraPlayer = wavesurferRefs.current['extra'];
     const selectedStemPlayer = wavesurferRefs.current['selected-stem'];
 
+    console.log('🔊 Applying volume settings for solo track:', targetSoloTrack);
+    console.log('🔊 Ready states:', readyStates);
+    console.log('🔊 Available players:', {
+      main: !!mainPlayer,
+      extra: !!extraPlayer,
+      selectedStem: !!selectedStemPlayer
+    });
+
     try {
-      if (targetSoloTrack === null) {
-        // Solo 모드 해제: 모든 트랙 재생
-        if (mainPlayer && readyStates['main']) {
-          mainPlayer.setVolume(volume);
+      // 각 플레이어에 대해 순차적으로 볼륨 설정
+      const setPlayerVolume = async (player: any, targetVolume: number, playerName: string) => {
+        if (!player) return;
+        
+        try {
+          // 약간의 딜레이를 두어 동시 호출 방지
+          await new Promise(resolve => setTimeout(resolve, 10));
+          player.setVolume(targetVolume);
+          console.log(`🔊 ${playerName} volume set to:`, targetVolume);
+        } catch (error: any) {
+          // AbortError는 무시, 다른 에러만 로그
+          if (error.name !== 'AbortError') {
+            console.warn(`🔊 Warning setting ${playerName} volume:`, error.message);
+          }
         }
-        if (extraPlayer && readyStates['extra']) {
-          extraPlayer.setVolume(volume);
-        }
-        if (selectedStemPlayer && readyStates['selected-stem']) {
-          selectedStemPlayer.setVolume(volume);
-        }
-        console.log('🔊 All tracks playing with volume:', volume);
-      } else if (targetSoloTrack === 'main') {
+      };
+
+      if (targetSoloTrack === 'main') {
         // 메인 트랙만 재생
-        if (mainPlayer && readyStates['main']) {
-          mainPlayer.setVolume(volume);
-        }
-        if (extraPlayer && readyStates['extra']) {
-          extraPlayer.setVolume(0);
-        }
-        if (selectedStemPlayer && readyStates['selected-stem']) {
-          selectedStemPlayer.setVolume(0);
-        }
-        console.log('🔊 Main track solo activated');
+        console.log('🔊 Main track solo mode');
+        await Promise.all([
+          readyStates['main'] ? setPlayerVolume(mainPlayer, volume, 'main') : Promise.resolve(),
+          readyStates['extra'] ? setPlayerVolume(extraPlayer, 0, 'extra') : Promise.resolve(),
+          readyStates['selected-stem'] ? setPlayerVolume(selectedStemPlayer, 0, 'selected-stem') : Promise.resolve()
+        ]);
       } else if (targetSoloTrack === 'extra') {
         // 엑스트라 트랙만 재생
-        if (mainPlayer && readyStates['main']) {
-          mainPlayer.setVolume(0);
-        }
-        if (extraPlayer && readyStates['extra']) {
-          extraPlayer.setVolume(volume);
-        }
-        if (selectedStemPlayer && readyStates['selected-stem']) {
-          selectedStemPlayer.setVolume(0);
-        }
-        console.log('🔊 Extra track solo activated');
+        console.log('🔊 Extra track solo mode');
+        await Promise.all([
+          readyStates['main'] ? setPlayerVolume(mainPlayer, 0, 'main') : Promise.resolve(),
+          readyStates['extra'] ? setPlayerVolume(extraPlayer, volume, 'extra') : Promise.resolve(),
+          readyStates['selected-stem'] ? setPlayerVolume(selectedStemPlayer, 0, 'selected-stem') : Promise.resolve()
+        ]);
       } else if (targetSoloTrack === 'selected-stem') {
         // 선택된 스템만 재생
-        if (mainPlayer && readyStates['main']) {
-          mainPlayer.setVolume(0);
-        }
-        if (extraPlayer && readyStates['extra']) {
-          extraPlayer.setVolume(0);
-        }
-        if (selectedStemPlayer && readyStates['selected-stem']) {
-          selectedStemPlayer.setVolume(volume);
-        }
-        console.log('🔊 Selected stem solo activated');
+        console.log('🔊 Selected stem solo mode');
+        await Promise.all([
+          readyStates['main'] ? setPlayerVolume(mainPlayer, 0, 'main') : Promise.resolve(),
+          readyStates['extra'] ? setPlayerVolume(extraPlayer, 0, 'extra') : Promise.resolve(),
+          readyStates['selected-stem'] ? setPlayerVolume(selectedStemPlayer, volume, 'selected-stem') : Promise.resolve()
+        ]);
       }
+
+      console.log('✅ Volume settings applied successfully');
     } catch (error) {
-      console.error('🔊 Error applying volume settings:', error);
+      console.error('❌ Error applying volume settings:', error);
     }
   }, [volume, readyStates]);
 
@@ -589,31 +592,24 @@ const StemSetReviewPage = () => {
     }
 
     try {
-      // 현재 선택된 트랙과 같은 트랙을 다시 클릭하면 solo 모드 해제
-      const newSoloTrack = soloTrack === trackId ? null : trackId;
+      // 현재 선택된 트랙과 같은 트랙을 다시 클릭해도 그대로 유지 (토글 없음)
+      // 다른 트랙을 클릭하면 해당 트랙으로 전환
+      const newSoloTrack = trackId;
       
-      console.log(`🔊 Solo mode changing from '${soloTrack || 'all'}' to '${newSoloTrack || 'all'}'`);
+      console.log(`🔊 Solo mode changing from '${soloTrack}' to '${newSoloTrack}'`);
       
-      // 상태 업데이트
+      // 상태 업데이트만 하고 useEffect에서 볼륨 적용을 처리
       setSoloTrack(newSoloTrack);
       
-      // 다음 렌더링 사이클에서 볼륨 적용 (상태 업데이트 후)
-      setTimeout(() => {
-        applyVolumeSettings(newSoloTrack);
-      }, 0);
-      
-      console.log(`✅ Solo mode changed to: ${newSoloTrack || 'all tracks'}`);
+      console.log(`✅ Solo mode changed to: ${newSoloTrack}`);
       
     } catch (error) {
       console.error('❌ Error in solo operation:', error);
       showError('Solo 기능 실행 중 오류가 발생했습니다.');
       
-      // 오류 발생 시 안전한 상태로 복구
+      // 오류 발생 시 안전한 상태로 복구 (기본값: main)
       try {
-        setSoloTrack(null);
-        setTimeout(() => {
-          applyVolumeSettings(null);
-        }, 0);
+        setSoloTrack('main');
       } catch (recoveryError) {
         console.error('❌ Error during solo recovery:', recoveryError);
       }
@@ -632,36 +628,9 @@ const StemSetReviewPage = () => {
       
       setVolume(vol);
       console.log(`🔊 Volume slider changed to: ${vol}`);
-
-      // 준비된 플레이어에만 볼륨 적용
-      const mainPlayer = wavesurferRefs.current['main'];
-      const extraPlayer = wavesurferRefs.current['extra'];
-
-      try {
-        if (soloTrack === null) {
-          // Solo 모드가 아닌 경우: 모든 준비된 트랙에 볼륨 적용
-          if (mainPlayer && readyStates['main']) {
-            mainPlayer.setVolume(vol);
-          }
-          if (extraPlayer && readyStates['extra']) {
-            extraPlayer.setVolume(vol);
-          }
-          console.log('🔊 Volume applied to all ready tracks:', vol);
-        } else {
-          // Solo 모드인 경우: 선택된 트랙에만 볼륨 적용
-          if (mainPlayer && readyStates['main']) {
-            mainPlayer.setVolume(soloTrack === 'main' ? vol : 0);
-          }
-          if (extraPlayer && readyStates['extra']) {
-            extraPlayer.setVolume(soloTrack === 'extra' ? vol : 0);
-          }
-          console.log(`🔊 Volume applied to ${soloTrack} track:`, vol);
-        }
-      } catch (error) {
-        console.error('❌ Error applying volume:', error);
-      }
+      // volume 상태 변경은 useEffect(volume 의존성)에서 자동으로 볼륨 적용 처리
     },
-    [soloTrack, readyStates]
+    []
   );
 
   // 댓글 추가 함수
@@ -1118,6 +1087,16 @@ const StemSetReviewPage = () => {
   const handleMainSolo = useCallback(() => handleSolo('main'), [handleSolo]);
   const handleExtraSolo = useCallback(() => handleSolo('extra'), [handleSolo]);
   const handleSelectedStemSolo = useCallback(() => handleSolo('selected-stem'), [handleSolo]);
+
+  // soloTrack 또는 volume 상태 변경 시 볼륨 적용을 위한 useEffect
+  useEffect(() => {
+    if (Object.keys(readyStates).length > 0) {
+      console.log('🔊 SoloTrack or volume changed, applying volume settings:', { soloTrack, volume });
+      applyVolumeSettings(soloTrack).catch(error => {
+        console.error('❌ Error applying volume settings on state change:', error);
+      });
+    }
+  }, [soloTrack, volume, readyStates, applyVolumeSettings]);
 
   // audioprocess 이벤트를 통한 재생 중 동기화 (main을 기준으로 모든 스템 동기화)
   useEffect(() => {

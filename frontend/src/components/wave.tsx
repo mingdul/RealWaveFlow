@@ -306,11 +306,11 @@ const Wave = ({
               disabled={!isReady}
               className={`px-3 py-2 sm:px-4 sm:py-2 rounded transition-all text-sm sm:text-base ${
                 isSolo 
-                  ? 'bg-purple-500 text-black font-medium' 
+                  ? 'bg-green-500 text-white font-medium' 
                   : 'bg-gray-700 text-white hover:bg-gray-600'
               } ${!isReady ? 'opacity-50 cursor-not-allowed' : ''}`}
             >
-              {isSolo ? 'Solo 활성화됨' : 'Solo'}
+              {isSolo ? '🔊 활성' : '🔇 뮤트'}
             </button>
             {isReady && <span className="text-green-400 text-xs">✓ 준비 완료</span>}
           </div>
