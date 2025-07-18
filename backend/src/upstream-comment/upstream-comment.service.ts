@@ -5,7 +5,7 @@ import { InjectRepository } from '@nestjs/typeorm';
 import { Repository } from 'typeorm';
 import { CreateUpstreamCommentDto } from './dto/createUpstreamComment.dto';
 import { UpdateUpstreamCommentDto } from './dto/updateUpstreamComment.dto';
-import { NotificationGateway, NotificationPayload } from '../notification/notification.gateway';
+import { NotificationGateway } from '../notification/notification.gateway';
 
 @Injectable()
 export class UpstreamCommentService {
@@ -117,26 +117,21 @@ export class UpstreamCommentService {
                 return;
             }
 
-            // 알림 페이로드 생성
-            const notification: NotificationPayload = {
-                type: 'upstream_reviewed',
-                title: '💬 새 리뷰',
-                message: `${upstream.title}`,
-                data: {
-                    commentId: comment.id,
-                    upstreamId: upstream.id,
-                    stageId: upstream.stage?.id,
-                    trackId: upstream.stage?.track?.id,
-                    upstreamTitle: upstream.title,
-                    commentContent: comment.comment,
-                    commenter: comment.user?.id,
-                },
-                timestamp: new Date().toISOString(),
-                read: false,
+            // 알림 데이터 준비
+            const type = 'upstream_reviewed';
+            const message = `💬 새 리뷰: ${upstream.title}`;
+            const data = {
+                commentId: comment.id,
+                upstreamId: upstream.id,
+                stageId: upstream.stage?.id,
+                trackId: upstream.stage?.track?.id,
+                upstreamTitle: upstream.title,
+                commentContent: comment.comment,
+                commenter: comment.user?.id,
             };
 
             // 업스트림 업로더에게 알림 전송
-            this.notificationGateway.sendNotificationToUser(upstream.user.id, notification);
+            this.notificationGateway.sendNotificationToUser(upstream.user.id, type, message, data);
 
             this.logger.log(`Comment created notification sent to uploader ${upstream.user.id} for comment: ${comment.id}`);
         } catch (error) {

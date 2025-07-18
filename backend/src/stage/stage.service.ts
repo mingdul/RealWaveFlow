@@ -6,7 +6,7 @@ import { CreateStageDto } from './dto/createStage.dto';
 import { SqsService } from '../sqs/service/sqs.service';
 import { VersionStemService } from '../version-stem/version-stem.service';
 import { StageReviewerService } from 'src/stage-reviewer/stage-reviewer.service';
-import { NotificationGateway, NotificationPayload } from '../notification/notification.gateway';
+import { NotificationGateway } from '../notification/notification.gateway';
 import { TrackCollaborator } from '../track_collaborator/track_collaborator.entity';
 import { Track } from '../track/track.entity';
 
@@ -250,29 +250,23 @@ export class StageService {
                 });
             }
 
-            // 알림 페이로드 생성
-            const notification: NotificationPayload = {
-                type: 'stage_created',
-                title: '🎵 새 스테이지',
-                message: `${track.title}`,
-                data: {
-                    stageId: stage.id,
-                    trackId: track.id,
-                    stageTitle: stage.title,
-                    trackTitle: track.title,
-                    version: stage.version,
-                },
-                timestamp: new Date().toISOString(),
-                read: false,
+            // 알림 데이터 준비
+            const type = 'stage_created';
+            const message = `🎵 새 스테이지: ${track.title}`;
+            const data = {
+                stageId: stage.id,
+                trackId: track.id,
+                stageTitle: stage.title,
+                trackTitle: track.title,
+                version: stage.version,
             };
 
             this.logger.log(`🔔 [StageService] Sending stage notification: "${stage.title}" to ${userIds.length} users`);
             this.logger.log(`🔔 [StageService] User IDs: [${userIds.join(', ')}]`);
-            this.logger.log(`🔔 [StageService] Notification payload:`, JSON.stringify(notification, null, 2));
 
             // 각 사용자에게 알림 전송
             if (this.notificationGateway) {
-                await this.notificationGateway.sendNotificationToUsers(userIds, notification);
+                await this.notificationGateway.sendNotificationToUsers(userIds, type, message, data);
                 this.logger.log(`🔔 [StageService] ✅ Stage notification sent successfully`);
             } else {
                 this.logger.error(`🔔 [StageService] ❌ NotificationGateway is null!`);
