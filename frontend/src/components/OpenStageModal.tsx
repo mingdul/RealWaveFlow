@@ -2,6 +2,7 @@ import React, { useState, useEffect } from 'react';
 import { X, Users, FileText, CirclePlus, Check, UserCheck } from 'lucide-react';
 import { Button, Input } from './';
 import trackService from '../services/trackService';
+import AnimatedModal from './AnimatedModal';
 // import { createStageReviewer } from '../services/stageReviewerService';
 import { TrackCollaborator } from '../types/api';
 // import { Track } from '../types/api';
@@ -30,6 +31,7 @@ const OpenStageModal: React.FC<OpenStageModalProps> = ({
   const [availableUsers, setAvailableUsers] = useState<User[]>([]);
   const [loading, setLoading] = useState(false);
   const [searchTerm, setSearchTerm] = useState('');
+  const [error, setError] = useState<string | null>(null);
 
   // 트랙 참여인원 가져오기
   useEffect(() => {
@@ -40,37 +42,78 @@ const OpenStageModal: React.FC<OpenStageModalProps> = ({
 
   const fetchTrackParticipants = async () => {
     setLoading(true);
+    setError(null);
+    
     try {
+      console.log('[DEBUG] Fetching track participants for trackId:', trackId);
+      
       // 트랙 정보와 협업자 정보를 가져오기
       const [trackResponse, collaboratorsResponse] = await Promise.all([
         trackService.getTrackById(trackId),
         trackService.getCollaborators(trackId)
       ]);
 
+      console.log('[DEBUG] Track response:', trackResponse);
+      console.log('[DEBUG] Collaborators response:', collaboratorsResponse);
+
       const users: User[] = [];
       let ownerId: string | null = null;
       
       // 트랙 오너 ID 저장 (리뷰어 리스트에서 제외하기 위해)
-      if (trackResponse.success && trackResponse.data?.owner_id) {
+      if (trackResponse.success && trackResponse.data?.owner_id?.id) {
         ownerId = trackResponse.data.owner_id.id;
+        console.log('[DEBUG] Track owner ID:', ownerId);
       }
 
+      // 백엔드 응답 구조에 맞게 collaborators 데이터 처리
+      let collaborators: TrackCollaborator[] = [];
+      
+      if (collaboratorsResponse.success) {
+        // trackService.getCollaborators는 { success: true, data: TrackCollaborator[] } 형태를 기대하지만
+        // 실제 백엔드는 { collaborators: TrackCollaborator[] } 형태로 응답
+        if (collaboratorsResponse.data) {
+          collaborators = collaboratorsResponse.data;
+        } else if ((collaboratorsResponse as any).collaborators) {
+          // 백엔드가 { collaborators: [...] } 형태로 응답하는 경우
+          collaborators = (collaboratorsResponse as any).collaborators;
+        }
+      }
+
+      console.log('[DEBUG] Processed collaborators:', collaborators);
+
       // 협업자들만 추가 (오너는 자동으로 리뷰어가 되므로 제외)
-      if (collaboratorsResponse.success && collaboratorsResponse.data) {
-        collaboratorsResponse.data.forEach((collaborator: TrackCollaborator) => {
-          if (collaborator.user_id && collaborator.user_id.id !== ownerId) {
-            users.push({
-              id: collaborator.user_id.id,
-              username: collaborator.user_id.username || 'User',
-              email: collaborator.user_id.email || 'user@example.com'
-            });
+      if (Array.isArray(collaborators)) {
+        collaborators.forEach((collaborator: TrackCollaborator) => {
+          // null 체크 강화
+          if (collaborator && collaborator.user_id && collaborator.user_id.id) {
+            // 오너가 아니고, accepted 상태인 경우만 추가
+            if (collaborator.user_id.id !== ownerId && collaborator.status === 'accepted') {
+              const user: User = {
+                id: collaborator.user_id.id,
+                username: collaborator.user_id.username || 'Unknown User',
+                email: collaborator.user_id.email || 'No email'
+              };
+              users.push(user);
+              console.log('[DEBUG] Added user to reviewers list:', user);
+            } else {
+              console.log('[DEBUG] Skipped user (owner or not accepted):', {
+                userId: collaborator.user_id.id,
+                isOwner: collaborator.user_id.id === ownerId,
+                status: collaborator.status
+              });
+            }
+          } else {
+            console.warn('[DEBUG] Invalid collaborator data:', collaborator);
           }
         });
       }
 
+      console.log('[DEBUG] Final available users:', users);
       setAvailableUsers(users);
+      
     } catch (error) {
       console.error('Failed to fetch track participants:', error);
+      setError('참가자 정보를 불러오는데 실패했습니다.');
     } finally {
       setLoading(false);
     }
@@ -89,6 +132,7 @@ const OpenStageModal: React.FC<OpenStageModalProps> = ({
       onSubmit(description, selectedReviewers);
       setDescription('');
       setSelectedReviewers([]);
+      setError(null);
       onClose();
     }
   };
@@ -98,11 +142,13 @@ const OpenStageModal: React.FC<OpenStageModalProps> = ({
     user.email.toLowerCase().includes(searchTerm.toLowerCase())
   );
 
-  if (!isOpen) return null;
-
   return (
-    <div className="fixed inset-0 bg-black/60 backdrop-blur-sm flex items-center justify-center z-50 p-4">
-      <div className="bg-[#262626] rounded-xl p-4 sm:p-6 max-w-sm sm:max-w-md lg:max-w-lg w-full mx-4 shadow-2xl border border-[#595959] max-h-[90vh] overflow-y-auto">
+    <AnimatedModal
+      isOpen={isOpen}
+      onClose={onClose}
+      animationType="scale"
+      className="bg-[#262626] rounded-xl p-4 sm:p-6 max-w-sm sm:max-w-md lg:max-w-lg w-full mx-4 shadow-2xl border border-[#595959] max-h-[90vh] overflow-y-auto"
+    >
         {/* Header */}
         <div className="flex items-center justify-between mb-6 sm:mb-8">
           <div className="flex items-center gap-3">
@@ -121,6 +167,13 @@ const OpenStageModal: React.FC<OpenStageModalProps> = ({
             <X size={20} />
           </button>
         </div>
+
+        {/* Error Message */}
+        {error && (
+          <div className="mb-6 p-4 bg-red-500/20 border border-red-500/50 rounded-lg">
+            <p className="text-red-400 text-sm">{error}</p>
+          </div>
+        )}
 
         {/* Description Section */}
         <div className="space-y-4 sm:space-y-6 mb-6">
@@ -170,6 +223,17 @@ const OpenStageModal: React.FC<OpenStageModalProps> = ({
               <div className="animate-spin rounded-full h-8 w-8 border-b-2 border-purple-500 mx-auto mb-2"></div>
               <p className="text-[#BFBFBF] text-sm">Loading participants...</p>
             </div>
+          ) : error ? (
+            <div className="text-center py-6 bg-red-500/10 rounded-lg border border-red-500/30">
+              <UserCheck size={32} className="text-red-400 mx-auto mb-2" />
+              <p className="text-red-400 text-sm">Failed to load participants</p>
+              <button 
+                onClick={fetchTrackParticipants}
+                className="mt-2 text-xs text-purple-400 hover:text-purple-300 underline"
+              >
+                Retry
+              </button>
+            </div>
           ) : filteredUsers.length > 0 ? (
             <div className="space-y-2 max-h-60 overflow-y-auto bg-[#595959]/10 p-3 rounded-lg border border-[#595959]/30">
               {filteredUsers.map(user => (
@@ -213,8 +277,13 @@ const OpenStageModal: React.FC<OpenStageModalProps> = ({
             <div className="text-center py-6 bg-[#595959]/10 rounded-lg border border-[#595959]/30">
               <UserCheck size={32} className="text-[#BFBFBF] mx-auto mb-2" />
               <p className="text-[#BFBFBF] text-sm">
-                {searchTerm ? 'No participants found' : 'No participants available'}
+                {searchTerm ? 'No participants found matching your search' : 'No collaborators available for review'}
               </p>
+              {!searchTerm && (
+                <p className="text-[#BFBFBF] text-xs mt-1">
+                  Add collaborators to the track first
+                </p>
+              )}
             </div>
           )}
         </div>
@@ -238,8 +307,7 @@ const OpenStageModal: React.FC<OpenStageModalProps> = ({
             OPEN STAGE
           </Button>
         </div>
-      </div>
-    </div>
+    </AnimatedModal>
   );
 };
 

@@ -23,6 +23,7 @@ import StepProgress from './StepProgress';
 import trackService from '../services/trackService';
 import { useSocket } from '../contexts/SocketContext';
 import socketService from '../services/socketService';
+import AnimatedModal from './AnimatedModal';
 
 // Types
 interface UploadedFile {
@@ -709,17 +710,14 @@ const InitProjectModal: React.FC<InitProjectModalProps> = ({
     onClose();
   };
 
-  if (!isOpen) return null;
-
   return (
-    <div
-      className='fixed inset-0 z-50 flex items-center justify-center bg-black bg-opacity-60 p-4'
-      onClick={handleCloseModal}
+    <AnimatedModal
+      isOpen={isOpen}
+      onClose={onClose}
+      closeOnBackdropClick={false}
+      animationType="scale"
+      className='flex max-h-[90vh] w-full max-w-6xl flex-col rounded-xl bg-gray-800 shadow-2xl'
     >
-      <div
-        className='flex max-h-[90vh] w-full max-w-6xl flex-col rounded-xl bg-gray-800 shadow-2xl'
-        onClick={(e) => e.stopPropagation()}
-      >
         <div className='flex h-full flex-col overflow-y-auto'>
           {/* Header */}
           <div className='flex items-center justify-between border-b border-gray-700 p-6'>
@@ -781,8 +779,7 @@ const InitProjectModal: React.FC<InitProjectModalProps> = ({
             </button>
           </div>
         </div>
-      </div>
-    </div>
+    </AnimatedModal>
   );
 };
 

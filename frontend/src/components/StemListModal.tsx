@@ -3,6 +3,7 @@ import { X } from 'lucide-react';
 import { Button, StemPlayer } from './';
 import { StemStreamingInfo } from '../services/streamingService';
 import ConfirmModal from './ConfirmModal';
+import AnimatedModal from './AnimatedModal';
 
 interface StemListModalProps {
   isOpen: boolean;
@@ -27,11 +28,14 @@ const StemListModal: React.FC<StemListModalProps> = ({
 
   console.log('StemListModal stems:', stems);
   console.log('StemListModal versionNumber:', versionNumber);
-  if (!isOpen) return null;
 
   return (
-    <div className="fixed inset-0 bg-black/60 backdrop-blur-sm flex items-center justify-center z-50 p-4">
-      <div className="bg-[#262626] rounded-xl p-4 sm:p-6 max-w-sm sm:max-w-2xl md:max-w-4xl lg:max-w-6xl w-full mx-4 max-h-[85vh] overflow-y-auto shadow-2xl border border-[#595959]">
+    <AnimatedModal
+      isOpen={isOpen}
+      onClose={onClose}
+      animationType="scale"
+      className="bg-[#262626] rounded-xl p-4 sm:p-6 max-w-sm sm:max-w-2xl md:max-w-4xl lg:max-w-6xl w-full mx-4 max-h-[85vh] overflow-y-auto shadow-2xl border border-[#595959]"
+    >
         {/* Header */}
         <div className="flex items-center justify-between mb-6 md:mb-8">
           <div className="flex-1">
@@ -104,8 +108,7 @@ const StemListModal: React.FC<StemListModalProps> = ({
           }}
           onCancel={() => setShowRollbackConfirm(false)}
         />
-      </div>
-    </div>
+    </AnimatedModal>
   );
 };
 
