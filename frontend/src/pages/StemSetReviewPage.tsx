@@ -104,9 +104,7 @@ const StemSetReviewPage = () => {
   const [newCommentText, setNewCommentText] = useState('');
   
   // 새로운 호버 기반 댓글 시스템
-  const [mousePosition, setMousePosition] = useState({ x: 0, y: 0 });
-  const [showCommentIcon, setShowCommentIcon] = useState(false);
-  const [hoverTime, setHoverTime] = useState(0);
+  const [hoveredPosition, setHoveredPosition] = useState<{ x: number; time: number } | null>(null);
   const [isCommentModalOpen, setIsCommentModalOpen] = useState(false);
   const [comments, setComments] = useState<Comment[]>([]);
   const [selectedUpstream, setSelectedUpstream] = useState<any>(null);
@@ -777,7 +775,7 @@ const StemSetReviewPage = () => {
   }, [togglePlay, currentTime, duration, volume]);
 
 
-  // 파형 마우스 이동 이벤트 - 댓글 아이콘 표시
+  // 파형 마우스 이동 이벤트 - 호버 위치 감지
   const handleWaveformMouseMove = useCallback((event: React.MouseEvent) => {
     if (!selectedUpstream || !waveformContainerRef.current || isCommentModalOpen) return;
     
@@ -786,29 +784,23 @@ const StemSetReviewPage = () => {
     const progress = x / rect.width;
     const time = progress * duration;
     
-    setMousePosition({ x: event.clientX, y: event.clientY });
-    setHoverTime(time);
-    setShowCommentIcon(true);
+    setHoveredPosition({ x, time });
   }, [selectedUpstream, duration, isCommentModalOpen]);
 
   // 파형에서 마우스가 벗어날 때
   const handleWaveformMouseLeave = useCallback(() => {
-    setShowCommentIcon(false);
+    setHoveredPosition(null);
   }, []);
 
   // 댓글 아이콘 클릭
   const handleCommentIconClick = useCallback((event: React.MouseEvent) => {
     event.stopPropagation(); // 파형 클릭 이벤트와 겹치지 않도록
-    if (!selectedUpstream || !waveformContainerRef.current) return;
+    if (!hoveredPosition) return;
     
-    const rect = waveformContainerRef.current.getBoundingClientRect();
-    const x = event.clientX - rect.left;
-    const time = hoverTime;
-    
-    setCommentPosition({ x, time });
+    setCommentPosition({ x: hoveredPosition.x, time: hoveredPosition.time });
     setIsCommentModalOpen(true);
-    setShowCommentIcon(false);
-  }, [selectedUpstream, hoverTime]);
+    setHoveredPosition(null);
+  }, [hoveredPosition]);
 
   // 댓글 추가 완료
   const handleAddComment = useCallback(async () => {
@@ -855,30 +847,38 @@ const StemSetReviewPage = () => {
     setNewCommentText('');
   }, []);
 
-  // 재생 중 댓글 표시 로직
+  // 재생 중 댓글 표시 로직 - 프로그레스바가 댓글 지점을 지날 때
   useEffect(() => {
-    if (!isPlaying) {
+    if (!isPlaying || comments.length === 0) {
       setFloatingComments([]);
       return;
     }
 
-    const currentComments = comments.filter(comment => {
-      const timeDiff = Math.abs(currentTime - comment.timeNumber);
-      return timeDiff <= 0.5; // 0.5초 이내의 댓글들
+    // 현재 시간 근처의 댓글들을 찾기 (더 정확한 타이밍)
+    const activeComments = comments.filter(comment => {
+      const timeDiff = currentTime - comment.timeNumber;
+      // 댓글 시간을 막 지나쳤거나 정확히 일치할 때 (0.2초 범위)
+      return timeDiff >= -0.1 && timeDiff <= 0.3;
     });
 
-    setFloatingComments(currentComments.map(comment => ({
-      ...comment,
-      id: `floating-${comment.id}-${Date.now()}`, // 유니크 ID
-      position: duration > 0 ? comment.timeNumber / duration : 0,
-    })));
+    if (activeComments.length > 0) {
+      console.log('🎵 [Comment Display] Showing comments at time:', currentTime, activeComments);
+      setFloatingComments(activeComments.map(comment => ({
+        ...comment,
+        id: `floating-${comment.id}-${currentTime}`, // 시간 기반 유니크 ID
+        position: duration > 0 ? comment.timeNumber / duration : 0,
+      })));
 
-    // 3초 후 자동 제거
-    const timer = setTimeout(() => {
+      // 3초 후 자동 제거 (페이드아웃 애니메이션)
+      const timer = setTimeout(() => {
+        setFloatingComments([]);
+      }, 3000);
+
+      return () => clearTimeout(timer);
+    } else {
+      // 활성 댓글이 없으면 기존 댓글들 제거
       setFloatingComments([]);
-    }, 3000);
-
-    return () => clearTimeout(timer);
+    }
   }, [currentTime, isPlaying, comments, duration]);
 
   const stopPlayback = useCallback(() => {
@@ -2234,6 +2234,26 @@ const StemSetReviewPage = () => {
                           );
                         })}
                         
+                        {/* 호버 시 나타나는 댓글 추가 아이콘 */}
+                        {hoveredPosition && !isCommentModalOpen && (
+                          <div
+                            className='absolute z-40 pointer-events-auto'
+                            style={{
+                              left: `${(hoveredPosition.x / (waveformContainerRef.current?.offsetWidth || 1)) * 100}%`,
+                              top: '50%',
+                              transform: 'translate(-50%, -50%)',
+                            }}
+                          >
+                            <button
+                              onClick={handleCommentIconClick}
+                              className='w-8 h-8 bg-blue-500 hover:bg-blue-600 rounded-full flex items-center justify-center text-white shadow-lg transition-all duration-200 hover:scale-110 border-2 border-white'
+                              title={`댓글 추가 (${Math.floor(hoveredPosition.time / 60)}:${String(Math.floor(hoveredPosition.time % 60)).padStart(2, '0')})`}
+                            >
+                              💬
+                            </button>
+                          </div>
+                        )}
+                        
                         {/* 플로팅 댓글 버블들 - 마커와 연결된 말풍선 */}
                         {floatingComments.map((comment) => {
                           const position = comment.position * 100;
@@ -2458,30 +2478,12 @@ const StemSetReviewPage = () => {
               <MessageCircle size={20} className='text-blue-400' />
               <div className='text-sm'>
                 <div className='text-white font-medium'>인터랙티브 댓글 시스템</div>
-                <div className='text-gray-400'>파형에 마우스를 올려 댓글 아이콘을 클릭하세요</div>
+                <div className='text-gray-400'>파형에 마우스를 올리면 💬 아이콘이 나타납니다. 재생 시 프로그레스바가 댓글을 지나가면 자동으로 표시됩니다.</div>
               </div>
             </div>
           </div>
         </div>
 
-        {/* 호버 댓글 아이콘 */}
-        {showCommentIcon && !isCommentModalOpen && (
-          <div
-            className='fixed z-50 pointer-events-auto'
-            style={{
-              left: `${mousePosition.x - 12}px`,
-              top: `${mousePosition.y - 12}px`,
-            }}
-          >
-            <button
-              onClick={handleCommentIconClick}
-              className='w-6 h-6 bg-blue-500 hover:bg-blue-600 rounded-full flex items-center justify-center text-white text-xs shadow-lg transition-all duration-200 hover:scale-110'
-              title={`댓글 추가 (${Math.floor(hoverTime / 60)}:${String(Math.floor(hoverTime % 60)).padStart(2, '0')})`}
-            >
-              💬
-            </button>
-          </div>
-        )}
 
         {/* 댓글 작성 모달 */}
         {isCommentModalOpen && selectedUpstream && (
