@@ -507,7 +507,6 @@ export interface Upstream {
 }
 
 export interface CreateUpstreamDto {
-  title: string;
   description?: string;
   stage_id: string;
   user_id: string;

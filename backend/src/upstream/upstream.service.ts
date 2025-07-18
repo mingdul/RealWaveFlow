@@ -48,9 +48,15 @@ export class UpstreamService {
          console.log('🔔 [UpstreamService] DTO:', dto);
          
          // 1) Upstream 생성
-         const { title, description, stage_id, user_id  } = dto.upstream;
+         const { description, stage_id, user_id  } = dto.upstream;
+         const title = await this.upstreamRepository.findOne(
+            {
+             where: { stage: { id: stage_id } },
+             order: { id: 'DESC' },
+         })
+         
          const upstream = this.upstreamRepository.create({
-             title,
+             title: title ? (title.title + 1) : 1,
              description,
              status: 'ACTIVE', // 기본 상태 설정
              stage: { id: stage_id },
