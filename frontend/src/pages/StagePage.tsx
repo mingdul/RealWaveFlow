@@ -188,7 +188,7 @@ const StagePage: React.FC = () => {
         </div>
 
         {/* Title Overlay */}
-        <div className="absolute top-[70px] left-0 w-full text-center z-20">
+        <div className={`absolute top-[70px] left-0 w-full text-center z-20 transition-opacity duration-500 ${isHovered ? 'opacity-0' : 'opacity-100'}`}>
           <div className="bg-gradient-to-r from-transparent via-black/60 to-transparent py-2">
             <h3 className="text-xl font-bold text-white drop-shadow-lg px-4">
               {upstream.title || `AWESOME MIX #${upstream.id}`}
@@ -238,7 +238,7 @@ const StagePage: React.FC = () => {
                 </button>
                 
                 <button
-                  onClick={(e) => { e.stopPropagation(); onDetail(); navigate(`/review/${upstream.id}?stageId=${stageId}`); }}
+                  onClick={(e) => { e.stopPropagation(); onDetail(); }}
                   className="flex items-center gap-2 px-4 py-2 rounded-full bg-gradient-to-r from-yellow-500 to-orange-500 text-black font-semibold shadow-lg hover:from-yellow-400 hover:to-orange-400 border border-yellow-300/50 transition-all duration-200 transform hover:scale-105"
                 >
                   <Eye className="w-4 h-4" />
