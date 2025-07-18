@@ -159,7 +159,7 @@ return (
       <button
         onClick={onPlayPause}
         disabled={loading}
-        className="flex items-center justify-center w-10 h-10 bg-purple-600 hover:bg-purple-700 disabled:bg-gray-600 rounded-full transition-colors"
+        className="flex items-center justify-center w-10 h-10 bg-purple-600 hover:bg-purple-700 disabled:bg-gray-600 rounded-full shadow-lg hover:shadow-xl transition-all duration-200 transform hover:scale-105 disabled:hover:scale-100 disabled:cursor-not-allowed"
       >
         {loading ? (
           <div className="w-4 h-4 border-2 border-white border-t-transparent rounded-full animate-spin" />
@@ -182,9 +182,12 @@ return (
       <div className="flex items-center gap-2">
         <button
           onClick={onMuteToggle}
-          className="p-1 text-gray-400 hover:text-white transition-colors"
+          className={`p-1 rounded-lg transition-all duration-200 transform hover:scale-105 ${
+            muted ? 'bg-gradient-to-br from-red-500 to-red-600 text-white shadow-md hover:shadow-lg' 
+                  : 'bg-gradient-to-br from-gray-600 to-gray-700 hover:from-gray-500 hover:to-gray-600 text-gray-300 hover:text-white shadow-sm hover:shadow-md'
+          }`}
         >
-          {muted ? <VolumeX size={16} /> : <Volume2 size={16} />}
+          {muted ? <VolumeX size={16} className="drop-shadow-sm"/> : <Volume2 size={16} className="drop-shadow-sm"/>}
         </button>
         <input
           type="range"

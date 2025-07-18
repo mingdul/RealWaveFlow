@@ -415,7 +415,7 @@ const StemPlayer: React.FC<StemPlayerProps> = ({ stems, className = '', stageId}
                 onChange={(e) => handleMasterVolumeChange(parseFloat(e.target.value))}
                 className="w-28 h-2 bg-gray-700 rounded-full appearance-none cursor-pointer"
                 style={{
-                  background: `linear-gradient(to right, #10b981 0%, #10b981 ${(masterMuted ? 0 : masterVolume) * 100}%, #374151 ${(masterMuted ? 0 : masterVolume) * 100}%, #374151 100%)`
+                  background: `linear-gradient(to right, #8b5cf6 0%, #8b5cf ${(masterMuted ? 0 : masterVolume) * 100}%, #374151 ${(masterMuted ? 0 : masterVolume) * 100}%, #374151 100%)`
                 }}
               />
               <style dangerouslySetInnerHTML={{
@@ -455,7 +455,7 @@ const StemPlayer: React.FC<StemPlayerProps> = ({ stems, className = '', stageId}
           <button
             onClick={handleMasterPlayPause}
             disabled={guideLoading}
-            className="group relative flex items-center justify-center w-14 h-14 bg-gradient-to-br from-emerald-500 to-emerald-600 hover:from-emerald-400 hover:to-emerald-500 disabled:from-gray-500 disabled:to-gray-600 rounded-full shadow-lg hover:shadow-xl transition-all duration-200 transform hover:scale-105 disabled:hover:scale-100 disabled:cursor-not-allowed"
+            className="group relative flex items-center justify-center w-14 h-14 bg-purple-600 hover:bg-purple-700 disabled:bg-gray-600 rounded-full shadow-lg hover:shadow-xl transition-all duration-200 transform hover:scale-105 disabled:hover:scale-100 disabled:cursor-not-allowed"
           >
             {guideLoading ? (
               <div className="w-6 h-6 border-2 border-white border-t-transparent rounded-full animate-spin" />
