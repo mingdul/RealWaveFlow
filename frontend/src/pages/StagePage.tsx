@@ -150,11 +150,49 @@ const StagePage: React.FC = () => {
     const config = statusConfig[status] || statusConfig.ACTIVE;
     const tapeImg = status === 'APPROVED' ? tapeApproved : status === 'REJECTED' ? tapeRejected : tapeActive;
 
+    // 강화된 이벤트 핸들러들
+    const handlePlayClick = (e: React.MouseEvent) => {
+      e.preventDefault();
+      e.stopPropagation();
+      console.log('🔍 Play button clicked!', { upstreamId: upstream.id, isPlaying });
+      onPlayToggle();
+    };
+
+    const handleDetailClick = (e: React.MouseEvent) => {
+      e.preventDefault();
+      e.stopPropagation();
+      console.log('🔍 Detail button clicked!', { upstreamId: upstream.id });
+      onDetail();
+    };
+
+    const handleApproveClick = (e: React.MouseEvent) => {
+      e.preventDefault();
+      e.stopPropagation();
+      console.log('🔍 Approve button clicked!', { upstreamId: upstream.id });
+      onApprove();
+    };
+
+    const handleRejectClick = (e: React.MouseEvent) => {
+      e.preventDefault();
+      e.stopPropagation();
+      console.log('🔍 Reject button clicked!', { upstreamId: upstream.id });
+      onReject();
+    };
+
+    const handleSeekChange = (e: React.ChangeEvent<HTMLInputElement>) => {
+      e.preventDefault();
+      e.stopPropagation();
+      const value = Number(e.target.value);
+      console.log('🔍 Seek changed!', { value });
+      onSeek(value);
+    };
+
     return (
       <div
         className="group relative w-full max-w-[380px] h-[280px] rounded-2xl overflow-hidden transition-all duration-500 ease-out transform hover:scale-[1.02] hover:-translate-y-1"
         onMouseEnter={() => setIsHovered(true)}
         onMouseLeave={() => setIsHovered(false)}
+        style={{ pointerEvents: 'auto' }}
       >
         {/* Status Badge */}
         <div className="absolute top-4 right-4 z-30">
@@ -181,7 +219,7 @@ const StagePage: React.FC = () => {
         </div>
 
         {/* Tape Image */}
-        <div className="absolute inset-0 flex items-center justify-center">
+        <div className="absolute inset-0 flex items-center justify-center z-10" style={{ pointerEvents: 'none' }}>
           <img
             src={tapeImg}
             alt={`Stem Set ${upstream.id}`}
@@ -190,7 +228,7 @@ const StagePage: React.FC = () => {
         </div>
 
         {/* Title Overlay */}
-        <div className={`absolute top-[70px] left-0 w-full text-center z-20 transition-opacity duration-500 ${isHovered ? 'opacity-0' : 'opacity-100'}`}>
+        <div className={`absolute top-[70px] left-0 w-full text-center z-20 transition-opacity duration-500 ${isHovered ? 'opacity-0' : 'opacity-100'}`} style={{ pointerEvents: 'none' }}>
           <div className="bg-gradient-to-r from-transparent via-black/60 to-transparent py-2">
             <h3 className="text-xl font-bold text-white drop-shadow-lg px-4">
               {upstream.title || `AWESOME MIX #${upstream.id}`}
@@ -200,8 +238,9 @@ const StagePage: React.FC = () => {
 
         {/* Hover Overlay */}
         <div
-          className={`absolute inset-0 bg-gradient-to-t from-black/90 via-black/70 to-transparent transition-all duration-500 ease-out
+          className={`absolute inset-0 bg-gradient-to-t from-black/90 via-black/70 to-transparent transition-all duration-500 ease-out z-40
             ${isHovered ? 'opacity-100' : 'opacity-0'}`}
+          style={{ pointerEvents: isHovered ? 'auto' : 'none' }}
         >
           <div className="absolute bottom-0 left-0 right-0 p-6 space-y-4">
             {/* Description */}
@@ -220,11 +259,13 @@ const StagePage: React.FC = () => {
                   min={0}
                   max={100}
                   value={seek}
-                  onChange={e => onSeek(Number(e.target.value))}
-                  onClick={e => e.stopPropagation()}
+                  onChange={handleSeekChange}
+                  onMouseDown={e => e.stopPropagation()}
+                  onMouseUp={e => e.stopPropagation()}
                   className="w-full h-2 bg-gray-700 rounded-lg appearance-none cursor-pointer slider"
                   style={{
-                    background: `linear-gradient(to right, #8b5cf6 0%, #8b5cf6 ${seek}%, #374151 ${seek}%, #374151 100%)`
+                    background: `linear-gradient(to right, #8b5cf6 0%, #8b5cf6 ${seek}%, #374151 ${seek}%, #374151 100%)`,
+                    pointerEvents: 'auto'
                   }}
                 />
               </div>
@@ -232,20 +273,24 @@ const StagePage: React.FC = () => {
               {/* Control Buttons */}
               <div className="flex items-center justify-center gap-3">
                 <button
-                  onClick={(e) => { e.stopPropagation(); onPlayToggle(); }}
-                  className="w-12 h-12 flex items-center justify-center rounded-full bg-gradient-to-r from-purple-600 to-purple-700 text-white shadow-lg hover:from-purple-500 hover:to-purple-600 border-2 border-white/20 hover:border-white/40 transition-all duration-200 transform hover:scale-110"
+                  type="button"
+                  onClick={handlePlayClick}
+                  onMouseDown={e => e.stopPropagation()}
+                  onMouseUp={e => e.stopPropagation()}
+                  className="w-12 h-12 flex items-center justify-center rounded-full bg-gradient-to-r from-purple-600 to-purple-700 text-white shadow-lg hover:from-purple-500 hover:to-purple-600 border-2 border-white/20 hover:border-white/40 transition-all duration-200 transform hover:scale-110 z-50"
                   aria-label={isPlaying ? '정지' : '재생'}
+                  style={{ pointerEvents: 'auto' }}
                 >
                   {isPlaying ? <Pause className="w-5 h-5" /> : <Play className="w-5 h-5 ml-0.5" />}
                 </button>
                 
                 <button
-                  onClick={(e) => { 
-                    e.stopPropagation(); 
-                    console.log('🔍 Detail button clicked!');
-                    onDetail(); 
-                  }}
-                  className="flex items-center gap-2 px-4 py-2 rounded-full bg-gradient-to-r from-yellow-500 to-orange-500 text-black font-semibold shadow-lg hover:from-yellow-400 hover:to-orange-400 border border-yellow-300/50 transition-all duration-200 transform hover:scale-105"
+                  type="button"
+                  onClick={handleDetailClick}
+                  onMouseDown={e => e.stopPropagation()}
+                  onMouseUp={e => e.stopPropagation()}
+                  className="flex items-center gap-2 px-4 py-2 rounded-full bg-gradient-to-r from-yellow-500 to-orange-500 text-black font-semibold shadow-lg hover:from-yellow-400 hover:to-orange-400 border border-yellow-300/50 transition-all duration-200 transform hover:scale-105 z-50"
+                  style={{ pointerEvents: 'auto' }}
                 >
                   <Eye className="w-4 h-4" />
                   <span className="text-sm">Detail</span>
@@ -256,23 +301,23 @@ const StagePage: React.FC = () => {
               {status === 'ACTIVE' && (
                 <div className="flex items-center justify-center gap-2 pt-2">
                   <button
-                    onClick={(e) => { 
-                      e.stopPropagation(); 
-                      console.log('🔍 Approve button clicked!');
-                      onApprove(); 
-                    }}
-                    className="flex items-center gap-1 px-3 py-1.5 rounded-full bg-gradient-to-r from-green-600 to-green-700 text-white text-xs font-semibold shadow-lg hover:from-green-500 hover:to-green-600 border border-green-400/50 transition-all duration-200 transform hover:scale-105"
+                    type="button"
+                    onClick={handleApproveClick}
+                    onMouseDown={e => e.stopPropagation()}
+                    onMouseUp={e => e.stopPropagation()}
+                    className="flex items-center gap-1 px-3 py-1.5 rounded-full bg-gradient-to-r from-green-600 to-green-700 text-white text-xs font-semibold shadow-lg hover:from-green-500 hover:to-green-600 border border-green-400/50 transition-all duration-200 transform hover:scale-105 z-50"
+                    style={{ pointerEvents: 'auto' }}
                   >
                     <CheckCircle className="w-3 h-3" />
                     Approve
                   </button>
                   <button
-                    onClick={(e) => { 
-                      e.stopPropagation(); 
-                      console.log('🔍 Reject button clicked!');
-                      onReject(); 
-                    }}
-                    className="flex items-center gap-1 px-3 py-1.5 rounded-full bg-gradient-to-r from-red-600 to-red-700 text-white text-xs font-semibold shadow-lg hover:from-red-500 hover:to-red-600 border border-red-400/50 transition-all duration-200 transform hover:scale-105"
+                    type="button"
+                    onClick={handleRejectClick}
+                    onMouseDown={e => e.stopPropagation()}
+                    onMouseUp={e => e.stopPropagation()}
+                    className="flex items-center gap-1 px-3 py-1.5 rounded-full bg-gradient-to-r from-red-600 to-red-700 text-white text-xs font-semibold shadow-lg hover:from-red-500 hover:to-red-600 border border-red-400/50 transition-all duration-200 transform hover:scale-105 z-50"
+                    style={{ pointerEvents: 'auto' }}
                   >
                     <XCircle className="w-3 h-3" />
                     Reject
@@ -284,7 +329,7 @@ const StagePage: React.FC = () => {
         </div>
 
         {/* Glow Effect */}
-        <div className={`absolute inset-0 rounded-2xl transition-all duration-500 ${isHovered ? 'shadow-[0_0_30px_rgba(147,51,234,0.3)]' : ''}`} />
+        <div className={`absolute inset-0 rounded-2xl transition-all duration-500 z-5 ${isHovered ? 'shadow-[0_0_30px_rgba(147,51,234,0.3)]' : ''}`} style={{ pointerEvents: 'none' }} />
       </div>
     );
   };
@@ -639,6 +684,19 @@ const StagePage: React.FC = () => {
 
         {/* Stem Sets Grid */}
         <div className='grid grid-cols-1 gap-8 md:grid-cols-2 lg:grid-cols-3 xl:grid-cols-4 justify-items-center'>
+          {/* 디버깅용 테스트 버튼 */}
+          <div className="col-span-full mb-4">
+            <button
+              onClick={() => {
+                console.log('🔍 Test button clicked!');
+                showInfo('테스트 버튼이 클릭되었습니다!');
+              }}
+              className="px-4 py-2 bg-red-500 text-white rounded-lg hover:bg-red-600"
+            >
+              테스트 버튼 (클릭해보세요)
+            </button>
+          </div>
+          
           {loading ? (
             <div className="col-span-full flex justify-center items-center py-16">
               <div className="flex items-center gap-4">
@@ -713,6 +771,7 @@ const StagePage: React.FC = () => {
           cursor: pointer;
           border: 2px solid white;
           box-shadow: 0 2px 6px rgba(0,0,0,0.3);
+          z-index: 1000;
         }
         
         .slider::-moz-range-thumb {
@@ -723,6 +782,26 @@ const StagePage: React.FC = () => {
           cursor: pointer;
           border: 2px solid white;
           box-shadow: 0 2px 6px rgba(0,0,0,0.3);
+          z-index: 1000;
+        }
+        
+        /* 버튼 클릭 가능성 보장 */
+        button {
+          position: relative;
+          z-index: 1000 !important;
+          pointer-events: auto !important;
+        }
+        
+        /* 슬라이더 클릭 가능성 보장 */
+        input[type="range"] {
+          position: relative;
+          z-index: 1000 !important;
+          pointer-events: auto !important;
+        }
+        
+        /* 호버 오버레이가 활성화될 때만 포인터 이벤트 허용 */
+        .group:hover .absolute.inset-0.bg-gradient-to-t {
+          pointer-events: auto !important;
         }
         
         @keyframes blob {
