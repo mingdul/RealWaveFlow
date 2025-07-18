@@ -15,10 +15,12 @@ import tapeApproved from '../assets/approveTape.png';
 import tapeRejected from '../assets/rejectedTape.png';
 import TrackHeader from '../components/TrackHeader';
 import { useNavigate } from 'react-router-dom';
+import { useToast } from '../contexts/ToastContext';
 
 const StagePage: React.FC = () => {
   const { trackId, stageId } = useParams<{ trackId: string; stageId: string }>();
   const navigate = useNavigate();
+  const { showSuccess, showError, showWarning, showInfo } = useToast();
   // 상태 관리
   const [stage, setStage] = useState<Stage | null>(null);
   const [upstreams, setUpstreams] = useState<Upstream[]>([]);
@@ -238,7 +240,11 @@ const StagePage: React.FC = () => {
                 </button>
                 
                 <button
-                  onClick={(e) => { e.stopPropagation(); onDetail(); }}
+                  onClick={(e) => { 
+                    e.stopPropagation(); 
+                    console.log('🔍 Detail button clicked!');
+                    onDetail(); 
+                  }}
                   className="flex items-center gap-2 px-4 py-2 rounded-full bg-gradient-to-r from-yellow-500 to-orange-500 text-black font-semibold shadow-lg hover:from-yellow-400 hover:to-orange-400 border border-yellow-300/50 transition-all duration-200 transform hover:scale-105"
                 >
                   <Eye className="w-4 h-4" />
@@ -250,14 +256,22 @@ const StagePage: React.FC = () => {
               {status === 'ACTIVE' && (
                 <div className="flex items-center justify-center gap-2 pt-2">
                   <button
-                    onClick={(e) => { e.stopPropagation(); onApprove(); }}
+                    onClick={(e) => { 
+                      e.stopPropagation(); 
+                      console.log('🔍 Approve button clicked!');
+                      onApprove(); 
+                    }}
                     className="flex items-center gap-1 px-3 py-1.5 rounded-full bg-gradient-to-r from-green-600 to-green-700 text-white text-xs font-semibold shadow-lg hover:from-green-500 hover:to-green-600 border border-green-400/50 transition-all duration-200 transform hover:scale-105"
                   >
                     <CheckCircle className="w-3 h-3" />
                     Approve
                   </button>
                   <button
-                    onClick={(e) => { e.stopPropagation(); onReject(); }}
+                    onClick={(e) => { 
+                      e.stopPropagation(); 
+                      console.log('🔍 Reject button clicked!');
+                      onReject(); 
+                    }}
                     className="flex items-center gap-1 px-3 py-1.5 rounded-full bg-gradient-to-r from-red-600 to-red-700 text-white text-xs font-semibold shadow-lg hover:from-red-500 hover:to-red-600 border border-red-400/50 transition-all duration-200 transform hover:scale-105"
                   >
                     <XCircle className="w-3 h-3" />
@@ -337,47 +351,75 @@ const StagePage: React.FC = () => {
   };
   
   const handleDetail = (upstream: Upstream) => {
-    // Review Page로 이동 (stageId를 쿼리 파라미터로 함께 전달)
-    navigate(`/review/${upstream.id}?stageId=${stageId}`);
+    try {
+      console.log('🔍 Navigating to review page:', { upstreamId: upstream.id, stageId });
+      // Review Page로 이동 (stageId를 쿼리 파라미터로 함께 전달)
+      navigate(`/review/${upstream.id}?stageId=${stageId}`);
+    } catch (error: any) {
+      console.error('❌ Error navigating to review page:', error);
+      showError('리뷰 페이지로 이동 중 오류가 발생했습니다.');
+    }
   };
 
   const handleApprove = async (upstream: Upstream) => {
     try {
       if (!stageId) {
-        console.error('Stage ID is required');
+        showWarning('Stage ID가 필요합니다.');
         return;
       }
       
+      console.log('🔍 Approving upstream:', { stageId, upstreamId: upstream.id });
+      console.log('🔍 Upstream object:', upstream);
+      
+      // 간단한 테스트 - API 호출 전에 확인
+      showInfo('승인 요청을 보내는 중...');
+      
       const response = await approveDropReviewer(stageId, upstream.id);
+      console.log('🔍 API Response:', response);
+      
       if (response.success) {
-        console.log('Upstream approved successfully');
+        console.log('✅ Upstream approved successfully');
+        showSuccess('업스트림이 성공적으로 승인되었습니다!');
         // upstreams 목록 새로고침
         handleUploadComplete();
       } else {
-        console.error('Failed to approve upstream:', response.message);
+        console.error('❌ Failed to approve upstream:', response.message);
+        showError(`승인 실패: ${response.message || '알 수 없는 오류'}`);
       }
-    } catch (error) {
-      console.error('Error approving upstream:', error);
+    } catch (error: any) {
+      console.error('❌ Error approving upstream:', error);
+      console.error('❌ Error details:', {
+        message: error.message,
+        status: error.response?.status,
+        data: error.response?.data,
+        config: error.config
+      });
+      showError(`승인 중 오류 발생: ${error.response?.data?.message || error.message || '알 수 없는 오류'}`);
     }
   };
 
   const handleReject = async (upstream: Upstream) => {
     try {
       if (!stageId) {
-        console.error('Stage ID is required');
+        showWarning('Stage ID가 필요합니다.');
         return;
       }
       
+      console.log('🔍 Rejecting upstream:', { stageId, upstreamId: upstream.id });
       const response = await rejectDropReviewer(stageId, upstream.id);
+      
       if (response.success) {
-        console.log('Upstream rejected successfully');
+        console.log('✅ Upstream rejected successfully');
+        showSuccess('업스트림이 성공적으로 거부되었습니다!');
         // upstreams 목록 새로고침
         handleUploadComplete();
       } else {
-        console.error('Failed to reject upstream:', response.message);
+        console.error('❌ Failed to reject upstream:', response.message);
+        showError(`거부 실패: ${response.message || '알 수 없는 오류'}`);
       }
-    } catch (error) {
-      console.error('Error rejecting upstream:', error);
+    } catch (error: any) {
+      console.error('❌ Error rejecting upstream:', error);
+      showError(`거부 중 오류 발생: ${error.response?.data?.message || error.message || '알 수 없는 오류'}`);
     }
   };
 
