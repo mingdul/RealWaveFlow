@@ -71,12 +71,14 @@ const Wave = ({
     wavesurfer.on('ready', () => {
       if (!isDestroyed) {
         setIsReady(true);
+        setIsAudioLoading(false); // 오디오 로딩 완료 시 로딩 상태 해제
         if (onReady) onReady(wavesurfer, id);
       }
     });
 
     wavesurfer.on('error', (error) => {
       console.warn('WaveSurfer error:', error);
+      setIsAudioLoading(false); // 오디오 로딩 오류 시에도 로딩 상태 해제
     });
 
     // 사용자가 파형을 클릭하거나 드래그할 때 즉시 currentTime 업데이트
