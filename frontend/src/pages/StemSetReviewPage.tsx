@@ -516,21 +516,23 @@ const StemSetReviewPage = () => {
 
   const handleReady = useCallback(
     (ws: WaveSurfer, id: string) => {
+      console.log(`🎯 [handleReady] Ready callback for ${id}`);
       wavesurferRefs.current[id] = ws;
 
       // ready 상태 업데이트
-      setReadyStates((prev) => ({ ...prev, [id]: true }));
+      setReadyStates((prev) => {
+        if (prev[id] === true) {
+          console.log(`⚠️ [handleReady] ${id} already ready, skipping`);
+          return prev;
+        }
+        console.log(`✅ [handleReady] Setting ${id} ready state`);
+        return { ...prev, [id]: true };
+      });
 
-      // main 파형이 ready 되었을 때 이벤트 리스너 추가
+      // main 파형이 ready 되었을 때 이벤트 리스너 추가 (한 번만)
       if (id === 'main') {
         ws.on('audioprocess', (time: number) => {
           setCurrentTime(time);
-        });
-
-        ws.on('ready', () => {
-          setDuration(ws.getDuration());
-          // 초기 볼륨 설정
-          ws.setVolume(soloTrack === 'main' ? 1 : 0);
         });
 
         ws.on('play', () => {
@@ -544,16 +546,15 @@ const StemSetReviewPage = () => {
         ws.on('finish', () => {
           setIsPlaying(false);
         });
-      }
 
-      // extra 파형이 ready 되었을 때 볼륨 설정
-      if (id === 'extra') {
-        ws.on('ready', () => {
-          ws.setVolume(soloTrack === 'extra' ? 1 : 0);
-        });
+        // duration 설정 (즉시)
+        const duration = ws.getDuration();
+        if (duration > 0) {
+          setDuration(duration);
+        }
       }
     },
-    [soloTrack]
+    [] // dependencies 제거로 재생성 방지
   );
 
   const togglePlay = useCallback(() => {
@@ -628,15 +629,16 @@ const StemSetReviewPage = () => {
 
   const handleSolo = useCallback(
     (trackId: 'main' | 'extra') => {
+      // 같은 트랙이 이미 솔로 중이면 무시 (불필요한 업데이트 방지)
+      if (soloTrack === trackId) {
+        console.log(`🔊 ${trackId} is already solo, skipping`);
+        return;
+      }
+
       const mainPlayer = wavesurferRefs.current['main'];
       const extraPlayer = wavesurferRefs.current['extra'];
 
       console.log(`🔊 Solo request for: ${trackId}`);
-      console.log(`🔊 Ready states:`, readyStates);
-      console.log(`🔊 Available players:`, {
-        main: !!mainPlayer,
-        extra: !!extraPlayer,
-      });
 
       // 엄격한 준비 상태 체크
       if (!mainPlayer || !readyStates['main']) {
@@ -659,16 +661,14 @@ const StemSetReviewPage = () => {
       }
 
       try {
-        const newSoloTrack = trackId;
-
         console.log(
-          `🔊 Solo mode changing from '${soloTrack}' to '${newSoloTrack}'`
+          `🔊 Solo mode changing from '${soloTrack}' to '${trackId}'`
         );
 
         // 상태 업데이트만 하고 useEffect에서 볼륨 적용을 처리
-        setSoloTrack(newSoloTrack);
+        setSoloTrack(trackId);
 
-        console.log(`✅ Solo mode changed to: ${newSoloTrack}`);
+        console.log(`✅ Solo mode changed to: ${trackId}`);
       } catch (error) {
         console.error('❌ Error in solo operation:', error);
         showError('Solo 기능 실행 중 오류가 발생했습니다.');
@@ -1168,58 +1168,78 @@ const StemSetReviewPage = () => {
     [showWarning, showError]
   );
 
-  // Solo 버튼 핸들러들을 메모이제이션
+  // Solo 버튼 핸들러들을 메모이제이션 (stable references)
   const handleMainSolo = useCallback(() => handleSolo('main'), [handleSolo]);
   const handleExtraSolo = useCallback(() => handleSolo('extra'), [handleSolo]);
 
-  // soloTrack 또는 volume 상태 변경 시 볼륨 적용
+  // Memoize other callback functions to prevent re-renders
+  const memoizedTogglePlay = useCallback(togglePlay, [isPlaying, readyStates]);
+  const memoizedStopPlayback = useCallback(stopPlayback, [readyStates]);
+  const memoizedVolumeChange = useCallback(handleVolumeChange, []);
+
+  // soloTrack 또는 volume 상태 변경 시 볼륨 적용 (최적화된 버전)
   useEffect(() => {
-    if (readyStates['main'] && volume !== undefined) {
-      console.log('🔊 Volume changed, applying to current solo track:', {
-        soloTrack,
-        volume,
-      });
+    // 메인 플레이어가 준비되지 않은 경우 스킵
+    if (!readyStates['main'] || volume === undefined) {
+      return;
+    }
 
-      // 직접 볼륨 설정 (applyVolumeSettings dependency 문제 방지)
-      const mainPlayer = wavesurferRefs.current['main'];
-      const extraPlayer = wavesurferRefs.current['extra'];
+    console.log('🔊 Volume changed, applying to current solo track:', {
+      soloTrack,
+      volume,
+    });
 
-      const safeSetVolume = (
-        player: any,
-        vol: number,
-        name: string,
-        id: string
-      ) => {
-        if (player && readyStates[id]) {
-          try {
-            player.setVolume(vol);
-          } catch (error: any) {
-            if (
-              error.name !== 'AbortError' &&
-              !error.message?.includes('destroyed')
-            ) {
-              console.warn(`Volume setting error for ${name}:`, error);
-            }
-          }
-        }
-      };
+    const mainPlayer = wavesurferRefs.current['main'];
+    const extraPlayer = wavesurferRefs.current['extra'];
 
-      if (soloTrack === 'main') {
-        safeSetVolume(mainPlayer, volume, 'main', 'main');
-        safeSetVolume(extraPlayer, 0, 'extra', 'extra');
-      } else if (soloTrack === 'extra' && readyStates['extra']) {
-        safeSetVolume(mainPlayer, 0, 'main', 'main');
-        safeSetVolume(extraPlayer, volume, 'extra', 'extra');
+    // 볼륨 설정 헬퍼 함수 (에러 처리 포함)
+    const safeSetVolume = (
+      player: any,
+      vol: number,
+      name: string,
+      id: string
+    ) => {
+      if (!player || !readyStates[id]) {
+        console.log(`🔊 Skipping volume for ${name}: player not ready`);
+        return;
       }
+
+      try {
+        const currentVolume = player.getVolume();
+        // 볼륨이 이미 같다면 설정하지 않음 (불필요한 호출 방지)
+        if (Math.abs(currentVolume - vol) < 0.01) {
+          return;
+        }
+        
+        player.setVolume(vol);
+        console.log(`🔊 Set ${name} volume to ${vol}`);
+      } catch (error: any) {
+        if (
+          error.name !== 'AbortError' &&
+          !error.message?.includes('destroyed')
+        ) {
+          console.warn(`Volume setting error for ${name}:`, error);
+        }
+      }
+    };
+
+    // Solo 모드에 따른 볼륨 적용
+    if (soloTrack === 'main') {
+      safeSetVolume(mainPlayer, volume, 'main', 'main');
+      safeSetVolume(extraPlayer, 0, 'extra', 'extra');
+    } else if (soloTrack === 'extra' && readyStates['extra']) {
+      safeSetVolume(mainPlayer, 0, 'main', 'main');
+      safeSetVolume(extraPlayer, volume, 'extra', 'extra');
     }
   }, [volume, soloTrack, readyStates]);
 
-  // audioprocess 이벤트를 통한 재생 중 동기화 (main -> extra만)
+  // 동기화를 위한 debounced seek (과도한 seek 방지)
+  const lastSyncTime = useRef<number>(0);
   useEffect(() => {
     const extraPlayer = wavesurferRefs.current['extra'];
     const mainPlayer = wavesurferRefs.current['main'];
 
-    // 재생 중일 때만 audioprocess 이벤트를 통한 동기화 수행
+    // 재생 중이고 both players ready일 때만 동기화
     if (
       isPlaying &&
       extraPlayer &&
@@ -1227,13 +1247,27 @@ const StemSetReviewPage = () => {
       readyStates['extra'] &&
       readyStates['main']
     ) {
-      try {
-        const progress = currentTime / mainPlayer.getDuration();
-        if (progress >= 0 && progress <= 1) {
-          extraPlayer.seekTo(progress);
+      const now = Date.now();
+      // 100ms 간격으로 동기화 (과도한 호출 방지)
+      if (now - lastSyncTime.current > 100) {
+        try {
+          const duration = mainPlayer.getDuration();
+          if (duration > 0) {
+            const progress = currentTime / duration;
+            if (progress >= 0 && progress <= 1) {
+              const extraCurrentTime = extraPlayer.getCurrentTime();
+              const timeDiff = Math.abs(extraCurrentTime - currentTime);
+              
+              // 시간 차이가 0.2초 이상일 때만 동기화
+              if (timeDiff > 0.2) {
+                extraPlayer.seekTo(progress);
+                lastSyncTime.current = now;
+              }
+            }
+          }
+        } catch (error) {
+          // 동기화 실패 시 무시
         }
-      } catch (error) {
-        // 동기화 실패 시 무시
       }
     }
   }, [currentTime, readyStates, isPlaying]);
@@ -1477,44 +1511,21 @@ const StemSetReviewPage = () => {
                 })}  */}
 
                   {(() => {
-                    console.log('🎨 [Render] === RENDER START ===');
-                    console.log('🎨 [Render] showHistory:', showHistory);
-                    console.log('🎨 [Render] stemsLoading:', stemsLoading);
-                    console.log(
-                      '🎨 [Render] upstreamStems.length:',
-                      upstreamStems.length
-                    );
-                    console.log('🎨 [Render] upstreamStems:', upstreamStems);
-                    console.log('🎨 [Render] stageId:', stageId);
-                    console.log(
-                      '🎨 [Render] selectedUpstream:',
-                      selectedUpstream
-                    );
-
-                    // 스템 데이터 구조 상세 로깅
-                    if (upstreamStems.length > 0) {
-                      console.log(
-                        '🎨 [Render] First upstream details:',
-                        upstreamStems[0]
-                      );
-                      console.log(
-                        '🎨 [Render] stemData exists:',
-                        !!upstreamStems[0]?.stemData
-                      );
-                      console.log(
-                        '🎨 [Render] stemData content:',
-                        upstreamStems[0]?.stemData
-                      );
-                      if (upstreamStems[0]?.stemData) {
-                        console.log(
-                          '🎨 [Render] stemData is array:',
-                          Array.isArray(upstreamStems[0].stemData)
-                        );
-                        console.log(
-                          '🎨 [Render] stemData length:',
-                          upstreamStems[0].stemData.length
-                        );
-                      }
+                    // Reduce excessive logging (only log once per state change)
+                    const debugRef = useRef({ lastLog: 0, lastState: '' });
+                    const currentState = `${showHistory}-${stemsLoading}-${upstreamStems.length}`;
+                    const now = Date.now();
+                    
+                    if (currentState !== debugRef.current.lastState || now - debugRef.current.lastLog > 2000) {
+                      console.log('🎨 [Render] State:', {
+                        showHistory,
+                        stemsLoading,
+                        stemsCount: upstreamStems.length,
+                        stageId,
+                        selectedUpstreamId: selectedUpstream?.id
+                      });
+                      debugRef.current.lastLog = now;
+                      debugRef.current.lastState = currentState;
                     }
 
                     if (stemsLoading) {
@@ -1895,13 +1906,13 @@ const StemSetReviewPage = () => {
         {/* Control Bar */}
         <div className='flex items-center rounded bg-[#2b2b2b] px-6 py-3 text-sm shadow'>
           <button
-            onClick={stopPlayback}
+            onClick={memoizedStopPlayback}
             className='ml-6 text-white hover:text-gray-300'
           >
             <Square size={20} />
           </button>
           <button
-            onClick={togglePlay}
+            onClick={memoizedTogglePlay}
             className='ml-3 text-white hover:text-gray-300'
           >
             {isPlaying ? <Pause size={20} /> : <Play size={20} />}
@@ -1921,7 +1932,7 @@ const StemSetReviewPage = () => {
               max='1'
               step='0.01'
               value={volume}
-              onChange={handleVolumeChange}
+              onChange={memoizedVolumeChange}
               className='w-24 accent-blue-500'
             />
           </div>

@@ -1,4 +1,4 @@
-import { useEffect, useRef, useState, memo } from 'react';
+import { useEffect, useRef, useState, memo, useCallback } from 'react';
 import WaveSurfer from 'wavesurfer.js';
 import TimelinePlugin from 'wavesurfer.js/dist/plugins/timeline';
 import MinimapPlugin from 'wavesurfer.js/dist/plugins/minimap';
@@ -19,7 +19,7 @@ export interface WaveProps {
   isLoading?: boolean; // 로딩 상태 추가
 }
 
-const Wave = ({ 
+const Wave = memo(({ 
   onReady, 
   audioUrl, 
   waveColor, 
@@ -43,12 +43,30 @@ const Wave = ({
   const [isDestroyed, setIsDestroyed] = useState(false);
   const currentAudioUrlRef = useRef<string>('');
   const [isAudioLoading, setIsAudioLoading] = useState(false);
+  const initializationRef = useRef<boolean>(false);
+  const readyCallbackCalledRef = useRef<boolean>(false);
+
+  // Memoized ready handler to prevent recreation
+  const handleReadyCallback = useCallback(() => {
+    if (!wavesurferRef.current || isDestroyed || readyCallbackCalledRef.current) return;
+    
+    console.log(`✅ [${id}] WaveSurfer ready event fired, calling onReady`);
+    setIsReady(true);
+    setIsAudioLoading(false);
+    readyCallbackCalledRef.current = true;
+    
+    if (onReady) {
+      onReady(wavesurferRef.current, id);
+    }
+  }, [onReady, id, isDestroyed]);
 
   // WaveSurfer 인스턴스 생성 (한 번만)
   useEffect(() => {
-    if (!waveRef.current || !timelineRef.current || !minimapRef.current) return;
+    if (!waveRef.current || !timelineRef.current || !minimapRef.current || initializationRef.current) return;
 
+    initializationRef.current = true;
     setIsDestroyed(false);
+    readyCallbackCalledRef.current = false;
 
     const wavesurfer = WaveSurfer.create({
       container: waveRef.current,
@@ -69,24 +87,11 @@ const Wave = ({
 
     wavesurferRef.current = wavesurfer;
 
-    wavesurfer.on('ready', () => {
-      console.log(`✅ [${id}] WaveSurfer ready event fired, isDestroyed:`, isDestroyed);
-      if (!isDestroyed) {
-        console.log(`🎯 [${id}] Setting isReady=true, isAudioLoading=false`);
-        setIsReady(true);
-        setIsAudioLoading(false); // 오디오 로딩 완료 시 로딩 상태 해제
-        if (onReady) {
-          console.log(`🔄 [${id}] Calling onReady callback`);
-          onReady(wavesurfer, id);
-        }
-      } else {
-        console.warn(`⚠️ [${id}] Ready event fired but component is destroyed`);
-      }
-    });
+    wavesurfer.on('ready', handleReadyCallback);
 
     wavesurfer.on('error', (error) => {
       console.warn(`❌ [${id}] WaveSurfer error:`, error);
-      setIsAudioLoading(false); // 오디오 로딩 오류 시에도 로딩 상태 해제
+      setIsAudioLoading(false);
     });
 
     // 사용자가 파형을 클릭하거나 드래그할 때 즉시 currentTime 업데이트
@@ -105,8 +110,10 @@ const Wave = ({
     });
 
     return () => {
+      initializationRef.current = false;
       setIsDestroyed(true);
       setIsReady(false);
+      readyCallbackCalledRef.current = false;
       if (wavesurfer) {
         try {
           wavesurfer.destroy();
@@ -115,35 +122,27 @@ const Wave = ({
         }
       }
     };
-  }, [waveColor, onReady, id]); // audioUrl 의존성 제거
+  }, [waveColor, handleReadyCallback, id, onSeek]);
 
   // 오디오 URL 또는 peaks 변경 시 로드만 다시 실행
   useEffect(() => {
-    if (!wavesurferRef.current || !audioUrl || isDestroyed) return;
+    if (!wavesurferRef.current || !audioUrl || isDestroyed || !initializationRef.current) return;
     
     // 이미 같은 URL이 로드되어 있으면 스킵
-    if (currentAudioUrlRef.current === audioUrl) {
-      // 로딩 상태가 계속 true로 남아있는 경우 방지
-      if (isAudioLoading) {
-        console.log(`🔄 [${id}] Same URL detected, clearing loading state`);
-        setIsAudioLoading(false);
-      }
-      // peaks 데이터만 변경된 경우 ready 상태 설정
-      if (!isReady && wavesurferRef.current) {
-        console.log(`🔄 [${id}] Setting ready state for existing audio`);
-        setIsReady(true);
-      }
+    if (currentAudioUrlRef.current === audioUrl && isReady) {
+      console.log(`🔄 [${id}] Same URL detected and already ready, skipping reload`);
       return;
     }
 
-    console.log(`🎵 [${id}] Loading new audio URL:`, audioUrl);
-    if (peaks) {
-      console.log(`🌊 [${id}] Using peaks data, type:`, typeof peaks, 'keys:', peaks && typeof peaks === 'object' ? Object.keys(peaks) : 'N/A');
-    }
+    console.log(`🎵 [${id}] Loading audio URL:`, audioUrl);
     
-    setIsReady(false);
-    setIsAudioLoading(true);
-    currentAudioUrlRef.current = audioUrl;
+    // 새로운 오디오 로드 시에만 ready 상태 리셋
+    if (currentAudioUrlRef.current !== audioUrl) {
+      setIsReady(false);
+      setIsAudioLoading(true);
+      readyCallbackCalledRef.current = false;
+      currentAudioUrlRef.current = audioUrl;
+    }
 
     const wavesurfer = wavesurferRef.current;
 
@@ -155,26 +154,19 @@ const Wave = ({
       // 객체 형태인 경우 peaks 배열 추출
       if (peaks && typeof peaks === 'object' && !Array.isArray(peaks)) {
         if (peaks.peaks && Array.isArray(peaks.peaks)) {
-          // {peaks: [...], duration: ..., sample_rate: ...} 형태
           peaksData = peaks.peaks;
         } else if (peaks.data && Array.isArray(peaks.data)) {
-          // {data: [...]} 형태
           peaksData = peaks.data;
         }
       } else if (Array.isArray(peaks)) {
-        // 이미 배열 형태인 경우
         peaksData = peaks;
       }
       
       // WaveSurfer가 기대하는 형식으로 변환
-      // peaks 배열이 유효한지 확인
       if (Array.isArray(peaksData) && peaksData.length > 0) {
         console.log(`🌊 [${id}] Loading with peaks data, length: ${peaksData.length}`);
         
-        // 성능 최적화: 오디오와 peaks 데이터를 함께 로드
         try {
-          // WaveSurfer 2.x 버전에서는 load 메서드에 peaks 데이터를 직접 전달할 수 있음
-          console.log(`🔄 [${id}] Calling wavesurfer.load with peaks`);
           wavesurfer.load(audioUrl, peaksData);
         } catch (error: any) {
           console.warn(`❌ [${id}] Failed to load audio with peaks:`, error);
@@ -188,7 +180,7 @@ const Wave = ({
           });
         }
       } else {
-        console.warn(`⚠️ [${id}] Invalid peaks data, loading audio only, peaksData:`, peaksData);
+        console.warn(`⚠️ [${id}] Invalid peaks data, loading audio only`);
         wavesurfer.load(audioUrl).catch((error) => {
           if (error.name !== 'AbortError') {
             console.warn('Failed to load audio:', error);
@@ -198,7 +190,6 @@ const Wave = ({
       }
     } else {
       console.log(`🎵 [${id}] Loading audio only (no peaks)`);
-      console.log(`🔄 [${id}] Calling wavesurfer.load without peaks`);
       wavesurfer.load(audioUrl).catch((error) => {
         if (error.name !== 'AbortError') {
           console.warn(`❌ [${id}] Failed to load audio:`, error);
@@ -206,74 +197,78 @@ const Wave = ({
         setIsAudioLoading(false);
       });
     }
-  }, [audioUrl, peaks, id, isDestroyed]);
+  }, [audioUrl, peaks, id, isDestroyed, isReady]);
 
-  // 강제 ready 상태 설정 - audioUrl과 peaks가 있으면 즉시 준비된 것으로 간주
+  // 재생/일시정지 제어 (AbortError 방지)
   useEffect(() => {
-    if (audioUrl && peaks && !isReady && wavesurferRef.current) {
-      console.log(`🔧 [${id}] Force setting ready state immediately - audioUrl and peaks available`);
-      setIsReady(true);
-      setIsAudioLoading(false);
+    if (!wavesurferRef.current || !isReady || isDestroyed) return;
+
+    const wavesurfer = wavesurferRef.current;
+    
+    try {
+      if (isPlaying) {
+        // 이미 재생 중인지 확인
+        if (!wavesurfer.isPlaying()) {
+          wavesurfer.play().catch((error: any) => {
+            // AbortError는 정상적인 동작이므로 무시
+            if (error.name !== 'AbortError') {
+              console.warn(`❌ [${id}] Play error:`, error);
+            }
+          });
+        }
+      } else {
+        // 재생 중인지 확인 후 일시정지
+        if (wavesurfer.isPlaying()) {
+          wavesurfer.pause();
+        }
+      }
+    } catch (error: any) {
+      if (error.name !== 'AbortError') {
+        console.warn(`❌ [${id}] Playback control error:`, error);
+      }
     }
-  }, [audioUrl, peaks, isReady, id]);
+  }, [isPlaying, isReady, isDestroyed, id]);
 
-  // 백업 타이머 - 1초 후에도 ready 상태가 아니면 강제 설정
+  // 시간 동기화 (seeking 시에만 실행되도록 최적화)
   useEffect(() => {
-    if (audioUrl && peaks && !isReady) {
-      const forceReadyTimer = setTimeout(() => {
-        console.log(`🔧 [${id}] Backup timer: Force setting ready state after 1 second`);
-        setIsReady(true);
-        setIsAudioLoading(false);
-      }, 1000);
+    if (!wavesurferRef.current || !isReady || isDestroyed) return;
+
+    const wavesurfer = wavesurferRef.current;
+    const duration = wavesurfer.getDuration();
+    
+    if (duration > 0) {
+      const currentWaveTime = wavesurfer.getCurrentTime();
+      const timeDiff = Math.abs(currentWaveTime - currentTime);
       
-      return () => clearTimeout(forceReadyTimer);
-    }
-  }, [audioUrl, peaks, isReady, id]);
-
-  useEffect(() => {
-    if (wavesurferRef.current && isReady && !isDestroyed) {
-      try {
-        if (isPlaying) {
-          wavesurferRef.current.play();
-        } else {
-          wavesurferRef.current.pause();
-        }
-      } catch (error: any) {
-        if (error.name !== 'AbortError') {
-          console.warn('Error controlling playback:', error);
+      // 시간 차이가 0.1초 이상일 때만 seek (불필요한 seek 방지)
+      if (timeDiff > 0.1) {
+        try {
+          wavesurfer.seekTo(currentTime / duration);
+        } catch (error: any) {
+          if (error.name !== 'AbortError') {
+            console.warn(`❌ [${id}] Seek error:`, error);
+          }
         }
       }
     }
-  }, [isPlaying, isReady, isDestroyed]);
+  }, [currentTime, isReady, isDestroyed, id]);
 
-  useEffect(() => {
-    if (wavesurferRef.current && isReady && !isDestroyed) {
-      try {
-        const duration = wavesurferRef.current.getDuration();
-        if (duration > 0 && Math.abs(wavesurferRef.current.getCurrentTime() - currentTime) > 0.1) {
-          wavesurferRef.current.seekTo(currentTime / duration);
-        }
-      } catch (error: any) {
-        if (error.name !== 'AbortError') {
-          console.warn('Error seeking:', error);
-        }
-      }
-    }
-  }, [currentTime, isReady, isDestroyed]);
-
-  // 실제 로딩 상태 계산 (외부 로딩 상태 또는 내부 오디오 로딩 상태)
+  // 실제 로딩 상태 계산
   const isActuallyLoading = isLoading || isAudioLoading;
 
-  console.log(`🔍 [${id}] Render state check:`, {
-    isLoading: isLoading,
-    isAudioLoading: isAudioLoading,
-    isActuallyLoading: isActuallyLoading,
-    isReady: isReady,
-    audioUrl: !!audioUrl,
-    peaks: !!peaks,
-    wavesurferExists: !!wavesurferRef.current,
-    currentAudioUrl: currentAudioUrlRef.current
-  });
+  // 렌더링 로그 최소화
+  const shouldLog = useRef(true);
+  if (shouldLog.current) {
+    console.log(`🔍 [${id}] Render state:`, {
+      isReady,
+      isActuallyLoading,
+      hasAudio: !!audioUrl,
+      hasPeaks: !!peaks
+    });
+    shouldLog.current = false;
+    // 1초 후 다시 로깅 허용
+    setTimeout(() => { shouldLog.current = true; }, 1000);
+  }
 
   return (
     <div 
@@ -286,7 +281,7 @@ const Wave = ({
           <span className="text-white font-medium">오디오를 불러오는 중...</span>
           <span className="text-gray-400 text-sm mt-2">잠시만 기다려주세요</span>
         </div>
-      ) : !isReady && (!audioUrl || !peaks) ? (
+      ) : !isReady ? (
         <div className="flex flex-col items-center justify-center py-8">
           <div className="mb-3 h-8 w-8 animate-spin rounded-full border-b-2 border-blue-300"></div>
           <span className="text-white">파형을 준비하는 중...</span>
@@ -330,6 +325,9 @@ const Wave = ({
       )}
     </div>
   );
-};
+});
 
-export default memo(Wave);
+// 디스플레이 이름 설정
+Wave.displayName = 'Wave';
+
+export default Wave;
