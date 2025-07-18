@@ -1580,8 +1580,7 @@ const StemSetReviewPage = () => {
                 currentTime: currentTime,
                 onSolo: handleMainSolo,
                 isSolo: soloTrack === 'main',
-                onSeek: handleSeek,
-                isLoading: guideLoading
+                onSeek: handleSeek
               };
               
               return (
@@ -1630,7 +1629,6 @@ const StemSetReviewPage = () => {
                     onSolo={handleExtraSolo}
                     isSolo={soloTrack === 'extra'}
                     onSeek={handleSeek}
-                    isLoading={stemLoading || waveformLoading}
                   />
                 </>
               )}

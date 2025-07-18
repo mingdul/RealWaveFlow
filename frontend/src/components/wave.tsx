@@ -118,7 +118,13 @@ const Wave = ({
     if (currentAudioUrlRef.current === audioUrl) {
       // 로딩 상태가 계속 true로 남아있는 경우 방지
       if (isAudioLoading) {
+        console.log(`🔄 [${id}] Same URL detected, clearing loading state`);
         setIsAudioLoading(false);
+      }
+      // peaks 데이터만 변경된 경우 ready 상태 설정
+      if (!isReady && wavesurferRef.current) {
+        console.log(`🔄 [${id}] Setting ready state for existing audio`);
+        setIsReady(true);
       }
       return;
     }
