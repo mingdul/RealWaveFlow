@@ -18,7 +18,7 @@ import { useToast } from '../contexts/ToastContext';
 const StagePage: React.FC = () => {
   const { trackId, stageId } = useParams<{ trackId: string; stageId: string }>();
   const navigate = useNavigate();
-  const { showSuccess, showError, showWarning, showInfo } = useToast();
+  const { showError } = useToast();
   // 상태 관리
   const [stage, setStage] = useState<Stage | null>(null);
   const [upstreams, setUpstreams] = useState<Upstream[]>([]);
@@ -479,7 +479,7 @@ const StagePage: React.FC = () => {
               <p className="text-gray-400 text-center max-w-md">Start by uploading your first stem set to begin the review process.</p>
             </div>
           ) : (
-            upstreams.map((upstream, idx) => (
+            upstreams.map((upstream) => (
               <StemSetCard
                 key={upstream.id}
                 upstream={upstream}
