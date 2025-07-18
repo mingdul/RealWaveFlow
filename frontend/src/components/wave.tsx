@@ -88,7 +88,13 @@ const Wave = memo(({
       height: 260,
       normalize: true,
       plugins: [
-        TimelinePlugin.create({ container: timelineRef.current }),
+        TimelinePlugin.create({ 
+          container: timelineRef.current,
+          style: {
+            fontSize: '12px',
+            color: '#9ca3af'
+          }
+        }),
         MinimapPlugin.create({
           container: minimapRef.current,
           waveColor: '#555',

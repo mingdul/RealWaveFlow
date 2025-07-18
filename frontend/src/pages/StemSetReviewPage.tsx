@@ -105,7 +105,7 @@ const StemSetReviewPage = () => {
   
   // 새로운 호버 기반 댓글 시스템
   const [hoveredPosition, setHoveredPosition] = useState<{ x: number; time: number } | null>(null);
-  const [isCommentModalOpen, setIsCommentModalOpen] = useState(false);
+  const [isInlineCommentOpen, setIsInlineCommentOpen] = useState(false);
   const [comments, setComments] = useState<Comment[]>([]);
   const [selectedUpstream, setSelectedUpstream] = useState<any>(null);
   const [commentsLoading, setCommentsLoading] = useState(false);
@@ -777,7 +777,7 @@ const StemSetReviewPage = () => {
 
   // 파형 마우스 이동 이벤트 - 호버 위치 감지
   const handleWaveformMouseMove = useCallback((event: React.MouseEvent) => {
-    if (!selectedUpstream || !waveformContainerRef.current || isCommentModalOpen) return;
+    if (!selectedUpstream || !waveformContainerRef.current || isInlineCommentOpen) return;
     
     const rect = waveformContainerRef.current.getBoundingClientRect();
     const x = event.clientX - rect.left;
@@ -785,7 +785,7 @@ const StemSetReviewPage = () => {
     const time = progress * duration;
     
     setHoveredPosition({ x, time });
-  }, [selectedUpstream, duration, isCommentModalOpen]);
+  }, [selectedUpstream, duration, isInlineCommentOpen]);
 
   // 파형에서 마우스가 벗어날 때
   const handleWaveformMouseLeave = useCallback(() => {
@@ -798,7 +798,7 @@ const StemSetReviewPage = () => {
     if (!hoveredPosition) return;
     
     setCommentPosition({ x: hoveredPosition.x, time: hoveredPosition.time });
-    setIsCommentModalOpen(true);
+    setIsInlineCommentOpen(true);
     setHoveredPosition(null);
   }, [hoveredPosition]);
 
@@ -833,7 +833,7 @@ const StemSetReviewPage = () => {
 
       setComments((prev) => [...prev, newComment]);
       setNewCommentText('');
-      setIsCommentModalOpen(false);
+      setIsInlineCommentOpen(false);
       showSuccess('댓글이 추가되었습니다!');
     } catch (error) {
       console.error('댓글 추가 실패:', error);
@@ -841,9 +841,9 @@ const StemSetReviewPage = () => {
     }
   }, [newCommentText, commentPosition, user, selectedUpstream, showSuccess, showError]);
 
-  // 댓글 모달 닫기
-  const handleCloseCommentModal = useCallback(() => {
-    setIsCommentModalOpen(false);
+  // 인라인 댓글 닫기
+  const handleCloseInlineComment = useCallback(() => {
+    setIsInlineCommentOpen(false);
     setNewCommentText('');
   }, []);
 
@@ -871,7 +871,7 @@ const StemSetReviewPage = () => {
     // SoundCloud 스타일: 프로그레스바가 댓글 위치에 도달할 때 표시
     const triggeredComments = comments.filter(comment => {
       const timeDiff = currentTime - comment.timeNumber;
-      const shouldShow = timeDiff >= -0.2 && timeDiff <= 0.5;
+      const shouldShow = timeDiff >= 0 && timeDiff <= 0.2;
       
       if (shouldShow) {
         console.log('💬 [Comment Match] Found comment to show:', {
@@ -896,11 +896,11 @@ const StemSetReviewPage = () => {
         delay: index * 100,
       })));
 
-      // SoundCloud 스타일: 4초 후 자동 제거
+      // SoundCloud 스타일: 3초 후 자동 제거
       const timer = setTimeout(() => {
-        console.log('💬 [SoundCloud Style] ⏰ Hiding comments after 4 seconds');
+        console.log('💬 [SoundCloud Style] ⏰ Hiding comments after 3 seconds');
         setFloatingComments([]);
-      }, 4000);
+      }, 3000);
 
       return () => clearTimeout(timer);
     } else {
@@ -2123,6 +2123,7 @@ const StemSetReviewPage = () => {
                           </div>
                         ) : (
                           <div className='mt-2 text-gray-300'>
+                            {console.log('댓글 내용:', comment.comment, '타입:', typeof comment.comment)}
                             {comment.comment}
                             {comment.user && (
                               <div className='mt-2 text-xs text-gray-400 flex items-center gap-1'>
@@ -2267,7 +2268,7 @@ const StemSetReviewPage = () => {
                         })}
                         
                         {/* 호버 시 나타나는 댓글 추가 아이콘 */}
-                        {hoveredPosition && !isCommentModalOpen && (
+                        {hoveredPosition && !isInlineCommentOpen && (
                           <div
                             className='absolute z-40 pointer-events-auto'
                             style={{
@@ -2292,37 +2293,44 @@ const StemSetReviewPage = () => {
                           return (
                             <div
                               key={comment.id}
-                              className='absolute z-30 animate-fade-in-up'
+                              className='absolute z-30'
                               style={{
                                 left: `${position}%`,
-                                top: '20px', // 마커 위쪽에 배치 (SoundCloud 스타일)
+                                top: '20px',
                                 transform: 'translateX(-50%)',
                                 animationDelay: `${comment.delay || 0}ms`,
                               }}
                             >
-                              {/* SoundCloud 스타일 댓글 버블 */}
+                              {/* 개선된 댓글 버블 */}
                               <div className='relative'>
-                                {/* 말풍선 */}
-                                <div className='bg-orange-500 text-white px-3 py-2 rounded-lg shadow-xl max-w-xs relative comment-bubble'>
-                                  <div className='flex items-center gap-2 mb-1'>
-                                    <div className='w-6 h-6 bg-orange-600 rounded-full flex items-center justify-center text-xs font-bold'>
-                                      {comment.user?.username?.charAt(0).toUpperCase() || 'U'}
-                                    </div>
-                                    <div className='text-xs font-medium opacity-90'>
-                                      {comment.user?.username}
-                                    </div>
-                                    <div className='text-xs opacity-75'>
-                                      {Math.floor(comment.timeNumber / 60)}:{String(Math.floor(comment.timeNumber % 60)).padStart(2, '0')}
-                                    </div>
-                                  </div>
-                                  <div className='text-sm font-medium leading-tight'>{comment.comment}</div>
+                                {/* 메인 버블 */}
+                                <div className='bg-gradient-to-br from-blue-500 to-blue-600 text-white px-4 py-3 rounded-2xl shadow-2xl max-w-xs relative comment-bubble border border-blue-400/30'>
+                                  {/* 글리터 효과 */}
+                                  <div className='absolute inset-0 bg-gradient-to-r from-transparent via-white/10 to-transparent rounded-2xl'></div>
                                   
-                                  {/* 아래쪽 삼각형 (SoundCloud 스타일) */}
-                                  <div className='absolute top-full left-6 w-0 h-0 border-l-4 border-r-4 border-t-4 border-transparent border-t-orange-500'></div>
+                                  <div className='relative z-10'>
+                                    <div className='flex items-center gap-2 mb-2'>
+                                      <div className='w-7 h-7 bg-blue-400 rounded-full flex items-center justify-center text-xs font-bold shadow-lg'>
+                                        {comment.user?.username?.charAt(0).toUpperCase() || 'U'}
+                                      </div>
+                                      <div className='flex-1'>
+                                        <div className='text-xs font-semibold opacity-95'>
+                                          {comment.user?.username || 'Anonymous'}
+                                        </div>
+                                        <div className='text-xs opacity-80 font-mono'>
+                                          {Math.floor(comment.timeNumber / 60)}:{String(Math.floor(comment.timeNumber % 60)).padStart(2, '0')}
+                                        </div>
+                                      </div>
+                                    </div>
+                                    <div className='text-sm font-medium leading-relaxed'>{comment.comment}</div>
+                                  </div>
+                                  
+                                  {/* 아래쪽 화살표 - 더 부드러운 디자인 */}
+                                  <div className='absolute top-full left-8 w-3 h-3 bg-blue-600 transform rotate-45 border-r border-b border-blue-400/30'></div>
                                 </div>
                                 
-                                {/* 연결선 (버블에서 마커로) */}
-                                <div className='absolute top-full left-6 w-0.5 h-4 bg-orange-400 mx-auto'></div>
+                                {/* 연결선 - 더 세련된 스타일 */}
+                                <div className='absolute top-full left-8 w-px h-6 bg-gradient-to-b from-blue-500 to-transparent'></div>
                               </div>
                             </div>
                           );
@@ -2536,64 +2544,73 @@ const StemSetReviewPage = () => {
 
 
         {/* 댓글 작성 모달 */}
-        {isCommentModalOpen && selectedUpstream && (
-          <div className='fixed inset-0 z-50 flex items-center justify-center bg-black/50 backdrop-blur-sm'>
-            <div 
-              className='bg-gray-900 border border-gray-600 rounded-lg shadow-2xl p-6 min-w-96 max-w-md mx-4'
-              onClick={(e) => e.stopPropagation()}
-            >
-              {/* 모달 헤더 */}
-              <div className='flex items-center justify-between mb-4'>
-                <div className='flex items-center gap-3'>
-                  <div className='w-8 h-8 bg-blue-500 rounded-full flex items-center justify-center text-white text-sm'>
+        {/* 인라인 댓글 창 */}
+        {isInlineCommentOpen && selectedUpstream && (
+          <div 
+            className='absolute z-50 animate-slide-in-right'
+            style={{
+              left: `${commentPosition.x}px`,
+              top: '280px',
+              transform: 'translateX(-50%)',
+            }}
+          >
+            <div className='bg-gray-900/95 backdrop-blur-sm border border-gray-600 rounded-lg shadow-2xl p-4 min-w-80 max-w-sm'>
+              {/* 상단 화살표 */}
+              <div className='absolute -top-2 left-1/2 transform -translate-x-1/2 w-4 h-4 bg-gray-900 border-t border-l border-gray-600 rotate-45'></div>
+              
+              {/* 헤더 */}
+              <div className='flex items-center justify-between mb-3'>
+                <div className='flex items-center gap-2'>
+                  <div className='w-6 h-6 bg-blue-500 rounded-full flex items-center justify-center text-white text-xs'>
                     💬
                   </div>
                   <div>
-                    <h3 className='text-lg font-semibold text-white'>댓글 추가</h3>
-                    <p className='text-sm text-gray-400'>
-                      시간: {Math.floor(commentPosition.time / 60)}:{String(Math.floor(commentPosition.time % 60)).padStart(2, '0')}
-                    </p>
+                    <span className='text-white text-sm font-medium'>댓글 추가</span>
+                    <div className='text-xs text-gray-400'>
+                      {Math.floor(commentPosition.time / 60)}:{String(Math.floor(commentPosition.time % 60)).padStart(2, '0')}
+                    </div>
                   </div>
                 </div>
                 <button
-                  onClick={handleCloseCommentModal}
-                  className='text-gray-400 hover:text-white transition-colors'
+                  onClick={handleCloseInlineComment}
+                  className='text-gray-400 hover:text-white transition-colors p-1'
                 >
-                  <X size={20} />
+                  <X size={16} />
                 </button>
-              </div>
-
-              {/* 말풍선 연결선 (시각적 개선) */}
-              <div className='mb-4 p-3 bg-gray-800/50 rounded-lg border-l-4 border-blue-500'>
-                <p className='text-sm text-gray-300'>
-                  이 시점에서 들리는 내용에 대한 댓글을 작성해보세요.
-                </p>
               </div>
 
               {/* 댓글 입력 */}
               <textarea
                 value={newCommentText}
                 onChange={(e) => setNewCommentText(e.target.value)}
-                placeholder='댓글 내용을 입력하세요...'
-                className='w-full bg-gray-800 border border-gray-600 rounded-lg px-4 py-3 text-white placeholder-gray-400 resize-none focus:border-blue-500 focus:outline-none'
-                rows={4}
+                placeholder='댓글을 입력하세요...'
+                className='w-full bg-gray-800 border border-gray-600 rounded-md px-3 py-2 text-white placeholder-gray-400 resize-none focus:border-blue-500 focus:outline-none text-sm'
+                rows={3}
                 autoFocus
+                onKeyDown={(e) => {
+                  if (e.key === 'Enter' && e.ctrlKey) {
+                    handleAddComment();
+                  }
+                  if (e.key === 'Escape') {
+                    handleCloseInlineComment();
+                  }
+                }}
               />
 
-              {/* 모달 버튼 */}
-              <div className='flex justify-end gap-3 mt-4'>
+              {/* 버튼 */}
+              <div className='flex justify-end gap-2 mt-3'>
                 <button
-                  onClick={handleCloseCommentModal}
-                  className='px-4 py-2 text-sm bg-gray-700 hover:bg-gray-600 text-gray-300 rounded-lg transition-colors'
+                  onClick={handleCloseInlineComment}
+                  className='px-3 py-1.5 text-xs bg-gray-700 hover:bg-gray-600 text-gray-300 rounded-md transition-colors'
                 >
                   취소
                 </button>
                 <button
                   onClick={handleAddComment}
                   disabled={!newCommentText.trim()}
-                  className='px-4 py-2 text-sm bg-blue-600 hover:bg-blue-700 disabled:bg-gray-600 disabled:cursor-not-allowed text-white rounded-lg transition-colors'
+                  className='px-3 py-1.5 text-xs bg-blue-600 hover:bg-blue-700 disabled:bg-gray-600 disabled:cursor-not-allowed text-white rounded-md transition-colors'
                 >
-                  댓글 작성
+                  작성 (Ctrl+Enter)
                 </button>
               </div>
             </div>
