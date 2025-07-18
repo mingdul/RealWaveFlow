@@ -1,6 +1,7 @@
 import React, { useReducer, useEffect} from 'react';
 // import { useState } from 'react';
 import { Check, X, FileAudio, Upload,  Play, Plus, Music, Drum, Mic, Zap, Guitar, Volume2, Users, MoreHorizontal } from 'lucide-react';
+import AnimatedModal from './AnimatedModal';
 // import {Plus, ArrowRight} from 'lucide-react';
 import { UploadProgress, MasterStem } from '../types/api';
 // import { StemFile, User } from '../types/api';
@@ -835,7 +836,7 @@ const UploadModal: React.FC<UploadModalProps> = ({
       const upstreamData = {
         upstream: {
           title: `Stem Set ${new Date().toLocaleString()}`,
-          description: state.description || `Updated stem set: ${replacementCount} replacement(s), ${newStemCount} new stem(s)`,
+          description: state.description || `Updated: ${replacementCount}, Added: ${newStemCount}`,
           stage_id: stageId,
           user_id: user?.id || '',
         },
@@ -882,14 +883,13 @@ const UploadModal: React.FC<UploadModalProps> = ({
 //   const canComplete = completedFiles.length > 0 && !state.isUploading;
 
   return (
-    <div
-      className="fixed inset-0 bg-black bg-opacity-60 flex items-center justify-center z-50 p-4"
-      onClick={handleCloseModal}
+    <AnimatedModal
+      isOpen={isOpen}
+      onClose={onClose}
+      closeOnBackdropClick={false}
+      animationType="scale"
+      className="bg-gray-800 rounded-xl w-full max-w-7xl max-h-[95vh] flex flex-col shadow-2xl"
     >
-      <div
-        className="bg-gray-800 rounded-xl w-full max-w-7xl max-h-[95vh] flex flex-col shadow-2xl"
-        onClick={(e) => e.stopPropagation()}
-      >
         {/* Header */}
         <div className="flex items-center justify-between p-6 border-b border-gray-700">
           <div>
@@ -1006,8 +1006,7 @@ const UploadModal: React.FC<UploadModalProps> = ({
             </button>
           </div>
         </div>
-      </div>
-    </div>
+    </AnimatedModal>
   );
 };
 

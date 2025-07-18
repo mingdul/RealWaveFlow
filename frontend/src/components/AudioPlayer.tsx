@@ -164,9 +164,9 @@ return (
         {loading ? (
           <div className="w-4 h-4 border-2 border-white border-t-transparent rounded-full animate-spin" />
         ) : isPlaying ? (
-          <Pause size={16} className="text-white" />
+          <Pause size={20} className="text-white drop-shadow-md" />
         ) : (
-          <Play size={16} className="text-white ml-0.5" />
+          <Play size={20} className="text-white ml-0.5 drop-shadow-md" />
         )}
       </button>
 
