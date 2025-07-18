@@ -70,7 +70,7 @@ const StagePage: React.FC = () => {
         setLoading(false);
         return;
       }
-      
+
       try {
         setLoading(true);
         
@@ -150,14 +150,10 @@ const StagePage: React.FC = () => {
 
     return (
       <div
-        className="group relative w-full max-w-[380px] h-[280px] rounded-2xl overflow-hidden bg-gradient-to-br from-gray-900 via-gray-800 to-gray-900 border border-gray-700/50 shadow-2xl hover:shadow-purple-500/20 transition-all duration-500 ease-out transform hover:scale-[1.02] hover:-translate-y-1"
+        className="group relative w-full max-w-[380px] h-[280px] rounded-2xl overflow-hidden transition-all duration-500 ease-out transform hover:scale-[1.02] hover:-translate-y-1"
         onMouseEnter={() => setIsHovered(true)}
         onMouseLeave={() => setIsHovered(false)}
       >
-        {/* Background Pattern */}
-        <div className="absolute inset-0 bg-gradient-to-br from-purple-900/20 via-transparent to-blue-900/20" />
-        <div className="absolute inset-0 bg-[radial-gradient(circle_at_30%_20%,rgba(147,51,234,0.1),transparent_50%)]" />
-        
         {/* Status Badge */}
         <div className="absolute top-4 right-4 z-30">
           <div className={`flex items-center gap-2 px-3 py-1.5 rounded-full ${config.color} ${config.textColor} text-xs font-semibold shadow-lg border ${config.border} backdrop-blur-sm`}>
