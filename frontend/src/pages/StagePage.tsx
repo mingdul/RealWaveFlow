@@ -134,6 +134,19 @@ const StagePage: React.FC = () => {
     }
   };
 
+  // title을 안전하게 처리하는 유틸리티 함수
+  const getSafeTitle = (upstream: Upstream): string => {
+    // title이 number 타입인 경우 문자열로 변환
+    if (upstream.title !== null && upstream.title !== undefined) {
+      const titleStr = String(upstream.title).trim();
+      if (titleStr) {
+        return titleStr;
+      }
+    }
+    // upstream.id가 이미 생성 순서대로 나오므로 그대로 사용
+    return `STEM SET #${upstream.id}`;
+  };
+
   interface StemSetCardProps {
     upstream: Upstream;
     onDetail: () => void;
@@ -176,9 +189,11 @@ const StagePage: React.FC = () => {
     console.log('[DEBUG] Upstream title:', {
       id: upstream.id,
       title: upstream.title,
-      titleLength: upstream.title?.length,
-      titleTrimmed: upstream.title?.trim(),
-      titleTrimmedLength: upstream.title?.trim()?.length
+      titleType: typeof upstream.title,
+      titleAsString: upstream.title !== null && upstream.title !== undefined ? String(upstream.title) : 'N/A',
+      titleLength: upstream.title !== null && upstream.title !== undefined ? String(upstream.title).length : 0,
+      titleTrimmed: upstream.title !== null && upstream.title !== undefined ? String(upstream.title).trim() : 'N/A',
+      titleTrimmedLength: upstream.title !== null && upstream.title !== undefined ? String(upstream.title).trim().length : 0
     });
 
     // Detail 버튼 클릭 핸들러
@@ -233,7 +248,7 @@ const StagePage: React.FC = () => {
         <div className="absolute top-[70px] left-0 w-full text-center z-20">
           <div className="bg-gradient-to-r from-transparent via-black/60 to-transparent py-2">
             <h3 className="text-xl font-bold text-white drop-shadow-lg px-4">
-              {upstream.title && upstream.title.trim() ? upstream.title : 'STEM SET #' + upstream.id}
+              {getSafeTitle(upstream)}
             </h3>
           </div>
         </div>
@@ -507,13 +522,20 @@ const StagePage: React.FC = () => {
               <p className="text-gray-400 text-center max-w-md">Start by uploading your first stem set to begin the review process.</p>
             </div>
           ) : (
-            upstreams.map((upstream) => (
-              <StemSetCard
-                key={upstream.id}
-                upstream={upstream}
-                onDetail={() => handleDetail(upstream)}
-              />
-            ))
+            // 생성 시간 순으로 정렬 (최신 것부터 오래된 순)
+            upstreams
+              .sort((a, b) => {
+                const dateA = new Date(a.created_at || 0);
+                const dateB = new Date(b.created_at || 0);
+                return dateB.getTime() - dateA.getTime(); // 내림차순 정렬 (최신 것부터)
+              })
+              .map((upstream) => (
+                <StemSetCard
+                  key={upstream.id}
+                  upstream={upstream}
+                  onDetail={() => handleDetail(upstream)}
+                />
+              ))
           )}
         </div>
       </main>
