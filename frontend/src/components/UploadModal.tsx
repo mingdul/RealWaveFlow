@@ -698,22 +698,33 @@ const UploadModal: React.FC<UploadModalProps> = ({
         // 중복 파일 토스트 메시지 표시
         showError(`중복된 파일이 감지되었습니다: ${data.fileName}`);
         
-        // 중복 파일을 업로드된 파일 목록에서 제거
-        const duplicateFile = state.uploadedFiles.find(file => 
-          file.name === data.fileName || file.name.includes(data.fileName || '')
-        );
+        // 중복 파일을 업로드된 파일 목록에서 제거 (더 정확한 파일명 매칭)
+        const duplicateFile = state.uploadedFiles.find(file => {
+          // 정확한 파일명 매칭 또는 디코딩된 파일명과 매칭
+          const originalName = file.name;
+          const decodedFileName = data.fileName || '';
+          
+          return originalName === decodedFileName || 
+                 originalName.includes(decodedFileName) ||
+                 decodedFileName.includes(originalName) ||
+                 // 파일명에서 확장자를 제거한 베이스 네임으로 매칭
+                 originalName.replace(/\.[^/.]+$/, "") === decodedFileName.replace(/\.[^/.]+$/, "");
+        });
         
         if (duplicateFile) {
-          // 매칭된 스템이 있는 경우, 해당 스템의 매칭을 해제
-          if (duplicateFile.matchedStemId) {
-            console.log(`Removing duplicate file from matched stem: ${duplicateFile.matchedStemId}`);
-            // 매칭된 스템에서 파일을 제거하기 위해 파일 삭제
-            dispatch({ type: 'REMOVE_FILE', payload: duplicateFile.id });
-          } else {
-            // 일반 업로드 파일인 경우에도 삭제
-            dispatch({ type: 'REMOVE_FILE', payload: duplicateFile.id });
-          }
+          console.log(`Found duplicate file to remove:`, {
+            id: duplicateFile.id,
+            name: duplicateFile.name,
+            isComplete: duplicateFile.isComplete,
+            matchedStemId: duplicateFile.matchedStemId
+          });
+          
+          // 중복 파일 제거 (완료된 파일이든 진행 중인 파일이든 상관없이)
+          dispatch({ type: 'REMOVE_FILE', payload: duplicateFile.id });
           console.log(`Removed duplicate file: ${duplicateFile.name}`);
+        } else {
+          console.log(`No matching file found for duplicate: ${data.fileName}`);
+          console.log('Current files:', state.uploadedFiles.map(f => ({ id: f.id, name: f.name })));
         }
       }
     };
@@ -733,16 +744,68 @@ const UploadModal: React.FC<UploadModalProps> = ({
       if (data.result && data.result.isDuplicate) {
         showError(`중복된 파일이 감지되었습니다: ${data.fileName}`);
         
-        const duplicateFile = state.uploadedFiles.find(file => 
-          file.name === data.fileName || file.name.includes(data.fileName)
-        );
+        const duplicateFile = state.uploadedFiles.find(file => {
+          // 정확한 파일명 매칭 또는 디코딩된 파일명과 매칭
+          const originalName = file.name;
+          const decodedFileName = data.fileName || '';
+          
+          return originalName === decodedFileName || 
+                 originalName.includes(decodedFileName) ||
+                 decodedFileName.includes(originalName) ||
+                 // 파일명에서 확장자를 제거한 베이스 네임으로 매칭
+                 originalName.replace(/\.[^/.]+$/, "") === decodedFileName.replace(/\.[^/.]+$/, "");
+        });
         
         if (duplicateFile) {
-          // 매칭된 스템이 있는 경우, 해당 스템의 매칭을 해제
-          if (duplicateFile.matchedStemId) {
-            console.log(`Removing duplicate file from matched stem: ${duplicateFile.matchedStemId}`);
-          }
+          console.log(`Found duplicate file to remove from processing completed:`, {
+            id: duplicateFile.id,
+            name: duplicateFile.name,
+            isComplete: duplicateFile.isComplete,
+            matchedStemId: duplicateFile.matchedStemId
+          });
+          
+          // 중복 파일 제거 (완료된 파일이든 진행 중인 파일이든 상관없이)
           dispatch({ type: 'REMOVE_FILE', payload: duplicateFile.id });
+          console.log(`Removed duplicate file from processing completed: ${duplicateFile.name}`);
+        }
+      }
+    };
+
+    // 추가 중복 파일 이벤트 핸들러
+    const handleFileDuplicate = (data: {
+      trackId: string;
+      fileName: string;
+      stageId: string;
+      originalFilePath: string;
+      duplicateHash: string;
+      timestamp: string;
+      message: string;
+    }) => {
+      console.log('File duplicate event received:', data);
+      
+      if (data.fileName) {
+        showError(`중복된 파일이 감지되었습니다: ${data.fileName}`);
+        
+        const duplicateFile = state.uploadedFiles.find(file => {
+          const originalName = file.name;
+          const decodedFileName = data.fileName || '';
+          
+          return originalName === decodedFileName || 
+                 originalName.includes(decodedFileName) ||
+                 decodedFileName.includes(originalName) ||
+                 originalName.replace(/\.[^/.]+$/, "") === decodedFileName.replace(/\.[^/.]+$/, "");
+        });
+        
+        if (duplicateFile) {
+          console.log(`Found duplicate file to remove from file-duplicate event:`, {
+            id: duplicateFile.id,
+            name: duplicateFile.name,
+            isComplete: duplicateFile.isComplete,
+            matchedStemId: duplicateFile.matchedStemId
+          });
+          
+          dispatch({ type: 'REMOVE_FILE', payload: duplicateFile.id });
+          console.log(`Removed duplicate file from file-duplicate event: ${duplicateFile.name}`);
         }
       }
     };
@@ -750,6 +813,7 @@ const UploadModal: React.FC<UploadModalProps> = ({
     // 소켓 이벤트 리스너 등록
     socketService.on('dub-check-result', handleDuplicateCheck);
     socketService.on('file-processing-completed', handleFileProcessingCompleted);
+    socketService.on('file-duplicate', handleFileDuplicate);
 
     // 에러 핸들링
     const handleSocketError = (error: any) => {
@@ -762,6 +826,7 @@ const UploadModal: React.FC<UploadModalProps> = ({
     return () => {
       socketService.off('dub-check-result', handleDuplicateCheck);
       socketService.off('file-processing-completed', handleFileProcessingCompleted);
+      socketService.off('file-duplicate', handleFileDuplicate);
       socketService.off('error', handleSocketError);
     };
   }, [isConnected, isOpen, state.uploadedFiles, showError]);
