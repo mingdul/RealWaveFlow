@@ -1,4 +1,4 @@
-import React, { createContext, useContext, useEffect, useState, ReactNode, useMemo } from 'react';
+import React, { createContext, useContext, useEffect, useState, ReactNode, useMemo, useCallback } from 'react';
 import { io, Socket } from 'socket.io-client';
 import { useAuth } from './AuthContext';
 import { useToast } from './ToastContext';
@@ -109,13 +109,15 @@ export const NotificationProvider: React.FC<NotificationProviderProps> = ({ chil
       // 연결 성공
       notificationSocket.on('connect', () => {
         console.log('🔔 [NotificationSocket] ✅ Connected successfully, Socket ID:', notificationSocket.id);
-        // 🔥 REMOVED: 토스트 제거
-        // showToast('success', '실시간 알림이 연결되었습니다.', 2000);
+        console.log('🔔 [NotificationSocket] Socket connected to:', `${baseUrl}/notifications`);
+        console.log('🔔 [NotificationSocket] User for room join:', user?.id, user?.email);
         
-        // 🔥 NEW: 연결 성공 시 즉시 사용자 룸 조인 요청
+        // 연결 성공 시 즉시 사용자 룸 조인 요청
         if (user?.id) {
-          console.log('🔔 [NotificationSocket] Requesting to join user room:', user.id);
+          console.log('🔔 [NotificationSocket] 🚪 Requesting to join user room for user:', user.id);
           notificationSocket.emit('join_user_room', { userId: user.id });
+        } else {
+          console.error('🔔 [NotificationSocket] ❌ No user ID available for room join!');
         }
       });
 
@@ -153,25 +155,8 @@ export const NotificationProvider: React.FC<NotificationProviderProps> = ({ chil
         // showToast('error', `알림 룸 연결에 실패했습니다: ${data.message}`, 3000);
       });
 
-      // 새 알림 수신
-      notificationSocket.on('notification', (notification: Notification) => {
-        console.log('🔔 [NotificationSocket] 📢 New notification received via WebSocket!');
-        console.log('🔔 [NotificationSocket] Notification details:', {
-          id: notification.id,
-          message: notification.message,
-          type: notification.type,
-          isRead: notification.isRead,
-          userId: notification.userId
-        });
-        
-        // 즉시 알림 추가 (Badge 개수 실시간 업데이트)
-        addNotification(notification);
-        
-        console.log('🔔 [NotificationSocket] ✅ addNotification called - Badge should update now!');
-        
-        // 🔥 REMOVED: 토스트 제거 - Bell 아이콘의 개수만 증가
-        // showToast('info', `${notification.message}`, 5000);
-      });
+      // 🔥 REMOVED: notification 이벤트 핸들러는 별도 useEffect에서 처리하므로 제거
+      // 이제 소켓 이벤트는 최신 addNotification 함수를 참조하는 별도 useEffect에서 처리됩니다
 
       // 연결 오류
       notificationSocket.on('connect_error', (error) => {
@@ -215,30 +200,81 @@ export const NotificationProvider: React.FC<NotificationProviderProps> = ({ chil
     }
   };
 
-  const addNotification = (notification: Notification) => {
-    console.log('🔔 [NotificationProvider] addNotification called with:', {
+  const addNotification = useCallback((notification: Notification) => {
+    console.log('🔔 [NotificationProvider] 🚀 addNotification called with notification:', {
       id: notification.id,
       message: notification.message,
       isRead: notification.isRead,
-      type: notification.type
+      type: notification.type,
+      userId: notification.userId
     });
 
     setNotifications(prev => {
+      console.log('🔔 [NotificationProvider] 📊 BEFORE setState - Previous notifications:', prev.length);
+      console.log('🔔 [NotificationProvider] 📊 BEFORE setState - Previous unread count:', prev.filter(n => !n.isRead).length);
+      
       // 중복 알림 방지 (같은 ID가 이미 있다면 무시)
       const exists = prev.some(n => n.id === notification.id);
       if (exists) {
-        console.log('🔔 [NotificationProvider] Duplicate notification ignored:', notification.id);
+        console.log('🔔 [NotificationProvider] ⚠️ Duplicate notification ignored:', notification.id);
         return prev;
       }
       
       const newNotifications = [notification, ...prev];
-      console.log('🔔 [NotificationProvider] ✅ New notification added successfully');
-      console.log('🔔 [NotificationProvider] Previous count:', prev.length, '→ New count:', newNotifications.length);
-      console.log('🔔 [NotificationProvider] New notification isRead:', notification.isRead);
+      const newUnreadCount = newNotifications.filter(n => !n.isRead).length;
+      
+      console.log('🔔 [NotificationProvider] ✅ NEW NOTIFICATION ADDED SUCCESSFULLY!');
+      console.log('🔔 [NotificationProvider] 📊 AFTER setState - Previous count:', prev.length, '→ New count:', newNotifications.length);
+      console.log('🔔 [NotificationProvider] 📊 AFTER setState - New unread count should be:', newUnreadCount);
+      console.log('🔔 [NotificationProvider] 🔔 New notification isRead:', notification.isRead, '(false means it will increase badge count)');
+      
+      // React 상태 업데이트 후 Badge 업데이트 확인을 위한 비동기 체크
+      setTimeout(() => {
+        console.log('🔔 [NotificationProvider] 📊 ASYNC CHECK (50ms later) - Badge should now reflect new count');
+      }, 50);
       
       return newNotifications;
     });
-  };
+  }, []); // dependency 제거하여 함수가 재생성되지 않도록 함
+
+  // 소켓 이벤트 핸들러 재등록을 위한 useEffect
+  useEffect(() => {
+    if (socket && user) {
+      console.log('🔔 [NotificationProvider] 🔄 Re-registering socket event handlers with latest addNotification');
+      
+      // 기존 이벤트 핸들러 제거
+      socket.off('notification');
+      
+      // 새로운 이벤트 핸들러 등록 (최신 addNotification 사용)
+      socket.on('notification', (notification: Notification) => {
+        console.log('🔔 [NotificationSocket] 📢 🆕 NEW NOTIFICATION RECEIVED VIA WEBSOCKET!');
+        console.log('🔔 [NotificationSocket] 📋 Received notification details:', {
+          id: notification.id,
+          message: notification.message,
+          type: notification.type,
+          isRead: notification.isRead,
+          userId: notification.userId,
+          createdAt: notification.createdAt
+        });
+        
+        // 타임스탬프로 이벤트 추적
+        const eventTimestamp = new Date().toISOString();
+        console.log(`🔔 [NotificationSocket] ⏰ Event timestamp: ${eventTimestamp}`);
+        
+        // 즉시 알림 추가 (Badge 개수 실시간 업데이트)
+        console.log('🔔 [NotificationSocket] 🚀 Calling addNotification with latest function...');
+        addNotification(notification);
+        
+        console.log('🔔 [NotificationSocket] ✅ addNotification called - Badge should update immediately!');
+      });
+    }
+    
+    return () => {
+      if (socket) {
+        socket.off('notification');
+      }
+    };
+  }, [socket, user, addNotification]); // addNotification을 dependency에 추가
 
   const markAsRead = async (notificationId: string) => {
     try {
@@ -287,6 +323,55 @@ export const NotificationProvider: React.FC<NotificationProviderProps> = ({ chil
     await loadExistingNotifications();
     console.log('🔔 [NotificationProvider] ✅ Manual refresh completed');
   };
+
+  // 🔧 DEBUG: 테스트용 함수들 (개발 환경에서만)
+  const debugAddTestNotification = () => {
+    if (import.meta.env.DEV) {
+      const testNotification: Notification = {
+        id: `test-${Date.now()}`,
+        userId: user?.id || 'test-user',
+        type: 'test',
+        message: `🧪 테스트 알림 - ${new Date().toLocaleTimeString()}`,
+        data: { test: true },
+        isRead: false,
+        createdAt: new Date().toISOString()
+      };
+      
+      console.log('🧪 [DEBUG] Adding test notification manually...');
+      addNotification(testNotification);
+    }
+  };
+
+  const debugSocketStatus = () => {
+    if (import.meta.env.DEV) {
+      console.log('🔧 [DEBUG] Socket Status Check:');
+      console.log('  - Socket exists:', !!socket);
+      console.log('  - Socket connected:', socket?.connected);
+      console.log('  - Socket ID:', socket?.id);
+      console.log('  - User ID:', user?.id);
+      console.log('  - Current notifications count:', notifications.length);
+      console.log('  - Current unread count:', unreadCount);
+      
+      if (socket && user?.id) {
+        console.log('🔧 [DEBUG] Testing room join...');
+        socket.emit('join_user_room', { userId: user.id });
+      }
+    }
+  };
+
+  // 🔧 DEBUG: 개발 환경에서 전역 접근 가능하도록 설정
+  useEffect(() => {
+    if (import.meta.env.DEV) {
+      (window as any).debugNotifications = {
+        addTestNotification: debugAddTestNotification,
+        checkSocketStatus: debugSocketStatus,
+        currentNotifications: notifications,
+        currentUnreadCount: unreadCount,
+        socketConnected: socket?.connected
+      };
+      console.log('🔧 [DEBUG] Debug tools available in window.debugNotifications');
+    }
+  }, [notifications, unreadCount, socket?.connected]);
 
   const value: NotificationContextType = {
     notifications,

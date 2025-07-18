@@ -7,6 +7,14 @@ const NotificationBell: React.FC = () => {
   const dropdownRef = useRef<HTMLDivElement>(null);
   const { notifications, unreadCount, markAsRead, refreshNotifications } = useNotifications();
 
+  // 컴포넌트 렌더링 로그
+  console.log('🔔 [NotificationBell] 🎭 COMPONENT RENDERED');
+  console.log('🔔 [NotificationBell] 📊 Current props from context:', {
+    totalNotifications: notifications.length,
+    unreadCount: unreadCount,
+    isOpen: isOpen
+  });
+
   // 알림 상태 변경 시 로그 및 실시간 Badge 업데이트 확인
   useEffect(() => {
     console.log('🔔 [NotificationBell] 🔄 Badge update triggered!');
@@ -18,7 +26,15 @@ const NotificationBell: React.FC = () => {
     } else {
       console.log('🔔 [NotificationBell] ⚪ Badge should be hidden (no unread)');
     }
-  }, [unreadCount, notifications.length]);
+
+    // 최근 알림 몇 개 로깅 (디버깅용)
+    if (notifications.length > 0) {
+      console.log('🔔 [NotificationBell] 📋 Recent notifications (first 3):');
+      notifications.slice(0, 3).forEach((notif, index) => {
+        console.log(`   ${index + 1}. ${notif.message} (isRead: ${notif.isRead}, id: ${notif.id})`);
+      });
+    }
+  }, [unreadCount, notifications.length, notifications]);
 
   // 외부 클릭 시 드롭다운 닫기
   useEffect(() => {
