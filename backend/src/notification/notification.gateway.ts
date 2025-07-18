@@ -120,16 +120,18 @@ export class NotificationGateway
       
       this.logger.log(`🔔 [NotificationGateway] User connected: ${client.data.user?.email} (Room: user_${userId})`);
       
-      // 연결 성공 메시지 전송
+      // 🔥 MODIFIED: 조용히 연결 완료 알림 (토스트 없음)
       client.emit('notification_connected', {
-        message: 'Successfully connected to notification service',
+        message: 'Connected to notification service',
         userId: userId,
         socketId: client.id,
         joinedRoom: `user_${userId}`,
+        silent: true, // 토스트 표시하지 않음
       });
 
-      // 🔥 NEW: 연결 즉시 미읽은 알림 전송
-      await this.sendPendingNotificationsFromDB(userId, client);
+      // 🔥 MODIFIED: 연결 시 pending 알림은 클라이언트가 요청할 때만 전송
+      // 클라이언트에서 API로 초기 로드하므로 여기서는 제거
+      // await this.sendPendingNotificationsFromDB(userId, client);
       
     } catch (error) {
       this.logger.error('🔔 [NotificationGateway] Connection error:', error.message);
@@ -179,8 +181,8 @@ export class NotificationGateway
         userId: userId 
       });
 
-      // 조인 후 미읽은 알림 전송
-      await this.sendPendingNotificationsFromDB(userId, client);
+      // 🔥 MODIFIED: 조인 후에도 pending 알림 전송 제거 (클라이언트 API 로드로 대체)
+      // await this.sendPendingNotificationsFromDB(userId, client);
       
     } catch (error) {
       this.logger.error('🔔 [NotificationGateway] Join room error:', error.message);

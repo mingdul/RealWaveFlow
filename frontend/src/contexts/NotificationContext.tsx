@@ -40,10 +40,11 @@ export const NotificationProvider: React.FC<NotificationProviderProps> = ({ chil
     if (user) {
       console.log('🔔 [NotificationProvider] Initializing for user:', user.email);
       
-      // 🔥 NEW: 로그인 후 즉시 소켓 연결 (지연 없음)
-      initializeNotificationSocket();
+      // 🔥 NEW: 로그인 후 즉시 기존 알림 로드 (소켓 연결 전)
+      loadExistingNotifications();
       
-      // 기존 알림은 소켓 연결 후에 로드 (중복 방지)
+      // 🔥 NEW: 소켓 연결은 별도로 진행
+      initializeNotificationSocket();
       
       return () => {
         if (socket) {
@@ -74,15 +75,17 @@ export const NotificationProvider: React.FC<NotificationProviderProps> = ({ chil
         console.log(`📋 [NotificationProvider] Loaded ${serverNotifications.length} notifications`);
         setNotifications(serverNotifications);
         
-        if (serverNotifications.length > 0) {
-          showToast('success', `${serverNotifications.length}개의 알림을 불러왔습니다.`, 3000);
-        }
+        // 🔥 REMOVED: 초기 로드 시 토스트 제거
+        // if (serverNotifications.length > 0) {
+        //   showToast('success', `${serverNotifications.length}개의 알림을 불러왔습니다.`, 3000);
+        // }
       } else {
         setNotifications([]);
       }
     } catch (error) {
       console.error('❌ [NotificationProvider] Failed to load notifications:', error);
-      showToast('error', '기존 알림을 불러오는데 실패했습니다.');
+      // 🔥 REMOVED: 초기 로드 실패 시에도 토스트 제거 (로그만 남김)
+      // showToast('error', '기존 알림을 불러오는데 실패했습니다.');
       setNotifications([]);
     }
   };
@@ -114,7 +117,8 @@ export const NotificationProvider: React.FC<NotificationProviderProps> = ({ chil
       // 연결 성공
       notificationSocket.on('connect', () => {
         console.log('🔔 [NotificationSocket] ✅ Connected successfully, Socket ID:', notificationSocket.id);
-        showToast('success', '실시간 알림이 연결되었습니다.', 2000);
+        // 🔥 REMOVED: 토스트 제거
+        // showToast('success', '실시간 알림이 연결되었습니다.', 2000);
         
         // 🔥 NEW: 연결 성공 시 즉시 사용자 룸 조인 요청
         if (user?.id) {
@@ -126,28 +130,35 @@ export const NotificationProvider: React.FC<NotificationProviderProps> = ({ chil
       // 연결 해제
       notificationSocket.on('disconnect', (reason) => {
         console.log('🔔 [NotificationSocket] ❌ Disconnected:', reason);
-        showToast('warning', '실시간 알림 연결이 해제되었습니다.', 2000);
+        // 🔥 REMOVED: 토스트 제거
+        // showToast('warning', '실시간 알림 연결이 해제되었습니다.', 2000);
       });
 
       // 알림 서비스 연결 확인
       notificationSocket.on('notification_connected', (data) => {
         console.log('🔔 [NotificationSocket] Notification service connected:', data);
-        showToast('success', '알림 서비스가 활성화되었습니다.', 3000);
         
-        // 🔥 REMOVED: 중복 로딩 방지 - 서버에서 pending 알림을 자동으로 전송함
+        // 🔥 MODIFIED: silent 플래그가 없을 때만 토스트 표시 (기본적으로 토스트 없음)
+        if (!data.silent) {
+          showToast('success', '알림 서비스가 활성화되었습니다.', 3000);
+        }
+        
+        // 🔥 REMOVED: 중복 방지 - 이미 useEffect에서 로드했으므로 여기서는 제거
         // loadExistingNotifications();
       });
 
       // 🔥 NEW: 룸 조인 성공 이벤트
       notificationSocket.on('join_user_room_success', (data) => {
         console.log('🔔 [NotificationSocket] ✅ Successfully joined user room:', data);
-        showToast('success', `알림 룸에 연결되었습니다. (${data.room})`, 2000);
+        // 🔥 REMOVED: 토스트 제거
+        // showToast('success', `알림 룸에 연결되었습니다. (${data.room})`, 2000);
       });
 
       // 🔥 NEW: 룸 조인 실패 이벤트
       notificationSocket.on('join_user_room_error', (data) => {
         console.error('🔔 [NotificationSocket] ❌ Failed to join user room:', data);
-        showToast('error', `알림 룸 연결에 실패했습니다: ${data.message}`, 3000);
+        // 🔥 REMOVED: 토스트 제거, 로그만 남김
+        // showToast('error', `알림 룸 연결에 실패했습니다: ${data.message}`, 3000);
       });
 
       // 새 알림 수신
@@ -155,14 +166,15 @@ export const NotificationProvider: React.FC<NotificationProviderProps> = ({ chil
         console.log('🔔 [NotificationSocket] 📢 New notification received:', notification.title);
         addNotification(notification);
         
-        // 토스트로 알림 표시
-        showToast('info', `${notification.title}: ${notification.message}`, 5000);
+        // 🔥 REMOVED: 토스트 제거 - Bell 아이콘의 개수만 증가
+        // showToast('info', `${notification.title}: ${notification.message}`, 5000);
       });
 
       // 연결 오류
       notificationSocket.on('connect_error', (error) => {
         console.error('🔔 [NotificationSocket] ❌ Connection error:', error.message);
-        showToast('error', '실시간 알림 연결에 실패했습니다.', 3000);
+        // 🔥 REMOVED: 일반 연결 오류는 토스트 표시하지 않음
+        // showToast('error', '실시간 알림 연결에 실패했습니다.', 3000);
         
         if (error.message.includes('Unauthorized')) {
           showToast('error', '인증이 만료되었습니다. 다시 로그인해주세요.');
@@ -237,7 +249,8 @@ export const NotificationProvider: React.FC<NotificationProviderProps> = ({ chil
               : notification
           )
         );
-        showToast('error', '읽음 처리에 실패했습니다.');
+        // 🔥 REMOVED: 개별 읽음 처리 실패 시에도 토스트 제거 (로그만 남김)
+        // showToast('error', '읽음 처리에 실패했습니다.');
       }
     } catch (error) {
       console.error('📖 [NotificationProvider] Error marking as read:', error);
@@ -249,7 +262,8 @@ export const NotificationProvider: React.FC<NotificationProviderProps> = ({ chil
             : notification
         )
       );
-      showToast('error', '읽음 처리 중 오류가 발생했습니다.');
+      // 🔥 REMOVED: 에러 시에도 토스트 제거 (로그만 남김)
+      // showToast('error', '읽음 처리 중 오류가 발생했습니다.');
     }
   };
 
@@ -265,18 +279,22 @@ export const NotificationProvider: React.FC<NotificationProviderProps> = ({ chil
       const response = await notificationService.markAllAsRead();
       
       if (response.success) {
-        showToast('success', `${response.data?.updatedCount || '모든'} 알림을 읽음 처리했습니다.`);
+        // 🔥 REMOVED: 전체 읽음 처리 성공 시 토스트 제거
+        // showToast('success', `${response.data?.updatedCount || '모든'} 알림을 읽음 처리했습니다.`);
+        console.log(`📖 [NotificationProvider] ${response.data?.updatedCount || '모든'} 알림을 읽음 처리했습니다.`);
       } else {
         console.error('📖 [NotificationProvider] Failed to mark all as read:', response.message);
         // 실패 시 상태 롤백
         setNotifications(previousNotifications);
-        showToast('error', '전체 읽음 처리에 실패했습니다.');
+        // 🔥 REMOVED: 실패 시에도 토스트 제거 (로그만 남김)
+        // showToast('error', '전체 읽음 처리에 실패했습니다.');
       }
     } catch (error) {
       console.error('📖 [NotificationProvider] Error marking all as read:', error);
       // 에러 시 상태 롤백 (기존 알림 다시 로드)
       loadExistingNotifications();
-      showToast('error', '전체 읽음 처리 중 오류가 발생했습니다.');
+      // 🔥 REMOVED: 에러 시에도 토스트 제거 (로그만 남김)
+      // showToast('error', '전체 읽음 처리 중 오류가 발생했습니다.');
     }
   };
 
