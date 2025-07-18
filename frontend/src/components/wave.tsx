@@ -70,15 +70,22 @@ const Wave = ({
     wavesurferRef.current = wavesurfer;
 
     wavesurfer.on('ready', () => {
+      console.log(`✅ [${id}] WaveSurfer ready event fired, isDestroyed:`, isDestroyed);
       if (!isDestroyed) {
+        console.log(`🎯 [${id}] Setting isReady=true, isAudioLoading=false`);
         setIsReady(true);
         setIsAudioLoading(false); // 오디오 로딩 완료 시 로딩 상태 해제
-        if (onReady) onReady(wavesurfer, id);
+        if (onReady) {
+          console.log(`🔄 [${id}] Calling onReady callback`);
+          onReady(wavesurfer, id);
+        }
+      } else {
+        console.warn(`⚠️ [${id}] Ready event fired but component is destroyed`);
       }
     });
 
     wavesurfer.on('error', (error) => {
-      console.warn('WaveSurfer error:', error);
+      console.warn(`❌ [${id}] WaveSurfer error:`, error);
       setIsAudioLoading(false); // 오디오 로딩 오류 시에도 로딩 상태 해제
     });
 
@@ -129,9 +136,9 @@ const Wave = ({
       return;
     }
 
-    console.log(`🎵 Loading new audio URL for ${id}:`, audioUrl);
+    console.log(`🎵 [${id}] Loading new audio URL:`, audioUrl);
     if (peaks) {
-      console.log(`🌊 Using peaks data for ${id}`);
+      console.log(`🌊 [${id}] Using peaks data, type:`, typeof peaks, 'keys:', peaks && typeof peaks === 'object' ? Object.keys(peaks) : 'N/A');
     }
     
     setIsReady(false);
@@ -162,24 +169,26 @@ const Wave = ({
       // WaveSurfer가 기대하는 형식으로 변환
       // peaks 배열이 유효한지 확인
       if (Array.isArray(peaksData) && peaksData.length > 0) {
-        console.log(`🌊 Loading with peaks data for ${id}, length: ${peaksData.length}`);
+        console.log(`🌊 [${id}] Loading with peaks data, length: ${peaksData.length}`);
         
         // 성능 최적화: 오디오와 peaks 데이터를 함께 로드
         try {
           // WaveSurfer 2.x 버전에서는 load 메서드에 peaks 데이터를 직접 전달할 수 있음
+          console.log(`🔄 [${id}] Calling wavesurfer.load with peaks`);
           wavesurfer.load(audioUrl, peaksData);
         } catch (error: any) {
-          console.warn('Failed to load audio with peaks:', error);
+          console.warn(`❌ [${id}] Failed to load audio with peaks:`, error);
           // 실패 시 오디오만 로드 시도
+          console.log(`🔄 [${id}] Fallback: loading audio only`);
           wavesurfer.load(audioUrl).catch((err: any) => {
             if (err.name !== 'AbortError') {
-              console.warn('Failed to load audio:', err);
+              console.warn(`❌ [${id}] Failed to load audio:`, err);
             }
             setIsAudioLoading(false);
           });
         }
       } else {
-        console.warn('Invalid peaks data, loading audio only');
+        console.warn(`⚠️ [${id}] Invalid peaks data, loading audio only, peaksData:`, peaksData);
         wavesurfer.load(audioUrl).catch((error) => {
           if (error.name !== 'AbortError') {
             console.warn('Failed to load audio:', error);
@@ -188,10 +197,11 @@ const Wave = ({
         });
       }
     } else {
-      console.log(`🎵 Loading audio only for ${id}`);
+      console.log(`🎵 [${id}] Loading audio only (no peaks)`);
+      console.log(`🔄 [${id}] Calling wavesurfer.load without peaks`);
       wavesurfer.load(audioUrl).catch((error) => {
         if (error.name !== 'AbortError') {
-          console.warn('Failed to load audio:', error);
+          console.warn(`❌ [${id}] Failed to load audio:`, error);
         }
         setIsAudioLoading(false);
       });
@@ -231,6 +241,15 @@ const Wave = ({
 
   // 실제 로딩 상태 계산 (외부 로딩 상태 또는 내부 오디오 로딩 상태)
   const isActuallyLoading = isLoading || isAudioLoading;
+
+  console.log(`🔍 [${id}] Render state check:`, {
+    isLoading: isLoading,
+    isAudioLoading: isAudioLoading,
+    isActuallyLoading: isActuallyLoading,
+    isReady: isReady,
+    audioUrl: !!audioUrl,
+    peaks: !!peaks
+  });
 
   return (
     <div 
