@@ -152,6 +152,7 @@ const StemListPanel: React.FC<{
                 {/* Current Stem Info */}
                 <td className="py-4 px-4">
                   <div className="flex items-center space-x-3">
+                    {/* Play Button -> instrument name*/}
                     <button
                       onClick={() => onStemPlay?.(stem.id)}
                       className="p-2 text-gray-400 hover:text-purple-400 hover:bg-purple-900/20 rounded-lg transition-colors"
