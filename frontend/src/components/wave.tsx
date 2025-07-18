@@ -63,8 +63,20 @@ const Wave = memo(({
 
   // WaveSurfer 인스턴스 생성 (한 번만)
   useEffect(() => {
-    if (!waveRef.current || !timelineRef.current || !minimapRef.current || initializationRef.current) return;
+    console.log(`🔧 [${id}] WaveSurfer creation effect triggered`);
+    console.log(`🔧 [${id}] DOM refs status:`, {
+      waveRef: !!waveRef.current,
+      timelineRef: !!timelineRef.current,
+      minimapRef: !!minimapRef.current,
+      initializationRef: initializationRef.current
+    });
+    
+    if (!waveRef.current || !timelineRef.current || !minimapRef.current || initializationRef.current) {
+      console.log(`🔧 [${id}] Skipping WaveSurfer creation - missing refs or already initialized`);
+      return;
+    }
 
+    console.log(`🔧 [${id}] Creating WaveSurfer instance...`);
     initializationRef.current = true;
     setIsDestroyed(false);
     readyCallbackCalledRef.current = false;
@@ -88,11 +100,24 @@ const Wave = memo(({
 
     wavesurferRef.current = wavesurfer;
 
-    wavesurfer.on('ready', handleReadyCallback);
+    console.log(`🔧 [${id}] WaveSurfer instance created, setting up event listeners...`);
+    
+    wavesurfer.on('ready', () => {
+      console.log(`🎯 [${id}] WaveSurfer ready event fired!`);
+      handleReadyCallback();
+    });
 
     wavesurfer.on('error', (error) => {
       console.warn(`❌ [${id}] WaveSurfer error:`, error);
       setIsAudioLoading(false);
+    });
+
+    wavesurfer.on('load', (url: string) => {
+      console.log(`🔄 [${id}] WaveSurfer loading audio from: ${url}`);
+    });
+
+    wavesurfer.on('decode', (duration: number) => {
+      console.log(`🎵 [${id}] WaveSurfer audio decoded, duration: ${duration}s`);
     });
 
     // 사용자가 파형을 클릭하거나 드래그할 때 즉시 currentTime 업데이트
@@ -127,7 +152,19 @@ const Wave = memo(({
 
   // 오디오 URL 또는 peaks 변경 시 로드만 다시 실행
   useEffect(() => {
-    if (!wavesurferRef.current || !audioUrl || isDestroyed || !initializationRef.current) return;
+    console.log(`🔄 [${id}] Audio load effect triggered`, {
+      hasWaveSurfer: !!wavesurferRef.current,
+      hasAudioUrl: !!audioUrl,
+      isDestroyed,
+      isInitialized: initializationRef.current,
+      isReady,
+      currentAudioUrl: currentAudioUrlRef.current
+    });
+    
+    if (!wavesurferRef.current || !audioUrl || isDestroyed || !initializationRef.current) {
+      console.log(`🔄 [${id}] Skipping audio load - conditions not met`);
+      return;
+    }
     
     // 이미 같은 URL이 로드되어 있으면 스킵
     if (currentAudioUrlRef.current === audioUrl && isReady) {
@@ -149,18 +186,26 @@ const Wave = memo(({
 
     // peaks 데이터가 있으면 함께 로드, 없으면 오디오만 로드
     if (peaks) {
+      console.log(`🌊 [${id}] Processing peaks data:`, peaks);
+      
       // peaks 데이터 형태 확인 및 처리
       let peaksData = peaks;
       
       // 객체 형태인 경우 peaks 배열 추출
       if (peaks && typeof peaks === 'object' && !Array.isArray(peaks)) {
+        console.log(`🔍 [${id}] Peaks is object, extracting array...`);
         if (peaks.peaks && Array.isArray(peaks.peaks)) {
           peaksData = peaks.peaks;
+          console.log(`✅ [${id}] Extracted peaks.peaks array, length: ${peaksData.length}`);
         } else if (peaks.data && Array.isArray(peaks.data)) {
           peaksData = peaks.data;
+          console.log(`✅ [${id}] Extracted peaks.data array, length: ${peaksData.length}`);
+        } else {
+          console.warn(`⚠️ [${id}] Peaks object has no valid array property`);
         }
       } else if (Array.isArray(peaks)) {
         peaksData = peaks;
+        console.log(`✅ [${id}] Peaks is already array, length: ${peaksData.length}`);
       }
       
       // WaveSurfer가 기대하는 형식으로 변환
@@ -168,7 +213,9 @@ const Wave = memo(({
         console.log(`🌊 [${id}] Loading with peaks data, length: ${peaksData.length}`);
         
         try {
+          console.log(`🔄 [${id}] Calling wavesurfer.load with peaks...`);
           wavesurfer.load(audioUrl, peaksData);
+          console.log(`✅ [${id}] Wavesurfer.load called successfully with peaks`);
         } catch (error: any) {
           console.warn(`❌ [${id}] Failed to load audio with peaks:`, error);
           // 실패 시 오디오만 로드 시도
@@ -182,6 +229,7 @@ const Wave = memo(({
         }
       } else {
         console.warn(`⚠️ [${id}] Invalid peaks data, loading audio only`);
+        console.log(`🎵 [${id}] Loading audio only (invalid peaks)`);
         wavesurfer.load(audioUrl).catch((error) => {
           if (error.name !== 'AbortError') {
             console.warn('Failed to load audio:', error);
@@ -191,12 +239,14 @@ const Wave = memo(({
       }
     } else {
       console.log(`🎵 [${id}] Loading audio only (no peaks)`);
+      console.log(`🔄 [${id}] Calling wavesurfer.load without peaks...`);
       wavesurfer.load(audioUrl).catch((error) => {
         if (error.name !== 'AbortError') {
           console.warn(`❌ [${id}] Failed to load audio:`, error);
         }
         setIsAudioLoading(false);
       });
+      console.log(`✅ [${id}] Wavesurfer.load called successfully without peaks`);
     }
   }, [audioUrl, peaks, id, isDestroyed, isReady]);
 
