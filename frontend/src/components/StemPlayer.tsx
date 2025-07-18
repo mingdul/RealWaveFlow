@@ -415,7 +415,7 @@ const StemPlayer: React.FC<StemPlayerProps> = ({ stems, className = '', stageId}
                 onChange={(e) => handleMasterVolumeChange(parseFloat(e.target.value))}
                 className="w-28 h-2 bg-gray-700 rounded-full appearance-none cursor-pointer"
                 style={{
-                  background: `linear-gradient(to right, #8b5cf6 0%, #8b5cf ${(masterMuted ? 0 : masterVolume) * 100}%, #374151 ${(masterMuted ? 0 : masterVolume) * 100}%, #374151 100%)`
+                  background: `linear-gradient(to right, #8b5cf6 0%, #8b5cf6 ${(masterMuted ? 0 : masterVolume) * 100}%, #4b5563 ${(masterMuted ? 0 : masterVolume) * 100}%, #4b5563 100%)`
                 }}
               />
               <style dangerouslySetInnerHTML={{

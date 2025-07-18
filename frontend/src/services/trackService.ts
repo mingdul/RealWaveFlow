@@ -127,12 +127,29 @@ class TrackService {
    */
   async getCollaborators(trackId: string): Promise<ApiResponse<TrackCollaborator[]>> {
     try {
-      // 임시로 기존 엔드포인트 사용 (백엔드 수정 후 변경 예정)
-      const response = await apiClient.get<ApiResponse<TrackCollaborator[]>>(
+      console.log('[DEBUG] TrackService - getCollaborators for trackId:', trackId);
+      
+      const response = await apiClient.get(
         `/track-collaborator/track/${trackId}`
       );
-      return response.data;
+      
+      console.log('[DEBUG] TrackService - getCollaborators raw response:', response.data);
+      
+      // 백엔드가 { collaborators: [...] } 형태로 응답하므로 ApiResponse 형태로 변환
+      if (response.data && response.data.collaborators) {
+        const transformedResponse: ApiResponse<TrackCollaborator[]> = {
+          success: true,
+          data: response.data.collaborators,
+          message: 'Collaborators retrieved successfully'
+        };
+        console.log('[DEBUG] TrackService - transformed response:', transformedResponse);
+        return transformedResponse;
+      } else {
+        // 백엔드 응답이 이미 ApiResponse 형태인 경우
+        return response.data;
+      }
     } catch (error: any) {
+      console.error('[ERROR] TrackService - getCollaborators failed:', error);
       throw new Error(error.response?.data?.message || '협업자 목록 조회에 실패했습니다.');
     }
   }
