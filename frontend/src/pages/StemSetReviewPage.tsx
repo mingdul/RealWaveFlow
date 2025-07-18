@@ -277,6 +277,28 @@ const StemSetReviewPage = () => {
     fetchGuideUrl();
   }, [stageId, upstreamId, showError, showWarning]);
 
+  // 강제로 guideLoading 상태 해제 - API 호출이 성공했는데도 로딩이 계속되는 문제 해결
+  useEffect(() => {
+    if (guideAudioUrl && guidePeaks && guideLoading) {
+      console.log('🔧 [Force Guide Loading Clear] Audio and peaks available but still loading, forcing clear');
+      setGuideLoading(false);
+    }
+  }, [guideAudioUrl, guidePeaks, guideLoading]);
+
+  // 타이머 기반 강제 로딩 해제 - 5초 후에도 로딩 중이면 강제 해제
+  useEffect(() => {
+    if (guideLoading) {
+      const forceStopTimer = setTimeout(() => {
+        if (guideLoading) {
+          console.log('🔧 [Force Guide Loading Clear Timer] Loading too long, forcing clear after 5 seconds');
+          setGuideLoading(false);
+        }
+      }, 5000);
+      
+      return () => clearTimeout(forceStopTimer);
+    }
+  }, [guideLoading]);
+
   // 스템 데이터 로드 함수 분리
   const loadStemsData = async (stageId: string, upstream: any) => {
     console.log('🎯 [loadStemsData] Starting stems load:', {
