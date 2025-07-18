@@ -11,7 +11,7 @@ import s3UploadService from '../services/s3UploadService';
 import { createUpstream } from '../services/upstreamService';
 import versionstemService from '../services/versionstemService';
 import stemJobService from '../services/stemJobService';
-import { encodeFilename, getDisplayFilename } from '../utils/filenameUtils';
+import {getDisplayFilename } from '../utils/filenameUtils';
 // import stemFileService from '../services/stemFileService';
 // import categoryService from '../services/categoryService';
 // import masterStemService from '../services/masterStemService';

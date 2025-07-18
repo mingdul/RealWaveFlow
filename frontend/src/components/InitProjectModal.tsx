@@ -24,7 +24,7 @@ import trackService from '../services/trackService';
 import { useSocket } from '../contexts/SocketContext';
 import socketService from '../services/socketService';
 import AnimatedModal from './AnimatedModal';
-import { encodeFilename, getDisplayFilename } from '../utils/filenameUtils';
+// import { encodeFilename, getDisplayFilename } from '../utils/filenameUtils';
 
 // Types
 interface UploadedFile {
