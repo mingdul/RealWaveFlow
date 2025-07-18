@@ -1333,35 +1333,51 @@ const StemSetReviewPage = () => {
 
         {/* Waveform */}
         <div className='space-y-6'>
-          {guideLoading ? (
-            <div className='flex flex-col items-center justify-center py-8 bg-gray-900/30 rounded-md p-6'>
-              <div className='mb-3 h-10 w-10 animate-spin rounded-full border-b-2 border-t-2 border-red-400'></div>
-              <span className='text-white font-medium'>가이드 오디오를 불러오는 중...</span>
-              <span className='text-gray-400 text-sm mt-2'>잠시만 기다려주세요</span>
-            </div>
-          ) : guideLoadAttempted && guideAudioUrl ? (
-            <>
-              <Wave
-                onReady={handleReady}
-                audioUrl={guideAudioUrl}
-                peaks={guidePeaks}
-                waveColor='#f87171'
-                id='main'
-                isPlaying={isPlaying}
-                currentTime={currentTime}
-                onSolo={handleMainSolo}
-                isSolo={soloTrack === 'main'}
-                onSeek={handleSeek}
-                isLoading={guideLoading}
-              />
-            </>
-          ) : (
-            <div className='flex items-center justify-center py-8 bg-gray-900/30 rounded-md p-6'>
-              <span className='text-sm text-white'>
-                이 스테이지에 사용 가능한 가이드 오디오가 없습니다.
-              </span>
-            </div>
-          )}
+          {(() => {
+            console.log('🎨 [Waveform Render] guideLoading:', guideLoading);
+            console.log('🎨 [Waveform Render] guideLoadAttempted:', guideLoadAttempted);
+            console.log('🎨 [Waveform Render] guideAudioUrl:', !!guideAudioUrl);
+            console.log('🎨 [Waveform Render] guidePeaks:', !!guidePeaks);
+            
+            if (guideLoading) {
+              console.log('🎨 [Waveform Render] Showing loading state');
+              return (
+                <div className='flex flex-col items-center justify-center py-8 bg-gray-900/30 rounded-md p-6'>
+                  <div className='mb-3 h-10 w-10 animate-spin rounded-full border-b-2 border-t-2 border-red-400'></div>
+                  <span className='text-white font-medium'>가이드 오디오를 불러오는 중...</span>
+                  <span className='text-gray-400 text-sm mt-2'>잠시만 기다려주세요</span>
+                </div>
+              );
+            } else if (guideLoadAttempted && guideAudioUrl) {
+              console.log('🎨 [Waveform Render] Rendering Wave component');
+              return (
+                <>
+                  <Wave
+                    onReady={handleReady}
+                    audioUrl={guideAudioUrl}
+                    peaks={guidePeaks}
+                    waveColor='#f87171'
+                    id='main'
+                    isPlaying={isPlaying}
+                    currentTime={currentTime}
+                    onSolo={handleMainSolo}
+                    isSolo={soloTrack === 'main'}
+                    onSeek={handleSeek}
+                    isLoading={guideLoading}
+                  />
+                </>
+              );
+            } else {
+              console.log('🎨 [Waveform Render] Showing no audio message');
+              return (
+                <div className='flex items-center justify-center py-8 bg-gray-900/30 rounded-md p-6'>
+                  <span className='text-sm text-white'>
+                    이 스테이지에 사용 가능한 가이드 오디오가 없습니다.
+                  </span>
+                </div>
+              );
+            }
+          })()}
 
           {showExtraWaveform && extraAudio && (
             <>
