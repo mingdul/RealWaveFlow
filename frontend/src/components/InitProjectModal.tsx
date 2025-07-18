@@ -24,6 +24,7 @@ import trackService from '../services/trackService';
 import { useSocket } from '../contexts/SocketContext';
 import socketService from '../services/socketService';
 import AnimatedModal from './AnimatedModal';
+import { encodeFilename, getDisplayFilename } from '../utils/filenameUtils';
 
 // Types
 interface UploadedFile {
@@ -515,7 +516,7 @@ const InitProjectModal: React.FC<InitProjectModalProps> = ({
             }
 
             const stemJobRequest = {
-              file_name: result.fileName,
+              file_name: result.fileName, // 이미 인코딩된 파일명이 result에 포함됨
               file_path: result.key,
               key: fileToUpload.key || '',
               bpm: fileToUpload.bpm || '',

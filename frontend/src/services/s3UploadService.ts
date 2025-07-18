@@ -11,6 +11,7 @@ import {
   UploadedPart,
   PresignedImageUrl,
 } from '../types/api';
+import { encodeFilename, getDisplayFilename } from '../utils/filenameUtils';
 
 class S3UploadService {
   private activeUploads: Map<string, UploadProgress> = new Map();
@@ -265,10 +266,15 @@ class S3UploadService {
     let key = '';
 
     try {
+      // 한글 파일명을 안전한 ASCII 형태로 인코딩
+      const encodedFilename = encodeFilename(file.name);
+      console.log('[DEBUG] Original filename:', file.name);
+      console.log('[DEBUG] Encoded filename:', encodedFilename);
+
       // 1. 업로드 초기화 (기존 프로젝트에 파일 추가)
       const uploadResponse = await this.addUpload({
         projectId,
-        filename: file.name,
+        filename: encodedFilename, // 인코딩된 파일명 사용
         contentType: file.type,
         fileSize: file.size,
       });
@@ -292,7 +298,7 @@ class S3UploadService {
       // 3. 업로드 진행 상태 초기화
       const uploadProgress: UploadProgress = {
         uploadId,
-        fileName: file.name,
+        fileName: file.name, // UI 표시용으로는 원본 파일명 사용
         totalSize: file.size,
         uploadedBytes: 0,
         progress: 0,
