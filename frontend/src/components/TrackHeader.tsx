@@ -29,8 +29,8 @@ const TrackHeader: React.FC<TrackHeaderProps> = ({
     console.log('🏠 [TrackHeader] 📋 Notifications details:', notifications.map(n => ({
       id: n.id,
       type: n.type,
-      title: n.title,
-      read: n.read
+      message: n.message,
+      isRead: n.isRead
     })));
 
     // 10초마다 상태 확인
@@ -46,9 +46,9 @@ const TrackHeader: React.FC<TrackHeaderProps> = ({
         console.log('  - Latest notification:', {
           id: notifications[0].id,
           type: notifications[0].type,
-          title: notifications[0].title,
-          timestamp: notifications[0].timestamp,
-          read: notifications[0].read
+          message: notifications[0].message,
+          createdAt: notifications[0].createdAt,
+          isRead: notifications[0].isRead
         });
       }
     }, 10000);

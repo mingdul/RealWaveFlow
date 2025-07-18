@@ -5,7 +5,7 @@ import { Notification } from '../types/notification';
 const NotificationBell: React.FC = () => {
   const [isOpen, setIsOpen] = useState(false);
   const dropdownRef = useRef<HTMLDivElement>(null);
-  const { notifications, unreadCount, markAsRead, markAllAsRead, refreshNotifications } = useNotifications();
+  const { notifications, unreadCount, markAsRead, refreshNotifications } = useNotifications();
 
   // 알림 상태 변경 시 로그 (개발용)
   useEffect(() => {
@@ -29,7 +29,7 @@ const NotificationBell: React.FC = () => {
   }, []);
 
   const toggleDropdown = async () => {
-    // 🔥 NEW: 알림 버튼 클릭 시 최신 알림을 API에서 가져오기
+    // 알림 버튼 클릭 시 최신 알림을 API에서 가져오기
     if (!isOpen) {
       console.log('🔔 [NotificationBell] Refreshing notifications from API...');
       try {
@@ -42,13 +42,13 @@ const NotificationBell: React.FC = () => {
   };
 
   const handleNotificationClick = async (notification: Notification) => {
-    if (!notification.read) {
+    if (!notification.isRead) {
       await markAsRead(notification.id);
     }
     
     // 알림 데이터에 따라 적절한 페이지로 이동
     if (notification.data) {
-      const { trackId, stageId, upstreamId } = notification.data;
+      const { trackId, stageId } = notification.data;
       
       switch (notification.type) {
         case 'stage_created':
@@ -57,23 +57,16 @@ const NotificationBell: React.FC = () => {
           }
           break;
         case 'upstream_created':
-          if (stageId) {
-            window.location.href = `/stage/${stageId}`;
-          }
-          break;
         case 'upstream_reviewed':
-          if (upstreamId) {
-            window.location.href = `/review/${upstreamId}`;
+          if (trackId && stageId) {
+            window.location.href = `/track/${trackId}?stage=${stageId}`;
           }
           break;
         default:
+          console.log('Unknown notification type:', notification.type);
           break;
       }
     }
-  };
-
-  const handleMarkAllAsRead = async () => {
-    await markAllAsRead();
   };
 
   const formatTimeAgo = (timestamp: string) => {
@@ -83,43 +76,43 @@ const NotificationBell: React.FC = () => {
 
     if (diffInMinutes < 1) return '방금';
     if (diffInMinutes < 60) return `${diffInMinutes}분`;
-    
-    const diffInHours = Math.floor(diffInMinutes / 60);
-    if (diffInHours < 24) return `${diffInHours}시간`;
-    
-    const diffInDays = Math.floor(diffInHours / 24);
-    if (diffInDays < 7) return `${diffInDays}일`;
-    
-    return notificationTime.toLocaleDateString('ko-KR', { month: 'short', day: 'numeric' });
+    if (diffInMinutes < 1440) return `${Math.floor(diffInMinutes / 60)}시간`;
+    return `${Math.floor(diffInMinutes / 1440)}일`;
+  };
+
+  const getNotificationIcon = (type: string) => {
+    switch (type) {
+      case 'stage_created':
+        return '🎵';
+      case 'upstream_created':
+        return '📁';
+      case 'upstream_reviewed':
+        return '💬';
+      case 'track_approved':
+        return '✅';
+      default:
+        return '🔔';
+    }
   };
 
   return (
     <div className="relative" ref={dropdownRef}>
-      {/* 벨 아이콘 */}
+      {/* 알림 벨 아이콘 */}
       <button
         onClick={toggleDropdown}
-        className="relative p-2 text-white hover:text-gray-300 focus:outline-none focus:ring-2 focus:ring-blue-500 focus:ring-offset-2 rounded-lg transition-colors"
-        aria-label="알림 보기"
+        className="relative p-2 text-gray-400 hover:text-gray-500 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-blue-500 rounded-full"
       >
-        {/* 벨 아이콘 (SVG) */}
-        <svg
-          className="w-6 h-6"
-          fill="none"
-          stroke="currentColor"
-          viewBox="0 0 24 24"
-          xmlns="http://www.w3.org/2000/svg"
-        >
-          <path
-            strokeLinecap="round"
-            strokeLinejoin="round"
-            strokeWidth={2}
-            d="M15 17h5l-5-5V9a6 6 0 1 0-12 0v3l-5 5h5m7 0v1a3 3 0 0 1-6 0v-1m6 0H9"
-          />
+        <span className="sr-only">View notifications</span>
+        <svg className="h-6 w-6" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+          <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M15 17h5l-5 5v-5z" />
+          <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M5 17h5l-5 5v-5z" />
+          <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M12 19v-7" />
+          <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M12 12V5a3 3 0 116 0v7" />
         </svg>
         
-        {/* 알림 개수 뱃지 */}
+        {/* 읽지 않은 알림 개수 배지 */}
         {unreadCount > 0 && (
-          <span className="absolute -top-1 -right-1 bg-red-500 text-white text-xs font-bold rounded-full h-5 w-5 flex items-center justify-center min-w-[20px]">
+          <span className="absolute -top-1 -right-1 inline-flex items-center justify-center px-2 py-1 text-xs font-bold leading-none text-white transform translate-x-1/2 -translate-y-1/2 bg-red-600 rounded-full">
             {unreadCount > 99 ? '99+' : unreadCount}
           </span>
         )}
@@ -127,98 +120,86 @@ const NotificationBell: React.FC = () => {
 
       {/* 드롭다운 메뉴 */}
       {isOpen && (
-        <div className="absolute right-0 mt-2 w-80 bg-white border border-gray-200 rounded-lg shadow-lg z-50 max-h-96 overflow-hidden">
-          {/* 헤더 */}
-          <div className="px-4 py-3 border-b border-gray-200 bg-gray-50">
-            <div className="flex items-center justify-between">
-              <h3 className="text-lg font-semibold text-gray-900">알림</h3>
-              {unreadCount > 0 && (
-                <button
-                  onClick={handleMarkAllAsRead}
-                  className="text-sm text-blue-600 hover:text-blue-800 font-medium"
-                >
-                  모두 읽음
-                </button>
-              )}
-            </div>
-          </div>
-
-          {/* 알림 목록 */}
-          <div className="max-h-80 overflow-y-auto">
-            {notifications.length === 0 ? (
-              <div className="px-4 py-8 text-center text-gray-500">
-                <svg
-                  className="w-12 h-12 mx-auto mb-4 text-gray-300"
-                  fill="none"
-                  stroke="currentColor"
-                  viewBox="0 0 24 24"
-                >
-                  <path
-                    strokeLinecap="round"
-                    strokeLinejoin="round"
-                    strokeWidth={2}
-                    d="M15 17h5l-5-5V9a6 6 0 1 0-12 0v3l-5 5h5m7 0v1a3 3 0 0 1-6 0v-1m6 0H9"
-                  />
-                </svg>
-                <p>새로운 알림이 없습니다</p>
+        <div className="absolute right-0 mt-2 w-96 bg-white rounded-md shadow-lg ring-1 ring-black ring-opacity-5 z-50 max-h-96 overflow-hidden">
+          <div className="py-1">
+            {/* 헤더 */}
+            <div className="px-4 py-3 border-b border-gray-200 bg-gray-50">
+              <div className="flex items-center justify-between">
+                <h3 className="text-lg font-medium text-gray-900">알림</h3>
+                <span className="text-sm text-gray-500">
+                  {unreadCount > 0 ? `${unreadCount}개의 새 알림` : '모든 알림을 확인했습니다'}
+                </span>
               </div>
-            ) : (
-              notifications.map((notification) => (
-                <div
-                  key={notification.id}
-                  onClick={() => handleNotificationClick(notification)}
-                  className={`px-4 py-3 border-b border-gray-100 cursor-pointer hover:bg-gray-50 transition-colors ${
-                    !notification.read ? 'bg-blue-50 border-l-4 border-l-blue-500' : ''
-                  }`}
-                >
-                  <div className="flex items-start space-x-3">
-                    {/* 아이콘 */}
-                    <div className="flex-shrink-0 mt-1">
-                      <div className={`w-2 h-2 rounded-full ${
-                        notification.type === 'stage_created' ? 'bg-blue-500' :
-                        notification.type === 'upstream_created' ? 'bg-green-500' :
-                        notification.type === 'upstream_reviewed' ? 'bg-purple-500' :
-                        notification.type === 'upstream_completed' ? 'bg-emerald-500' :
-                        notification.type === 'track_approved' ? 'bg-yellow-500' :
-                        'bg-gray-400'
-                      }`}></div>
-                    </div>
-                    
-                    {/* 내용 */}
-                    <div className="flex-1 min-w-0">
-                      <div className="flex items-center justify-between">
-                        <h4 className={`text-sm font-medium ${!notification.read ? 'text-gray-900' : 'text-gray-600'}`}>
-                          {notification.title}
-                        </h4>
-                        <p className="text-xs text-gray-400 ml-2">
-                          {formatTimeAgo(notification.timestamp)}
+            </div>
+
+            {/* 알림 목록 */}
+            <div className="max-h-80 overflow-y-auto">
+              {notifications.length === 0 ? (
+                <div className="px-4 py-8 text-center text-gray-500">
+                  <svg className="h-12 w-12 text-gray-300 mx-auto mb-4" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+                    <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={1} d="M15 17h5l-5 5v-5z" />
+                    <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={1} d="M5 17h5l-5 5v-5z" />
+                    <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={1} d="M12 19v-7" />
+                    <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={1} d="M12 12V5a3 3 0 116 0v7" />
+                  </svg>
+                  <p className="text-sm">알림이 없습니다</p>
+                </div>
+              ) : (
+                notifications.map((notification) => (
+                  <div
+                    key={notification.id}
+                    onClick={() => handleNotificationClick(notification)}
+                    className={`
+                      block px-4 py-3 hover:bg-gray-100 cursor-pointer border-b border-gray-100 last:border-b-0
+                      ${!notification.isRead ? 'bg-blue-50 border-l-4 border-l-blue-500' : ''}
+                    `}
+                  >
+                    <div className="flex items-start space-x-3">
+                      {/* 알림 아이콘 */}
+                      <div className="flex-shrink-0">
+                        <span className="text-2xl">
+                          {getNotificationIcon(notification.type)}
+                        </span>
+                      </div>
+                      
+                      {/* 알림 내용 */}
+                      <div className="flex-1 min-w-0">
+                        <div className="flex items-center justify-between">
+                          <h4 className={`text-sm font-medium ${!notification.isRead ? 'text-gray-900' : 'text-gray-600'}`}>
+                            {notification.message}
+                          </h4>
+                          <span className="text-xs text-gray-400 ml-2 flex-shrink-0">
+                            {formatTimeAgo(notification.createdAt)}
+                          </span>
+                        </div>
+                        <p className={`text-sm ${!notification.isRead ? 'text-gray-700' : 'text-gray-500'} mt-0.5`}>
+                          {notification.data?.stageTitle || notification.data?.upstreamTitle || ''}
                         </p>
                       </div>
-                      <p className={`text-sm ${!notification.read ? 'text-gray-700' : 'text-gray-500'} mt-0.5`}>
-                        {notification.message}
-                      </p>
+                      
+                      {/* 읽지 않은 알림 표시 */}
+                      {!notification.isRead && (
+                        <div className="flex-shrink-0">
+                          <div className="w-2 h-2 bg-blue-600 rounded-full"></div>
+                        </div>
+                      )}
                     </div>
-                    
-                    {/* 읽지 않은 알림 표시 */}
-                    {!notification.read && (
-                      <div className="flex-shrink-0 mt-1">
-                        <div className="w-2 h-2 bg-red-500 rounded-full"></div>
-                      </div>
-                    )}
                   </div>
+                ))
+              )}
+            </div>
+
+            {/* 푸터 */}
+            {notifications.length > 0 && (
+              <div className="px-4 py-3 border-t border-gray-200 bg-gray-50">
+                <div className="text-center">
+                  <span className="text-sm text-gray-500">
+                    총 {notifications.length}개의 알림
+                  </span>
                 </div>
-              ))
+              </div>
             )}
           </div>
-
-          {/* 푸터 (선택사항) */}
-          {notifications.length > 0 && (
-            <div className="px-4 py-2 border-t border-gray-200 bg-gray-50">
-              <p className="text-xs text-gray-400 text-center">
-                {notifications.length}개
-              </p>
-            </div>
-          )}
         </div>
       )}
     </div>
