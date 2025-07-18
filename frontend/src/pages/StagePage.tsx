@@ -1,14 +1,12 @@
-import React, { useState, useEffect, useRef } from 'react';
+import React, { useState, useEffect } from 'react';
 import { useParams } from 'react-router-dom';
-import { Upload, Users, Music, Clock, Award, Play, Pause, Eye, CheckCircle, XCircle } from 'lucide-react';
+import { Upload, Users, Music, Clock, Award, Eye, CheckCircle, XCircle } from 'lucide-react';
 // import Logo from '../components/Logo';
 import UploadModal from '../components/UploadModal';
 import trackService from '../services/trackService';
 import { getStageDetail } from '../services/stageService';
 import { getStageUpstreams } from '../services/upstreamService';
 import { getStageReviewers } from '../services/stageReviewerService';
-import streamingService from '../services/streamingService';
-import { approveDropReviewer, rejectDropReviewer } from '../services/upstreamReviewService';
 import { Track, Stage, Upstream, StageReviewer } from '../types/api';
 import tapeActive from '../assets/activeTape.png';
 import tapeApproved from '../assets/approveTape.png';
@@ -106,19 +104,24 @@ const StagePage: React.FC = () => {
     }
   };
 
+  const handleDetail = (upstream: Upstream) => {
+    try {
+      console.log('🔍 Navigating to review page:', { upstreamId: upstream.id, stageId });
+      // Review Page로 이동 (stageId를 쿼리 파라미터로 함께 전달)
+      navigate(`/review/${upstream.id}?stageId=${stageId}`);
+    } catch (error: any) {
+      console.error('❌ Error navigating to review page:', error);
+      showError('리뷰 페이지로 이동 중 오류가 발생했습니다.');
+    }
+  };
+
   interface StemSetCardProps {
     upstream: Upstream;
-    isPlaying: boolean;
-    seek: number;
-    onPlayToggle: () => void;
-    onSeek: (value: number) => void;
     onDetail: () => void;
-    onApprove: () => void;
-    onReject: () => void;
   }
 
   const StemSetCard: React.FC<StemSetCardProps> = ({
-    upstream, isPlaying, seek, onPlayToggle, onSeek, onDetail, onApprove, onReject
+    upstream, onDetail
   }) => {
     const [isHovered, setIsHovered] = useState(false);
 
@@ -150,41 +153,12 @@ const StagePage: React.FC = () => {
     const config = statusConfig[status] || statusConfig.ACTIVE;
     const tapeImg = status === 'APPROVED' ? tapeApproved : status === 'REJECTED' ? tapeRejected : tapeActive;
 
-    // 강화된 이벤트 핸들러들
-    const handlePlayClick = (e: React.MouseEvent) => {
-      e.preventDefault();
-      e.stopPropagation();
-      console.log('🔍 Play button clicked!', { upstreamId: upstream.id, isPlaying });
-      onPlayToggle();
-    };
-
+    // Detail 버튼 클릭 핸들러
     const handleDetailClick = (e: React.MouseEvent) => {
       e.preventDefault();
       e.stopPropagation();
       console.log('🔍 Detail button clicked!', { upstreamId: upstream.id });
       onDetail();
-    };
-
-    const handleApproveClick = (e: React.MouseEvent) => {
-      e.preventDefault();
-      e.stopPropagation();
-      console.log('🔍 Approve button clicked!', { upstreamId: upstream.id });
-      onApprove();
-    };
-
-    const handleRejectClick = (e: React.MouseEvent) => {
-      e.preventDefault();
-      e.stopPropagation();
-      console.log('🔍 Reject button clicked!', { upstreamId: upstream.id });
-      onReject();
-    };
-
-    const handleSeekChange = (e: React.ChangeEvent<HTMLInputElement>) => {
-      e.preventDefault();
-      e.stopPropagation();
-      const value = Number(e.target.value);
-      console.log('🔍 Seek changed!', { value });
-      onSeek(value);
     };
 
     return (
@@ -227,8 +201,8 @@ const StagePage: React.FC = () => {
           />
         </div>
 
-        {/* Title Overlay */}
-        <div className={`absolute top-[70px] left-0 w-full text-center z-20 transition-opacity duration-500 ${isHovered ? 'opacity-0' : 'opacity-100'}`} style={{ pointerEvents: 'none' }}>
+        {/* Title Overlay - 항상 표시 */}
+        <div className="absolute top-[70px] left-0 w-full text-center z-20">
           <div className="bg-gradient-to-r from-transparent via-black/60 to-transparent py-2">
             <h3 className="text-xl font-bold text-white drop-shadow-lg px-4">
               {upstream.title || `AWESOME MIX #${upstream.id}`}
@@ -246,85 +220,23 @@ const StagePage: React.FC = () => {
             {/* Description */}
             <div className="text-center">
               <p className="text-gray-200 text-sm leading-relaxed line-clamp-2">
-                {upstream.description || "No feedback yet."}
+                {upstream.description || "No description available."}
               </p>
             </div>
 
-            {/* Controls */}
-            <div className="space-y-3">
-            
-              {/* Progress Bar */}
-              <div className="relative">
-                <input
-                  type="range"
-                  min={0}
-                  max={100}
-                  value={seek}
-                  onChange={handleSeekChange}
-                  onMouseDown={e => e.stopPropagation()}
-                  onMouseUp={e => e.stopPropagation()}
-                  className="w-full h-2 bg-gray-700 rounded-lg appearance-none cursor-pointer slider"
-                  style={{
-                    background: `linear-gradient(to right, #8b5cf6 0%, #8b5cf6 ${seek}%, #374151 ${seek}%, #374151 100%)`,
-                    pointerEvents: 'auto'
-                  }}
-                />
-              </div>
-
-              {/* Control Buttons */}
-              <div className="flex items-center justify-center gap-3">
-                <button
-                  type="button"
-                  onClick={handlePlayClick}
-                  onMouseDown={e => e.stopPropagation()}
-                  onMouseUp={e => e.stopPropagation()}
-                  className="w-12 h-12 flex items-center justify-center rounded-full bg-gradient-to-r from-purple-600 to-purple-700 text-white shadow-lg hover:from-purple-500 hover:to-purple-600 border-2 border-white/20 hover:border-white/40 transition-all duration-200 transform hover:scale-110 z-50"
-                  aria-label={isPlaying ? '정지' : '재생'}
-                  style={{ pointerEvents: 'auto' }}
-                >
-                  {isPlaying ? <Pause className="w-5 h-5" /> : <Play className="w-5 h-5 ml-0.5" />}
-                </button>
-                
-                <button
-                  type="button"
-                  onClick={handleDetailClick}
-                  onMouseDown={e => e.stopPropagation()}
-                  onMouseUp={e => e.stopPropagation()}
-                  className="flex items-center gap-2 px-4 py-2 rounded-full bg-gradient-to-r from-yellow-500 to-orange-500 text-black font-semibold shadow-lg hover:from-yellow-400 hover:to-orange-400 border border-yellow-300/50 transition-all duration-200 transform hover:scale-105 z-50"
-                  style={{ pointerEvents: 'auto' }}
-                >
-                  <Eye className="w-4 h-4" />
-                  <span className="text-sm">Detail</span>
-                </button>
-              </div>
-
-              {/* Action Buttons for Active Status */}
-              {status === 'ACTIVE' && (
-                <div className="flex items-center justify-center gap-2 pt-2">
-                  <button
-                    type="button"
-                    onClick={handleApproveClick}
-                    onMouseDown={e => e.stopPropagation()}
-                    onMouseUp={e => e.stopPropagation()}
-                    className="flex items-center gap-1 px-3 py-1.5 rounded-full bg-gradient-to-r from-green-600 to-green-700 text-white text-xs font-semibold shadow-lg hover:from-green-500 hover:to-green-600 border border-green-400/50 transition-all duration-200 transform hover:scale-105 z-50"
-                    style={{ pointerEvents: 'auto' }}
-                  >
-                    <CheckCircle className="w-3 h-3" />
-                    Approve
-                  </button>
-                  <button
-                    type="button"
-                    onClick={handleRejectClick}
-                    onMouseDown={e => e.stopPropagation()}
-                    onMouseUp={e => e.stopPropagation()}
-                    className="flex items-center gap-1 px-3 py-1.5 rounded-full bg-gradient-to-r from-red-600 to-red-700 text-white text-xs font-semibold shadow-lg hover:from-red-500 hover:to-red-600 border border-red-400/50 transition-all duration-200 transform hover:scale-105 z-50"
-                    style={{ pointerEvents: 'auto' }}
-                  >
-                    <XCircle className="w-3 h-3" />
-                    Reject
-                  </button>
-                </div>
-              )}
+            {/* Detail Button */}
+            <div className="flex items-center justify-center">
+              <button
+                type="button"
+                onClick={handleDetailClick}
+                onMouseDown={e => e.stopPropagation()}
+                onMouseUp={e => e.stopPropagation()}
+                className="flex items-center gap-2 px-4 py-2 rounded-full bg-gradient-to-r from-yellow-500 to-orange-500 text-black font-semibold shadow-lg hover:from-yellow-400 hover:to-orange-400 border border-yellow-300/50 transition-all duration-200 transform hover:scale-105 z-50"
+                style={{ pointerEvents: 'auto' }}
+              >
+                <Eye className="w-4 h-4" />
+                <span className="text-sm">Detail</span>
+              </button>
             </div>
           </div>
         </div>
@@ -333,140 +245,6 @@ const StagePage: React.FC = () => {
         <div className={`absolute inset-0 rounded-2xl transition-all duration-500 z-5 ${isHovered ? 'shadow-[0_0_30px_rgba(147,51,234,0.3)]' : ''}`} style={{ pointerEvents: 'none' }} />
       </div>
     );
-  };
-
-// 11
-  const [playingIndex, setPlayingIndex] = useState<number | null>(null);
-  const [seekValues, setSeekValues] = useState<number[]>([]);
-  const [audioUrl, setAudioUrl] = useState<string | null>(null);
-  const audioRef = useRef<HTMLAudioElement | null>(null);
-  
-  // upstreams가 변경될 때 seekValues 배열도 업데이트
-  useEffect(() => {
-    setSeekValues((upstreams || []).map(() => 0));
-  }, [upstreams]);
-
-  // 오디오 URL이 설정되면 자동 재생
-  useEffect(() => {
-    if (audioUrl && audioRef.current) {
-      audioRef.current.play().catch(error => {
-        console.error('Failed to play audio:', error);
-        setPlayingIndex(null);
-        setAudioUrl(null);
-      });
-    }
-  }, [audioUrl]);
-
-  const handlePlayToggle = async (idx: number, upstream: Upstream) => {
-    if (playingIndex === idx) {
-      // 현재 재생 중인 경우 정지
-      if (audioRef.current) {
-        audioRef.current.pause();
-        audioRef.current = null;
-      }
-      setPlayingIndex(null);
-      setAudioUrl(null);
-    } else {
-      // 다른 업스트림 재생 시작
-      if (playingIndex !== null && audioRef.current) {
-        audioRef.current.pause();
-        audioRef.current = null;
-      }
-      
-      try {
-        // upstream의 guide_path가 있는지 확인
-        if (upstream.guide_path && track) {
-          const response = await streamingService.getGuidePresignedUrlByStageId(stageId || '');
-          if (response.success && response.data) {
-            setAudioUrl(response.data.presignedUrl);
-            setPlayingIndex(idx);
-          } else {
-            console.error('Failed to get guide presigned URL:', response.message);
-          }
-        } else {
-          console.log('No guide path available for this upstream');
-        }
-      } catch (error) {
-        console.error('Error playing guide:', error);
-      }
-    }
-  };
-  
-  const handleSeek = (idx: number, value: number) => {
-    setSeekValues(prev => prev.map((v, i) => (i === idx ? value : v)));
-  };
-  
-  const handleDetail = (upstream: Upstream) => {
-    try {
-      console.log('🔍 Navigating to review page:', { upstreamId: upstream.id, stageId });
-      // Review Page로 이동 (stageId를 쿼리 파라미터로 함께 전달)
-      navigate(`/review/${upstream.id}?stageId=${stageId}`);
-    } catch (error: any) {
-      console.error('❌ Error navigating to review page:', error);
-      showError('리뷰 페이지로 이동 중 오류가 발생했습니다.');
-    }
-  };
-
-  const handleApprove = async (upstream: Upstream) => {
-    try {
-      if (!stageId) {
-        showWarning('Stage ID가 필요합니다.');
-        return;
-      }
-      
-      console.log('🔍 Approving upstream:', { stageId, upstreamId: upstream.id });
-      console.log('🔍 Upstream object:', upstream);
-      
-      // 간단한 테스트 - API 호출 전에 확인
-      showInfo('승인 요청을 보내는 중...');
-      
-      const response = await approveDropReviewer(stageId, upstream.id);
-      console.log('🔍 API Response:', response);
-      
-      if (response.success) {
-        console.log('✅ Upstream approved successfully');
-        showSuccess('업스트림이 성공적으로 승인되었습니다!');
-        // upstreams 목록 새로고침
-        handleUploadComplete();
-      } else {
-        console.error('❌ Failed to approve upstream:', response.message);
-        showError(`승인 실패: ${response.message || '알 수 없는 오류'}`);
-      }
-    } catch (error: any) {
-      console.error('❌ Error approving upstream:', error);
-      console.error('❌ Error details:', {
-        message: error.message,
-        status: error.response?.status,
-        data: error.response?.data,
-        config: error.config
-      });
-      showError(`승인 중 오류 발생: ${error.response?.data?.message || error.message || '알 수 없는 오류'}`);
-    }
-  };
-
-  const handleReject = async (upstream: Upstream) => {
-    try {
-      if (!stageId) {
-        showWarning('Stage ID가 필요합니다.');
-        return;
-      }
-      
-      console.log('🔍 Rejecting upstream:', { stageId, upstreamId: upstream.id });
-      const response = await rejectDropReviewer(stageId, upstream.id);
-      
-      if (response.success) {
-        console.log('✅ Upstream rejected successfully');
-        showSuccess('업스트림이 성공적으로 거부되었습니다!');
-        // upstreams 목록 새로고침
-        handleUploadComplete();
-      } else {
-        console.error('❌ Failed to reject upstream:', response.message);
-        showError(`거부 실패: ${response.message || '알 수 없는 오류'}`);
-      }
-    } catch (error: any) {
-      console.error('❌ Error rejecting upstream:', error);
-      showError(`거부 중 오류 발생: ${error.response?.data?.message || error.message || '알 수 없는 오류'}`);
-    }
   };
 
   // 스테이지가 닫혀있는지 확인
@@ -705,13 +483,7 @@ const StagePage: React.FC = () => {
               <StemSetCard
                 key={upstream.id}
                 upstream={upstream}
-                isPlaying={playingIndex === idx}
-                seek={seekValues[idx]}
-                onPlayToggle={() => handlePlayToggle(idx, upstream)}
-                onSeek={value => handleSeek(idx, value)}
                 onDetail={() => handleDetail(upstream)}
-                onApprove={() => handleApprove(upstream)}
-                onReject={() => handleReject(upstream)}
               />
             ))
           )}
@@ -731,22 +503,7 @@ const StagePage: React.FC = () => {
       )}
       
       {/* 오디오 엘리먼트 */}
-      {audioUrl && (
-        <audio
-          ref={audioRef}
-          src={audioUrl}
-          onEnded={() => {
-            setPlayingIndex(null);
-            setAudioUrl(null);
-          }}
-          onError={(e) => {
-            console.error('Audio playback error:', e);
-            setPlayingIndex(null);
-            setAudioUrl(null);
-          }}
-          style={{ display: 'none' }}
-        />
-      )}
+      {/* The audio element is removed as per the edit hint. */}
 
       {/* Custom CSS for slider */}
       <style>{`
