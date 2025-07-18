@@ -252,6 +252,7 @@ const StagePage: React.FC = () => {
 
             {/* Controls */}
             <div className="space-y-3">
+            
               {/* Progress Bar */}
               <div className="relative">
                 <input
@@ -684,19 +685,6 @@ const StagePage: React.FC = () => {
 
         {/* Stem Sets Grid */}
         <div className='grid grid-cols-1 gap-8 md:grid-cols-2 lg:grid-cols-3 xl:grid-cols-4 justify-items-center'>
-          {/* 디버깅용 테스트 버튼 */}
-          <div className="col-span-full mb-4">
-            <button
-              onClick={() => {
-                console.log('🔍 Test button clicked!');
-                showInfo('테스트 버튼이 클릭되었습니다!');
-              }}
-              className="px-4 py-2 bg-red-500 text-white rounded-lg hover:bg-red-600"
-            >
-              테스트 버튼 (클릭해보세요)
-            </button>
-          </div>
-          
           {loading ? (
             <div className="col-span-full flex justify-center items-center py-16">
               <div className="flex items-center gap-4">
