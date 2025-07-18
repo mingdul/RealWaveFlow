@@ -1,9 +1,6 @@
 import { IsNotEmpty, IsOptional, IsString, IsUUID } from 'class-validator';
 
 export class CreateUpstreamDto {
-    @IsString()
-    @IsNotEmpty()
-    title: string;
 
     @IsString()
     @IsOptional()

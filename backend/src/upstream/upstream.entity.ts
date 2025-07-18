@@ -12,8 +12,8 @@ export class Upstream {
     @PrimaryGeneratedColumn('uuid')
     id : string;
 
-    @Column({ type: 'varchar' })
-    title : string;
+    @Column({ type: 'number' })
+    title : number;
 
     @Column({ type: 'text' })
     description : string;

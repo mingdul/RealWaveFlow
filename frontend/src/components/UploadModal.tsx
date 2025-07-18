@@ -835,7 +835,6 @@ const UploadModal: React.FC<UploadModalProps> = ({
       const newStemCount = completedNewCategoryFiles.length;
       const upstreamData = {
         upstream: {
-          title: `Stem Set ${new Date().toLocaleString()}`,
           description: state.description || `Updated: ${replacementCount}, Added: ${newStemCount}`,
           stage_id: stageId,
           user_id: user?.id || '',
