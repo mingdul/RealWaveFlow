@@ -38,12 +38,11 @@ import {
   Check,
   X,
   MoreVertical,
-  Eye,
   MessageCircle,
   VolumeX,
   Volume2,
 } from 'lucide-react';
-import { ActionButton, ToggleButton, StatusBadge, FloatingCommentButton, CommentMarker, FloatingCommentBubble } from '../components/ui';
+import { ActionButton, StatusBadge } from '../components/ui';
 import { theme } from '../styles/theme';
 
 // Comment interface updated to match backend response
@@ -97,16 +96,13 @@ const StemSetReviewPage = () => {
   const [duration, setDuration] = useState(0);
   const [isPlaying, setIsPlaying] = useState(false);
   const [soloTrack, setSoloTrack] = useState<'main' | 'extra'>('main'); // 초기에는 guide(main)만 소리 나게
-  const [showHistory, setShowHistory] = useState(false);
-  const [showCommentList, setShowCommentList] = useState(false);
-  const [showSidebar, setShowSidebar] = useState(true);
-  const [sidebarWidth, setSidebarWidth] = useState(320);
-  const [enableNewCommentUI, setEnableNewCommentUI] = useState(true); // 새로운 댓글 UI 활성화
-  const [waveformWidth] = useState(800); // 파형 넓이
-  const [activeCommentMarkers] = useState<string[]>([]); // 활성 댓글 마커
+  // 새로운 UI 상태 관리
+  const [activePanel, setActivePanel] = useState<'none' | 'comments' | 'stems'>('none');
   const [floatingComments, setFloatingComments] = useState<any[]>([]); // 떠다니는 댓글
   const waveformContainerRef = useRef<HTMLDivElement>(null);
-  const [commentInput, setCommentInput] = useState('');
+  const [showCommentInput, setShowCommentInput] = useState(false);
+  const [commentPosition, setCommentPosition] = useState({ x: 0, time: 0 });
+  const [newCommentText, setNewCommentText] = useState('');
   const [comments, setComments] = useState<Comment[]>([]);
   const [selectedUpstream, setSelectedUpstream] = useState<any>(null);
   const [commentsLoading, setCommentsLoading] = useState(false);
@@ -258,12 +254,8 @@ const StemSetReviewPage = () => {
 
   // 상태 변경 추적을 위한 로그
   useEffect(() => {
-    console.log('📊 [State Change] showHistory:', showHistory);
-  }, [showHistory]);
-
-  useEffect(() => {
-    console.log('📊 [State Change] showCommentList:', showCommentList);
-  }, [showCommentList]);
+    console.log('📊 [State Change] activePanel:', activePanel);
+  }, [activePanel]);
 
   useEffect(() => {
     console.log('📊 [State Change] selectedUpstream:', selectedUpstream?.id || 'null');
@@ -779,6 +771,85 @@ const StemSetReviewPage = () => {
     };
   }, [togglePlay, currentTime, duration, volume]);
 
+
+  // 파형 클릭 이벤트 - 댓글 추가
+  const handleWaveformClick = useCallback((event: React.MouseEvent) => {
+    if (!selectedUpstream || !waveformContainerRef.current) return;
+    
+    const rect = waveformContainerRef.current.getBoundingClientRect();
+    const x = event.clientX - rect.left;
+    const progress = x / rect.width;
+    const time = progress * duration;
+    
+    setCommentPosition({ x, time });
+    setShowCommentInput(true);
+  }, [selectedUpstream, duration]);
+
+  // 댓글 추가 완료
+  const handleAddComment = useCallback(async () => {
+    if (!newCommentText.trim() || !user || !selectedUpstream) return;
+
+    const timeString = `${String(Math.floor(commentPosition.time / 60)).padStart(2, '0')}:${String(Math.floor(commentPosition.time % 60)).padStart(2, '0')}`;
+
+    try {
+      const commentData = {
+        comment: newCommentText.trim(),
+        time: timeString,
+        upstream_id: selectedUpstream.id,
+        user_id: user.id,
+      };
+
+      const response = await createUpstreamComment(commentData);
+      const createdComment = response.upstream_comment || response;
+
+      const newComment: Comment = {
+        id: createdComment.id,
+        time: timeString,
+        comment: newCommentText.trim(),
+        timeNumber: commentPosition.time,
+        timeString: timeString,
+        user: {
+          id: user.id,
+          username: user.username,
+        },
+      };
+
+      setComments((prev) => [...prev, newComment]);
+      setNewCommentText('');
+      setShowCommentInput(false);
+      showSuccess('댓글이 추가되었습니다!');
+    } catch (error) {
+      console.error('댓글 추가 실패:', error);
+      showError('댓글 추가 중 오류가 발생했습니다.');
+    }
+  }, [newCommentText, commentPosition, user, selectedUpstream, showSuccess, showError]);
+
+  // 재생 중 댓글 표시 로직
+  useEffect(() => {
+    if (!isPlaying) {
+      setFloatingComments([]);
+      return;
+    }
+
+    const currentComments = comments.filter(comment => {
+      const timeDiff = Math.abs(currentTime - comment.timeNumber);
+      return timeDiff <= 0.5; // 0.5초 이내의 댓글들
+    });
+
+    setFloatingComments(currentComments.map(comment => ({
+      ...comment,
+      id: `floating-${comment.id}-${Date.now()}`, // 유니크 ID
+      position: duration > 0 ? comment.timeNumber / duration : 0,
+    })));
+
+    // 3초 후 자동 제거
+    const timer = setTimeout(() => {
+      setFloatingComments([]);
+    }, 3000);
+
+    return () => clearTimeout(timer);
+  }, [currentTime, isPlaying, comments, duration]);
+
   const stopPlayback = useCallback(() => {
     const mainPlayer = wavesurferRefs.current['main'];
     const extraPlayer = wavesurferRefs.current['extra'];
@@ -882,104 +953,6 @@ const StemSetReviewPage = () => {
     []
   );
 
-  // 새로운 댓글 추가 함수 (플로팅 버튼용)
-  const handleFloatingCommentAdd = useCallback(async (time: number, comment: string) => {
-    if (!user || !selectedUpstream) return;
-
-    const timeString = `${String(Math.floor(time / 60)).padStart(2, '0')}:${String(Math.floor(time % 60)).padStart(2, '0')}`;
-
-    try {
-      const commentData = {
-        comment: comment,
-        time: timeString,
-        upstream_id: selectedUpstream.id,
-        user_id: user.id,
-      };
-
-      const response = await createUpstreamComment(commentData);
-      const createdComment = response.upstream_comment || response;
-
-      const newComment: Comment = {
-        id: createdComment.id,
-        time: timeString,
-        comment: comment,
-        timeNumber: time,
-        timeString: timeString,
-        user: {
-          id: user.id,
-          username: user.username,
-        },
-      };
-
-      setComments((prev) => [...prev, newComment]);
-      showSuccess('댓글이 추가되었습니다!');
-    } catch (error) {
-      console.error('댓글 추가 실패:', error);
-      showError('댓글 추가 중 오류가 발생했습니다.');
-    }
-  }, [user, selectedUpstream, showSuccess, showError]);
-
-  // 기존 댓글 추가 함수 (레거시)
-  const handleAddComment = useCallback(async () => {
-    if (!commentInput.trim() || !user) return;
-
-    const timeString = `${String(Math.floor(currentTime / 60)).padStart(2, '0')}:${String(Math.floor(currentTime % 60)).padStart(2, '0')}`;
-
-    try {
-      const commentData = {
-        comment: commentInput.trim(),
-        time: timeString,
-        upstream_id: selectedUpstream.id,
-        user_id: user.id,
-      };
-
-      const response = await createUpstreamComment(commentData);
-
-      // 백엔드 응답 구조에 맞게 수정: upstream_comment 객체에서 데이터 추출
-      const createdComment = response.upstream_comment || response;
-
-      // 새 댓글을 로컬 상태에 추가
-      const newComment: Comment = {
-        id: createdComment.id,
-        time: timeString,
-        comment: commentInput.trim(),
-        timeNumber: currentTime,
-        timeString: timeString,
-        user: {
-          id: user.id,
-          username: user.username,
-        },
-      };
-
-      setComments((prev) => [...prev, newComment]);
-      setCommentInput('');
-      setShowCommentList(true);
-
-      // 마커 생성 (얇은 선)
-      const ws = wavesurferRefs.current['main'];
-      if (ws) {
-        try {
-          const container = ws.getWrapper();
-          const marker = document.createElement('div');
-          marker.style.position = 'absolute';
-          marker.style.left = `${(currentTime / duration) * 100}%`;
-          marker.style.top = '0';
-          marker.style.width = '2px';
-          marker.style.height = '100%';
-          marker.style.backgroundColor = 'rgba(255, 255, 255, 0.8)';
-          marker.style.pointerEvents = 'none';
-          marker.style.zIndex = '10';
-          marker.dataset.commentId = newComment.id;
-
-          container.appendChild(marker);
-        } catch (error) {
-          console.warn('마커 생성 실패:', error);
-        }
-      }
-    } catch (error) {
-      console.error('댓글 추가 실패:', error);
-    }
-  }, [commentInput, currentTime, duration, selectedUpstream, user]);
 
   // 댓글 로드 함수
   const loadComments = useCallback(async (upstreamId: string) => {
@@ -1533,7 +1506,7 @@ const StemSetReviewPage = () => {
         stageId,
         upstreamId,
         selectedUpstream: selectedUpstream?.id || 'null',
-        showHistory,
+        activePanel,
         upstreamStemsCount: upstreamStems.length
       });
 
@@ -1560,19 +1533,18 @@ const StemSetReviewPage = () => {
   }, []);
 
   // 렌더링 로그 최적화 (무한 리렌더링 방지)
-  if (debugRef.current.lastState !== `${showHistory}-${stemsLoading}-${upstreamStems.length}`) {
+  if (debugRef.current.lastState !== `${activePanel}-${stemsLoading}-${upstreamStems.length}`) {
     console.log('🎨 [StemSetReviewPage] Starting render, current state:', {
       stageId,
       upstreamId,
       selectedUpstream: selectedUpstream?.id || 'null',
-      showHistory,
-      showCommentList,
+      activePanel,
       stemsLoading,
       guideLoading,
       upstreamStemsCount: upstreamStems.length,
       isReady: readyStates
     });
-    debugRef.current.lastState = `${showHistory}-${stemsLoading}-${upstreamStems.length}`;
+    debugRef.current.lastState = `${activePanel}-${stemsLoading}-${upstreamStems.length}`;
   }
 
   return (
@@ -1615,13 +1587,6 @@ const StemSetReviewPage = () => {
 
           {/* Right section - Secondary Actions */}
           <div className='flex items-center space-x-2'>
-            <ToggleButton
-              iconOn={<Eye size={18} />}
-              iconOff={<Eye size={18} />}
-              isOn={showSidebar}
-              onToggle={() => setShowSidebar(!showSidebar)}
-              label='사이드바'
-            />
             <div className='flex items-center space-x-1 rounded bg-gray-800 p-1'>
               <button
                 className='rounded p-2 text-gray-300 hover:bg-gray-700 hover:text-white transition-colors'
@@ -1645,7 +1610,7 @@ const StemSetReviewPage = () => {
           </div>
         </header>
 
-        {/* Secondary Actions Bar */}
+        {/* 새로운 Actions Bar */}
         <div className='bg-gray-900/50 border-b border-gray-800 px-6 py-3'>
           <div className='flex items-center justify-between'>
             <div className='flex items-center space-x-4'>
@@ -1660,43 +1625,30 @@ const StemSetReviewPage = () => {
             </div>
             
             <div className='flex items-center space-x-3'>
-              <ToggleButton
-                iconOn={<Eye size={16} />}
-                iconOff={<Eye size={16} />}
-                isOn={showHistory}
-                onToggle={() => {
-                  console.log('🔍 [Show History] Button clicked, toggling from', showHistory, 'to', !showHistory);
-                  setShowHistory(!showHistory);
-                }}
-                label={`스템 목록 ${upstreamStems.length > 0 ? `(${upstreamStems.length})` : ''}`}
-                disabled={upstreamStems.length === 0}
-                className='text-xs'
+              <ActionButton
+                icon={<Volume2 size={16} />}
+                label='스템 목록'
+                onClick={() => setActivePanel(activePanel === 'stems' ? 'none' : 'stems')}
+                variant={activePanel === 'stems' ? 'primary' : 'secondary'}
+                className='text-sm px-4 py-2'
               />
-              <ToggleButton
-                iconOn={<MessageCircle size={16} />}
-                iconOff={<MessageCircle size={16} />}
-                isOn={enableNewCommentUI ? false : showCommentList}
-                onToggle={() => {
-                  if (enableNewCommentUI) {
-                    setEnableNewCommentUI(false);
-                    setShowCommentList(true);
-                  } else {
-                    setShowCommentList(!showCommentList);
-                  }
-                }}
-                label={enableNewCommentUI ? '레거시 댓글' : '댓글'}
-                className='text-xs'
+              <ActionButton
+                icon={<MessageCircle size={16} />}
+                label='댓글'
+                onClick={() => setActivePanel(activePanel === 'comments' ? 'none' : 'comments')}
+                variant={activePanel === 'comments' ? 'primary' : 'secondary'}
+                className='text-sm px-4 py-2'
               />
             </div>
           </div>
         </div>
 
-        {/* Enhanced Sidebar with resize functionality */}
-        {showSidebar && showHistory && (
+        {/* 새로운 슬라이드 패널 - 스템 목록 */}
+        {activePanel === 'stems' && (
           <div 
             className='fixed right-0 top-0 z-40 h-full bg-gray-900/95 backdrop-blur-sm border-l border-gray-700 shadow-2xl transition-all duration-300 ease-in-out'
             style={{ 
-              width: `${sidebarWidth}px`,
+              width: '400px',
               minWidth: '300px',
               maxWidth: '500px'
             }}
@@ -1706,12 +1658,12 @@ const StemSetReviewPage = () => {
               className='absolute left-0 top-0 w-1 h-full bg-gray-600 hover:bg-blue-500 cursor-col-resize transition-colors'
               onMouseDown={(e) => {
                 const startX = e.clientX;
-                const startWidth = sidebarWidth;
+                const startWidth = 400;
                 
                 const handleMouseMove = (e: MouseEvent) => {
                   const newWidth = startWidth - (e.clientX - startX);
                   if (newWidth >= 300 && newWidth <= 500) {
-                    setSidebarWidth(newWidth);
+                    // Fixed width for now, remove resize functionality
                   }
                 };
                 
@@ -1737,7 +1689,7 @@ const StemSetReviewPage = () => {
                   </p>
                 </div>
                 <button
-                  onClick={() => setShowHistory(false)}
+                  onClick={() => setActivePanel('none')}
                   className='rounded-lg p-2 text-gray-400 hover:bg-gray-800 hover:text-white transition-all duration-200'
                   title='닫기'
                 >
@@ -1806,12 +1758,12 @@ const StemSetReviewPage = () => {
                       console.log('🎨 [Render IIFE] Starting render function');
                       
                       // Reduce excessive logging (only log once per state change)
-                      const currentState = `${showHistory}-${stemsLoading}-${upstreamStems.length}`;
+                      const currentState = `${activePanel}-${stemsLoading}-${upstreamStems.length}`;
                       const now = Date.now();
                       
                       console.log('🎨 [Render IIFE] Current state:', {
                         currentState,
-                        showHistory,
+                        activePanel,
                         stemsLoading,
                         upstreamStemsLength: upstreamStems.length,
                         stageId,
@@ -1821,7 +1773,7 @@ const StemSetReviewPage = () => {
                       
                       if (currentState !== debugRef.current.lastState || now - debugRef.current.lastLog > 2000) {
                         console.log('🎨 [Render] State:', {
-                          showHistory,
+                          activePanel,
                           stemsLoading,
                           stemsCount: upstreamStems.length,
                           stageId,
@@ -2001,7 +1953,8 @@ const StemSetReviewPage = () => {
           </div>
         )}
 
-        {showSidebar && showCommentList && !enableNewCommentUI && (
+        {/* 새로운 슬라이드 패널 - 댓글 */}
+        {activePanel === 'comments' && (
           <div className='fixed right-0 top-0 z-40 h-full w-80 bg-gray-900/95 backdrop-blur-sm border-l border-gray-700 shadow-2xl transition-all duration-300 ease-in-out'>
             <div className='px-6 py-6 h-full flex flex-col'>
               {/* Header */}
@@ -2016,7 +1969,7 @@ const StemSetReviewPage = () => {
                   </p>
                 </div>
                 <button
-                  onClick={() => setShowCommentList(false)}
+                  onClick={() => setActivePanel('none')}
                   className='rounded-lg p-2 text-gray-400 hover:bg-gray-800 hover:text-white transition-all duration-200'
                   title='닫기'
                 >
@@ -2125,8 +2078,8 @@ const StemSetReviewPage = () => {
           </div>
         )}
 
-        {/* Main Content Area */}
-        <main className={`transition-all duration-300 ${showSidebar ? 'mr-80' : ''} px-6`}>
+        {/* Main Content Area - 새로운 레이아웃 */}
+        <main className={`transition-all duration-300 ${activePanel !== 'none' ? 'mr-80' : ''} px-6`}>
           {/* Waveform Cards */}
           <div className='space-y-6'>
             {/* Guide Waveform Card */}
@@ -2140,19 +2093,26 @@ const StemSetReviewPage = () => {
                     <StatusBadge status='in_progress' />
                   </div>
                   <div className='flex items-center gap-2'>
-                    <ToggleButton
-                      iconOn={<Volume2 size={16} />}
-                      iconOff={<VolumeX size={16} />}
-                      isOn={soloTrack === 'main'}
-                      onToggle={handleMainSolo}
-                      className='text-xs'
-                    />
+                    <button
+                      onClick={handleMainSolo}
+                      className={`p-2 rounded-lg transition-colors text-xs ${
+                        soloTrack === 'main' 
+                          ? 'bg-blue-600 text-white' 
+                          : 'bg-gray-700 text-gray-300 hover:bg-gray-600'
+                      }`}
+                    >
+                      {soloTrack === 'main' ? <Volume2 size={16} /> : <VolumeX size={16} />}
+                    </button>
                   </div>
                 </div>
               </div>
               
-              {/* Waveform Content */}
-              <div className='p-6 relative' ref={waveformContainerRef}>
+              {/* Waveform Content - 새로운 인터랙티브 파형 */}
+              <div 
+                className='p-6 relative cursor-pointer' 
+                ref={waveformContainerRef}
+                onClick={handleWaveformClick}
+              >
                 {(() => {
                   console.log('🎨 [Waveform Render] Checking conditions:', {
                     guideLoading,
@@ -2198,48 +2158,100 @@ const StemSetReviewPage = () => {
                       <div className='relative'>
                         <Wave {...mainWaveProps} />
                         
-                        {/* 새로운 댓글 UI 오버레이 */}
-                        {enableNewCommentUI && selectedUpstream && (
-                          <div className='absolute inset-0 pointer-events-none'>
-                            {/* 플로팅 댓글 버튼 */}
-                            <div className='absolute bottom-0 left-0 right-0 h-12 pointer-events-auto'>
-                              <FloatingCommentButton
-                                currentTime={currentTime}
-                                duration={duration}
-                                containerWidth={waveformWidth}
-                                onAddComment={handleFloatingCommentAdd}
-                                disabled={!selectedUpstream}
-                              />
+                        {/* 댓글 마커들 */}
+                        {selectedUpstream && comments.map((comment) => {
+                          const position = duration > 0 ? (comment.timeNumber / duration) * 100 : 0;
+                          return (
+                            <div
+                              key={comment.id}
+                              className='absolute top-1/2 transform -translate-y-1/2 cursor-pointer z-20'
+                              style={{ left: `${position}%` }}
+                              onClick={() => seekToTime(comment.timeNumber)}
+                              title={`${comment.user?.username}: ${comment.comment}`}
+                            >
+                              <div className='w-3 h-3 rounded-full bg-blue-500 border-2 border-white shadow-lg hover:scale-125 transition-transform'>
+                                <div className='w-full h-full rounded-full bg-gradient-to-br from-blue-400 to-blue-600'></div>
+                              </div>
                             </div>
-                            
-                            {/* 댓글 마커들 */}
-                            {comments.map((comment) => (
-                              <CommentMarker
-                                key={comment.id}
-                                user={{
-                                  id: comment.user?.id || '',
-                                  username: comment.user?.username || 'Unknown',
-                                  avatarUrl: undefined // TODO: 아바타 URL 추가 시 수정
-                                }}
-                                position={duration > 0 ? comment.timeNumber / duration : 0}
-                                isActive={activeCommentMarkers.includes(comment.id)}
-                                onClick={() => seekToTime(comment.timeNumber)}
+                          );
+                        })}
+                        
+                        {/* 플로팅 댓글 버블들 */}
+                        {floatingComments.map((comment) => {
+                          const position = comment.position * 100;
+                          return (
+                            <div
+                              key={comment.id}
+                              className='absolute z-30 animate-bounce-slow'
+                              style={{
+                                left: `${position}%`,
+                                bottom: '100%',
+                                transform: 'translateX(-50%)',
+                                marginBottom: '10px',
+                              }}
+                            >
+                              <div className='bg-black/90 text-white px-3 py-2 rounded-lg shadow-xl max-w-xs'>
+                                <div className='text-xs text-blue-400 font-medium mb-1'>
+                                  {comment.user?.username}
+                                </div>
+                                <div className='text-sm'>{comment.comment}</div>
+                                <div className='absolute top-full left-1/2 transform -translate-x-1/2 w-0 h-0 border-l-4 border-r-4 border-t-4 border-transparent border-t-black/90'></div>
+                              </div>
+                            </div>
+                          );
+                        })}
+                        
+                        {/* 댓글 입력 팝업 */}
+                        {showCommentInput && selectedUpstream && (
+                          <div
+                            className='absolute z-40'
+                            style={{
+                              left: `${commentPosition.x}px`,
+                              top: '50%',
+                              transform: 'translate(-50%, -100%)',
+                              marginTop: '-10px',
+                            }}
+                          >
+                            <div className='bg-gray-900/95 border border-gray-600 rounded-lg shadow-2xl p-4 min-w-80'>
+                              <div className='absolute top-full left-1/2 transform -translate-x-1/2 w-0 h-0 border-l-4 border-r-4 border-t-4 border-transparent border-t-gray-900'></div>
+                              
+                              <div className='mb-3'>
+                                <div className='flex items-center gap-2 text-sm'>
+                                  <span className='text-blue-400 font-medium'>댓글 추가</span>
+                                  <span className='bg-blue-600 text-white px-2 py-1 rounded text-xs font-mono'>
+                                    {Math.floor(commentPosition.time / 60)}:{String(Math.floor(commentPosition.time % 60)).padStart(2, '0')}
+                                  </span>
+                                </div>
+                              </div>
+                              
+                              <textarea
+                                value={newCommentText}
+                                onChange={(e) => setNewCommentText(e.target.value)}
+                                placeholder='이 시점에 대한 댓글을 작성하세요...'
+                                className='w-full bg-gray-800 border border-gray-600 rounded px-3 py-2 text-white placeholder-gray-400 text-sm resize-none focus:border-blue-500 focus:outline-none'
+                                rows={3}
+                                autoFocus
                               />
-                            ))}
-                            
-                            {/* 플로팅 댓글 버블들 */}
-                            {floatingComments.map((comment) => (
-                              <FloatingCommentBubble
-                                key={`floating-${comment.id}`}
-                                comment={comment}
-                                position={comment.position}
-                                onClose={() => {
-                                  setFloatingComments(prev => 
-                                    prev.filter(c => c.id !== comment.id)
-                                  );
-                                }}
-                              />
-                            ))}
+                              
+                              <div className='flex justify-end gap-2 mt-3'>
+                                <button
+                                  onClick={() => {
+                                    setShowCommentInput(false);
+                                    setNewCommentText('');
+                                  }}
+                                  className='px-3 py-1 text-sm bg-gray-700 hover:bg-gray-600 text-gray-300 rounded transition-colors'
+                                >
+                                  취소
+                                </button>
+                                <button
+                                  onClick={handleAddComment}
+                                  disabled={!newCommentText.trim()}
+                                  className='px-3 py-1 text-sm bg-blue-600 hover:bg-blue-700 disabled:bg-gray-600 disabled:cursor-not-allowed text-white rounded transition-colors'
+                                >
+                                  댓글 작성
+                                </button>
+                              </div>
+                            </div>
                           </div>
                         )}
                       </div>
@@ -2270,13 +2282,16 @@ const StemSetReviewPage = () => {
                       <StatusBadge status='pending' />
                     </div>
                     <div className='flex items-center gap-2'>
-                      <ToggleButton
-                        iconOn={<Volume2 size={16} />}
-                        iconOff={<VolumeX size={16} />}
-                        isOn={soloTrack === 'extra'}
-                        onToggle={handleExtraSolo}
-                        className='text-xs'
-                      />
+                      <button
+                        onClick={handleExtraSolo}
+                        className={`p-2 rounded-lg transition-colors text-xs ${
+                          soloTrack === 'extra' 
+                            ? 'bg-blue-600 text-white' 
+                            : 'bg-gray-700 text-gray-300 hover:bg-gray-600'
+                        }`}
+                      >
+                        {soloTrack === 'extra' ? <Volume2 size={16} /> : <VolumeX size={16} />}
+                      </button>
                     </div>
                   </div>
                 </div>
@@ -2321,25 +2336,6 @@ const StemSetReviewPage = () => {
                         onSeek={handleSeek}
                       />
                       
-                      {/* Extra 파형 댓글 오버레이 */}
-                      {enableNewCommentUI && selectedUpstream && (
-                        <div className='absolute inset-0 pointer-events-none'>
-                          {/* 댓글 마커들 */}
-                          {comments.map((comment) => (
-                            <CommentMarker
-                              key={`extra-${comment.id}`}
-                              user={{
-                                id: comment.user?.id || '',
-                                username: comment.user?.username || 'Unknown',
-                                avatarUrl: undefined
-                              }}
-                              position={duration > 0 ? comment.timeNumber / duration : 0}
-                              isActive={activeCommentMarkers.includes(comment.id)}
-                              onClick={() => seekToTime(comment.timeNumber)}
-                            />
-                          ))}
-                        </div>
-                      )}
                     </div>
                   )}
                 </div>
@@ -2349,7 +2345,7 @@ const StemSetReviewPage = () => {
         </main>
 
         {/* Enhanced Control Bar */}
-        <div className={`transition-all duration-300 ${showSidebar ? 'mr-80' : ''} px-6`}>
+        <div className={`transition-all duration-300 ${activePanel !== 'none' ? 'mr-80' : ''} px-6`}>
           <div className='rounded-xl bg-gray-900/80 backdrop-blur-sm border border-gray-700 shadow-2xl overflow-hidden'>
             <div className='flex items-center justify-between px-6 py-4'>
               {/* Left Controls */}
@@ -2442,98 +2438,18 @@ const StemSetReviewPage = () => {
           </div>
         </div>
 
-        {/* Enhanced Comment Input - 레거시 모드에서만 표시 */}
-        {!enableNewCommentUI && (
-          <div className={`transition-all duration-300 ${showSidebar ? 'mr-80' : ''} px-6`}>
-          <div className='rounded-xl bg-gray-900/80 backdrop-blur-sm border border-gray-700 shadow-2xl overflow-hidden'>
-            {/* Comment Input Header */}
-            {selectedUpstream && (
-              <div className='bg-gray-800/50 border-b border-gray-700 px-6 py-3'>
-                <div className='flex items-center gap-2 text-sm'>
-                  <MessageCircle size={16} className='text-blue-400' />
-                  <span className='text-gray-400'>댓글 대상:</span>
-                  <span className='text-white font-medium'>{selectedUpstream.title}</span>
-                </div>
+        {/* 새로운 댓글 시스템 안내 */}
+        <div className={`transition-all duration-300 ${activePanel !== 'none' ? 'mr-80' : ''} px-6 py-4`}>
+          <div className='text-center'>
+            <div className='inline-flex items-center gap-3 bg-gray-900/60 backdrop-blur-sm border border-gray-700 rounded-lg px-6 py-3'>
+              <MessageCircle size={20} className='text-blue-400' />
+              <div className='text-sm'>
+                <div className='text-white font-medium'>인터랙티브 댓글 시스템</div>
+                <div className='text-gray-400'>파형을 클릭하여 해당 시점에 댓글을 추가하세요</div>
               </div>
-            )}
-            
-            {/* Comment Input Area */}
-            <div className='p-6'>
-              <div className='flex items-center gap-4'>
-                {/* Timestamp */}
-                <div className='flex items-center gap-2'>
-                  <span className='text-xs text-gray-400'>시간:</span>
-                  <span className='rounded-lg bg-blue-600 px-3 py-1 text-sm font-mono text-white'>
-                    {String(Math.floor(currentTime / 60)).padStart(2, '0')}:
-                    {String(Math.floor(currentTime % 60)).padStart(2, '0')}
-                  </span>
-                </div>
-                
-                {/* Comment Input */}
-                <div className='flex-1 flex items-center gap-3'>
-                  <input
-                    type='text'
-                    placeholder={
-                      selectedUpstream
-                        ? '이 시점에 대한 댓글을 작성하세요...'
-                        : '오디오 파일을 선택하여 댓글을 작성하세요'
-                    }
-                    className='flex-1 bg-gray-800 border border-gray-600 rounded-lg px-4 py-3 text-white placeholder-gray-400 focus:border-blue-500 focus:outline-none transition-colors'
-                    value={commentInput}
-                    onChange={(e) => setCommentInput(e.target.value)}
-                    disabled={!selectedUpstream}
-                    onKeyPress={(e) => {
-                      if (e.key === 'Enter' && selectedUpstream && commentInput.trim()) {
-                        handleAddComment();
-                      }
-                    }}
-                  />
-                  
-                  {/* Send Button */}
-                  <ActionButton
-                    icon={<MessageCircle size={18} />}
-                    label='댓글 작성'
-                    onClick={handleAddComment}
-                    disabled={!selectedUpstream || !commentInput.trim()}
-                    variant={selectedUpstream && commentInput.trim() ? 'primary' : 'secondary'}
-                    className='px-4 py-3'
-                  />
-                </div>
-              </div>
-              
-              {/* Comment Status */}
-              {!selectedUpstream && (
-                <div className='mt-4 text-center'>
-                  <p className='text-sm text-gray-400'>
-                    사이드바에서 오디오 파일을 선택하면 해당 시점에 댓글을 남길 수 있습니다.
-                  </p>
-                </div>
-              )}
             </div>
           </div>
         </div>
-        )}
-        
-        {/* 새로운 댓글 UI 안내 */}
-        {enableNewCommentUI && (
-          <div className={`transition-all duration-300 ${showSidebar ? 'mr-80' : ''} px-6 py-4`}>
-            <div className='text-center'>
-              <div className='inline-flex items-center gap-3 bg-gray-900/60 backdrop-blur-sm border border-gray-700 rounded-lg px-6 py-3'>
-                <MessageCircle size={20} className='text-blue-400' />
-                <div className='text-sm'>
-                  <div className='text-white font-medium'>새로운 댓글 시스템 활성화</div>
-                  <div className='text-gray-400'>파형 위의 파란색 버튼을 클릭하여 댓글을 추가하세요</div>
-                </div>
-                <button
-                  onClick={() => setEnableNewCommentUI(false)}
-                  className='text-xs bg-gray-700 hover:bg-gray-600 text-gray-300 px-3 py-1 rounded transition-colors'
-                >
-                  레거시 모드
-                </button>
-              </div>
-            </div>
-          </div>
-        )}
       </div>
     </div>
   );
