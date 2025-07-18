@@ -663,7 +663,7 @@ const StagePage: React.FC = () => {
               </div>
             </div>
             
-            {!isStageClosed ? (
+            {!isStageClosed && !isUploadModalOpen ? (
               <button
                 className='flex items-center gap-3 rounded-xl bg-gradient-to-r from-purple-600 to-purple-700 px-6 py-3 text-white transition-all duration-200 hover:from-purple-500 hover:to-purple-600 shadow-lg hover:shadow-purple-500/25 transform hover:scale-105 border border-purple-500/50'
                 onClick={() => setUploadModalOpen(true)}
@@ -671,7 +671,7 @@ const StagePage: React.FC = () => {
                 <Upload size={18} />
                 <span className='font-semibold'>UPLOAD</span>
               </button>
-            ) : (
+            ) : isStageClosed ? (
               <button
                 className='flex items-center gap-3 rounded-xl bg-gray-600/50 px-6 py-3 text-gray-400 cursor-not-allowed border border-gray-600/50'
                 disabled
@@ -679,7 +679,7 @@ const StagePage: React.FC = () => {
                 <Upload size={18} />
                 <span className='font-semibold'>UPLOAD (스테이지가 닫혀있습니다)</span>
               </button>
-            )}
+            ) : null}
           </div>
         </div>
 

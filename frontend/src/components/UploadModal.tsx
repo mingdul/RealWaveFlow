@@ -11,7 +11,9 @@ import s3UploadService from '../services/s3UploadService';
 import { createUpstream } from '../services/upstreamService';
 import versionstemService from '../services/versionstemService';
 import stemJobService from '../services/stemJobService';
-import {getDisplayFilename } from '../utils/filenameUtils';
+import { getDisplayFilename, decodeFilename } from '../utils/filenameUtils';
+import { useSocket } from '../contexts/SocketContext';
+import socketService from '../services/socketService';
 // import stemFileService from '../services/stemFileService';
 // import categoryService from '../services/categoryService';
 // import masterStemService from '../services/masterStemService';
@@ -94,6 +96,15 @@ const uploadReducer = (state: UploadState, action: any): UploadState => {
       return { ...state, isLoadingStems: action.payload };
     case 'SET_DESCRIPTION':
       return { ...state, description: action.payload };
+    case 'RESET_UPLOAD':
+      return {
+        uploadedFiles: [],
+        existingStems: [],
+        isUploading: false,
+        currentUploadIndex: 0,
+        isLoadingStems: false,
+        description: ''
+      };
     default:
       return state;
   }
@@ -607,6 +618,7 @@ const UploadModal: React.FC<UploadModalProps> = ({
 }) => {
   const { user } = useAuth();
   const { showError, showSuccess } = useToast();
+  const { isConnected } = useSocket();
   const [state, dispatch] = useReducer(uploadReducer, {
     uploadedFiles: [],
     existingStems: [],
@@ -616,9 +628,11 @@ const UploadModal: React.FC<UploadModalProps> = ({
     description: ''
   });
 
-  // Load existing stems
+  // 모달 상태 초기화 및 기존 스템 로드
   useEffect(() => {
     if (isOpen && projectId && stageId) {
+      // 모달 열릴 때 상태 초기화
+      dispatch({ type: 'RESET_UPLOAD' });
       dispatch({ type: 'SET_LOADING_STEMS', payload: true });
       
       // projectId is the track_id, and we need to get stage info to get version
@@ -629,19 +643,25 @@ const UploadModal: React.FC<UploadModalProps> = ({
         .then(response => {
           if (response && Array.isArray(response)) {
             // 백엔드 응답을 MasterStem 형태로 변환
-            const stems = response.map((item: any) => ({
-              id: item.stem.id,
-              file_name: item.stem.file_name,
-              file_path: item.stem.file_path,
-              tag: item.category, // category name을 tag로 사용
-              key: item.stem.key || '',
-              description: `${item.category} stem`,
-              track_id: item.stem.track?.id || '',
-              category_id: item.stem.category?.id || '',
-              session_id: item.stem.stage?.id || '',
-              created_at: item.stem.uploaded_at || new Date().toISOString(),
-              updated_at: item.stem.uploaded_at || new Date().toISOString()
-            }));
+            const stems = response.map((item: any) => {
+              console.log('[DEBUG] UploadModal - Raw stem data:', item.stem);
+              console.log('[DEBUG] UploadModal - Original file_name:', item.stem.file_name);
+              console.log('[DEBUG] UploadModal - Decoded file_name:', decodeFilename(item.stem.file_name));
+              
+              return {
+                id: item.stem.id,
+                file_name: item.stem.file_name, // 원본 파일명 유지 (표시할 때 디코딩)
+                file_path: item.stem.file_path,
+                tag: item.category, // category name을 tag로 사용
+                key: item.stem.key || '',
+                description: `${item.category} stem`,
+                track_id: item.stem.track?.id || '',
+                category_id: item.stem.category?.id || '',
+                session_id: item.stem.stage?.id || '',
+                created_at: item.stem.uploaded_at || new Date().toISOString(),
+                updated_at: item.stem.uploaded_at || new Date().toISOString()
+              };
+            });
             dispatch({ type: 'SET_EXISTING_STEMS', payload: stems });
           } else {
             dispatch({ type: 'SET_EXISTING_STEMS', payload: [] });
@@ -656,7 +676,160 @@ const UploadModal: React.FC<UploadModalProps> = ({
           dispatch({ type: 'SET_LOADING_STEMS', payload: false });
         });
     }
-  }, [isOpen, projectId, stageId, showError]);
+  }, [isOpen, projectId, stageId, stageVersion, showError]);
+
+  // 중복 파일 감지 소켓 이벤트 리스너
+  useEffect(() => {
+    if (!isConnected || !isOpen) return;
+
+    // 중복 파일 감지 이벤트 핸들러
+    const handleDuplicateCheck = (data: {
+      stemJobId: string;
+      isDuplicate: boolean;
+      fileName?: string;
+      trackId?: string;
+      stageId?: string;
+      timestamp: string;
+      message: string;
+    }) => {
+      console.log('Duplicate check result received:', data);
+
+      if (data.isDuplicate && data.fileName) {
+        // 중복 파일 토스트 메시지 표시
+        showError(`중복된 파일이 감지되었습니다: ${data.fileName}`);
+        
+        // 중복 파일을 업로드된 파일 목록에서 제거 (더 정확한 파일명 매칭)
+        const duplicateFile = state.uploadedFiles.find(file => {
+          // 정확한 파일명 매칭 또는 디코딩된 파일명과 매칭
+          const originalName = file.name;
+          const decodedFileName = data.fileName || '';
+          
+          return originalName === decodedFileName || 
+                 originalName.includes(decodedFileName) ||
+                 decodedFileName.includes(originalName) ||
+                 // 파일명에서 확장자를 제거한 베이스 네임으로 매칭
+                 originalName.replace(/\.[^/.]+$/, "") === decodedFileName.replace(/\.[^/.]+$/, "");
+        });
+        
+        if (duplicateFile) {
+          console.log(`Found duplicate file to remove:`, {
+            id: duplicateFile.id,
+            name: duplicateFile.name,
+            isComplete: duplicateFile.isComplete,
+            matchedStemId: duplicateFile.matchedStemId
+          });
+          
+          // 중복 파일 제거 (완료된 파일이든 진행 중인 파일이든 상관없이)
+          dispatch({ type: 'REMOVE_FILE', payload: duplicateFile.id });
+          console.log(`Removed duplicate file: ${duplicateFile.name}`);
+        } else {
+          console.log(`No matching file found for duplicate: ${data.fileName}`);
+          console.log('Current files:', state.uploadedFiles.map(f => ({ id: f.id, name: f.name })));
+        }
+      }
+    };
+
+    // 파일 처리 완료 이벤트 핸들러 (중복 검사 포함)
+    const handleFileProcessingCompleted = (data: {
+      trackId: string;
+      fileName: string;
+      result: any;
+      processingTime: number;
+      timestamp: string;
+      message: string;
+    }) => {
+      console.log('File processing completed:', data);
+      
+      // 결과에 중복 정보가 포함되어 있는지 확인
+      if (data.result && data.result.isDuplicate) {
+        showError(`중복된 파일이 감지되었습니다: ${data.fileName}`);
+        
+        const duplicateFile = state.uploadedFiles.find(file => {
+          // 정확한 파일명 매칭 또는 디코딩된 파일명과 매칭
+          const originalName = file.name;
+          const decodedFileName = data.fileName || '';
+          
+          return originalName === decodedFileName || 
+                 originalName.includes(decodedFileName) ||
+                 decodedFileName.includes(originalName) ||
+                 // 파일명에서 확장자를 제거한 베이스 네임으로 매칭
+                 originalName.replace(/\.[^/.]+$/, "") === decodedFileName.replace(/\.[^/.]+$/, "");
+        });
+        
+        if (duplicateFile) {
+          console.log(`Found duplicate file to remove from processing completed:`, {
+            id: duplicateFile.id,
+            name: duplicateFile.name,
+            isComplete: duplicateFile.isComplete,
+            matchedStemId: duplicateFile.matchedStemId
+          });
+          
+          // 중복 파일 제거 (완료된 파일이든 진행 중인 파일이든 상관없이)
+          dispatch({ type: 'REMOVE_FILE', payload: duplicateFile.id });
+          console.log(`Removed duplicate file from processing completed: ${duplicateFile.name}`);
+        }
+      }
+    };
+
+    // 추가 중복 파일 이벤트 핸들러
+    const handleFileDuplicate = (data: {
+      trackId: string;
+      fileName: string;
+      stageId: string;
+      originalFilePath: string;
+      duplicateHash: string;
+      timestamp: string;
+      message: string;
+    }) => {
+      console.log('File duplicate event received:', data);
+      
+      if (data.fileName) {
+        showError(`중복된 파일이 감지되었습니다: ${data.fileName}`);
+        
+        const duplicateFile = state.uploadedFiles.find(file => {
+          const originalName = file.name;
+          const decodedFileName = data.fileName || '';
+          
+          return originalName === decodedFileName || 
+                 originalName.includes(decodedFileName) ||
+                 decodedFileName.includes(originalName) ||
+                 originalName.replace(/\.[^/.]+$/, "") === decodedFileName.replace(/\.[^/.]+$/, "");
+        });
+        
+        if (duplicateFile) {
+          console.log(`Found duplicate file to remove from file-duplicate event:`, {
+            id: duplicateFile.id,
+            name: duplicateFile.name,
+            isComplete: duplicateFile.isComplete,
+            matchedStemId: duplicateFile.matchedStemId
+          });
+          
+          dispatch({ type: 'REMOVE_FILE', payload: duplicateFile.id });
+          console.log(`Removed duplicate file from file-duplicate event: ${duplicateFile.name}`);
+        }
+      }
+    };
+
+    // 소켓 이벤트 리스너 등록
+    socketService.on('dub-check-result', handleDuplicateCheck);
+    socketService.on('file-processing-completed', handleFileProcessingCompleted);
+    socketService.on('file-duplicate', handleFileDuplicate);
+
+    // 에러 핸들링
+    const handleSocketError = (error: any) => {
+      console.error('Socket error in UploadModal:', error);
+    };
+
+    socketService.on('error', handleSocketError);
+
+    // Cleanup 함수
+    return () => {
+      socketService.off('dub-check-result', handleDuplicateCheck);
+      socketService.off('file-processing-completed', handleFileProcessingCompleted);
+      socketService.off('file-duplicate', handleFileDuplicate);
+      socketService.off('error', handleSocketError);
+    };
+  }, [isConnected, isOpen, state.uploadedFiles, showError]);
 
   const handleMatchStem = (fileId: string, stemId: string) => {
     // Remove any existing match for this stem
@@ -765,6 +938,10 @@ const UploadModal: React.FC<UploadModalProps> = ({
     // 완료된 파일이 없는 경우
     if (allCompletedFiles.length === 0) {
       showSuccess('All uploads completed successfully!');
+      
+      // 업로드 완료 후 모달 상태 초기화
+      dispatch({ type: 'RESET_UPLOAD' });
+      
       onComplete();
       onClose();
       return;
@@ -826,6 +1003,10 @@ const UploadModal: React.FC<UploadModalProps> = ({
       // 처리할 스템이 없는 경우
       if (stemSet.length === 0 && newCategoryStems.length === 0) {
         showSuccess('All uploads completed successfully!');
+        
+        // 업로드 완료 후 모달 상태 초기화
+        dispatch({ type: 'RESET_UPLOAD' });
+        
         onComplete();
         onClose();
         return;
@@ -849,6 +1030,10 @@ const UploadModal: React.FC<UploadModalProps> = ({
       const response = await createUpstream(upstreamData);
       if (response.success) {
         showSuccess('Stem set update completed successfully!');
+        
+        // 업로드 완료 후 모달 상태 초기화
+        dispatch({ type: 'RESET_UPLOAD' });
+        
         onComplete();
         onClose();
       } else {
@@ -957,16 +1142,7 @@ const UploadModal: React.FC<UploadModalProps> = ({
             />
           )}
 
-          {/* Upload Complete */}
-          {state.uploadedFiles.filter(f => f.isComplete).length > 0 && !state.isUploading && (
-            <div className="text-center py-8 bg-green-900/20 rounded-lg border border-green-500/30 mt-6">
-              <Check size={48} className="text-green-400 mx-auto mb-4" />
-              <h3 className="text-white text-xl font-semibold mb-2">Upload Complete!</h3>
-              <p className="text-gray-300 mb-4">
-                Successfully uploaded {state.uploadedFiles.filter(f => f.isComplete).length} file(s).
-              </p>
-            </div>
-          )}
+          {/* Upload Complete - 이 메시지를 표시하지 않음 (요구사항에 따라 제거) */}
         </div>
 
         {/* Footer */}
