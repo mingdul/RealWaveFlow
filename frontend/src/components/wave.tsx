@@ -45,6 +45,7 @@ const Wave = memo(({
   const [isAudioLoading, setIsAudioLoading] = useState(false);
   const initializationRef = useRef<boolean>(false);
   const readyCallbackCalledRef = useRef<boolean>(false);
+  const shouldLog = useRef(true); // 렌더링 로그 최소화용
 
   // Memoized ready handler to prevent recreation
   const handleReadyCallback = useCallback(() => {
@@ -257,7 +258,6 @@ const Wave = memo(({
   const isActuallyLoading = isLoading || isAudioLoading;
 
   // 렌더링 로그 최소화
-  const shouldLog = useRef(true);
   if (shouldLog.current) {
     console.log(`🔍 [${id}] Render state:`, {
       isReady,

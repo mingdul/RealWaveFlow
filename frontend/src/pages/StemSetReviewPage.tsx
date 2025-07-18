@@ -1510,41 +1510,30 @@ const StemSetReviewPage = () => {
           </div>
         </div>
 
-        {/* 🔽 Header 아래로 이동된 버튼들 */}
-        <div className='mt-4 flex justify-end space-x-4'>
+                {/* 🔽 Header 아래로 이동된 버튼들 */}
+                <div className='mt-4 flex justify-end space-x-4'>
           <button
             onClick={() => {
-              try {
-                console.log('🔍 [Show History] Button clicked START');
-                console.log('🔍 [Show History] Current state BEFORE:', {
-                  showHistory,
-                  upstreamStems: upstreamStems.length,
-                  upstreamStemsData: upstreamStems,
-                  stageId,
-                  selectedUpstream: selectedUpstream?.id || 'null',
-                  stemsLoading,
-                });
-                console.log('🔍 [Show History] UpstreamStems detailed:', upstreamStems);
-                console.log('🔍 [Show History] About to toggle showHistory from', showHistory, 'to', !showHistory);
-                
-                setShowHistory(!showHistory);
-                
-                console.log('🔍 [Show History] Button clicked END - setShowHistory called');
-              } catch (error: any) {
-                console.error('❌ [Show History] Error in button click handler:', error);
-                console.error('❌ [Show History] Error stack:', error?.stack);
-              }
+              console.log('🔍 [Show History] Button clicked. Current state:', { 
+                showHistory, 
+                upstreamStems: upstreamStems.length,
+                upstreamStemsData: upstreamStems,
+                stageId,
+                selectedUpstream,
+                stemsLoading
+              });
+              console.log('🔍 [Show History] UpstreamStems detailed:', upstreamStems);
+              setShowHistory(!showHistory);
             }}
             className={`self-start rounded px-3 py-1 text-sm transition-colors ${
-              showHistory
-                ? 'bg-blue-600 text-white hover:bg-blue-700'
+              showHistory 
+                ? 'bg-blue-600 text-white hover:bg-blue-700' 
                 : 'bg-[#3a3a3a] text-white hover:bg-[#555]'
             } ${upstreamStems.length === 0 ? 'opacity-50' : ''}`}
           >
-            Show History{' '}
-            {upstreamStems.length > 0 && `(${upstreamStems.length})`}
+            Show History {upstreamStems.length > 0 && `(${upstreamStems.length})`}
           </button>
-
+          
           <button
             onClick={() => setShowCommentList(!showCommentList)}
             className='self-start rounded bg-[#3a3a3a] px-3 py-1 text-sm hover:bg-[#555]'
