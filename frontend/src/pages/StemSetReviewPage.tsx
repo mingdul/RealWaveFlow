@@ -2123,7 +2123,6 @@ const StemSetReviewPage = () => {
                           </div>
                         ) : (
                           <div className='mt-2 text-gray-300'>
-                            {console.log('댓글 내용:', comment.comment, '타입:', typeof comment.comment)}
                             {comment.comment}
                             {comment.user && (
                               <div className='mt-2 text-xs text-gray-400 flex items-center gap-1'>
