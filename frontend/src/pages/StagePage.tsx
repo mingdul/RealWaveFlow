@@ -216,7 +216,7 @@ const StagePage: React.FC = () => {
             ${isHovered ? 'opacity-100' : 'opacity-0'}`}
           style={{ pointerEvents: isHovered ? 'auto' : 'none' }}
         >
-          <div className="absolute bottom-0 left-0 right-0 p-6 space-y-4">
+          <div className="absolute bottom-0 left-0 right-0 p-6 space-y-6">
             {/* Description */}
             <div className="text-center">
               <p className="text-gray-200 text-sm leading-relaxed line-clamp-2">
