@@ -4,6 +4,9 @@ import {
   OnGatewayInit,
   OnGatewayConnection,
   OnGatewayDisconnect,
+  SubscribeMessage,
+  MessageBody,
+  ConnectedSocket,
 } from '@nestjs/websockets';
 import { Server, Socket } from 'socket.io';
 import { Logger, Injectable } from '@nestjs/common';
@@ -46,6 +49,7 @@ export class NotificationGateway
 
   private logger = new Logger(NotificationGateway.name);
   private connectedUsers = new Map<string, Socket>(); // user_id -> Socket 매핑
+  private pendingNotifications = new Map<string, NotificationPayload[]>(); // user_id -> 대기 중인 알림 배열
 
   constructor(
     private jwtService: JwtService,
@@ -92,7 +96,7 @@ export class NotificationGateway
   }
 
   // 클라이언트 연결 시 처리
-  handleConnection(client: Socket) {
+  async handleConnection(client: Socket) {
     try {
       const userId = client.data.userId;
       
@@ -114,14 +118,21 @@ export class NotificationGateway
       // 사용자 전용 룸에 조인
       client.join(`user_${userId}`);
       
-      this.logger.log(`🔔 [NotificationGateway] User connected: ${client.data.user?.email}`);
+      this.logger.log(`🔔 [NotificationGateway] User connected: ${client.data.user?.email} (Room: user_${userId})`);
       
       // 연결 성공 메시지 전송
       client.emit('notification_connected', {
         message: 'Successfully connected to notification service',
         userId: userId,
         socketId: client.id,
+        joinedRoom: `user_${userId}`,
       });
+
+      // 🔥 NEW: 연결 즉시 미읽은 알림 전송
+      await this.sendUnreadNotificationsToUser(userId, client);
+
+      // 🔥 NEW: 대기 중인 알림이 있다면 전송
+      await this.sendPendingNotificationsToUser(userId, client);
       
     } catch (error) {
       this.logger.error('🔔 [NotificationGateway] Connection error:', error.message);
@@ -141,6 +152,42 @@ export class NotificationGateway
       }
     } catch (error) {
       this.logger.error('🔔 [NotificationGateway] Disconnect error:', error.message);
+    }
+  }
+
+  // 🔥 NEW: 클라이언트가 명시적으로 룸 조인을 요청할 수 있는 이벤트 핸들러
+  @SubscribeMessage('join_user_room')
+  async handleJoinUserRoom(
+    @MessageBody() data: { userId: string },
+    @ConnectedSocket() client: Socket,
+  ) {
+    try {
+      const userId = client.data.userId;
+      
+      if (!userId || userId !== data.userId) {
+        this.logger.error('🔔 [NotificationGateway] Invalid user ID for room join');
+        client.emit('join_user_room_error', { message: 'Invalid user ID' });
+        return;
+      }
+
+      // 룸 조인 (이미 조인되어 있어도 안전)
+      client.join(`user_${userId}`);
+      
+      this.logger.log(`🔔 [NotificationGateway] User explicitly joined room: user_${userId}`);
+      
+      // 조인 성공 확인
+      client.emit('join_user_room_success', { 
+        message: 'Successfully joined user room',
+        room: `user_${userId}`,
+        userId: userId 
+      });
+
+      // 조인 후 미읽은 알림 다시 전송
+      await this.sendUnreadNotificationsToUser(userId, client);
+      
+    } catch (error) {
+      this.logger.error('🔔 [NotificationGateway] Join room error:', error.message);
+      client.emit('join_user_room_error', { message: 'Failed to join room' });
     }
   }
 
@@ -195,7 +242,7 @@ export class NotificationGateway
     return cookies;
   }
 
-  // 특정 사용자에게 알림 전송
+  // 🔥 IMPROVED: 특정 사용자에게 알림 전송 (연결 상태 확인 및 재시도 로직 추가)
   async sendNotificationToUser(userId: string, notification: NotificationPayload) {
     const userRoom = `user_${userId}`;
     const isUserConnected = this.connectedUsers.has(userId);
@@ -216,15 +263,36 @@ export class NotificationGateway
     }
     
     // 알림 전송 (DB에서 생성된 ID 포함)
-    try {
-      const notificationWithId = {
-        ...notification,
-        id: savedNotification.id,
-      };
-      this.server.to(userRoom).emit('notification', notificationWithId);
-      this.logger.log(`🔔 [NotificationGateway] Notification sent via websocket to room: ${userRoom}`);
-    } catch (error) {
-      this.logger.error(`🔔 [NotificationGateway] Websocket send error: ${error.message}`);
+    const notificationWithId = {
+      ...notification,
+      id: savedNotification.id,
+    };
+
+    if (isUserConnected) {
+      // 🔥 연결된 사용자에게 즉시 전송
+      try {
+        this.server.to(userRoom).emit('notification', notificationWithId);
+        this.logger.log(`🔔 [NotificationGateway] ✅ Notification sent via websocket to room: ${userRoom}`);
+      } catch (error) {
+        this.logger.error(`🔔 [NotificationGateway] Websocket send error: ${error.message}`);
+      }
+    } else {
+      // 🔥 연결되지 않은 사용자의 경우 대기 알림으로 저장
+      this.logger.log(`🔔 [NotificationGateway] ⏳ User not connected, adding to pending notifications: ${userId}`);
+      
+      if (!this.pendingNotifications.has(userId)) {
+        this.pendingNotifications.set(userId, []);
+      }
+      
+      const userPendingNotifications = this.pendingNotifications.get(userId);
+      userPendingNotifications.push(notificationWithId);
+      
+      // 대기 알림이 너무 많아지지 않도록 최대 5개로 제한
+      if (userPendingNotifications.length > 5) {
+        userPendingNotifications.shift(); // 가장 오래된 알림 제거
+      }
+      
+      this.logger.log(`🔔 [NotificationGateway] Pending notifications for user ${userId}: ${userPendingNotifications.length}`);
     }
   }
 
@@ -265,6 +333,54 @@ export class NotificationGateway
     if (socket) {
       socket.join(`stage_reviewers_${stageId}`);
       this.logger.log(`User ${userId} joined stage reviewer room ${stageId}`);
+    }
+  }
+
+  // 🔥 NEW: 연결 시 미읽은 알림 전송
+  private async sendUnreadNotificationsToUser(userId: string, client: Socket) {
+    try {
+      // 최근 미읽은 알림 조회 (최대 10개)
+      const unreadNotifications = await this.notificationService.getUserUnreadNotifications(userId);
+      
+      if (unreadNotifications && unreadNotifications.length > 0) {
+        this.logger.log(`🔔 [NotificationGateway] Sending ${unreadNotifications.length} unread notifications to user ${userId}`);
+        
+        for (const notification of unreadNotifications) {
+          const notificationPayload: NotificationPayload = {
+            id: notification.id,
+            type: notification.type as any,
+            title: notification.title,
+            message: notification.message,
+            data: notification.data,
+            timestamp: notification.created_at.toISOString(),
+            read: notification.read,
+          };
+          
+          client.emit('notification', notificationPayload);
+        }
+      }
+    } catch (error) {
+      this.logger.error(`🔔 [NotificationGateway] Error sending unread notifications: ${error.message}`);
+    }
+  }
+
+  // 🔥 NEW: 대기 중인 알림 전송
+  private async sendPendingNotificationsToUser(userId: string, client: Socket) {
+    try {
+      const pendingNotifications = this.pendingNotifications.get(userId);
+      
+      if (pendingNotifications && pendingNotifications.length > 0) {
+        this.logger.log(`🔔 [NotificationGateway] Sending ${pendingNotifications.length} pending notifications to user ${userId}`);
+        
+        for (const notification of pendingNotifications) {
+          client.emit('notification', notification);
+        }
+        
+        // 전송 후 대기 알림 삭제
+        this.pendingNotifications.delete(userId);
+      }
+    } catch (error) {
+      this.logger.error(`🔔 [NotificationGateway] Error sending pending notifications: ${error.message}`);
     }
   }
 

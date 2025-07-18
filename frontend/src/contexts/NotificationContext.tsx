@@ -40,16 +40,12 @@ export const NotificationProvider: React.FC<NotificationProviderProps> = ({ chil
     if (user) {
       console.log('🔔 [NotificationProvider] Initializing for user:', user.email);
       
-      // 기존 알림 로드
-      loadExistingNotifications();
+      // 🔥 NEW: 로그인 후 즉시 소켓 연결 (지연 없음)
+      initializeNotificationSocket();
       
-      // 약간의 지연 후 소켓 연결 (cleanup 완료 보장)
-      const timer = setTimeout(() => {
-        initializeNotificationSocket();
-      }, 100);
+      // 기존 알림은 소켓 연결 후에 로드 (중복 방지)
       
       return () => {
-        clearTimeout(timer);
         if (socket) {
           socket.disconnect();
         }
@@ -119,6 +115,12 @@ export const NotificationProvider: React.FC<NotificationProviderProps> = ({ chil
       notificationSocket.on('connect', () => {
         console.log('🔔 [NotificationSocket] ✅ Connected successfully, Socket ID:', notificationSocket.id);
         showToast('success', '실시간 알림이 연결되었습니다.', 2000);
+        
+        // 🔥 NEW: 연결 성공 시 즉시 사용자 룸 조인 요청
+        if (user?.id) {
+          console.log('🔔 [NotificationSocket] Requesting to join user room:', user.id);
+          notificationSocket.emit('join_user_room', { userId: user.id });
+        }
       });
 
       // 연결 해제
@@ -131,6 +133,21 @@ export const NotificationProvider: React.FC<NotificationProviderProps> = ({ chil
       notificationSocket.on('notification_connected', (data) => {
         console.log('🔔 [NotificationSocket] Notification service connected:', data);
         showToast('success', '알림 서비스가 활성화되었습니다.', 3000);
+        
+        // 🔥 NEW: 연결 확인 후 기존 알림 로드
+        loadExistingNotifications();
+      });
+
+      // 🔥 NEW: 룸 조인 성공 이벤트
+      notificationSocket.on('join_user_room_success', (data) => {
+        console.log('🔔 [NotificationSocket] ✅ Successfully joined user room:', data);
+        showToast('success', `알림 룸에 연결되었습니다. (${data.room})`, 2000);
+      });
+
+      // 🔥 NEW: 룸 조인 실패 이벤트
+      notificationSocket.on('join_user_room_error', (data) => {
+        console.error('🔔 [NotificationSocket] ❌ Failed to join user room:', data);
+        showToast('error', `알림 룸 연결에 실패했습니다: ${data.message}`, 3000);
       });
 
       // 새 알림 수신
@@ -162,8 +179,12 @@ export const NotificationProvider: React.FC<NotificationProviderProps> = ({ chil
 
       // 재연결 시 기존 알림 다시 로드
       notificationSocket.on('reconnect', (_attemptNumber) => {
-        console.log('🔔 [NotificationProvider] WebSocket 재연결됨 - 알림 다시 로드');
-        if (user) {
+        console.log('🔔 [NotificationProvider] WebSocket 재연결됨 - 룸 재조인 및 알림 다시 로드');
+        if (user?.id) {
+          // 🔥 NEW: 재연결 시에도 룸 조인 재요청
+          console.log('🔔 [NotificationSocket] Reconnected - Requesting to join user room again:', user.id);
+          notificationSocket.emit('join_user_room', { userId: user.id });
+          
           loadExistingNotifications();
         }
       });
