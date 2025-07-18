@@ -238,7 +238,7 @@ const StagePage: React.FC = () => {
                 </button>
                 
                 <button
-                  onClick={(e) => { e.stopPropagation(); onDetail(); }}
+                  onClick={(e) => { e.stopPropagation(); onDetail(); navigate(`/review/${upstream.id}?stageId=${stageId}`); }}
                   className="flex items-center gap-2 px-4 py-2 rounded-full bg-gradient-to-r from-yellow-500 to-orange-500 text-black font-semibold shadow-lg hover:from-yellow-400 hover:to-orange-400 border border-yellow-300/50 transition-all duration-200 transform hover:scale-105"
                 >
                   <Eye className="w-4 h-4" />
