@@ -61,7 +61,7 @@ const StemSetReviewPage = () => {
   const [currentTime, setCurrentTime] = useState(0);
   const [duration, setDuration] = useState(0);
   const [isPlaying, setIsPlaying] = useState(false);
-  const [soloTrack, setSoloTrack] = useState<'main' | 'extra' | null>('main'); // 초기에는 main만 소리 나게
+  const [soloTrack, setSoloTrack] = useState<'main' | 'extra' | 'selected-stem' | null>('main'); // 초기에는 guide(main)만 소리 나게
   const [showHistory, setShowHistory] = useState(false);
   const [showCommentList, setShowCommentList] = useState(false);
   const [commentInput, setCommentInput] = useState('');
@@ -84,6 +84,13 @@ const StemSetReviewPage = () => {
 
   const wavesurferRefs = useRef<{ [id: string]: WaveSurfer }>({});
   const [readyStates, setReadyStates] = useState<{ [id: string]: boolean }>({});
+  
+  // 선택된 스템 관리 상태 추가
+  const [selectedStem, setSelectedStem] = useState<any>(null);
+  const [selectedStemAudioUrl, setSelectedStemAudioUrl] = useState<string>('');
+  const [selectedStemPeaks, setSelectedStemPeaks] = useState<any>(null);
+  const [selectedStemLoading, setSelectedStemLoading] = useState(false);
+  
   const isSeeking = useRef(false); // 무한 루프 방지용 플래그
   const { upstreamId, stageId: urlStageId } = useParams<{ upstreamId: string, stageId: string }>();
   const [stageId, setStageId] = useState<string | undefined>(urlStageId);
@@ -489,9 +496,10 @@ const StemSetReviewPage = () => {
   }, []);
 
   // 볼륨 적용 헬퍼 함수
-  const applyVolumeSettings = useCallback((targetSoloTrack: 'main' | 'extra' | null) => {
+  const applyVolumeSettings = useCallback((targetSoloTrack: 'main' | 'extra' | 'selected-stem' | null) => {
     const mainPlayer = wavesurferRefs.current['main'];
     const extraPlayer = wavesurferRefs.current['extra'];
+    const selectedStemPlayer = wavesurferRefs.current['selected-stem'];
 
     try {
       if (targetSoloTrack === null) {
@@ -502,6 +510,9 @@ const StemSetReviewPage = () => {
         if (extraPlayer && readyStates['extra']) {
           extraPlayer.setVolume(volume);
         }
+        if (selectedStemPlayer && readyStates['selected-stem']) {
+          selectedStemPlayer.setVolume(volume);
+        }
         console.log('🔊 All tracks playing with volume:', volume);
       } else if (targetSoloTrack === 'main') {
         // 메인 트랙만 재생
@@ -510,6 +521,9 @@ const StemSetReviewPage = () => {
         }
         if (extraPlayer && readyStates['extra']) {
           extraPlayer.setVolume(0);
+        }
+        if (selectedStemPlayer && readyStates['selected-stem']) {
+          selectedStemPlayer.setVolume(0);
         }
         console.log('🔊 Main track solo activated');
       } else if (targetSoloTrack === 'extra') {
@@ -520,22 +534,39 @@ const StemSetReviewPage = () => {
         if (extraPlayer && readyStates['extra']) {
           extraPlayer.setVolume(volume);
         }
+        if (selectedStemPlayer && readyStates['selected-stem']) {
+          selectedStemPlayer.setVolume(0);
+        }
         console.log('🔊 Extra track solo activated');
+      } else if (targetSoloTrack === 'selected-stem') {
+        // 선택된 스템만 재생
+        if (mainPlayer && readyStates['main']) {
+          mainPlayer.setVolume(0);
+        }
+        if (extraPlayer && readyStates['extra']) {
+          extraPlayer.setVolume(0);
+        }
+        if (selectedStemPlayer && readyStates['selected-stem']) {
+          selectedStemPlayer.setVolume(volume);
+        }
+        console.log('🔊 Selected stem solo activated');
       }
     } catch (error) {
       console.error('🔊 Error applying volume settings:', error);
     }
   }, [volume, readyStates]);
 
-  const handleSolo = useCallback((trackId: 'main' | 'extra') => {
+  const handleSolo = useCallback((trackId: 'main' | 'extra' | 'selected-stem') => {
     const mainPlayer = wavesurferRefs.current['main'];
     const extraPlayer = wavesurferRefs.current['extra'];
+    const selectedStemPlayer = wavesurferRefs.current['selected-stem'];
 
     console.log(`🔊 Solo request for: ${trackId}`);
     console.log(`🔊 Ready states:`, readyStates);
     console.log(`🔊 Available players:`, { 
       main: !!mainPlayer, 
-      extra: !!extraPlayer 
+      extra: !!extraPlayer,
+      'selected-stem': !!selectedStemPlayer
     });
 
     // 엄격한 준비 상태 체크
@@ -548,6 +579,12 @@ const StemSetReviewPage = () => {
     if (trackId === 'extra' && (!extraPlayer || !readyStates['extra'])) {
       showWarning('선택한 스템이 준비되지 않았습니다. 스템을 먼저 로드해주세요.');
       console.warn('🔊 Extra player not ready for solo operation');
+      return;
+    }
+
+    if (trackId === 'selected-stem' && (!selectedStemPlayer || !readyStates['selected-stem'])) {
+      showWarning('선택한 스템이 준비되지 않았습니다. 스템을 먼저 로드해주세요.');
+      console.warn('🔊 Selected stem player not ready for solo operation');
       return;
     }
 
@@ -802,19 +839,28 @@ const StemSetReviewPage = () => {
     [editCommentText, comments]
   );
 
-  // 댓글 클릭 시 해당 시간으로 이동
+  // 댓글 클릭 시 해당 시간으로 이동 (모든 스템 동기화)
   const seekToTime = useCallback((time: number) => {
     const mainPlayer = wavesurferRefs.current['main'];
     const extraPlayer = wavesurferRefs.current['extra'];
+    const selectedStemPlayer = wavesurferRefs.current['selected-stem'];
 
     if (mainPlayer && mainPlayer.getDuration()) {
       const progress = time / mainPlayer.getDuration();
+      
+      // 모든 플레이어를 동기화
       mainPlayer.seekTo(progress);
-
-      // extra 파형도 동기화
+      
       if (extraPlayer && extraPlayer.getDuration()) {
         extraPlayer.seekTo(progress);
       }
+      
+      if (selectedStemPlayer && selectedStemPlayer.getDuration()) {
+        selectedStemPlayer.seekTo(progress);
+      }
+      
+      // currentTime 상태도 업데이트
+      setCurrentTime(time);
     }
   }, []);
 
@@ -826,26 +872,41 @@ const StemSetReviewPage = () => {
       isSeeking.current = true;
       setCurrentTime(time);
 
-      // 양방향 동기화: 움직인 트랙이 아닌 다른 트랙을 동기화
+      // 양방향 동기화: 움직인 트랙이 아닌 다른 모든 트랙을 동기화
       const mainPlayer = wavesurferRefs.current['main'];
       const extraPlayer = wavesurferRefs.current['extra'];
+      const selectedStemPlayer = wavesurferRefs.current['selected-stem'];
 
-      if (
-        mainPlayer &&
-        extraPlayer &&
-        readyStates['main'] &&
-        readyStates['extra']
-      ) {
+      if (mainPlayer && readyStates['main']) {
         try {
           const progress = time / mainPlayer.getDuration();
           if (progress >= 0 && progress <= 1) {
-            // main 트랙에서 seek가 발생하면 extra 트랙을 동기화
-            if (trackId === 'main' && extraPlayer) {
-              extraPlayer.seekTo(progress);
+            // main 트랙에서 seek가 발생하면 다른 모든 트랙을 동기화
+            if (trackId === 'main') {
+              if (extraPlayer && readyStates['extra']) {
+                extraPlayer.seekTo(progress);
+              }
+              if (selectedStemPlayer && readyStates['selected-stem']) {
+                selectedStemPlayer.seekTo(progress);
+              }
             }
-            // extra 트랙에서 seek가 발생하면 main 트랙을 동기화
-            else if (trackId === 'extra' && mainPlayer) {
-              mainPlayer.seekTo(progress);
+            // extra 트랙에서 seek가 발생하면 다른 모든 트랙을 동기화
+            else if (trackId === 'extra') {
+              if (mainPlayer && readyStates['main']) {
+                mainPlayer.seekTo(progress);
+              }
+              if (selectedStemPlayer && readyStates['selected-stem']) {
+                selectedStemPlayer.seekTo(progress);
+              }
+            }
+            // selected-stem 트랙에서 seek가 발생하면 다른 모든 트랙을 동기화
+            else if (trackId === 'selected-stem') {
+              if (mainPlayer && readyStates['main']) {
+                mainPlayer.seekTo(progress);
+              }
+              if (extraPlayer && readyStates['extra']) {
+                extraPlayer.seekTo(progress);
+              }
             }
           }
         } catch (error) {
@@ -894,6 +955,10 @@ const StemSetReviewPage = () => {
         // 선택된 upstream 설정
         setSelectedUpstream(upstream);
         setShowExtraWaveform(true);
+        
+        // 선택된 스템 정보 저장
+        setSelectedStem(stemData);
+        setSelectedStemLoading(true);
 
         // 캐시 키 생성
         const stemId = stemData.stem.id;
@@ -908,14 +973,17 @@ const StemSetReviewPage = () => {
         
         if (cachedUrl) {
           console.log('📦 [handleIndividualStemClick] Using cached audio URL');
+          setSelectedStemAudioUrl(cachedUrl);
           setExtraAudio(cachedUrl);
           setStemLoading(false);
           
           if (cachedPeaks) {
             try {
               const parsedPeaks = JSON.parse(cachedPeaks);
+              setSelectedStemPeaks(parsedPeaks);
               setExtraPeaks(parsedPeaks);
               setWaveformLoading(false);
+              setSelectedStemLoading(false);
               clearTimeout(timeoutId);
               console.log('✅ [handleIndividualStemClick] Loaded from cache successfully');
               return;
@@ -971,6 +1039,7 @@ const StemSetReviewPage = () => {
           const audioUrl = audioResponse.data.presignedUrl;
           
           if (typeof audioUrl === 'string' && audioUrl.length > 0) {
+            setSelectedStemAudioUrl(audioUrl);
             setExtraAudio(audioUrl);
             sessionStorage.setItem(`audio-${cacheKey}`, audioUrl);
             console.log('🎵 [handleIndividualStemClick] Audio URL set successfully');
@@ -979,6 +1048,7 @@ const StemSetReviewPage = () => {
           }
         } else {
           console.warn('⚠️ [handleIndividualStemClick] Audio not available');
+          setSelectedStemAudioUrl('');
           setExtraAudio('');
           showWarning('이 스템의 오디오 파일을 불러올 수 없습니다.');
         }
@@ -991,15 +1061,18 @@ const StemSetReviewPage = () => {
           if (Array.isArray(waveformData) || 
               (waveformData.peaks && Array.isArray(waveformData.peaks)) ||
               (waveformData.data && Array.isArray(waveformData.data))) {
+            setSelectedStemPeaks(waveformData);
             setExtraPeaks(waveformData);
             sessionStorage.setItem(`peaks-${cacheKey}`, JSON.stringify(waveformData));
             console.log('🌊 [handleIndividualStemClick] Waveform data set successfully');
           } else {
             console.warn('⚠️ [handleIndividualStemClick] Invalid waveform structure:', waveformData);
+            setSelectedStemPeaks(null);
             setExtraPeaks(null);
           }
         } else {
           console.warn('⚠️ [handleIndividualStemClick] Waveform data not available');
+          setSelectedStemPeaks(null);
           setExtraPeaks(null);
         }
 
@@ -1034,6 +1107,7 @@ const StemSetReviewPage = () => {
         clearTimeout(timeoutId);
         setStemLoading(false);
         setWaveformLoading(false);
+        setSelectedStemLoading(false);
         console.log('🏁 [handleIndividualStemClick] Loading states cleared');
       }
     },
@@ -1043,18 +1117,18 @@ const StemSetReviewPage = () => {
   // Solo 버튼 핸들러들을 메모이제이션
   const handleMainSolo = useCallback(() => handleSolo('main'), [handleSolo]);
   const handleExtraSolo = useCallback(() => handleSolo('extra'), [handleSolo]);
+  const handleSelectedStemSolo = useCallback(() => handleSolo('selected-stem'), [handleSolo]);
 
-  // audioprocess 이벤트를 통한 재생 중 동기화 (main -> extra만)
+  // audioprocess 이벤트를 통한 재생 중 동기화 (main을 기준으로 모든 스템 동기화)
   useEffect(() => {
     const extraPlayer = wavesurferRefs.current['extra'];
     const mainPlayer = wavesurferRefs.current['main'];
+    const selectedStemPlayer = wavesurferRefs.current['selected-stem'];
 
     // 재생 중일 때만 audioprocess 이벤트를 통한 동기화 수행
     if (
       isPlaying &&
-      extraPlayer &&
       mainPlayer &&
-      readyStates['extra'] &&
       readyStates['main'] &&
       !isSeeking.current // 시크 중이 아닐 때만 동기화
     ) {
@@ -1063,11 +1137,23 @@ const StemSetReviewPage = () => {
         if (currentTime > 0 && mainPlayer.getDuration() > 0) {
           const progress = currentTime / mainPlayer.getDuration();
           if (progress >= 0 && progress <= 1) {
-            // 현재 위치와 extra 플레이어 위치가 너무 다를 때만 동기화 (성능 최적화)
-            const extraTime = extraPlayer.getCurrentTime();
-            if (Math.abs(extraTime - currentTime) > 0.1) {
-              console.log('🔄 Syncing extra player to main time:', currentTime);
-              extraPlayer.seekTo(progress);
+            
+            // Extra 플레이어 동기화
+            if (extraPlayer && readyStates['extra']) {
+              const extraTime = extraPlayer.getCurrentTime();
+              if (Math.abs(extraTime - currentTime) > 0.1) {
+                console.log('🔄 Syncing extra player to main time:', currentTime);
+                extraPlayer.seekTo(progress);
+              }
+            }
+            
+            // Selected stem 플레이어 동기화
+            if (selectedStemPlayer && readyStates['selected-stem']) {
+              const selectedStemTime = selectedStemPlayer.getCurrentTime();
+              if (Math.abs(selectedStemTime - currentTime) > 0.1) {
+                console.log('🔄 Syncing selected stem player to main time:', currentTime);
+                selectedStemPlayer.seekTo(progress);
+              }
             }
           }
         }
@@ -1621,7 +1707,92 @@ const StemSetReviewPage = () => {
             }
           })()}
 
-          {showExtraWaveform && extraAudio && (
+          {/* 선택된 스템 표시 영역 */}
+          {selectedStem && (
+            <div className="mt-6">
+              {/* 선택된 스템 정보 헤더 */}
+              <div className="bg-gray-800/50 rounded-t-md p-4 border-b border-gray-700">
+                <div className="flex items-center justify-between">
+                  <div className="flex items-center gap-3">
+                    <div className="text-blue-400 text-lg">
+                      {selectedStem.type === 'new' && '✨'}
+                      {selectedStem.type === 'modify' && '🔧'}
+                      {selectedStem.type === 'unchanged' && '📋'}
+                    </div>
+                    <div>
+                      <h3 className="text-white font-medium">
+                        {selectedStem.category?.name || 'Selected Stem'}
+                      </h3>
+                      <p className="text-gray-400 text-sm">
+                        {selectedStem.stem?.file_name || 'Unknown file'} • 
+                        <span className={`ml-1 px-2 py-0.5 rounded text-xs font-medium ${
+                          selectedStem.type === 'new' ? 'bg-green-500/20 text-green-300' :
+                          selectedStem.type === 'modify' ? 'bg-yellow-500/20 text-yellow-300' :
+                          'bg-blue-500/20 text-blue-300'
+                        }`}>
+                          {selectedStem.type?.toUpperCase()}
+                        </span>
+                      </p>
+                    </div>
+                  </div>
+                  
+                  {/* 스템 제거 버튼 */}
+                  <button
+                    onClick={() => {
+                      setSelectedStem(null);
+                      setSelectedStemAudioUrl('');
+                      setSelectedStemPeaks(null);
+                      setShowExtraWaveform(false);
+                      setExtraAudio('');
+                      setExtraPeaks(null);
+                    }}
+                    className="text-gray-400 hover:text-white transition-colors p-2 rounded hover:bg-gray-700/50"
+                    title="스템 제거"
+                  >
+                    <Square size={16} />
+                  </button>
+                </div>
+              </div>
+              
+              {/* 스템 파형 영역 */}
+              <div className="bg-gray-900/30 rounded-b-md">
+                {selectedStemLoading || stemLoading || waveformLoading ? (
+                  <div className='p-6'>
+                    <div className='flex flex-col items-center justify-center py-8'>
+                      <div className='mb-3 h-10 w-10 animate-spin rounded-full border-b-2 border-t-2 border-blue-400'></div>
+                      <span className='text-white font-medium'>선택한 스템을 불러오는 중...</span>
+                      <span className='text-gray-400 text-sm mt-2'>
+                        {stemLoading && '스템 오디오를 가져오는 중...'}
+                        {waveformLoading && '파형 데이터를 가져오는 중...'}
+                      </span>
+                    </div>
+                  </div>
+                ) : selectedStemAudioUrl ? (
+                  <Wave
+                    onReady={handleReady}
+                    audioUrl={selectedStemAudioUrl}
+                    peaks={selectedStemPeaks}
+                    waveColor='#60a5fa'
+                    id='selected-stem'
+                    isPlaying={isPlaying}
+                    currentTime={currentTime}
+                    onSolo={handleSelectedStemSolo}
+                    isSolo={soloTrack === 'selected-stem'}
+                    onSeek={handleSeek}
+                  />
+                ) : (
+                  <div className='flex items-center justify-center py-8 p-6'>
+                    <span className='text-sm text-gray-400'>
+                      선택된 스템의 오디오를 불러올 수 없습니다.
+                    </span>
+                  </div>
+                )}
+              </div>
+            </div>
+          )}
+          
+          {/* 기존 extra waveform (하위 호환성 유지) */}
+          {showExtraWaveform && extraAudio && !selectedStem && (
             <>
               {stemLoading ? (
                 <div className='flex flex-col items-center justify-center py-8 bg-gray-900/30 rounded-md p-6'>
