@@ -468,11 +468,7 @@ const DashboardPageV2 = () => {
           {/* Greeting */}
           <div className='mb-12 mt-8'>
             <h1 className='group mb-2 cursor-pointer bg-gradient-to-r from-[#FF4E4E] to-[#2159C6] bg-clip-text text-5xl font-bold text-transparent transition-all duration-500 hover:from-[#FF6B6B] hover:to-[#4ECDC4] hover:drop-shadow-[0_0_20px_rgba(255,78,78,0.5)]'>
-              Hello,{' '}
-              <span className='inline-block transition-transform duration-300 group-hover:scale-110 hover:from-[#FF6B6B] hover:to-[#4ECDC4] hover:drop-shadow-[0_0_20px_rgba(255,78,78,0.5)]'>
-                {user.username}
-              </span>
-              !
+              Hello,{user.username}!
             </h1>
             <p className='cursor-pointer text-lg text-gray-400 transition-all duration-500 hover:text-gray-300 hover:drop-shadow-[0_0_10px_rgba(255,255,255,0.3)]'>
               Creativity lives here
