@@ -125,16 +125,16 @@ const StagePage: React.FC = () => {
   }) => {
     const [isHovered, setIsHovered] = useState(false);
 
-    const status = upstream.status?.toUpperCase() as 'ACTIVE' | 'REJECTED' | 'APPROVED';
+    const status = upstream.status?.toUpperCase() as 'WAITING' | 'REJECTED' | 'APPROVED';
     
     console.log('[DEBUG] Upstream status:', upstream.status, 'Normalized:', status);
     
     const statusConfig = {
-      ACTIVE: {
-        color: 'bg-gradient-to-r from-emerald-500 to-green-500',
+      WAITING: {
+        color: 'bg-gradient-to-r from-purple-500 to-indigo-600',
         textColor: 'text-white',
         icon: <div className="w-2 h-2 bg-white rounded-full animate-pulse" />,
-        border: 'border-emerald-400'
+        border: 'border-purple-400'
       },
       REJECTED: {
         color: 'bg-gradient-to-r from-red-500 to-red-600',
@@ -143,14 +143,14 @@ const StagePage: React.FC = () => {
         border: 'border-red-400'
       },
       APPROVED: {
-        color: 'bg-gradient-to-r from-purple-500 to-indigo-600',
+        color: 'bg-gradient-to-r from-emerald-500 to-green-500',
         textColor: 'text-white',
         icon: <CheckCircle className="w-4 h-4" />,
-        border: 'border-purple-400'
+        border: 'border-emerald-400'
       }
     };
 
-    const config = statusConfig[status] || statusConfig.ACTIVE;
+    const config = statusConfig[status] || statusConfig.WAITING;
     const tapeImg = status === 'APPROVED' ? tapeApproved : status === 'REJECTED' ? tapeRejected : tapeActive;
 
     // Detail 버튼 클릭 핸들러
@@ -178,9 +178,9 @@ const StagePage: React.FC = () => {
         
         {/* Creation Time */}
         <div className="absolute top-4 left-4 z-30">
-          <div className="flex items-center gap-2 px-3 py-1.5 rounded-full bg-black/40 backdrop-blur-sm border border-gray-600/50">
-            <Clock className="w-3 h-3 text-gray-300" />
-            <span className="text-gray-300 text-xs font-medium">
+          <div className="flex items-center gap-2 px-3 py-1.5 rounded-full bg-black/40 backdrop-blur-sm">
+            <Clock className="w-3 h-3 text-white" />
+            <span className="text-white text-xs font-medium">
               {upstream.created_at ? new Date(upstream.created_at).toLocaleString('ko-KR', {
                 month: '2-digit',
                 day: '2-digit',
