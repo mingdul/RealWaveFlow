@@ -304,13 +304,25 @@ const Wave = ({
             <button 
               onClick={onSolo}
               disabled={!isReady}
-              className={`px-3 py-2 sm:px-4 sm:py-2 rounded transition-all text-sm sm:text-base ${
+              className={`px-3 py-2 sm:px-4 sm:py-2 rounded-lg transition-all duration-200 text-sm sm:text-base font-medium ${
                 isSolo 
-                  ? 'bg-green-500 text-white font-medium' 
-                  : 'bg-gray-700 text-white hover:bg-gray-600'
-              } ${!isReady ? 'opacity-50 cursor-not-allowed' : ''}`}
+                  ? 'bg-gradient-to-r from-green-500 to-green-600 text-white shadow-lg shadow-green-500/30 border border-green-400 ring-2 ring-green-300/50' 
+                  : 'bg-gray-700 text-gray-200 hover:bg-gray-600 border border-gray-600 hover:border-gray-500'
+              } ${!isReady ? 'opacity-50 cursor-not-allowed' : 'transform hover:scale-105'}`}
             >
-              {isSolo ? '🔊 활성' : '🔇 뮤트'}
+              <span className="flex items-center gap-1">
+                {isSolo ? (
+                  <>
+                    <span className="animate-pulse">🎵</span>
+                    <span>SOLO</span>
+                  </>
+                ) : (
+                  <>
+                    <span>🔇</span>
+                    <span>뮤트</span>
+                  </>
+                )}
+              </span>
             </button>
             {isReady && <span className="text-green-400 text-xs">✓ 준비 완료</span>}
           </div>
