@@ -1,4 +1,4 @@
-import { useEffect, useRef, useState } from 'react';
+import { useEffect, useRef, useState, memo } from 'react';
 import WaveSurfer from 'wavesurfer.js';
 import TimelinePlugin from 'wavesurfer.js/dist/plugins/timeline';
 import MinimapPlugin from 'wavesurfer.js/dist/plugins/minimap';
@@ -34,14 +34,6 @@ const Wave = ({
   onSeek,
   isLoading = false
 }: WaveProps) => {
-  console.log(`🌊🌊 [Wave ${id}] Component rendered with:`, {
-    audioUrl: !!audioUrl,
-    audioUrlPreview: audioUrl?.substring(0, 50),
-    peaks: !!peaks,
-    peaksType: typeof peaks,
-    peaksKeys: peaks && typeof peaks === 'object' ? Object.keys(peaks) : null,
-    isLoading
-  });
 
   const waveRef = useRef<HTMLDivElement>(null);
   const timelineRef = useRef<HTMLDivElement>(null);
@@ -123,7 +115,13 @@ const Wave = ({
     if (!wavesurferRef.current || !audioUrl || isDestroyed) return;
     
     // 이미 같은 URL이 로드되어 있으면 스킵
-    if (currentAudioUrlRef.current === audioUrl) return;
+    if (currentAudioUrlRef.current === audioUrl) {
+      // 로딩 상태가 계속 true로 남아있는 경우 방지
+      if (isAudioLoading) {
+        setIsAudioLoading(false);
+      }
+      return;
+    }
 
     console.log(`🎵 Loading new audio URL for ${id}:`, audioUrl);
     if (peaks) {
@@ -273,4 +271,4 @@ const Wave = ({
   );
 };
 
-export default Wave;
+export default memo(Wave);
