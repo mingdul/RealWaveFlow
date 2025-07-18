@@ -49,7 +49,7 @@ const AnimatedModal: React.FC<AnimatedModalProps> = ({
   if (!isVisible) return null;
 
   const getAnimationClasses = () => {
-    const baseTransition = 'transition-all duration-300 ease-out';
+    const baseTransition = 'transition-all duration-600 ease-out';
     
     switch (animationType) {
       case 'slideUp':
