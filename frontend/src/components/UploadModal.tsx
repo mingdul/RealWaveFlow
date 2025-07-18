@@ -939,9 +939,10 @@ const UploadModal: React.FC<UploadModalProps> = ({
     if (allCompletedFiles.length === 0) {
       showSuccess('All uploads completed successfully!');
       
-      // 업로드 완료 후 모달 상태 초기화
+      // 모달 닫기 전에 상태 초기화
       dispatch({ type: 'RESET_UPLOAD' });
       
+      // 콜백 호출 후 모달 닫기
       onComplete();
       onClose();
       return;
@@ -1004,9 +1005,10 @@ const UploadModal: React.FC<UploadModalProps> = ({
       if (stemSet.length === 0 && newCategoryStems.length === 0) {
         showSuccess('All uploads completed successfully!');
         
-        // 업로드 완료 후 모달 상태 초기화
+        // 모달 닫기 전에 상태 초기화
         dispatch({ type: 'RESET_UPLOAD' });
         
+        // 콜백 호출 후 모달 닫기
         onComplete();
         onClose();
         return;
@@ -1031,9 +1033,10 @@ const UploadModal: React.FC<UploadModalProps> = ({
       if (response.success) {
         showSuccess('Stem set update completed successfully!');
         
-        // 업로드 완료 후 모달 상태 초기화
+        // 성공 후 상태 초기화
         dispatch({ type: 'RESET_UPLOAD' });
         
+        // 콜백 호출 후 모달 닫기 (순서 중요)
         onComplete();
         onClose();
       } else {

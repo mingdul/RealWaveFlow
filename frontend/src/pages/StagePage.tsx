@@ -95,12 +95,31 @@ const StagePage: React.FC = () => {
     fetchStageData();
   }, [stageId]);
 
-  const handleUploadComplete = () => {
-    // 업로드 완료 후 업스트림 목록 새로고침
-    if (stageId) {
-      getStageUpstreams(stageId)
-        .then(setUpstreams)
-        .catch(error => console.error("Error refreshing upstreams:", error));
+  const handleUploadComplete = async () => {
+    try {
+      console.log('🔄 Refreshing upstreams after upload completion...');
+      
+      if (stageId) {
+        // 로딩 상태 설정
+        setLoading(true);
+        
+        const response = await getStageUpstreams(stageId);
+        console.log('✅ Upstreams refreshed successfully:', response);
+        
+        if (response && Array.isArray(response)) {
+          setUpstreams(response);
+        } else {
+          console.warn('⚠️ Unexpected response format:', response);
+          setUpstreams([]);
+        }
+      } else {
+        console.error('❌ Stage ID is missing for upstream refresh');
+      }
+    } catch (error) {
+      console.error('❌ Error refreshing upstreams:', error);
+      showError('업스트림 목록 새로고침 중 오류가 발생했습니다.');
+    } finally {
+      setLoading(false);
     }
   };
 
@@ -502,12 +521,21 @@ const StagePage: React.FC = () => {
       {stage.track && (
         <UploadModal
           isOpen={isUploadModalOpen}
-          onClose={() => setUploadModalOpen(false)}
+          onClose={() => {
+            console.log('🔒 Closing upload modal...');
+            setUploadModalOpen(false);
+          }}
           projectId={stage.track.id}
           projectName={track ? track.title : ""}
           stageId={stageId}
           stageVersion={stage.version}
-          onComplete={handleUploadComplete} 
+          onComplete={() => {
+            console.log('✅ Upload completed, refreshing data...');
+            // 약간의 지연을 두어 상태 업데이트가 완료된 후 새로고침
+            setTimeout(() => {
+              handleUploadComplete();
+            }, 100);
+          }} 
         />
       )}
       
