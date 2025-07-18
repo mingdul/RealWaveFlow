@@ -6,13 +6,15 @@ import s3UploadService from '../services/s3UploadService';
 import stemJobService from '../services/stemJobService';
 import { useToast } from '../contexts/ToastContext';
 import { getRandomDefaultImageUrl } from '../utils/imageUtils';
+import AnimatedModal from './AnimatedModal';
 
 interface CreateTrackModalProps {
+  isOpen: boolean;
   onClose: () => void;
   onSubmit: (data: any) => void;
 }
 
-const CreateTrackModal: React.FC<CreateTrackModalProps> = ({ onClose, onSubmit }) => {
+const CreateTrackModal: React.FC<CreateTrackModalProps> = ({ isOpen, onClose, onSubmit }) => {
   const { showError, showSuccess } = useToast();
   const [formData, setFormData] = useState({
     name: '',
@@ -133,14 +135,12 @@ const CreateTrackModal: React.FC<CreateTrackModalProps> = ({ onClose, onSubmit }
   };
 
   return (
-    <div 
-      className="fixed inset-0 bg-black bg-opacity-60 flex items-center justify-center z-50 p-4"
-      onClick={handleCloseModal}
+    <AnimatedModal
+      isOpen={isOpen}
+      onClose={onClose}
+      animationType="scale"
+      className="bg-gray-800 rounded-xl w-full max-w-sm sm:max-w-2xl md:max-w-3xl lg:max-w-4xl max-h-[90vh] flex flex-col shadow-2xl"
     >
-      <div 
-        className="bg-gray-800 rounded-xl w-full max-w-sm sm:max-w-2xl md:max-w-3xl lg:max-w-4xl max-h-[90vh] flex flex-col shadow-2xl"
-        onClick={(e) => e.stopPropagation()}
-      >
         {/* Header */}
         <div className="flex items-center justify-between p-4 sm:p-6 border-b border-gray-700">
           <div>
@@ -348,8 +348,7 @@ const CreateTrackModal: React.FC<CreateTrackModalProps> = ({ onClose, onSubmit }
             <span>{isSubmitting ? 'Creating...' : 'Next Step'}</span>
           </button>
         </div>
-      </div>
-    </div>
+    </AnimatedModal>
   );
 };
 

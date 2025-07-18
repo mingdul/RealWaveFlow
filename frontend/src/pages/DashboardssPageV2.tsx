@@ -21,6 +21,8 @@ import Logo from '../components/Logo';
 import InitProjectModal from '../components/InitProjectModal';
 import CreateTrackModal from '../components/CreateTrackModal';
 import PresignedImage from '../components/PresignedImage';
+import ConfirmModal from '../components/ConfirmModal';
+import AnimatedModal from '../components/AnimatedModal';
 
 const DashboardPageV2 = () => {
   const navigate = useNavigate();
@@ -34,6 +36,13 @@ const DashboardPageV2 = () => {
   const [filter, setFilter] = useState<'owned' | 'collaborated'>('owned');
   const [isCreating, setIsCreating] = useState(false);
   const [editingTrack, setEditingTrack] = useState<Track | null>(null);
+  const [deleteConfirmation, setDeleteConfirmation] = useState<{
+    isOpen: boolean;
+    trackId: string | null;
+  }>({
+    isOpen: false,
+    trackId: null,
+  });
   const [initProjectModal, setInitProjectModal] = useState<{
     isOpen: boolean;
     projectId: string;
@@ -111,15 +120,21 @@ const DashboardPageV2 = () => {
     setEditingTrack(track);
   };
 
-  const handleDeleteTrack = async (trackId: string, e: React.MouseEvent) => {
+  const handleDeleteTrack = (trackId: string, e: React.MouseEvent) => {
     e.stopPropagation();
-    if (window.confirm('Are you sure you want to delete this track?')) {
+    setDeleteConfirmation({ isOpen: true, trackId });
+  };
+
+  const confirmDeleteTrack = async () => {
+    if (deleteConfirmation.trackId) {
       try {
-        await trackService.deleteTrack(trackId);
+        await trackService.deleteTrack(deleteConfirmation.trackId);
         showSuccess('Track deleted successfully.');
         loadTracks();
       } catch (error: any) {
         showError(error.message || 'Failed to delete track.');
+      } finally {
+        setDeleteConfirmation({ isOpen: false, trackId: null });
       }
     }
   };
@@ -452,10 +467,16 @@ const DashboardPageV2 = () => {
         <main className='mx-auto w-full max-w-7xl flex-1 overflow-y-auto p-6 scrollbar-hide'>
           {/* Greeting */}
           <div className='mb-12 mt-8'>
-            <h1 className='mb-2 bg-gradient-to-r from-[#FF4E4E] to-[#2159C6] bg-clip-text text-5xl font-bold text-transparent'>
-              Hello, {user.username}!
+            <h1 className='group mb-2 cursor-pointer bg-gradient-to-r from-[#FF4E4E] to-[#2159C6] bg-clip-text text-5xl font-bold text-transparent transition-all duration-500 hover:from-[#FF6B6B] hover:to-[#4ECDC4] hover:drop-shadow-[0_0_20px_rgba(255,78,78,0.5)]'>
+              Hello,{' '}
+              <span className='inline-block transition-transform duration-300 group-hover:scale-110 hover:from-[#FF6B6B] hover:to-[#4ECDC4] hover:drop-shadow-[0_0_20px_rgba(255,78,78,0.5)]'>
+                {user.username}
+              </span>
+              !
             </h1>
-            <p className='text-lg text-gray-400'>Creativity lives here</p>
+            <p className='cursor-pointer text-lg text-gray-400 transition-all duration-500 hover:text-gray-300 hover:drop-shadow-[0_0_10px_rgba(255,255,255,0.3)]'>
+              Creativity lives here
+            </p>
           </div>
 
           {/* Filter Buttons */}
@@ -502,13 +523,14 @@ const DashboardPageV2 = () => {
         {/* Create Track Modal */}
         {isCreating && (
           <CreateTrackModal
+            isOpen={isCreating}
             onClose={() => setIsCreating(false)}
             onSubmit={handleCreateTrack}
           />
         )}
 
         {/* Edit Track Modal */}
-        {editingTrack && (
+        {editingTrack && (  
           <EditTrackModal
             track={editingTrack}
             onClose={() => setEditingTrack(null)}
@@ -525,6 +547,15 @@ const DashboardPageV2 = () => {
           projectDescription={initProjectModal.projectDescription}
           stageId={initProjectModal.stageId}
           onComplete={handleCompleteInitProject}
+        />
+
+        {/* Confirm Deletion Modal */}
+        <ConfirmModal
+          isOpen={deleteConfirmation.isOpen}
+          title="Delete Track"
+          description="Are you sure you want to delete this track? This action cannot be undone."
+          onConfirm={confirmDeleteTrack}
+          onCancel={() => setDeleteConfirmation({ isOpen: false, trackId: null })}
         />
       </div>
     </div>
@@ -555,10 +586,14 @@ const EditTrackModal = ({
   };
 
   return (
-    <div className='fixed inset-0 z-50 flex items-center justify-center bg-black bg-opacity-50'>
-      <div className='w-full max-w-md rounded-lg bg-gray-800 p-6'>
-        <h2 className='mb-4 text-xl font-bold text-white'>Edit Track</h2>
-        <form onSubmit={handleSubmit} className='space-y-4'>
+    <AnimatedModal
+      isOpen={!!track}
+      onClose={onClose}
+      animationType="scale"
+      className='w-full max-w-md rounded-lg bg-gray-800 p-6'
+    >
+      <h2 className='mb-4 text-xl font-bold text-white'>Edit Track</h2>
+      <form onSubmit={handleSubmit} className='space-y-4'>
           <div>
             <label className='mb-2 block text-sm text-gray-300'>
               Track Name
@@ -640,8 +675,7 @@ const EditTrackModal = ({
             </Button>
           </div>
         </form>
-      </div>
-    </div>
+    </AnimatedModal>
   );
 };
 
