@@ -43,7 +43,7 @@ import {
   VolumeX,
   Volume2,
 } from 'lucide-react';
-import { ActionButton, ToggleButton, StatusBadge } from '../components/ui';
+import { ActionButton, ToggleButton, StatusBadge, FloatingCommentButton, CommentMarker, FloatingCommentBubble } from '../components/ui';
 import { theme } from '../styles/theme';
 
 // Comment interface updated to match backend response
@@ -101,6 +101,11 @@ const StemSetReviewPage = () => {
   const [showCommentList, setShowCommentList] = useState(false);
   const [showSidebar, setShowSidebar] = useState(true);
   const [sidebarWidth, setSidebarWidth] = useState(320);
+  const [enableNewCommentUI, setEnableNewCommentUI] = useState(true); // 새로운 댓글 UI 활성화
+  const [waveformWidth] = useState(800); // 파형 넓이
+  const [activeCommentMarkers] = useState<string[]>([]); // 활성 댓글 마커
+  const [floatingComments, setFloatingComments] = useState<any[]>([]); // 떠다니는 댓글
+  const waveformContainerRef = useRef<HTMLDivElement>(null);
   const [commentInput, setCommentInput] = useState('');
   const [comments, setComments] = useState<Comment[]>([]);
   const [selectedUpstream, setSelectedUpstream] = useState<any>(null);
@@ -271,6 +276,7 @@ const StemSetReviewPage = () => {
   useEffect(() => {
     console.log('📊 [State Change] stemsLoading:', stemsLoading);
   }, [stemsLoading]);
+
 
   useEffect(() => {
     console.log('📊 [State] UpstreamStems data:', upstreamStems);
@@ -714,6 +720,65 @@ const StemSetReviewPage = () => {
     }
   }, [isPlaying, readyStates]);
 
+  // \uc2a4\ud398\uc774\uc2a4\ubc14 \uc7ac\uc0dd/\uc77c\uc2dc\uc815\uc9c0 \ud0a4\ubcf4\ub4dc \uc774\ubca4\ud2b8
+  useEffect(() => {
+    const handleKeyDown = (e: KeyboardEvent) => {
+      // \uc785\ub825 \ud544\ub4dc\uc5d0 \ud3ec\ucee4\uc2a4\uac00 \uc788\uc744 \ub54c\ub294 \ubc29\uc9c0
+      const target = e.target as HTMLElement;
+      if (target?.tagName === 'INPUT' || target?.tagName === 'TEXTAREA') {
+        return;
+      }
+
+      if (e.code === 'Space') {
+        e.preventDefault();
+        togglePlay();
+      } else if (e.code === 'ArrowLeft') {
+        e.preventDefault();
+        // 5\ucd08 \ub4a4\ub85c \uc774\ub3d9
+        const newTime = Math.max(0, currentTime - 5);
+        const mainPlayer = wavesurferRefs.current['main'];
+        const extraPlayer = wavesurferRefs.current['extra'];
+        if (mainPlayer && mainPlayer.getDuration()) {
+          const progress = newTime / mainPlayer.getDuration();
+          mainPlayer.seekTo(progress);
+          if (extraPlayer && extraPlayer.getDuration()) {
+            extraPlayer.seekTo(progress);
+          }
+          setCurrentTime(newTime);
+        }
+      } else if (e.code === 'ArrowRight') {
+        e.preventDefault();
+        // 5\ucd08 \uc55e\uc73c\ub85c \uc774\ub3d9
+        const newTime = Math.min(duration, currentTime + 5);
+        const mainPlayer = wavesurferRefs.current['main'];
+        const extraPlayer = wavesurferRefs.current['extra'];
+        if (mainPlayer && mainPlayer.getDuration()) {
+          const progress = newTime / mainPlayer.getDuration();
+          mainPlayer.seekTo(progress);
+          if (extraPlayer && extraPlayer.getDuration()) {
+            extraPlayer.seekTo(progress);
+          }
+          setCurrentTime(newTime);
+        }
+      } else if (e.code === 'ArrowUp') {
+        e.preventDefault();
+        // \ubcfc\ub968 \uc99d\uac00
+        const newVolume = Math.min(1, volume + 0.1);
+        setVolume(newVolume);
+      } else if (e.code === 'ArrowDown') {
+        e.preventDefault();
+        // \ubcfc\ub968 \uac10\uc18c
+        const newVolume = Math.max(0, volume - 0.1);
+        setVolume(newVolume);
+      }
+    };
+
+    window.addEventListener('keydown', handleKeyDown);
+    return () => {
+      window.removeEventListener('keydown', handleKeyDown);
+    };
+  }, [togglePlay, currentTime, duration, volume]);
+
   const stopPlayback = useCallback(() => {
     const mainPlayer = wavesurferRefs.current['main'];
     const extraPlayer = wavesurferRefs.current['extra'];
@@ -817,7 +882,44 @@ const StemSetReviewPage = () => {
     []
   );
 
-  // 댓글 추가 함수
+  // 새로운 댓글 추가 함수 (플로팅 버튼용)
+  const handleFloatingCommentAdd = useCallback(async (time: number, comment: string) => {
+    if (!user || !selectedUpstream) return;
+
+    const timeString = `${String(Math.floor(time / 60)).padStart(2, '0')}:${String(Math.floor(time % 60)).padStart(2, '0')}`;
+
+    try {
+      const commentData = {
+        comment: comment,
+        time: timeString,
+        upstream_id: selectedUpstream.id,
+        user_id: user.id,
+      };
+
+      const response = await createUpstreamComment(commentData);
+      const createdComment = response.upstream_comment || response;
+
+      const newComment: Comment = {
+        id: createdComment.id,
+        time: timeString,
+        comment: comment,
+        timeNumber: time,
+        timeString: timeString,
+        user: {
+          id: user.id,
+          username: user.username,
+        },
+      };
+
+      setComments((prev) => [...prev, newComment]);
+      showSuccess('댓글이 추가되었습니다!');
+    } catch (error) {
+      console.error('댓글 추가 실패:', error);
+      showError('댓글 추가 중 오류가 발생했습니다.');
+    }
+  }, [user, selectedUpstream, showSuccess, showError]);
+
+  // 기존 댓글 추가 함수 (레거시)
   const handleAddComment = useCallback(async () => {
     if (!commentInput.trim() || !user) return;
 
@@ -1475,10 +1577,10 @@ const StemSetReviewPage = () => {
 
   return (
     <div
-      className='relative min-h-screen space-y-6 overflow-hidden bg-cover bg-center'
+      className='relative min-h-screen bg-cover bg-center'
       style={{ backgroundImage: "url('/background.jpg')" }}
     >
-      <div className='absolute inset-0 bg-black bg-opacity-80'>
+      <div className='absolute inset-0 bg-black bg-opacity-80 overflow-y-auto' style={{ height: '100vh' }}>
         {/* Header */}
         <header className='flex items-center justify-between bg-black border-b border-gray-800 px-6 py-4'>
           {/* Left section - Navigation & Logo */}
@@ -1573,9 +1675,16 @@ const StemSetReviewPage = () => {
               <ToggleButton
                 iconOn={<MessageCircle size={16} />}
                 iconOff={<MessageCircle size={16} />}
-                isOn={showCommentList}
-                onToggle={() => setShowCommentList(!showCommentList)}
-                label='댓글'
+                isOn={enableNewCommentUI ? false : showCommentList}
+                onToggle={() => {
+                  if (enableNewCommentUI) {
+                    setEnableNewCommentUI(false);
+                    setShowCommentList(true);
+                  } else {
+                    setShowCommentList(!showCommentList);
+                  }
+                }}
+                label={enableNewCommentUI ? '레거시 댓글' : '댓글'}
                 className='text-xs'
               />
             </div>
@@ -1892,7 +2001,7 @@ const StemSetReviewPage = () => {
           </div>
         )}
 
-        {showSidebar && showCommentList && (
+        {showSidebar && showCommentList && !enableNewCommentUI && (
           <div className='fixed right-0 top-0 z-40 h-full w-80 bg-gray-900/95 backdrop-blur-sm border-l border-gray-700 shadow-2xl transition-all duration-300 ease-in-out'>
             <div className='px-6 py-6 h-full flex flex-col'>
               {/* Header */}
@@ -2043,7 +2152,7 @@ const StemSetReviewPage = () => {
               </div>
               
               {/* Waveform Content */}
-              <div className='p-6'>
+              <div className='p-6 relative' ref={waveformContainerRef}>
                 {(() => {
                   console.log('🎨 [Waveform Render] Checking conditions:', {
                     guideLoading,
@@ -2085,7 +2194,56 @@ const StemSetReviewPage = () => {
                       onSeek: handleSeek,
                     };
 
-                    return <Wave {...mainWaveProps} />;
+                    return (
+                      <div className='relative'>
+                        <Wave {...mainWaveProps} />
+                        
+                        {/* 새로운 댓글 UI 오버레이 */}
+                        {enableNewCommentUI && selectedUpstream && (
+                          <div className='absolute inset-0 pointer-events-none'>
+                            {/* 플로팅 댓글 버튼 */}
+                            <div className='absolute bottom-0 left-0 right-0 h-12 pointer-events-auto'>
+                              <FloatingCommentButton
+                                currentTime={currentTime}
+                                duration={duration}
+                                containerWidth={waveformWidth}
+                                onAddComment={handleFloatingCommentAdd}
+                                disabled={!selectedUpstream}
+                              />
+                            </div>
+                            
+                            {/* 댓글 마커들 */}
+                            {comments.map((comment) => (
+                              <CommentMarker
+                                key={comment.id}
+                                user={{
+                                  id: comment.user?.id || '',
+                                  username: comment.user?.username || 'Unknown',
+                                  avatarUrl: undefined // TODO: 아바타 URL 추가 시 수정
+                                }}
+                                position={duration > 0 ? comment.timeNumber / duration : 0}
+                                isActive={activeCommentMarkers.includes(comment.id)}
+                                onClick={() => seekToTime(comment.timeNumber)}
+                              />
+                            ))}
+                            
+                            {/* 플로팅 댓글 버블들 */}
+                            {floatingComments.map((comment) => (
+                              <FloatingCommentBubble
+                                key={`floating-${comment.id}`}
+                                comment={comment}
+                                position={comment.position}
+                                onClose={() => {
+                                  setFloatingComments(prev => 
+                                    prev.filter(c => c.id !== comment.id)
+                                  );
+                                }}
+                              />
+                            ))}
+                          </div>
+                        )}
+                      </div>
+                    );
                   } else {
                     console.log('🎨 [Waveform Render] Showing fallback message');
                     return (
@@ -2149,18 +2307,40 @@ const StemSetReviewPage = () => {
                       </div>
                     </div>
                   ) : (
-                    <Wave
-                      onReady={handleReady}
-                      audioUrl={extraAudio}
-                      peaks={extraPeaks}
-                      waveColor={theme.colors.waveform.extra}
-                      id='extra'
-                      isPlaying={isPlaying}
-                      currentTime={currentTime}
-                      onSolo={handleExtraSolo}
-                      isSolo={soloTrack === 'extra'}
-                      onSeek={handleSeek}
-                    />
+                    <div className='relative'>
+                      <Wave
+                        onReady={handleReady}
+                        audioUrl={extraAudio}
+                        peaks={extraPeaks}
+                        waveColor={theme.colors.waveform.extra}
+                        id='extra'
+                        isPlaying={isPlaying}
+                        currentTime={currentTime}
+                        onSolo={handleExtraSolo}
+                        isSolo={soloTrack === 'extra'}
+                        onSeek={handleSeek}
+                      />
+                      
+                      {/* Extra 파형 댓글 오버레이 */}
+                      {enableNewCommentUI && selectedUpstream && (
+                        <div className='absolute inset-0 pointer-events-none'>
+                          {/* 댓글 마커들 */}
+                          {comments.map((comment) => (
+                            <CommentMarker
+                              key={`extra-${comment.id}`}
+                              user={{
+                                id: comment.user?.id || '',
+                                username: comment.user?.username || 'Unknown',
+                                avatarUrl: undefined
+                              }}
+                              position={duration > 0 ? comment.timeNumber / duration : 0}
+                              isActive={activeCommentMarkers.includes(comment.id)}
+                              onClick={() => seekToTime(comment.timeNumber)}
+                            />
+                          ))}
+                        </div>
+                      )}
+                    </div>
                   )}
                 </div>
               </div>
@@ -2262,8 +2442,9 @@ const StemSetReviewPage = () => {
           </div>
         </div>
 
-        {/* Enhanced Comment Input */}
-        <div className={`transition-all duration-300 ${showSidebar ? 'mr-80' : ''} px-6`}>
+        {/* Enhanced Comment Input - 레거시 모드에서만 표시 */}
+        {!enableNewCommentUI && (
+          <div className={`transition-all duration-300 ${showSidebar ? 'mr-80' : ''} px-6`}>
           <div className='rounded-xl bg-gray-900/80 backdrop-blur-sm border border-gray-700 shadow-2xl overflow-hidden'>
             {/* Comment Input Header */}
             {selectedUpstream && (
@@ -2331,6 +2512,28 @@ const StemSetReviewPage = () => {
             </div>
           </div>
         </div>
+        )}
+        
+        {/* 새로운 댓글 UI 안내 */}
+        {enableNewCommentUI && (
+          <div className={`transition-all duration-300 ${showSidebar ? 'mr-80' : ''} px-6 py-4`}>
+            <div className='text-center'>
+              <div className='inline-flex items-center gap-3 bg-gray-900/60 backdrop-blur-sm border border-gray-700 rounded-lg px-6 py-3'>
+                <MessageCircle size={20} className='text-blue-400' />
+                <div className='text-sm'>
+                  <div className='text-white font-medium'>새로운 댓글 시스템 활성화</div>
+                  <div className='text-gray-400'>파형 위의 파란색 버튼을 클릭하여 댓글을 추가하세요</div>
+                </div>
+                <button
+                  onClick={() => setEnableNewCommentUI(false)}
+                  className='text-xs bg-gray-700 hover:bg-gray-600 text-gray-300 px-3 py-1 rounded transition-colors'
+                >
+                  레거시 모드
+                </button>
+              </div>
+            </div>
+          </div>
+        )}
       </div>
     </div>
   );
