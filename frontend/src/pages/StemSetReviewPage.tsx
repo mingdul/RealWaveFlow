@@ -1,4 +1,4 @@
-import { useEffect, useRef, useState, useCallback } from 'react';
+import { useEffect, useRef, useState, useCallback, useMemo } from 'react';
 import WaveSurfer from 'wavesurfer.js';
 import Wave from '../components/wave';
 import Logo from '../components/Logo';
@@ -1564,55 +1564,39 @@ const StemSetReviewPage = () => {
           </div>
         )}
 
-        {/* 🔍 디버깅: 모든 상태 출력 */}
-        {(() => {
-          console.log('🎨🎨🎨 [RENDER DEBUG] ===================');
-          console.log('🎨 guideLoading:', guideLoading);
-          console.log('🎨 guideLoadAttempted:', guideLoadAttempted);
-          console.log('🎨 guideAudioUrl:', !!guideAudioUrl, guideAudioUrl?.substring(0, 50));
-          console.log('🎨 guidePeaks:', !!guidePeaks, guidePeaks ? Object.keys(guidePeaks) : null);
-          console.log('🎨🎨🎨 ====================================');
-          return null;
-        })()}
 
         {/* Waveform */}
         <div className='space-y-6'>
           {(() => {
-            console.log('🎨 [Waveform Render] guideLoading:', guideLoading);
-            console.log('🎨 [Waveform Render] guideLoadAttempted:', guideLoadAttempted);
-            console.log('🎨 [Waveform Render] guideAudioUrl:', !!guideAudioUrl);
-            console.log('🎨 [Waveform Render] guidePeaks:', !!guidePeaks);
-            
             if (guideLoading) {
-              console.log('🎨 [Waveform Render] Showing loading state');
               return (
                 <div className='flex flex-col items-center justify-center py-8 bg-gray-900/30 rounded-md p-6'>
                   <div className='mb-3 h-10 w-10 animate-spin rounded-full border-b-2 border-t-2 border-red-400'></div>
-                  <span className='text-white font-medium'>가이드 오디오를 불러오는 중...</span>
+                  <span className='text-white font-medium'>파형을 준비하는 중...</span>
                   <span className='text-gray-400 text-sm mt-2'>잠시만 기다려주세요</span>
                 </div>
               );
             } else if (guideLoadAttempted && guideAudioUrl) {
-              console.log('🎨 [Waveform Render] Rendering Wave component');
+              const mainWaveProps = {
+                onReady: handleReady,
+                audioUrl: guideAudioUrl,
+                peaks: guidePeaks,
+                waveColor: '#f87171',
+                id: 'main',
+                isPlaying: isPlaying,
+                currentTime: currentTime,
+                onSolo: handleMainSolo,
+                isSolo: soloTrack === 'main',
+                onSeek: handleSeek,
+                isLoading: guideLoading
+              };
+              
               return (
                 <>
-                  <Wave
-                    onReady={handleReady}
-                    audioUrl={guideAudioUrl}
-                    peaks={guidePeaks}
-                    waveColor='#f87171'
-                    id='main'
-                    isPlaying={isPlaying}
-                    currentTime={currentTime}
-                    onSolo={handleMainSolo}
-                    isSolo={soloTrack === 'main'}
-                    onSeek={handleSeek}
-                    isLoading={guideLoading}
-                  />
+                  <Wave {...mainWaveProps} />
                 </>
               );
             } else {
-              console.log('🎨 [Waveform Render] Showing no audio message');
               return (
                 <div className='flex items-center justify-center py-8 bg-gray-900/30 rounded-md p-6'>
                   <span className='text-sm text-white'>
