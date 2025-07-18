@@ -208,6 +208,24 @@ const Wave = ({
     }
   }, [audioUrl, peaks, id, isDestroyed]);
 
+  // 강제 ready 상태 설정 - audioUrl과 peaks가 있으면 준비된 것으로 간주
+  useEffect(() => {
+    // 타이머를 사용해 WaveSurfer ready 이벤트를 기다린 후 강제 설정
+    if (audioUrl && peaks && !isReady && wavesurferRef.current) {
+      console.log(`🔧 [${id}] Waiting for WaveSurfer ready or forcing ready state...`);
+      
+      const forceReadyTimer = setTimeout(() => {
+        if (!isReady && wavesurferRef.current) {
+          console.log(`🔧 [${id}] Force setting ready state - audioUrl and peaks available, WaveSurfer ready event didn't fire`);
+          setIsReady(true);
+          setIsAudioLoading(false);
+        }
+      }, 2000); // 2초 후 강제 설정
+      
+      return () => clearTimeout(forceReadyTimer);
+    }
+  }, [audioUrl, peaks, isReady, id]);
+
   useEffect(() => {
     if (wavesurferRef.current && isReady && !isDestroyed) {
       try {
@@ -248,7 +266,9 @@ const Wave = ({
     isActuallyLoading: isActuallyLoading,
     isReady: isReady,
     audioUrl: !!audioUrl,
-    peaks: !!peaks
+    peaks: !!peaks,
+    wavesurferExists: !!wavesurferRef.current,
+    currentAudioUrl: currentAudioUrlRef.current
   });
 
   return (
