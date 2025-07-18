@@ -146,25 +146,23 @@ export class UpstreamService {
         }
 
                  // 6) 알림 전송: 스테이지의 모든 리뷰어에게 새 업스트림 생성 알림
-         // 🔥 NEW: 클라이언트 연결을 위한 약간의 지연 (2초)
-         setTimeout(async () => {
-             try {
-                 console.log('🔔 [UpstreamService] 알림 전송 시작... (2초 지연 후)');
-                 console.log('🔔 [UpstreamService] NotificationGateway 존재:', !!this.notificationGateway);
-                 console.log('🔔 [UpstreamService] Stage:', stage?.id);
-                 console.log('🔔 [UpstreamService] SavedUpstream:', savedUpstream.id);
-                 
-                 if (this.notificationGateway && stage) {
-                     await this.sendUpstreamCreatedNotification(savedUpstream, stage);
-                     console.log('🔔 [UpstreamService] ✅ 알림 전송 완료');
-                 } else {
-                     console.log('🔔 [UpstreamService] ❌ NotificationGateway 또는 Stage가 없습니다!');
-                     console.log('🔔 [UpstreamService] Gateway:', !!this.notificationGateway, 'Stage:', !!stage);
-                 }
-             } catch (error) {
-                 console.error('🔔 [UpstreamService] ❌ 알림 전송 실패:', error);
+         // 🔥 IMPROVED: DB 기반 pending 시스템으로 즉시 전송 (지연 불필요)
+         try {
+             console.log('📦 [UpstreamService] 알림 전송 시작... (DB pending 방식)');
+             console.log('📦 [UpstreamService] NotificationGateway 존재:', !!this.notificationGateway);
+             console.log('📦 [UpstreamService] Stage:', stage?.id);
+             console.log('📦 [UpstreamService] SavedUpstream:', savedUpstream.id);
+             
+             if (this.notificationGateway && stage) {
+                 await this.sendUpstreamCreatedNotification(savedUpstream, stage);
+                 console.log('📦 [UpstreamService] ✅ 알림 전송 완료 (pending으로 저장됨)');
+             } else {
+                 console.log('📦 [UpstreamService] ❌ NotificationGateway 또는 Stage가 없습니다!');
+                 console.log('📦 [UpstreamService] Gateway:', !!this.notificationGateway, 'Stage:', !!stage);
              }
-         }, 2000); // 2초 지연
+         } catch (error) {
+             console.error('📦 [UpstreamService] ❌ 알림 전송 실패:', error);
+         }
 
         return {
             success: true,
