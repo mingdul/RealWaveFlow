@@ -153,6 +153,15 @@ const StagePage: React.FC = () => {
     const config = statusConfig[status] || statusConfig.WAITING;
     const tapeImg = status === 'APPROVED' ? tapeApproved : status === 'REJECTED' ? tapeRejected : tapeActive;
 
+    // 디버깅을 위한 로그
+    console.log('[DEBUG] Upstream title:', {
+      id: upstream.id,
+      title: upstream.title,
+      titleLength: upstream.title?.length,
+      titleTrimmed: upstream.title?.trim(),
+      titleTrimmedLength: upstream.title?.trim()?.length
+    });
+
     // Detail 버튼 클릭 핸들러
     const handleDetailClick = (e: React.MouseEvent) => {
       e.preventDefault();
@@ -205,7 +214,7 @@ const StagePage: React.FC = () => {
         <div className="absolute top-[70px] left-0 w-full text-center z-20">
           <div className="bg-gradient-to-r from-transparent via-black/60 to-transparent py-2">
             <h3 className="text-xl font-bold text-white drop-shadow-lg px-4">
-              {upstream.title || `AWESOME MIX #${upstream.id}`}
+              {upstream.title && upstream.title.trim() ? upstream.title : 'STEM SET #' + upstream.id}
             </h3>
           </div>
         </div>
