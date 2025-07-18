@@ -44,13 +44,26 @@ export const encodeFilename = (originalFilename: string): string => {
  * 인코딩된 파일명을 원본으로 디코딩
  */
 export const decodeFilename = (encodedFilename: string): string => {
-  if (!encodedFilename.startsWith(ENCODED_PREFIX)) {
+  // enc_ 접두사가 있는지 확인 (타임스탬프가 앞에 있을 수 있음)
+  const encIndex = encodedFilename.indexOf(`_${ENCODED_PREFIX}`);
+  const directEncIndex = encodedFilename.indexOf(ENCODED_PREFIX);
+  
+  let prefixStart = -1;
+  
+  if (encIndex !== -1) {
+    // _enc_ 패턴을 찾은 경우 (타임스탬프_enc_...)
+    prefixStart = encIndex + 1; // '_' 다음부터
+  } else if (directEncIndex === 0) {
+    // enc_로 직접 시작하는 경우
+    prefixStart = 0;
+  } else {
     return encodedFilename;
   }
 
   try {
-    // 접두사 제거
-    const withoutPrefix = encodedFilename.substring(ENCODED_PREFIX.length);
+    // 접두사 제거 (enc_ 부분부터)
+    const afterPrefix = encodedFilename.substring(prefixStart);
+    const withoutPrefix = afterPrefix.substring(ENCODED_PREFIX.length);
     
     // 확장자 분리
     const lastDotIndex = withoutPrefix.lastIndexOf('.');
@@ -70,6 +83,8 @@ export const decodeFilename = (encodedFilename: string): string => {
     
     // Base64 디코딩 후 URI 디코딩
     const decoded = decodeURIComponent(atob(base64));
+    
+    // 타임스탬프 접두사가 있었다면 디코딩된 파일명에 추가하지 않고 원본 파일명만 반환
     return decoded;
   } catch (error) {
     console.error('Failed to decode filename:', error);
@@ -90,7 +105,7 @@ export const getFileExtension = (filename: string): string => {
  * 파일명이 인코딩된 것인지 확인
  */
 export const isEncodedFilename = (filename: string): boolean => {
-  return filename.startsWith(ENCODED_PREFIX);
+  return filename.includes(`_${ENCODED_PREFIX}`) || filename.startsWith(ENCODED_PREFIX);
 };
 
 /**

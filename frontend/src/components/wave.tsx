@@ -45,6 +45,7 @@ const Wave = memo(({
   const [isAudioLoading, setIsAudioLoading] = useState(false);
   const initializationRef = useRef<boolean>(false);
   const readyCallbackCalledRef = useRef<boolean>(false);
+  const shouldLog = useRef(true); // 렌더링 로그 최소화용
 
   // Memoized ready handler to prevent recreation
   const handleReadyCallback = useCallback(() => {
@@ -62,8 +63,20 @@ const Wave = memo(({
 
   // WaveSurfer 인스턴스 생성 (한 번만)
   useEffect(() => {
-    if (!waveRef.current || !timelineRef.current || !minimapRef.current || initializationRef.current) return;
+    console.log(`🔧 [${id}] WaveSurfer creation effect triggered`);
+    console.log(`🔧 [${id}] DOM refs status:`, {
+      waveRef: !!waveRef.current,
+      timelineRef: !!timelineRef.current,
+      minimapRef: !!minimapRef.current,
+      initializationRef: initializationRef.current
+    });
+    
+    if (!waveRef.current || !timelineRef.current || !minimapRef.current || initializationRef.current) {
+      console.log(`🔧 [${id}] Skipping WaveSurfer creation - missing refs or already initialized`);
+      return;
+    }
 
+    console.log(`🔧 [${id}] Creating WaveSurfer instance...`);
     initializationRef.current = true;
     setIsDestroyed(false);
     readyCallbackCalledRef.current = false;
@@ -87,11 +100,24 @@ const Wave = memo(({
 
     wavesurferRef.current = wavesurfer;
 
-    wavesurfer.on('ready', handleReadyCallback);
+    console.log(`🔧 [${id}] WaveSurfer instance created, setting up event listeners...`);
+    
+    wavesurfer.on('ready', () => {
+      console.log(`🎯 [${id}] WaveSurfer ready event fired!`);
+      handleReadyCallback();
+    });
 
     wavesurfer.on('error', (error) => {
       console.warn(`❌ [${id}] WaveSurfer error:`, error);
       setIsAudioLoading(false);
+    });
+
+    wavesurfer.on('load', (url: string) => {
+      console.log(`🔄 [${id}] WaveSurfer loading audio from: ${url}`);
+    });
+
+    wavesurfer.on('decode', (duration: number) => {
+      console.log(`🎵 [${id}] WaveSurfer audio decoded, duration: ${duration}s`);
     });
 
     // 사용자가 파형을 클릭하거나 드래그할 때 즉시 currentTime 업데이트
@@ -126,7 +152,19 @@ const Wave = memo(({
 
   // 오디오 URL 또는 peaks 변경 시 로드만 다시 실행
   useEffect(() => {
-    if (!wavesurferRef.current || !audioUrl || isDestroyed || !initializationRef.current) return;
+    console.log(`🔄 [${id}] Audio load effect triggered`, {
+      hasWaveSurfer: !!wavesurferRef.current,
+      hasAudioUrl: !!audioUrl,
+      isDestroyed,
+      isInitialized: initializationRef.current,
+      isReady,
+      currentAudioUrl: currentAudioUrlRef.current
+    });
+    
+    if (!wavesurferRef.current || !audioUrl || isDestroyed || !initializationRef.current) {
+      console.log(`🔄 [${id}] Skipping audio load - conditions not met`);
+      return;
+    }
     
     // 이미 같은 URL이 로드되어 있으면 스킵
     if (currentAudioUrlRef.current === audioUrl && isReady) {
@@ -257,7 +295,6 @@ const Wave = memo(({
   const isActuallyLoading = isLoading || isAudioLoading;
 
   // 렌더링 로그 최소화
-  const shouldLog = useRef(true);
   if (shouldLog.current) {
     console.log(`🔍 [${id}] Render state:`, {
       isReady,
@@ -275,54 +312,56 @@ const Wave = memo(({
       className={`w-full bg-gray-900 rounded-md shadow-lg p-3 sm:p-4 space-y-3 sm:space-y-4 ${isActive ? 'border-2 border-blue-500' : ''}`}
       onClick={onClick}
     >
-      {isActuallyLoading ? (
-        <div className="flex flex-col items-center justify-center py-8">
+      {/* 로딩 오버레이 - DOM refs는 항상 존재하고 로딩 상태에 따라 가시성만 조절 */}
+      {isActuallyLoading && (
+        <div className="absolute inset-0 z-10 flex flex-col items-center justify-center bg-gray-900/90 rounded-md">
           <div className="mb-3 h-10 w-10 animate-spin rounded-full border-b-2 border-t-2 border-blue-500"></div>
           <span className="text-white font-medium">오디오를 불러오는 중...</span>
           <span className="text-gray-400 text-sm mt-2">잠시만 기다려주세요</span>
         </div>
-      ) : !isReady ? (
-        <div className="flex flex-col items-center justify-center py-8">
+      )}
+
+      {!isReady && !isActuallyLoading && (
+        <div className="absolute inset-0 z-10 flex flex-col items-center justify-center bg-gray-900/90 rounded-md">
           <div className="mb-3 h-8 w-8 animate-spin rounded-full border-b-2 border-blue-300"></div>
           <span className="text-white">파형을 준비하는 중...</span>
         </div>
-      ) : (
-        <>
-          <div className="relative border border-gray-700 rounded overflow-hidden">
-            <div id="wave-minimap" ref={minimapRef} className="h-12 sm:h-14 md:h-16" />
-          </div>
-          <div className="relative border border-gray-700 rounded overflow-hidden">
-            <div id="wave-timeline" ref={timelineRef} className="h-8 sm:h-9 md:h-10" />
-            <div id="wave-presentation" ref={waveRef} className="h-48 sm:h-56 md:h-64 lg:h-72" />
-          </div>
-          <div className="flex justify-between items-center">
-            <button 
-              onClick={onSolo}
-              disabled={!isReady}
-              className={`px-3 py-2 sm:px-4 sm:py-2 rounded-lg transition-all duration-200 text-sm sm:text-base font-medium ${
-                isSolo 
-                  ? 'bg-gradient-to-r from-green-500 to-green-600 text-white shadow-lg shadow-green-500/30 border border-green-400 ring-2 ring-green-300/50' 
-                  : 'bg-gray-700 text-gray-200 hover:bg-gray-600 border border-gray-600 hover:border-gray-500'
-              } ${!isReady ? 'opacity-50 cursor-not-allowed' : 'transform hover:scale-105'}`}
-            >
-              <span className="flex items-center gap-1">
-                {isSolo ? (
-                  <>
-                    <span className="animate-pulse">🎵</span>
-                    <span>SOLO</span>
-                  </>
-                ) : (
-                  <>
-                    <span>🔇</span>
-                    <span>뮤트</span>
-                  </>
-                )}
-              </span>
-            </button>
-            {isReady && <span className="text-green-400 text-xs">✓ 준비 완료</span>}
-          </div>
-        </>
       )}
+
+      {/* DOM refs - 항상 렌더링되어야 함 */}
+      <div className="relative border border-gray-700 rounded overflow-hidden">
+        <div id="wave-minimap" ref={minimapRef} className="h-12 sm:h-14 md:h-16" />
+      </div>
+      <div className="relative border border-gray-700 rounded overflow-hidden">
+        <div id="wave-timeline" ref={timelineRef} className="h-8 sm:h-9 md:h-10" />
+        <div id="wave-presentation" ref={waveRef} className="h-48 sm:h-56 md:h-64 lg:h-72" />
+      </div>
+      <div className="flex justify-between items-center">
+        <button 
+          onClick={onSolo}
+          disabled={!isReady}
+          className={`px-3 py-2 sm:px-4 sm:py-2 rounded-lg transition-all duration-200 text-sm sm:text-base font-medium ${
+            isSolo 
+              ? 'bg-gradient-to-r from-green-500 to-green-600 text-white shadow-lg shadow-green-500/30 border border-green-400 ring-2 ring-green-300/50' 
+              : 'bg-gray-700 text-gray-200 hover:bg-gray-600 border border-gray-600 hover:border-gray-500'
+          } ${!isReady ? 'opacity-50 cursor-not-allowed' : 'transform hover:scale-105'}`}
+        >
+          <span className="flex items-center gap-1">
+            {isSolo ? (
+              <>
+                <span className="animate-pulse">🎵</span>
+                <span>SOLO</span>
+              </>
+            ) : (
+              <>
+                <span>🔇</span>
+                <span>뮤트</span>
+              </>
+            )}
+          </span>
+        </button>
+        {isReady && <span className="text-green-400 text-xs">✓ 준비 완료</span>}
+      </div>
     </div>
   );
 });

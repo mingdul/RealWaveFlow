@@ -391,10 +391,7 @@ export class UpstreamService {
         try {
             console.log('🔔 [UpstreamService] sendUpstreamCreatedNotification 시작');
             console.log('🔔 [UpstreamService] Upstream ID:', upstream.id);
-            console.log('🔔 [UpstreamService] Upstream Title:', upstream.title);
-            console.log('🔔 [UpstreamService] Stage ID:', stage.id);
-            console.log('🔔 [UpstreamService] Stage Title:', stage.title);
-            console.log('🔔 [UpstreamService] Track ID:', stage.track?.id);
+ 
 
             // 스테이지의 모든 리뷰어 조회
             const stageReviewers = await this.stageReviewerRepository.find({
@@ -430,17 +427,10 @@ export class UpstreamService {
                 uploader: upstream.user?.id,
             };
 
-            console.log('🔔 [UpstreamService] Notification data:', { type, message, data });
-            console.log('🔔 [UpstreamService] NotificationGateway 존재:', !!this.notificationGateway);
-
             // 각 리뷰어에게 알림 전송
             if (this.notificationGateway) {
-                console.log('🔔 [UpstreamService] 알림 전송 중...');
                 this.notificationGateway.sendNotificationToUsers(reviewerIds, type, message, data);
-                console.log('🔔 [UpstreamService] ✅ 알림 전송 호출 완료');
-            } else {
-                console.log('🔔 [UpstreamService] ❌ NotificationGateway가 없습니다!');
-            }
+            } 
 
             this.logger.log(`Upstream created notification sent to ${reviewerIds.length} reviewers for upstream: ${upstream.id}`);
         } catch (error) {

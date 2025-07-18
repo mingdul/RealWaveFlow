@@ -1,5 +1,6 @@
 import api from '../lib/api';
 import { StemPeaksPresignedUrlDto, GuidePathStreamingResponse, GuideWaveformPresignedUrlDto} from '../types/api';
+import { getDisplayFilename } from '../utils/filenameUtils';
 
 export interface AudioMetadata {
   duration?: number;
@@ -122,7 +123,19 @@ class StreamingService {
       const params = version ? { version } : {};
       const response = await api.get(`/streaming/track/${trackId}/stems`, { params });
       console.log(`[StreamingService] Successfully fetched track stems for trackId: ${trackId}`, response.data);
-      return response.data;
+      
+      // 파일명 디코딩 적용
+      const data = response.data;
+      if (data.success && data.data && data.data.stems) {
+        data.data.stems = data.data.stems.map((stem: any) => {
+          if (stem.fileName) {
+            return { ...stem, fileName: getDisplayFilename(stem.fileName) };
+          }
+          return stem;
+        });
+      }
+      
+      return data;
     } catch (error: any) {
       console.error(`[StreamingService] Error fetching track stems for trackId: ${trackId}`, error);
       return {
@@ -180,7 +193,19 @@ async getGuidePresignedUrlByStageId(stageId: string): Promise<StreamingResponse<
     try {
       const response = await api.get(`/streaming/track/${trackId}/version/${version}/master-stems`);
       console.log(`[StreamingService] Successfully fetched master stem streams for trackId: ${trackId}`, response.data);
-      return response.data;
+      
+      // 파일명 디코딩 적용
+      const data = response.data;
+      if (data.success && data.data && data.data.stems) {
+        data.data.stems = data.data.stems.map((stem: any) => {
+          if (stem.fileName) {
+            return { ...stem, fileName: getDisplayFilename(stem.fileName) };
+          }
+          return stem;
+        });
+      }
+      
+      return data;
     } catch (error: any) {
       console.error(`[StreamingService] Error fetching master stem streams for trackId: ${trackId}`, error);
       return {
@@ -203,10 +228,16 @@ async getGuidePresignedUrlByStageId(stageId: string): Promise<StreamingResponse<
       const response = await api.get(`/streaming/stem/${stemId}`);
       console.log(`[StreamingService] Successfully fetched stem streaming URL for stemId: ${stemId}`, response.data);
       
+      // 파일명 디코딩 적용
+      const data = response.data;
+      if (data.fileName) {
+        data.fileName = getDisplayFilename(data.fileName);
+      }
+      
       // 백엔드가 직접 데이터 객체를 반환하므로 success wrapper로 감싸서 반환
       return {
         success: true,
-        data: response.data,
+        data: data,
       };
     } catch (error: any) {
       console.error(`[StreamingService] Error fetching stem streaming URL for stemId: ${stemId}`, error);
@@ -230,10 +261,16 @@ async getGuidePresignedUrlByStageId(stageId: string): Promise<StreamingResponse<
       const response = await api.get(`/streaming/version-stem/${stemId}`);
       console.log(`[StreamingService] Successfully fetched version stem streaming URL for stemId: ${stemId}`, response.data);
       
+      // 파일명 디코딩 적용
+      const data = response.data;
+      if (data.fileName) {
+        data.fileName = getDisplayFilename(data.fileName);
+      }
+      
       // 백엔드가 직접 데이터 객체를 반환하므로 success wrapper로 감싸서 반환
       return {
         success: true,
-        data: response.data,
+        data: data,
       };
     } catch (error: any) {
       console.error(`[StreamingService] Error fetching version stem streaming URL for stemId: ${stemId}`, error);
@@ -250,7 +287,17 @@ async getGuidePresignedUrlByStageId(stageId: string): Promise<StreamingResponse<
     try {
       const response = await api.post('/streaming/batch', { stemIds });
       console.log(`[StreamingService] Successfully fetched batch streaming URLs for stemIds: ${stemIds.join(', ')}`, response.data);
-      return response.data;
+      
+      // 파일명 디코딩 적용
+      const data = response.data;
+      if (data.success && data.data && data.data.streams) {
+        data.data.streams = data.data.streams.map((stream: any) => ({
+          ...stream,
+          fileName: stream.fileName ? getDisplayFilename(stream.fileName) : stream.fileName
+        }));
+      }
+      
+      return data;
     } catch (error: any) {
       console.error(`[StreamingService] Error fetching batch streaming URLs for stemIds: ${stemIds.join(', ')}`, error);
       return {
@@ -271,9 +318,19 @@ async getGuidePresignedUrlByStageId(stageId: string): Promise<StreamingResponse<
     try {
       const response = await api.get(`/streaming/upstream/${upstreamId}/stems`);
       console.log(`[StreamingService] Successfully fetched upstream stems for upstreamId: ${upstreamId}`, response.data);
+      
+      // 파일명 디코딩 적용
+      const data = response.data;
+      if (data.stems) {
+        data.stems = data.stems.map((stem: any) => ({
+          ...stem,
+          fileName: stem.fileName ? getDisplayFilename(stem.fileName) : stem.fileName
+        }));
+      }
+      
       return {
         success: true,
-        data: response.data,
+        data: data,
       };
     } catch (error: any) {
       console.error(`[StreamingService] Error fetching upstream stems for upstreamId: ${upstreamId}`, error);

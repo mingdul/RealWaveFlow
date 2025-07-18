@@ -1,9 +1,10 @@
 import React, { useState, useEffect, useRef } from 'react';
-import { Play, Pause, Square, Volume2, VolumeX } from 'lucide-react';
+import { Play, Pause, Square, Volume2, VolumeX, Download } from 'lucide-react';
 import AudioPlayer from './AudioPlayer';
 import { StemStreamingInfo } from '../services/streamingService';
 import streamingService from '../services/streamingService';
 import { getStageDetail } from '../services/stageService';
+import { saveAs } from 'file-saver';
 
 interface StemPlayerProps {
   stems: StemStreamingInfo[];
@@ -26,6 +27,10 @@ const StemPlayer: React.FC<StemPlayerProps> = ({ stems, className = '', stageId}
   const [stemStates, setStemStates] = useState<Record<string, StemState>>({});
   const [masterVolume, setMasterVolume] = useState(1);
   const [masterMuted, setMasterMuted] = useState(false);
+  
+  // Download states
+  const [selectMode, setSelectMode] = useState(false);
+  const [selectedStems, setSelectedStems] = useState<Record<string, boolean>>({});
 
   // Guide audio states
   const [guideUrl, setGuideUrl] = useState<string | null>(null);
@@ -104,6 +109,15 @@ const StemPlayer: React.FC<StemPlayerProps> = ({ stems, className = '', stageId}
       };
     });
     setStemStates(initialStates);
+  }, [activeStemsData]);
+
+  // selectedStems 초기화
+  useEffect(() => {
+    const initialSelected: Record<string, boolean> = {};
+    activeStemsData.forEach(stem => {
+      initialSelected[stem.id] = false;
+    });
+    setSelectedStems(initialSelected);
   }, [activeStemsData]);
 
   // 가이드 오디오 시간 업데이트 핸들러
@@ -307,6 +321,71 @@ const StemPlayer: React.FC<StemPlayerProps> = ({ stems, className = '', stageId}
   // 최대 재생 시간 계산
   const maxDuration = Math.max(...Object.values(stemStates).map(state => state.duration || 0));
 
+  // 체크박스 토글 핸들러
+  const toggleSelect = (stemId: string) => {
+    setSelectedStems(prev => ({
+      ...prev,
+      [stemId]: !prev[stemId]
+    }));
+  };
+
+  // 다운로드 모드 토글
+  const toggleSelectMode = () => {
+    setSelectMode(!selectMode);
+    if (selectMode) {
+      // 취소 시 선택 상태 초기화
+      const resetSelected: Record<string, boolean> = {};
+      activeStemsData.forEach(stem => {
+        resetSelected[stem.id] = false;
+      });
+      setSelectedStems(resetSelected);
+    }
+  };
+
+  // 개별 가이드 다운로드
+  const handleGuideDownload = async () => {
+    if (!stageId) return;
+    
+    try {
+      const response = await streamingService.getGuidePresignedUrlByStageId(stageId);
+      if (response.success && response.data) {
+        const blob = await fetch(response.data.presignedUrl).then(res => res.blob());
+        const fileName = `guide_${stageId}.mp3`;
+        saveAs(blob, fileName);
+      }
+    } catch (error) {
+      console.error('Failed to download guide:', error);
+    }
+  };
+
+  // 선택된 스템들 일괄 다운로드
+  const handleExport = async () => {
+    const selectedStemIds = Object.keys(selectedStems).filter(id => selectedStems[id]);
+    if (selectedStemIds.length === 0) return;
+
+    try {
+      // 선택된 스템들의 다운로드 진행
+      for (const stemId of selectedStemIds) {
+        const stem = activeStemsData.find(s => s.id === stemId);
+        if (stem) {
+          const blob = await fetch(stem.presignedUrl).then(res => res.blob());
+          const fileName = stem.fileName || `stem_${stemId}.mp3`;
+          saveAs(blob, fileName);
+        }
+      }
+      
+      // 다운로드 완료 후 선택 모드 해제
+      setSelectMode(false);
+      const resetSelected: Record<string, boolean> = {};
+      activeStemsData.forEach(stem => {
+        resetSelected[stem.id] = false;
+      });
+      setSelectedStems(resetSelected);
+    } catch (error) {
+      console.error('Failed to export stems:', error);
+    }
+  };
+
   // 프로그레스 바 클릭 핸들러 - 가이드 오디오만 제어
   const handleProgressBarClick = (e: React.MouseEvent<HTMLDivElement>) => {
     const rect = e.currentTarget.getBoundingClientRect();
@@ -393,6 +472,16 @@ const StemPlayer: React.FC<StemPlayerProps> = ({ stems, className = '', stageId}
             {stageId && stageInfo ? `스테이지 컨트롤 (V${stageInfo.version})` : '마스터 컨트롤'}
           </h3>
           <div className="flex items-center gap-3">
+            {stageId && (
+              <button
+                onClick={handleGuideDownload}
+                className="group relative p-2.5 rounded-lg transition-all duration-200 transform hover:scale-105 bg-gradient-to-br from-blue-600 to-blue-700 hover:from-blue-500 hover:to-blue-600 text-white shadow-sm hover:shadow-md"
+                title="가이드 다운로드"
+              >
+                <Download size={20} className="drop-shadow-sm" />
+                <div className="absolute inset-0 rounded-lg bg-white opacity-0 group-hover:opacity-10 transition-opacity duration-200"></div>
+              </button>
+            )}
             <button
               onClick={handleMasterMuteToggle}
               className={`group relative p-2.5 rounded-lg transition-all duration-200 transform hover:scale-105 ${
@@ -483,7 +572,7 @@ const StemPlayer: React.FC<StemPlayerProps> = ({ stems, className = '', stageId}
               <div className={`w-2 h-2 rounded-full ${guideLoading ? 'bg-yellow-400 animate-pulse' : guideUrl ? 'bg-emerald-400' : 'bg-gray-500'}`}></div>
               <span className={`${guideLoading ? 'text-yellow-400' : guideUrl ? 'text-emerald-400' : 'text-gray-400'} font-medium`}>
                 {guideLoading ? '가이드 로딩 중...' : 
-                 guideUrl ? '가이드 재생 가능' : '가이드 없음'}
+                 guideUrl ? '가이드 재생 중' : '가이드 재생 가능'}
               </span>
             </div>
           )}
@@ -506,38 +595,81 @@ const StemPlayer: React.FC<StemPlayerProps> = ({ stems, className = '', stageId}
 
       {/* 스템 리스트 */}
       <div className="space-y-3">
-        <h3 className="text-lg font-semibold text-white mb-3">
-          {stageId && stageInfo ? `스템 트랙 (V${stageInfo.version})` : '스템 트랙'}
-        </h3>
+        <div className="flex items-center justify-between mb-3">
+          <h3 className="text-lg font-semibold text-white">
+            {stageId && stageInfo ? `Stem Track (V${stageInfo.version})` : '스템 트랙'}
+          </h3>
+          <div className="flex items-center gap-3">
+            <button
+              onClick={toggleSelectMode}
+              className={`inline-flex items-center justify-center font-medium transition-all duration-200 focus:outline-none focus:ring-2 focus:ring-offset-2 disabled:opacity-50 disabled:cursor-not-allowed px-3 py-2 text-sm rounded-lg ${
+                selectMode 
+                  ? 'bg-red-600 hover:bg-red-700 text-white focus:ring-red-500' 
+                  : 'bg-[#595959] text-[#D9D9D9] hover:bg-[#BFBFBF] hover:text-[#0D0D0D] focus:ring-[#BFBFBF]'
+              }`}
+            >
+              {selectMode ? 'cancled' : 'download'}
+            </button>
+            {selectMode && (
+              <button
+                onClick={handleExport}
+                disabled={Object.values(selectedStems).every(selected => !selected)}
+                className="inline-flex items-center justify-center font-medium transition-all duration-200 focus:outline-none focus:ring-2 focus:ring-offset-2 disabled:opacity-50 disabled:cursor-not-allowed bg-emerald-600 hover:bg-emerald-700 text-white focus:ring-emerald-500 px-3 py-2 text-sm rounded-lg"
+              >
+                Export
+              </button>
+            )}
+          </div>
+        </div>
         {activeStemsData.map((stem) => (
-          <AudioPlayer
-            key={stem.id}
-            src={stem.presignedUrl}
-            fileName={stem.fileName}
-            isPlaying={stemStates[stem.id]?.isPlaying || false}
-            onPlayPause={() => handleStemPlayPause(stem.id)}
-            currentTime={stemStates[stem.id]?.currentTime || 0}
-            volume={(stemStates[stem.id]?.volume || 1) * masterVolume}
-            onVolumeChange={(volume) => handleStemVolumeChange(stem.id, volume)}
-            muted={stemStates[stem.id]?.muted || masterMuted}
-            onMuteToggle={() => handleStemMuteToggle(stem.id)}
-            onTimeUpdate={(time) => handleTimeUpdate(stem.id, time)}
-            onLoadedMetadata={(duration) => handleStemLoadedMetadata(stem.id, duration)}
-            showProgressBar={stemStates[stem.id]?.isPlaying || false}
-            className="bg-gray-800"
-            onAudioReady={(audio) => {
-              // audio element를 stemRefs에 저장
-              stemRefs.current[stem.id] = audio;
-            }}
-            onProgressBarClick={(newTime) => {
-              // 개별 스템의 프로그레스 바 클릭 시 해당 스템만 시간 변경
-              const stemAudio = stemRefs.current[stem.id];
-              if (stemAudio) {
-                stemAudio.currentTime = newTime;
-              }
-            }}
-          />
+          <div key={stem.id} className="flex items-center gap-3">
+            {selectMode && (
+              <div className="flex items-center">
+                <input
+                  type="checkbox"
+                  checked={selectedStems[stem.id] || false}
+                  onChange={() => toggleSelect(stem.id)}
+                  className="w-4 h-4 text-purple-600 bg-gray-700 border-gray-600 rounded focus:ring-purple-500 focus:ring-2"
+                />
+              </div>
+            )}
+            <div className="flex-1">
+              <AudioPlayer
+                src={stem.presignedUrl}
+                fileName={stem.fileName}
+                isPlaying={stemStates[stem.id]?.isPlaying || false}
+                onPlayPause={() => handleStemPlayPause(stem.id)}
+                currentTime={stemStates[stem.id]?.currentTime || 0}
+                volume={(stemStates[stem.id]?.volume || 1) * masterVolume}
+                onVolumeChange={(volume) => handleStemVolumeChange(stem.id, volume)}
+                muted={stemStates[stem.id]?.muted || masterMuted}
+                onMuteToggle={() => handleStemMuteToggle(stem.id)}
+                onTimeUpdate={(time) => handleTimeUpdate(stem.id, time)}
+                onLoadedMetadata={(duration) => handleStemLoadedMetadata(stem.id, duration)}
+                showProgressBar={stemStates[stem.id]?.isPlaying || false}
+                className="bg-gray-800"
+                onAudioReady={(audio) => {
+                  // audio element를 stemRefs에 저장
+                  stemRefs.current[stem.id] = audio;
+                }}
+                onProgressBarClick={(newTime) => {
+                  // 개별 스템의 프로그레스 바 클릭 시 해당 스템만 시간 변경
+                  const stemAudio = stemRefs.current[stem.id];
+                  if (stemAudio) {
+                    stemAudio.currentTime = newTime;
+                  }
+                }}
+              />
+            </div>
+          </div>
         ))}
+      </div>
+
+      {/* 툴바 */}
+      <div className="mt-6 pt-6 border-t border-[#595959] flex justify-end">
+        <button className="inline-flex items-center justify-center font-medium transition-all duration-200 focus:outline-none focus:ring-2 focus:ring-offset-2 disabled:opacity-50 disabled:cursor-not-allowed bg-[#595959] text-[#D9D9D9] hover:bg-[#BFBFBF] hover:text-[#0D0D0D] focus:ring-[#BFBFBF] px-3 py-2 text-sm rounded-lg bg-red-600 hover:bg-red-700">
+          Roll Back
+        </button>
       </div>
 
       {/* Hidden Guide Audio Element */}
