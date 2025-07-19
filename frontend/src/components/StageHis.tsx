@@ -26,6 +26,7 @@ interface StageHisProps {
   onOpenStageClick?: () => void;
   disableStageOpening?: boolean;
   isActiveStage?: boolean;
+  selectedVersion?: number; // 외부에서 선택된 버전을 받기 위한 prop
 }
 
 const StageHis: React.FC<StageHisProps> = ({ 
@@ -33,7 +34,8 @@ const StageHis: React.FC<StageHisProps> = ({
   onStageSelect, 
   onOpenStageClick,
   disableStageOpening = false,
-  isActiveStage = false
+  isActiveStage = false,
+  selectedVersion
 }) => {
   const [selectedStage, setSelectedStage] = useState<Stage | null>(null);
   const [playingStage, setPlayingStage] = useState<string | null>(null);
@@ -179,14 +181,31 @@ const StageHis: React.FC<StageHisProps> = ({
     }
   };
 
+  // 외부에서 전달받은 selectedVersion에 따라 스테이지 자동 선택
+  useEffect(() => {
+    if (selectedVersion && stages.length > 0) {
+      const targetStage = stages.find(stage => stage.version === selectedVersion);
+      if (targetStage && targetStage.id !== selectedStage?.id) {
+        setSelectedStage(targetStage);
+        console.log('[DEBUG][StageHis] Auto-selected stage based on selectedVersion:', targetStage);
+      }
+    }
+  }, [selectedVersion, stages, selectedStage?.id]);
+
   // Center the selected stage card after state updates so layout is stable
   useEffect(() => {
     if (!selectedStage) return;
 
-    const cardElement = document.getElementById(`stage-card-${selectedStage.id}`);
-    if (cardElement) {
-      scrollToCenter(cardElement as HTMLElement);
-    }
+    // 약간의 지연을 두어 DOM이 완전히 렌더링된 후 스크롤
+    const timeoutId = setTimeout(() => {
+      const cardElement = document.getElementById(`stage-card-${selectedStage.id}`);
+      if (cardElement) {
+        scrollToCenter(cardElement as HTMLElement);
+        console.log('[DEBUG][StageHis] Scrolled to center for stage:', selectedStage.version);
+      }
+    }, 100);
+
+    return () => clearTimeout(timeoutId);
   }, [selectedStage]);
 
   const formatDate = (dateString: string) => {
