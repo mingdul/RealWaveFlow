@@ -121,7 +121,7 @@ const Trackinfocardjjm: React.FC<TrackinfocardjjmProps> = ({
 
             <Button
               variant='primary'
-              size='lg'
+              size='sm'
               className='flex items-center justify-center gap-3 rounded-full bg-white px-8 py-4 text-black shadow-xl transition-all duration-300 hover:bg-white/90 hover:scale-105 hover:shadow-2xl'
               onClick={handlePlayClick}
               disabled={stemsLoading || guideLoading}
@@ -140,7 +140,7 @@ const Trackinfocardjjm: React.FC<TrackinfocardjjmProps> = ({
             
             <Button
               variant='waveflowbtn'
-              size='lg'
+              size='sm'
               className='flex items-center justify-center gap-2 rounded-full border-2 border-white/30 bg-white/10 px-8 py-4 text-white backdrop-blur-sm transition-all duration-300 hover:bg-white/20 hover:scale-105'
               onClick={handleShowAllStems}
             >
@@ -164,7 +164,6 @@ const Trackinfocardjjm: React.FC<TrackinfocardjjmProps> = ({
         {/* Right side - Album cover */}
         <div className='flex-shrink-0 lg:ml-8'>
           <div className='group relative'>
-            <div className='absolute -inset-4 rounded-2xl bg-gradient-to-r from-gray-600 via-gray-400 to-white opacity-20 blur-lg transition-opacity duration-500 group-hover:opacity-40'></div>
             <PresignedImage
               trackId={track.id}
               imageUrl={track.image_url}

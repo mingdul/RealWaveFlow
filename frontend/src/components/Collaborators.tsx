@@ -22,11 +22,14 @@ const Collaborators: React.FC<CollaboratorsProps> = ({ track }) => {
     '/person/1750813233213.jpg',
     '/person/IMG_2052.jpg',
     '/person/IMG_6287.jpg',
-    '/person/IMG_6287.png'
+    '/person/IMG_6287.png',
   ];
 
   // 이미지 에러 핸들링을 위한 fallback
-  const handleImageError = (e: React.SyntheticEvent<HTMLImageElement, Event>, _username: string) => {
+  const handleImageError = (
+    e: React.SyntheticEvent<HTMLImageElement, Event>,
+    _username: string
+  ) => {
     const target = e.target as HTMLImageElement;
     // 이미지 로드 실패 시 기존 방식(첫 글자)으로 fallback
     target.style.display = 'none';
@@ -118,7 +121,7 @@ const Collaborators: React.FC<CollaboratorsProps> = ({ track }) => {
 
     try {
       const result = await inviteService.sendTrackInvites(track.id, emailList);
-      
+
       if (result.success) {
         setInviteSuccess(
           `${result.sent_count}개의 초대가 성공적으로 발송되었습니다.`
@@ -158,91 +161,88 @@ const Collaborators: React.FC<CollaboratorsProps> = ({ track }) => {
   return (
     <>
       {/* Collaborators Card */}
-      <div className="bg-white/10 backdrop-blur-lg border border-white/20 rounded-lg p-6 shadow-md mb-6">
-        <h3 className="text-xl font-semibold text-white mb-4">Collaborators</h3>
-        <div className="flex items-center space-x-4">
-          {/* 트랙 소유자 */}
-          <div className="w-12 h-12 rounded-full overflow-hidden relative">
-            <img
-              src={mockImages[0]}
-              alt={track.owner_id?.username || 'Owner'}
-              className="w-full h-full object-cover"
-              onError={(e) => handleImageError(e, track.owner_id?.username || 'U')}
-            />
-            {/* Fallback div */}
-            <div 
-              className="absolute inset-0 bg-gradient-to-br from-blue-400 to-blue-600 flex items-center justify-center"
-              style={{ display: 'none' }}
-            >
-              <span className="text-white text-sm font-semibold">
-                {track.owner_id?.username?.charAt(0)?.toUpperCase() || 'U'}
-              </span>
-            </div>
-          </div>
-          
-          {/* 콜라보레이터들 */}
-          {track.collaborators && track.collaborators.length > 0 ? (
-            track.collaborators.map((collaborator, index) => (
-              <div key={collaborator.id} className="w-12 h-12 rounded-full overflow-hidden relative">
-                <img
-                  src={mockImages[(index + 1) % mockImages.length]}
-                  alt={collaborator.user_id?.username || 'Collaborator'}
-                  className="w-full h-full object-cover"
-                  onError={(e) => handleImageError(e, collaborator.user_id?.username || 'C')}
-                />
-                {/* Fallback div */}
-                <div 
-                  className="absolute inset-0 bg-gradient-to-br from-purple-400 to-purple-600 flex items-center justify-center"
-                  style={{ display: 'none' }}
-                >
-                  <span className="text-white text-sm font-semibold">
-                    {collaborator.user_id?.username?.charAt(0)?.toUpperCase() || 'C'}
-                  </span>
-                </div>
-              </div>
-            ))
-          ) : (
-            // 목업 데이터로 샘플 collaborators 표시 (실제 데이터가 없는 경우)
-            <>
-              <div className="w-12 h-12 rounded-full overflow-hidden">
-                <img
-                  src={mockImages[1]}
-                  alt="Sample Collaborator"
-                  className="w-full h-full object-cover"
-                />
-              </div>
-              
-              <div className="w-12 h-12 rounded-full overflow-hidden">
-                <img
-                  src={mockImages[2]}
-                  alt="Sample Collaborator"
-                  className="w-full h-full object-cover"
-                />
-              </div>
-              
-              <div className="w-12 h-12 rounded-full overflow-hidden">
-                <img
-                  src={mockImages[3]}
-                  alt="Sample Collaborator"
-                  className="w-full h-full object-cover"
-                />
-              </div>
-            </>
-          )}
-        </div>
-        <div className='flex justify-center mt-6'>
-          <Button
-            variant='outline'
-            size='lg'
-            className='flex w-full items-center gap-2 rounded-full border-amber-400 text-amber-400 hover:bg-amber-400 hover:text-black sm:w-auto'
-            onClick={() => setShowInviteModal(true)}
+      <div className='flex items-center space-x-4'>
+        {/* 트랙 소유자 */}
+        <div className='relative h-12 w-12 overflow-hidden rounded-full'>
+          <img
+            src={mockImages[0]}
+            alt={track.owner_id?.username || 'Owner'}
+            className='h-full w-full object-cover'
+            onError={(e) =>
+              handleImageError(e, track.owner_id?.username || 'U')
+            }
+          />
+          {/* Fallback div */}
+          <div
+            className='absolute inset-0 flex items-center justify-center bg-gradient-to-br from-blue-400 to-blue-600'
+            style={{ display: 'none' }}
           >
-            <Plus size={20} />
-            Invite Collaborators
-          </Button>
+            <span className='text-sm font-semibold text-white'>
+              {track.owner_id?.username?.charAt(0)?.toUpperCase() || 'U'}
+            </span>
+          </div>
         </div>
-      </div>
 
+        {/* 콜라보레이터들 */}
+        {track.collaborators && track.collaborators.length > 0 ? (
+          track.collaborators.map((collaborator, index) => (
+            <div
+              key={collaborator.id}
+              className='relative h-12 w-12 overflow-hidden rounded-full'
+            >
+              <img
+                src={mockImages[(index + 1) % mockImages.length]}
+                alt={collaborator.user_id?.username || 'Collaborator'}
+                className='h-full w-full object-cover'
+                onError={(e) =>
+                  handleImageError(e, collaborator.user_id?.username || 'C')
+                }
+              />
+              {/* Fallback div */}
+              <div
+                className='absolute inset-0 flex items-center justify-center bg-gradient-to-br from-purple-400 to-purple-600'
+                style={{ display: 'none' }}
+              >
+                <span className='text-sm font-semibold text-white'>
+                  {collaborator.user_id?.username?.charAt(0)?.toUpperCase() ||
+                    'C'}
+                </span>
+              </div>
+            </div>
+          ))
+        ) : (
+          // 목업 데이터로 샘플 collaborators 표시 (실제 데이터가 없는 경우)
+          <>
+            <div className='h-12 w-12 overflow-hidden rounded-full'>
+              <img
+                src={mockImages[1]}
+                alt='Sample Collaborator'
+                className='h-full w-full object-cover'
+              />
+            </div>
+
+            <div className='h-12 w-12 overflow-hidden rounded-full'>
+              <img
+                src={mockImages[2]}
+                alt='Sample Collaborator'
+                className='h-full w-full object-cover'
+              />
+            </div>
+
+            <div className='h-12 w-12 overflow-hidden rounded-full'>
+              <img
+                src={mockImages[3]}
+                alt='Sample Collaborator'
+                className='h-full w-full object-cover'
+              />
+            </div>
+
+            <Button onClick={() => setShowInviteModal(true)}>
+              <Plus size={20} />
+            </Button>
+          </>
+        )}
+      </div>
       {/* Invite Modal */}
       {showInviteModal && (
         <div className='fixed inset-0 z-50 flex items-center justify-center bg-black bg-opacity-50 p-4'>

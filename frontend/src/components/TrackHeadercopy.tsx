@@ -3,7 +3,6 @@ import { ChevronLeft, Settings } from 'lucide-react';
 import { Button } from './';
 import Logo from './Logo';
 import NotificationBell from './NotificationBell';
-import { useNavigate } from 'react-router-dom';
 import { useNotifications } from '../contexts/NotificationContext';
 import { Track } from '../types/api';
 
@@ -19,7 +18,6 @@ const TrackHeaderCopy: React.FC<TrackHeaderCopyProps> = ({
   onSettingsClick,
 
 }) => {
-  const navigate = useNavigate();
   const { notifications, unreadCount } = useNotifications();
 
   
@@ -102,13 +100,6 @@ const TrackHeaderCopy: React.FC<TrackHeaderCopyProps> = ({
 
         <div className="flex items-center gap-4">
           {/* 🔥 NotificationBell에 실시간 상태 표시 */}
-          <div className="relative">
-            <nav
-              className="text-gray-300 hover:text-white text-sm font-medium cursor-pointer transition-colors"
-              onClick={() => navigate(`/dashboard`)}
-            >
-              Dashboard
-            </nav>
             <NotificationBell />
             {/* 개발 환경에서만 보이는 상태 표시 */}
             {import.meta.env.DEV && (
@@ -121,7 +112,7 @@ const TrackHeaderCopy: React.FC<TrackHeaderCopyProps> = ({
                 )}
               </div>
             )}
-          </div>
+
           <Button size="sm" className="p-2 bg-transparent hover:bg-gray-800 text-white border border-gray-700" onClick={onSettingsClick}>
             <Settings size={20} />
           </Button>
