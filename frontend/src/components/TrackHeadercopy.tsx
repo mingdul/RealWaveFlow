@@ -1,5 +1,5 @@
 import React, { useEffect, useState } from 'react';
-import { ChevronLeft, Settings, Music, Calendar, User } from 'lucide-react';
+import { ChevronLeft, Settings } from 'lucide-react';
 import { Button } from './';
 import Logo from './Logo';
 import NotificationBell from './NotificationBell';
