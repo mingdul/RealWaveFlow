@@ -330,8 +330,8 @@ const StagePage: React.FC = () => {
       <main className='relative px-8 pb-8 pt-6'>
         {/* Stage Header */}
         <div className='mb-12'>
-          <div className="flex items-start gap-6 mb-6">
-            <div className="w-20 h-20 bg-gradient-to-br from-purple-600 to-blue-600 rounded-2xl flex items-center justify-center shadow-lg overflow-hidden flex-shrink-0">
+          <div className="flex items-start gap-8 mb-8">
+            <div className="w-32 h-32 bg-gradient-to-br from-purple-600 to-blue-600 rounded-3xl flex items-center justify-center shadow-lg overflow-hidden flex-shrink-0">
               {track ? (
                 <PresignedImage
                   trackId={track.id}
@@ -340,18 +340,18 @@ const StagePage: React.FC = () => {
                   className="w-full h-full object-cover"
                 />
               ) : (
-                <Music className="w-10 h-10 text-white" />
+                <Music className="w-16 h-16 text-white" />
               )}
             </div>
             <div className="flex-1">
-              <h1 className='text-4xl font-bold text-white mb-3'>
+              <h1 className='text-6xl font-bold text-white mb-6'>
                 {track?.title || 'Unknown Track'}
               </h1>
-              <div className="space-y-2">
-                <p className="text-lg text-gray-300 font-medium">
+              <div className="space-y-4">
+                <p className="text-2xl text-gray-300 font-semibold">
                   Working on a new version {stage.version}
                 </p>
-                <p className="text-sm text-gray-400">
+                <p className="text-lg text-gray-400">
                   {stage.created_at ? new Date(stage.created_at).toLocaleString('ko-KR', {
                     month: '2-digit',
                     day: '2-digit',
@@ -361,7 +361,7 @@ const StagePage: React.FC = () => {
                   }) : ''}
                 </p>
                 {stage.description && (
-                  <p className="text-xl text-gray-200 leading-relaxed mt-4">
+                  <p className="text-3xl text-gray-200 leading-relaxed mt-6 font-medium">
                     {stage.description}
                   </p>
                 )}
