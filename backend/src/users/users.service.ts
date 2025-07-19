@@ -109,8 +109,8 @@ async updateUser(
 
   // ★ criteria를 명시적으로 객체로 전달
   await this.userRepository.update(
-    { id: userId },    // ← 여기!
-    updateData
+    { id: userId },    
+    { image_url : updateUserDto.image_url, username : updateUserDto.username }
   );
 
   // 업데이트된 유저 반환
@@ -162,7 +162,7 @@ async updateUser(
     // 6) 업데이트 (criteria를 { id: userId } 로 명시)
     await this.userRepository.update(
       { id: userId },
-      updateData
+      { image_url : updateUserDto.image_url, username : updateUserDto.username }
     );
   
     // 7) 결과 리턴
