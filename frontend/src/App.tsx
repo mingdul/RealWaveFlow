@@ -17,6 +17,7 @@ import TrackPage from './pages/TrackPage.tsx';
 import StemSetReviewPage from './pages/StemSetReviewPage.tsx';
 import InvitePage from './pages/InvitePage.tsx';
 import StemReview from './pages/StemReview.tsx';
+import TrackPageCopy from './pages/TrackPage copy.tsx';
 
 // import PR_Page from './pages/PR_Page.tsx';     
 // import MasterPage from './pages/MasterPage';
@@ -41,6 +42,7 @@ const App = () => {
               <Route path="/signup" element={<PublicRoute><SignUpPage /></PublicRoute>} />
               <Route path="/dashboard" element={<DashboardPage />} />
               <Route path="/track/:trackId" element={<TrackPage />} />
+              <Route path="/trackcopy/:trackId" element={<TrackPageCopy />} />
               <Route path="/invite/:token" element={<InvitePage />} />
               <Route path="/stage/:stageId" element={<StagePage />} />
               {/* <Route path="/review" element={<StemSetReviewPage />} /> */}
