@@ -1,4 +1,4 @@
-import { Controller, Post, Body, ValidationPipe, Res, UseGuards, Req, Get, Put, Patch, Param, NotFoundException, BadRequestException } from '@nestjs/common';
+import { Controller, Post, Body, ValidationPipe, Res, UseGuards, Req, Get, Put, Patch, Param, NotFoundException, BadRequestException, InternalServerErrorException } from '@nestjs/common';
 import { ApiTags, ApiOperation, ApiResponse, ApiBody, ApiParam, ApiBearerAuth } from '@nestjs/swagger';
 import { UsersService } from './users.service';
 import { ProfileImageService } from './profile-image.service';
@@ -10,6 +10,8 @@ import { UpdateUserDto } from './dto/update-user.dto';
 import { ProfileImageUploadDto } from './dto/profile-image-upload.dto';
 import { ProfileImageCompleteDto } from './dto/profile-image-complete.dto';
 import { AuthGuard } from '@nestjs/passport';
+import { S3Client, GetObjectCommand } from '@aws-sdk/client-s3';
+import { getSignedUrl } from '@aws-sdk/s3-request-presigner';
 
 @ApiTags('users')
 @Controller('users')
@@ -222,8 +224,7 @@ export class UsersController {
       example: {
         success: true,
         data: {
-          imageUrl: "https://s3.amazonaws.com/bucket/images/user-123/profile.jpg?presigned-params",
-          expiresIn: 3600
+          imageUrl: "https://s3.amazonaws.com/bucket/images/user-123/profile.jpg?presigned-params"
         }
       }
     }
@@ -266,24 +267,33 @@ export class UsersController {
     }
     
     try {
-      // S3 presigned URL 생성 (1시간 유효)
-      const imageUrl = await this.s3Service.getPresignedDownloadUrl(
-        currentUser.image_url, 
-        3600
-      );
+      // image.service.ts와 동일한 방식으로 S3 클라이언트 사용
+      const s3 = new S3Client({
+        region: process.env.AWS_REGION,
+      });
+      const bucketName = process.env.AWS_S3_BUCKET_NAME || 'waveflow-bucket';
+      
+      // Presigned URL 생성
+      const command = new GetObjectCommand({
+        Bucket: bucketName,
+        Key: currentUser.image_url,
+      });
+
+      const imageUrl = await getSignedUrl(s3, command, {
+        expiresIn: 3600 // 1시간
+      });
       
       console.log('🖼️ [GET /users/me/profile-image] Generated presigned URL');
       
       return {
         success: true,
         data: {
-          imageUrl,
-          expiresIn: 3600
+          imageUrl
         }
       };
     } catch (error) {
       console.error('🖼️ [GET /users/me/profile-image] S3 presigned URL 생성 실패:', error);
-      throw new BadRequestException('프로필 이미지를 가져올 수 없습니다.');
+      throw new InternalServerErrorException('프로필 이미지를 가져올 수 없습니다.');
     }
   }
 }
