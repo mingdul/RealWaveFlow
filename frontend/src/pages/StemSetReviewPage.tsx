@@ -1556,6 +1556,7 @@ const StemSetReviewPage = () => {
     try {
       await approveDropReviewer(stageId, upstreamId);
       showSuccess('승인 완료!');
+      navigate(`/stage/${stageId}`);
     } catch (error) {
       console.error('승인 실패:', error);
       showError('승인 중 오류 발생');
@@ -1577,6 +1578,7 @@ const StemSetReviewPage = () => {
     try {
       await rejectDropReviewer(stageId, upstreamId);
       showSuccess('거절 완료!');
+      navigate(`/stage/${stageId}`);
     } catch (error) {
       console.error('거절 실패:', error);
       showError('거절 중 오류 발생');
