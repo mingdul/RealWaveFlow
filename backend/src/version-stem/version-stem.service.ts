@@ -44,6 +44,20 @@ export class VersionStemService {
         };  
     }
 
+    async getVersionStemByStageId(stageId: string) {
+        const versionStems = await this.versionStemRepository.find({
+            where: { stage: { id: stageId } },
+        });
+        if (versionStems.length === 0) {
+            throw new NotFoundException(`No version stems found for stage: ${stageId}`);
+        }
+        return {
+            success: true,
+            message: 'Version stems retrieved successfully',
+            version_stems: versionStems,
+        };
+    }
+
     async getVersionStemPathsByStageId(stageId: string): Promise<string[]> {
         const versionStems = await this.versionStemRepository.find({
             where: { stage: { id: stageId } },

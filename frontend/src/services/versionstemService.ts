@@ -27,6 +27,19 @@ class VersionStemService {
             throw new Error('Failed to get latest stems per category by track');
         }
     }
+
+    async getVersionStemByStageId(stageId: string) {
+        try {
+            const response = await apiClient.get(`/version-stem/stage/${stageId}`);
+            if(!response.data.success){
+                throw new Error(response.data.message);
+            }
+            return response.data.data;
+        } catch (error) {
+            console.error('Failed to get version stems by stage ID:', error);
+            throw new Error('Failed to get version stems by stage ID');
+        }
+    }
 }
 
 export default new VersionStemService();
