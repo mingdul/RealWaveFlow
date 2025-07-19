@@ -2036,8 +2036,7 @@ const StemSetReview = () => {
           </div>
 
           {/* Control Bar - 반응형 */}
-          <div className={`transition-all duration-300 ease-in-out bg-white/5 backdrop-blur-lg rounded-2xl p-4 border border-white/10 shadow-xl ${(activePanel as string) !== 'none' ? 'mr-80' : ''
-            }`}>
+          <div className={`fixed bottom-0 left-0 z-50 w-full transition-all duration-300 ease-in-out bg-white/5 backdrop-blur-lg rounded-2xl p-4 border border-white/10 shadow-xl ${(activePanel as string) !== 'none' ? 'mr-80' : ''}`}>
             <div className="flex items-center justify-between">
               <div className="flex items-center space-x-4">
                 {/* Playback Controls */}
