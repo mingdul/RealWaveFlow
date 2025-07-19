@@ -189,7 +189,8 @@ const LandingPage2: React.FC = () => {
             WavefloW
           </div>
         </div>
-        <motion.button
+        <div className='flex w-full justify-end gap-3 px-6 pt-4'>
+          <motion.button
             whileHover={{ scale: 1.05 }}
             whileTap={{ scale: 0.95 }}
             className='group flex items-center gap-2 rounded-full bg-gradient-to-r px-6 py-2.5 text-sm font-medium text-white transition-all hover:shadow-lg hover:shadow-violet-500/25'
@@ -206,7 +207,7 @@ const LandingPage2: React.FC = () => {
           >
             Sign Up
           </motion.button>
-
+        </div>
       </header>
 
       {/* Hero Section */}
@@ -263,17 +264,15 @@ const LandingPage2: React.FC = () => {
               transition={{ duration: 1, delay: 0.8 }}
               className='flex flex-col items-center justify-center gap-4 sm:flex-row'
             >
-
-                <motion.button
-                  whileHover={{ scale: 1.05 }}
-                  whileTap={{ scale: 0.95 }}
-                  className='group flex items-center gap-3 rounded-full bg-gradient-to-r px-8 py-4 text-lg font-semibold text-white shadow-xl shadow-violet-500/25 transition-all hover:shadow-2xl hover:shadow-violet-500/40'
-                  onClick={() => navigate('/signup')}
-                >
-                  무료로 시작하기
-                  <ArrowRight className='h-5 w-5 transition-transform group-hover:translate-x-1' />
-                </motion.button>
-
+              <motion.button
+                whileHover={{ scale: 1.05 }}
+                whileTap={{ scale: 0.95 }}
+                className='group flex items-center gap-3 rounded-full bg-gradient-to-r px-8 py-4 text-lg font-semibold text-white shadow-xl shadow-violet-500/25 transition-all hover:shadow-2xl hover:shadow-violet-500/40'
+                onClick={() => navigate('/signup')}
+              >
+                무료로 시작하기
+                <ArrowRight className='h-5 w-5 transition-transform group-hover:translate-x-1' />
+              </motion.button>
             </motion.div>
           </div>
         </div>

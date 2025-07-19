@@ -18,7 +18,9 @@
 @font-face {
   font-family: 'monument';
   src: url('/fonts/MonumentExtended-FreeForPersonalUse/MonumentExtended-Regular.otf') format('opentype');
-  font-weight: 400;
+  font-weight: normal;
+  font-style: normal;
+  font-display: swap;
 
   color-scheme: light dark;
   color: var(--color-lightest);
@@ -53,7 +55,12 @@ html, body {
 body {
   min-width: 320px;
   min-height: 100vh;
-  font-family: 'monument', Inter, system-ui, Avenir, Helvetica, Arial, sans-serif;
+  font-family: 'monument', Inter, system-ui, Avenir, Helvetica, Arial, sans-serif !important;
+}
+
+/* 모든 요소에 monument 폰트 적용 */
+* {
+  font-family: 'monument', Inter, system-ui, Avenir, Helvetica, Arial, sans-serif !important;
 }
 
 #root {
