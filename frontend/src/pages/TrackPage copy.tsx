@@ -50,46 +50,7 @@ const ErrorState: React.FC<{ message: string }> = ({ message }) => (
   </div>
 );
 
-// 트랙 메타정보 카드 컴포넌트 (기본 정보만)
-const TrackMetaCard: React.FC<{ track: Track }> = ({ track }) => (
-  <div className="bg-white/10 backdrop-blur-lg border border-white/20 rounded-lg p-6 shadow-md mb-6">
-    <h3 className="text-xl font-semibold text-white mb-4">Track Information</h3>
-    <div className="space-y-4">
-      <div>
-        <label className="text-sm font-medium text-gray-300">Title</label>
-        <p className="text-base text-white">{track.title}</p>
-      </div>
-      {track.description && (
-        <div>
-          <label className="text-sm font-medium text-gray-300">Description</label>
-          <p className="text-sm text-gray-200">{track.description}</p>
-        </div>
-      )}
-      <div>
-        <label className="text-sm font-medium text-gray-300">Created Date</label>
-        <p className="text-base text-white">{new Date(track.created_date).toLocaleDateString()}</p>
-      </div>
-      {track.genre && (
-        <div>
-          <label className="text-sm font-medium text-gray-300">Genre</label>
-          <p className="text-base text-white">{track.genre}</p>
-        </div>
-      )}
-      {track.bpm && (
-        <div>
-          <label className="text-sm font-medium text-gray-300">BPM</label>
-          <p className="text-base text-white">{track.bpm}</p>
-        </div>
-      )}
-      {track.key_signature && (
-        <div>
-          <label className="text-sm font-medium text-gray-300">Key</label>
-          <p className="text-base text-white">{track.key_signature}</p>
-        </div>
-      )}
-    </div>
-  </div>
-);
+
 
 // 버전 정보 패널 컴포넌트
 const VersionInfoPanel: React.FC<{ 
@@ -215,7 +176,7 @@ const VersionTimeline: React.FC<{
       // 해당 버전의 스테이지 정보 조회
       const stageInfo = await getStageByTrackIdAndVersion(trackId, version);
       
-      if (!stageInfo) {
+      if (!stageInfo || !stageInfo.id) {
         console.error(`[ERROR][VersionTimeline] No stage found for version: ${version}`);
         setVersionStems(prev => ({ ...prev, [version]: [] }));
         return;
@@ -223,8 +184,8 @@ const VersionTimeline: React.FC<{
 
       console.log(`[DEBUG][VersionTimeline] Found stage info for version ${version}:`, stageInfo);
       
-      // 해당 스테이지의 version-stem만 조회
-      const versionStemsData = await versionStemService.getLatestStemsPerCategoryByTrack(trackId, version);
+      // 백엔드의 getVersionStemByStageId 함수로 해당 스테이지의 version-stem만 조회
+      const versionStemsData = await versionStemService.getVersionStemByStageId(stageInfo.id);
       
       if (versionStemsData && Array.isArray(versionStemsData)) {
         const convertedStems: StemStreamingInfo[] = versionStemsData.map((stem: any) => ({
@@ -251,9 +212,9 @@ const VersionTimeline: React.FC<{
           [version]: convertedStems 
         }));
         
-        console.log(`[DEBUG][VersionTimeline] Successfully loaded ${convertedStems.length} version-stems for stage version: ${version}`);
+        console.log(`[DEBUG][VersionTimeline] Successfully loaded ${convertedStems.length} version-stems for stage ID: ${stageInfo.id}`);
       } else {
-        console.warn(`[WARN][VersionTimeline] No version-stems found for version: ${version}`);
+        console.warn(`[WARN][VersionTimeline] No version-stems found for stage ID: ${stageInfo.id}`);
         setVersionStems(prev => ({ 
           ...prev, 
           [version]: [] 
@@ -444,7 +405,7 @@ const TrackPageCopy: React.FC<TrackPageCopyProps> = () => {
     loadTrackData();
   }, [trackId]);
 
-  // 최신 스테이지의 version-stem들 로드
+  // 최신 스테이지의 version-stem들 로드 (stageId 기반)
   const loadApproveStems = async () => {
     if (!trackId || stages.length === 0) return;
 
@@ -458,19 +419,16 @@ const TrackPageCopy: React.FC<TrackPageCopyProps> = () => {
         current.version > prev.version ? current : prev
       );
 
-      if (!targetStage) {
-        console.warn('[WARN][TrackPage] No stages found');
+      if (!targetStage || !targetStage.id) {
+        console.warn('[WARN][TrackPage] No stages found or stage ID missing');
         setStems([]);
         return;
       }
 
       console.log('[DEBUG][TrackPage] Loading stems for target stage:', targetStage);
 
-      // 해당 스테이지의 version-stem만 조회
-      const versionStems = await versionStemService.getLatestStemsPerCategoryByTrack(
-        trackId,
-        targetStage.version
-      );
+      // 백엔드의 getVersionStemByStageId 함수로 해당 스테이지의 version-stem만 조회
+      const versionStems = await versionStemService.getVersionStemByStageId(targetStage.id);
       
       if (versionStems && Array.isArray(versionStems)) {
         // 버전 스템 데이터를 StemStreamingInfo 형태로 변환
@@ -495,9 +453,9 @@ const TrackPageCopy: React.FC<TrackPageCopyProps> = () => {
         
         setStems(convertedStems);
         setSelectedStageVersion(targetStage.version);
-        console.log('[DEBUG][TrackPage] Successfully loaded', convertedStems.length, 'initial version-stems for stage version:', targetStage.version);
+        console.log('[DEBUG][TrackPage] Successfully loaded', convertedStems.length, 'initial version-stems for stage ID:', targetStage.id);
       } else {
-        console.warn('[WARN][TrackPage] No version-stems found for target stage:', targetStage);
+        console.warn('[WARN][TrackPage] No version-stems found for stage ID:', targetStage.id);
         setStems([]);
       }
     } catch (error) {
@@ -515,7 +473,7 @@ const TrackPageCopy: React.FC<TrackPageCopyProps> = () => {
     }
   }, [stages, trackId]);
 
-  // 스테이지별 version-stem만 로드 (개선된 버전)
+  // 스테이지별 version-stem만 로드 (stageId 기반)
   const loadStemsByVersion = async (version: number) => {
     if (!trackId) return;
 
@@ -526,7 +484,7 @@ const TrackPageCopy: React.FC<TrackPageCopyProps> = () => {
       // 해당 버전의 스테이지 정보 조회
       const stageInfo = await getStageByTrackIdAndVersion(trackId, version);
       
-      if (!stageInfo) {
+      if (!stageInfo || !stageInfo.id) {
         console.error('[ERROR][TrackPage] No stage found for version:', version);
         setStems([]);
         setSelectedStageVersion(version);
@@ -535,9 +493,9 @@ const TrackPageCopy: React.FC<TrackPageCopyProps> = () => {
 
       console.log('[DEBUG][TrackPage] Found stage info:', stageInfo);
       
-      // 해당 스테이지의 version-stem만 조회
-      const versionStems = await versionStemService.getLatestStemsPerCategoryByTrack(trackId, version);
-      console.log('[DEBUG][TrackPage] Loaded version stems for stage:', stageInfo.id, versionStems);
+      // 백엔드의 getVersionStemByStageId 함수로 해당 스테이지의 version-stem만 조회
+      const versionStems = await versionStemService.getVersionStemByStageId(stageInfo.id);
+      console.log('[DEBUG][TrackPage] Loaded version stems for stage ID:', stageInfo.id, versionStems);
       
       if (versionStems && Array.isArray(versionStems)) {
         // 버전 스템 데이터를 StemStreamingInfo 형태로 변환
@@ -561,9 +519,9 @@ const TrackPageCopy: React.FC<TrackPageCopyProps> = () => {
         }));
         
         setStems(convertedStems);
-        console.log('[DEBUG][TrackPage] Successfully loaded', convertedStems.length, 'version-stems for stage version:', version);
+        console.log('[DEBUG][TrackPage] Successfully loaded', convertedStems.length, 'version-stems for stage ID:', stageInfo.id);
       } else {
-        console.warn('[WARN][TrackPage] No version-stems found for version:', version);
+        console.warn('[WARN][TrackPage] No version-stems found for stage ID:', stageInfo.id);
         setStems([]);
       }
       
@@ -821,11 +779,8 @@ const TrackPageCopy: React.FC<TrackPageCopyProps> = () => {
                 />
               </div>
 
-              {/* 오른쪽 영역 - 메타정보 카드들 (1/3 width) */}
+              {/* 오른쪽 영역 - 정보 카드들 (1/3 width) */}
               <div className="space-y-6">
-                <div className="transform transition-all duration-300 hover:scale-[1.02]">
-                  <TrackMetaCard track={track} />
-                </div>
                 <div className="transform transition-all duration-300 hover:scale-[1.02]">
                   <VersionInfoPanel 
                     selectedVersion={selectedStageVersion}

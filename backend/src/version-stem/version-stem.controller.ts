@@ -26,4 +26,13 @@ export class VersionStemController {
   async getLatestStemsPerCategoryByTrack(@Param('track_id') track_id: string, @Param('version') version: number) {
     return this.versionStemService.getLatestStemsPerCategoryByTrack(track_id, version);
   }
+
+  @Get('/stage/:stage_id')
+  @ApiOperation({ summary: '스테이지별 버전 스템 조회', description: '특정 스테이지의 버전 스템들을 조회합니다.' })
+  @ApiParam({ name: 'stage_id', description: '스테이지 ID' })
+  @ApiResponse({ status: 200, description: '버전 스템 조회 성공' })
+  @ApiResponse({ status: 404, description: '스테이지를 찾을 수 없음' })
+  async getVersionStemByStageId(@Param('stage_id') stage_id: string) {
+    return this.versionStemService.getVersionStemByStageId(stage_id);
+  }
 }
