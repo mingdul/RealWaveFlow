@@ -252,7 +252,7 @@ const Collaborators: React.FC<CollaboratorsProps> = ({ track }) => {
             </div>
 
             {/* 콜라보레이터들 */}
-            {trackUsers.collaborators.collaborator.map((collaborator, index) => (
+            {trackUsers.collaborators.collaborator.map((collaborator) => (
               <div
                 key={collaborator.id}
                 className='relative h-12 w-12 overflow-hidden rounded-full'
