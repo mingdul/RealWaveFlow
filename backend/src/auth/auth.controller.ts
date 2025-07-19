@@ -78,7 +78,8 @@ export class AuthController {
 
     console.log('[DEBUG] Google cookie set successfully');
 
-    return  res.redirect('http://13.125.231.115:3000/dashboard'); 
+    const redirectUrl = process.env.REDIRECT_URL || 'https://waveflow.pro';
+    return  res.redirect(`${redirectUrl}/dashboard`); 
   }
 
   @Get('me')
