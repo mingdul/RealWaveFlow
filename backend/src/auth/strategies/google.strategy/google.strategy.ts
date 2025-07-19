@@ -10,7 +10,7 @@ export class GoogleStrategy extends PassportStrategy(Strategy, 'google') {
         super({
         clientID: process.env.GOOGLE_CLIENT_ID,
         clientSecret: process.env.GOOGLE_CLIENT_SECRET,
-        callbackURL: 'http://13.125.231.115:8080/auth/google/callback',
+        callbackURL: process.env.GOOGLE_CALLBACK_URL || 'https://waveflow.pro/api/auth/google/callback',
         scope: ['email', 'profile'],
         });
     }
