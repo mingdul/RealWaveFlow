@@ -134,19 +134,6 @@ const StagePage: React.FC = () => {
     }
   };
 
-  // title을 안전하게 처리하는 유틸리티 함수
-  const getSafeTitle = (upstream: Upstream): string => {
-    // title이 number 타입인 경우 문자열로 변환
-    if (upstream.title !== null && upstream.title !== undefined) {
-      const titleStr = String(upstream.title).trim();
-      if (titleStr) {
-        return titleStr;
-      }
-    }
-    // upstream.id가 이미 생성 순서대로 나오므로 그대로 사용
-    return `STEM SET #${upstream.id}`;
-  };
-
   interface StemSetCardProps {
     upstream: Upstream;
     onDetail: () => void;
