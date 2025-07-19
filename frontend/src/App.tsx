@@ -18,9 +18,11 @@ import StemSetReviewPage from './pages/StemSetReviewPage.tsx';
 import InvitePage from './pages/InvitePage.tsx';
 import StemReview from './pages/StemReview.tsx';
 import TrackPageCopy from './pages/TrackPage copy.tsx';
+import TrackPage3 from './pages/TrackPage3.tsx';
+
 
 // import PR_Page from './pages/PR_Page.tsx';     
-// import MasterPage from './pages/MasterPage';
+// import MasterPage from './pages/MasterPage'; 
 // import CommitPage from './pages/UploadPage';
 // import AddProjectPage from './pages/AddProjectPage';
 // import PublicRoute from './components/PublicRoute.tsx';
@@ -49,6 +51,7 @@ const App = () => {
               <Route path="/review/:upstreamId" element={<StemSetReviewPage />} />
               <Route path="*" element={<Notfound />} />
               <Route path="/stemreview/:upstreamId" element={<StemReview />} />
+              <Route path="/track3/:trackId" element={<TrackPage3 />} />
               {/* <Route path="/master" element={<MasterPage />} />
               <Route path="/commit" element={<CommitPage />} />
               <Route path="/pr" element={<PR_Page />} /> 
