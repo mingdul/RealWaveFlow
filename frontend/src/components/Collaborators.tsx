@@ -22,14 +22,11 @@ const Collaborators: React.FC<CollaboratorsProps> = ({ track }) => {
     '/person/1750813233213.jpg',
     '/person/IMG_2052.jpg',
     '/person/IMG_6287.jpg',
-    '/person/IMG_6287.png',
+    '/person/IMG_6287.png'
   ];
 
   // 이미지 에러 핸들링을 위한 fallback
-  const handleImageError = (
-    e: React.SyntheticEvent<HTMLImageElement, Event>,
-    _username: string
-  ) => {
+  const handleImageError = (e: React.SyntheticEvent<HTMLImageElement, Event>, username: string) => {
     const target = e.target as HTMLImageElement;
     // 이미지 로드 실패 시 기존 방식(첫 글자)으로 fallback
     target.style.display = 'none';
@@ -121,7 +118,7 @@ const Collaborators: React.FC<CollaboratorsProps> = ({ track }) => {
 
     try {
       const result = await inviteService.sendTrackInvites(track.id, emailList);
-
+      
       if (result.success) {
         setInviteSuccess(
           `${result.sent_count}개의 초대가 성공적으로 발송되었습니다.`
@@ -161,128 +158,79 @@ const Collaborators: React.FC<CollaboratorsProps> = ({ track }) => {
   return (
     <>
       {/* Collaborators Card */}
-      <div className='mb-6 rounded-lg border border-white/20 bg-white/10 p-6 shadow-md backdrop-blur-lg'>
-        <h3 className='mb-4 text-xl font-semibold text-white'>Collaborators</h3>
-        <div className='space-y-3'>
+      <div className="bg-white/10 backdrop-blur-lg border border-white/20 rounded-lg p-6 shadow-md mb-6">
+        <h3 className="text-xl font-semibold text-white mb-4">Collaborators</h3>
+        <div className="flex items-center space-x-4">
           {/* 트랙 소유자 */}
-          <div className='flex items-center space-x-3'>
-            <div className='relative h-12 w-12 overflow-hidden rounded-full'>
-              <img
-                src={mockImages[0]}
-                alt={track.owner_id?.username || 'Owner'}
-                className='h-full w-full object-cover'
-                onError={(e) =>
-                  handleImageError(e, track.owner_id?.username || 'U')
-                }
-              />
-              {/* Fallback div */}
-              <div
-                className='absolute inset-0 flex items-center justify-center bg-gradient-to-br from-blue-400 to-blue-600'
-                style={{ display: 'none' }}
-              >
-                <span className='text-sm font-semibold text-white'>
-                  {track.owner_id?.username?.charAt(0)?.toUpperCase() || 'U'}
-                </span>
-              </div>
-            </div>
-            <div>
-              <p className='text-base font-medium text-white'>
-                {track.owner_id?.username || 'Unknown User'}
-              </p>
-              <p className='text-sm text-gray-400'>Owner</p>
+          <div className="w-12 h-12 rounded-full overflow-hidden relative">
+            <img
+              src={mockImages[0]}
+              alt={track.owner_id?.username || 'Owner'}
+              className="w-full h-full object-cover"
+              onError={(e) => handleImageError(e, track.owner_id?.username || 'U')}
+            />
+            {/* Fallback div */}
+            <div 
+              className="absolute inset-0 bg-gradient-to-br from-blue-400 to-blue-600 flex items-center justify-center"
+              style={{ display: 'none' }}
+            >
+              <span className="text-white text-sm font-semibold">
+                {track.owner_id?.username?.charAt(0)?.toUpperCase() || 'U'}
+              </span>
             </div>
           </div>
-
+          
           {/* 콜라보레이터들 */}
           {track.collaborators && track.collaborators.length > 0 ? (
             track.collaborators.map((collaborator, index) => (
-              <div
-                key={collaborator.id}
-                className='flex items-center space-x-3'
-              >
-                <div className='relative h-12 w-12 overflow-hidden rounded-full'>
-                  <img
-                    src={mockImages[(index + 1) % mockImages.length]}
-                    alt={collaborator.user_id?.username || 'Collaborator'}
-                    className='h-full w-full object-cover'
-                    onError={(e) =>
-                      handleImageError(e, collaborator.user_id?.username || 'C')
-                    }
-                  />
-                  {/* Fallback div */}
-                  <div
-                    className='absolute inset-0 flex items-center justify-center bg-gradient-to-br from-purple-400 to-purple-600'
-                    style={{ display: 'none' }}
-                  >
-                    <span className='text-sm font-semibold text-white'>
-                      {collaborator.user_id?.username
-                        ?.charAt(0)
-                        ?.toUpperCase() || 'C'}
-                    </span>
-                  </div>
-                </div>
-                <div>
-                  <p className='text-base font-medium text-white'>
-                    {collaborator.user_id?.username || 'Unknown Collaborator'}
-                  </p>
-                  <p className='text-sm text-gray-400'>
-                    {collaborator.role} • {collaborator.status}
-                  </p>
+              <div key={collaborator.id} className="w-12 h-12 rounded-full overflow-hidden relative">
+                <img
+                  src={mockImages[(index + 1) % mockImages.length]}
+                  alt={collaborator.user_id?.username || 'Collaborator'}
+                  className="w-full h-full object-cover"
+                  onError={(e) => handleImageError(e, collaborator.user_id?.username || 'C')}
+                />
+                {/* Fallback div */}
+                <div 
+                  className="absolute inset-0 bg-gradient-to-br from-purple-400 to-purple-600 flex items-center justify-center"
+                  style={{ display: 'none' }}
+                >
+                  <span className="text-white text-sm font-semibold">
+                    {collaborator.user_id?.username?.charAt(0)?.toUpperCase() || 'C'}
+                  </span>
                 </div>
               </div>
             ))
           ) : (
             // 목업 데이터로 샘플 collaborators 표시 (실제 데이터가 없는 경우)
             <>
-              <div className='flex items-center space-x-3'>
-                <div className='h-12 w-12 overflow-hidden rounded-full'>
-                  <img
-                    src={mockImages[1]}
-                    alt='Sample Collaborator'
-                    className='h-full w-full object-cover'
-                  />
-                </div>
-                <div>
-                  <p className='text-base font-medium text-white'>
-                    Alex Johnson
-                  </p>
-                  <p className='text-sm text-gray-400'>Producer • Active</p>
-                </div>
+              <div className="w-12 h-12 rounded-full overflow-hidden">
+                <img
+                  src={mockImages[1]}
+                  alt="Sample Collaborator"
+                  className="w-full h-full object-cover"
+                />
               </div>
-
-              <div className='flex items-center space-x-3'>
-                <div className='h-12 w-12 overflow-hidden rounded-full'>
-                  <img
-                    src={mockImages[2]}
-                    alt='Sample Collaborator'
-                    className='h-full w-full object-cover'
-                  />
-                </div>
-                <div>
-                  <p className='text-base font-medium text-white'>Sarah Kim</p>
-                  <p className='text-sm text-gray-400'>Vocalist • Active</p>
-                </div>
+              
+              <div className="w-12 h-12 rounded-full overflow-hidden">
+                <img
+                  src={mockImages[2]}
+                  alt="Sample Collaborator"
+                  className="w-full h-full object-cover"
+                />
               </div>
-
-              <div className='flex items-center space-x-3'>
-                <div className='h-12 w-12 overflow-hidden rounded-full'>
-                  <img
-                    src={mockImages[3]}
-                    alt='Sample Collaborator'
-                    className='h-full w-full object-cover'
-                  />
-                </div>
-                <div>
-                  <p className='text-base font-medium text-white'>Mike Chen</p>
-                  <p className='text-sm text-gray-400'>
-                    Mix Engineer • Pending
-                  </p>
-                </div>
+              
+              <div className="w-12 h-12 rounded-full overflow-hidden">
+                <img
+                  src={mockImages[3]}
+                  alt="Sample Collaborator"
+                  className="w-full h-full object-cover"
+                />
               </div>
             </>
           )}
         </div>
-        <div className='mt-6 flex justify-center'>
+        <div className='flex justify-center mt-6'>
           <Button
             variant='outline'
             size='lg'
