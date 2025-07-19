@@ -26,7 +26,7 @@ const Collaborators: React.FC<CollaboratorsProps> = ({ track }) => {
   ];
 
   // 이미지 에러 핸들링을 위한 fallback
-  const handleImageError = (e: React.SyntheticEvent<HTMLImageElement, Event>, username: string) => {
+  const handleImageError = (e: React.SyntheticEvent<HTMLImageElement, Event>, _username: string) => {
     const target = e.target as HTMLImageElement;
     // 이미지 로드 실패 시 기존 방식(첫 글자)으로 fallback
     target.style.display = 'none';
