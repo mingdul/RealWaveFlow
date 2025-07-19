@@ -7,7 +7,6 @@ import {
   OpenStageModal,
   StemListModal,
   StageHis,
-  Collaborators,
 } from '../components';
 import { useAuth } from '../contexts/AuthContext';
 import {
