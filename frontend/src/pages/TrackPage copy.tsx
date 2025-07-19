@@ -124,6 +124,22 @@ const VersionTimeline: React.FC<{
     }
   };
 
+  // 초기 로딩 시 selectedVersion에 해당하는 버전을 자동 확장
+  useEffect(() => {
+    if (selectedVersion && stages.length > 0 && !expandedVersion) {
+      const targetStage = stages.find(stage => stage.version === selectedVersion);
+      if (targetStage) {
+        console.log('[DEBUG][VersionTimeline] Auto-expanding version based on selectedVersion:', selectedVersion);
+        setExpandedVersion(selectedVersion);
+        
+        // 스템 로드
+        if (!versionStems[selectedVersion]) {
+          loadVersionStems(selectedVersion);
+        }
+      }
+    }
+  }, [selectedVersion, stages, expandedVersion, versionStems]);
+
   const loadVersionStems = async (version: number) => {
     setLoadingVersions(prev => ({ ...prev, [version]: true }));
     
@@ -233,7 +249,6 @@ const VersionTimeline: React.FC<{
                           </span>
                         )}
                       </h4>
-                      <p className="text-sm text-gray-300 mt-1">{stage.title}</p>
                       <p className="text-xs text-gray-400 mt-1">
                         {new Date(stage.created_at).toLocaleDateString('ko-KR', {
                           year: 'numeric',
@@ -362,7 +377,7 @@ const TrackPageCopy: React.FC<TrackPageCopyProps> = () => {
     loadTrackData();
   }, [trackId]);
 
-  // 최신 스테이지의 version-stem들 로드 (stageId 기반)
+  // APPROVED 또는 approve 상태 중 가장 높은 버전의 스테이지 로드
   const loadApproveStems = async () => {
     if (!trackId || stages.length === 0) return;
 
@@ -370,11 +385,27 @@ const TrackPageCopy: React.FC<TrackPageCopyProps> = () => {
       setStemsLoading(true);
       console.log('[DEBUG][TrackPage] Loading initial stems for stages:', stages);
 
-      // 가장 높은 버전의 스테이지 선택 (active 스테이지 우선)
-      const activeStage = stages.find(stage => stage.status === 'active');
-      const targetStage = activeStage || stages.reduce((prev, current) => 
-        current.version > prev.version ? current : prev
+      // APPROVED 또는 approve 상태의 스테이지들 필터링
+      const approvedStages = stages.filter(stage => 
+        stage.status === 'APPROVED' || stage.status === 'approve'
       );
+
+      let targetStage: Stage;
+
+      if (approvedStages.length > 0) {
+        // APPROVED/approve 상태 중 가장 높은 버전 선택
+        targetStage = approvedStages.reduce((prev, current) => 
+          current.version > prev.version ? current : prev
+        );
+        console.log('[DEBUG][TrackPage] Selected highest approved stage:', targetStage);
+      } else {
+        // APPROVED/approve 상태가 없으면 active 스테이지 선택
+        const activeStage = stages.find(stage => stage.status === 'active');
+        targetStage = activeStage || stages.reduce((prev, current) => 
+          current.version > prev.version ? current : prev
+        );
+        console.log('[DEBUG][TrackPage] No approved stages found, selected fallback stage:', targetStage);
+      }
 
       if (!targetStage || !targetStage.id) {
         console.warn('[WARN][TrackPage] No stages found or stage ID missing');
@@ -753,6 +784,7 @@ const TrackPageCopy: React.FC<TrackPageCopyProps> = () => {
                 onOpenStageClick={() => setIsOpenStageModalOpen(true)}
                 disableStageOpening={isVersion1()}
                 isActiveStage={isActiveStage}
+                selectedVersion={selectedStageVersion}
               />
             </div>
 
