@@ -31,7 +31,7 @@ const StagePage: React.FC = () => {
     const fetchTrackData = async () => {
       try {
         let trackData = null;
-        
+
         // trackId가 있으면 trackId로 트랙 정보 가져오기
         if (trackId) {
           console.log('🔍 Fetching track by trackId:', trackId);
@@ -43,16 +43,16 @@ const StagePage: React.FC = () => {
             console.error("❌ Failed to fetch track by trackId");
           }
         }
-        
+
         // trackId가 없거나 실패했고, stage가 있으면 stage에서 트랙 정보 가져오기
         if (!trackData && stage?.track) {
           console.log('🔍 Using track info from stage:', stage.track);
           trackData = stage.track;
         }
-        
+
         setTrack(trackData || null);
         console.log('🎵 Final track data set:', trackData);
-        
+
       } catch (error) {
         console.error("❌ Error fetching track details:", error);
       }
@@ -349,7 +349,9 @@ const StagePage: React.FC = () => {
               </h1>
               <div className="space-y-4">
                 <p className="text-2xl text-gray-300 font-semibold">
-                  Working on a new version {stage.version}
+                  Currently creating version (
+                  <span style={{ color: '#8528d8', fontWeight: 'bold' }}>V{stage.version}</span>
+                  )
                 </p>
                 <p className="text-lg text-gray-400">
                   {stage.created_at ? new Date(stage.created_at).toLocaleString('ko-KR', {
