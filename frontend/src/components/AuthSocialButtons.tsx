@@ -6,7 +6,7 @@ interface AuthSocialButtonsProps {
 
 const AuthSocialButtons: React.FC<AuthSocialButtonsProps> = ({ className = '' }) => {
   const handleGoogleLogin = () => {
-    window.location.href = 'http://waveflow.pro/auth/google';
+    window.location.href = 'http://13.125.231.115:8080/auth/google';
   };
 
   const socialButtons = [
