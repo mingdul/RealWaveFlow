@@ -118,28 +118,46 @@ class AuthService {
   }
 
   /**
-   * 프로필 이미지 업로드 (새로운 전용 API 사용)
+   * 프로필 이미지 업로드 (기존 multipart upload API 활용)
    */
   async uploadProfileImage(imageFile: File): Promise<string> {
     try {
-      // 한국어 파일명 처리
+      // 한국어 파일명 처리 (기존 업로드 로직 참고)
       const sanitizedFileName = `profile_${Date.now()}_${imageFile.name.replace(/[^\w\s.-]/g, '_')}`;
       
-      // 1. 프로필 이미지 업로드 URL 생성 (JWT에서 자동으로 userId 추출)
-      const uploadUrlResponse = await apiClient.post('/users/profile-image/upload-url', {
+      // 프로필 전용 더미 projectId 생성 (UUID v4 형식)
+      const profileProjectId = '00000000-0000-0000-0000-000000000000';
+      
+      // 1. 업로드 추가 (S3 multipart upload 세션 생성)
+      const addUploadResponse = await apiClient.post('/uploads/add-upload', {
+        projectId: profileProjectId,
         filename: sanitizedFileName,
         contentType: imageFile.type,
         fileSize: imageFile.size
       }, { withCredentials: true });
 
-      if (!uploadUrlResponse.data.success) {
+      if (!addUploadResponse.data.success) {
+        throw new Error('업로드 요청 생성에 실패했습니다.');
+      }
+
+      const uploadData = addUploadResponse.data.data;
+      
+      // 2. Presigned URL 생성
+      const presignedResponse = await apiClient.post('/uploads/presigned-urls', {
+        uploadId: uploadData.uploadId,
+        key: uploadData.key,
+        projectId: profileProjectId,
+        parts: [{ partNumber: 1 }]
+      }, { withCredentials: true });
+
+      if (!presignedResponse.data.success) {
         throw new Error('업로드 URL 생성에 실패했습니다.');
       }
 
-      const { uploadUrl, key } = uploadUrlResponse.data.data;
+      const presignedUrl = presignedResponse.data.data.urls[0].url;
 
-      // 2. S3에 직접 업로드
-      const uploadResponse = await fetch(uploadUrl, {
+      // 3. S3에 직접 업로드
+      const uploadResponse = await fetch(presignedUrl, {
         method: 'PUT',
         body: imageFile,
         headers: {
@@ -151,19 +169,24 @@ class AuthService {
         throw new Error('S3 업로드에 실패했습니다.');
       }
 
-      // 3. 업로드 완료 처리 (사용자 프로필 업데이트)
-      const completeResponse = await apiClient.post('/users/profile-image/complete', {
-        key,
-        uploadId: 'simple-upload', // Simple upload이므로 실제 uploadId는 불필요
-        eTag: uploadResponse.headers.get('ETag') || '"completed"'
+      // 4. 업로드 완료 처리
+      const completeResponse = await apiClient.post('/uploads/complete', {
+        uploadId: uploadData.uploadId,
+        key: uploadData.key,
+        projectId: profileProjectId,
+        parts: [{
+          partNumber: 1,
+          eTag: uploadResponse.headers.get('ETag') || '"completed"'
+        }]
       }, { withCredentials: true });
 
       if (!completeResponse.data.success) {
-        throw new Error('프로필 업데이트에 실패했습니다.');
+        throw new Error('업로드 완료 처리에 실패했습니다.');
       }
 
-      // 업데이트된 이미지 URL 반환
-      return completeResponse.data.data.imageUrl;
+      // S3 이미지 URL 생성
+      const s3ImageUrl = `https://${import.meta.env.VITE_AWS_S3_BUCKET || 'waveflow-uploads'}.s3.amazonaws.com/${uploadData.key}`;
+      return s3ImageUrl;
 
     } catch (error: any) {
       console.error('Profile image upload error:', error);

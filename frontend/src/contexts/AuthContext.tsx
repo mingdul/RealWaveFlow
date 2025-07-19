@@ -1,6 +1,7 @@
 import React, { createContext, useContext, useReducer, ReactNode, useEffect } from 'react';
 import { User, LoginDto, RegisterDto } from '../types/api';
 import authService from '../services/authService';
+import apiClient from '../lib/api';
 
 // 상태 타입
 interface AuthState {
@@ -121,14 +122,32 @@ export const AuthProvider: React.FC<{ children: ReactNode }> = ({ children }) =>
     
     dispatch({ type: 'AUTH_START' });
     try {
-      // 프로필 이미지 업로드 처리 (새로운 전용 API 사용)
+      let imageUrl: string | undefined;
+      
+      // 프로필 이미지 업로드 처리 (기존 multipart upload API 활용)
       if (profileData.profileImage) {
-        await authService.uploadProfileImage(profileData.profileImage);
+        imageUrl = await authService.uploadProfileImage(profileData.profileImage);
       }
       
-      // 사용자 이름 변경 처리
+      // 사용자 정보 업데이트 (이름과 이미지 URL)
+      const updateData: any = {};
       if (profileData.name && profileData.name !== state.user.username) {
-        await authService.updateUserName(state.user.id, profileData.name);
+        updateData.name = profileData.name;
+      }
+      if (imageUrl) {
+        updateData.image_url = imageUrl;
+      }
+      
+      // 업데이트할 데이터가 있는 경우 API 호출
+      if (Object.keys(updateData).length > 0) {
+        if (updateData.name) {
+          await authService.updateUserName(state.user.id, updateData.name);
+        }
+        
+        // 이미지 URL 업데이트는 별도 API 호출 (PUT /users/me 사용)
+        if (updateData.image_url) {
+          await apiClient.put('/users/me', { image_url: updateData.image_url }, { withCredentials: true });
+        }
       }
       
       // 업데이트된 사용자 정보 가져오기
