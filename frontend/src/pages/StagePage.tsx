@@ -125,9 +125,9 @@ const StagePage: React.FC = () => {
 
   const handleDetail = (upstream: Upstream) => {
     try {
-      console.log('🔍 Navigating to review page:', { upstreamId: upstream.title, stageId });
+      console.log('🔍 Navigating to review page:', { upstreamId: upstream.id, stageId });
       // Review Page로 이동 (stageId를 쿼리 파라미터로 함께 전달)
-      navigate(`/review/${upstream.title}?stageId=${stageId}`);
+      navigate(`/review/${upstream.id}?stageId=${stageId}`);
     } catch (error: any) {
       console.error('❌ Error navigating to review page:', error);
       showError('리뷰 페이지로 이동 중 오류가 발생했습니다.');
