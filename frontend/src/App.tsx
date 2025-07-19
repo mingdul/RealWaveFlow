@@ -18,7 +18,7 @@ import StemSetReviewPage from './pages/StemSetReviewPage.tsx';
 import DashboardPageV2 from './pages/DashboardssPageV2.tsx';
 import InvitePage from './pages/InvitePage.tsx';
 import ProjectPage from './pages/ProjectPage.tsx';
-import StemRev from './pages/StemRev.tsx';
+import StemReview from './pages/StemReview.tsx';
 
 // import PR_Page from './pages/PR_Page.tsx';     
 // import MasterPage from './pages/MasterPage';
@@ -50,7 +50,7 @@ const App = () => {
               {/* <Route path="/review" element={<StemSetReviewPage />} /> */}
               <Route path="/review/:upstreamId" element={<StemSetReviewPage />} />
               <Route path="*" element={<Notfound />} />
-              <Route path="/stemrev/:upstreamId" element={<StemRev />} />
+              <Route path="/stemreview/:upstreamId" element={<StemReview />} />
               {/* <Route path="/master" element={<MasterPage />} />
               <Route path="/commit" element={<CommitPage />} />
               <Route path="/pr" element={<PR_Page />} /> 
