@@ -5,9 +5,17 @@ import { TrackCollaborator } from './track_collaborator.entity';
 import { CreateTrackCollaboratorDto } from './dto/create-track-collaborator.dto';
 import { UpdateTrackCollaboratorDto } from './dto/update-track-collaborator.dto';
 import { Track } from '../track/track.entity';
+import { S3Client, GetObjectCommand } from '@aws-sdk/client-s3';
+import { getSignedUrl } from '@aws-sdk/s3-request-presigner';
 
 @Injectable()
 export class TrackCollaboratorService { 
+    private readonly s3 = new S3Client({
+        region: process.env.AWS_REGION,
+    });
+    
+    private readonly bucketName = process.env.AWS_S3_BUCKET_NAME || 'waveflow-bucket';
+
     constructor(
         @InjectRepository(TrackCollaborator)
         private trackCollaboratorRepository: Repository<TrackCollaborator>,
@@ -116,6 +124,28 @@ export class TrackCollaboratorService {
         return { message: 'Collaboration rejected successfully', collaborator };
     }
 
+    private async generatePresignedUrl(imageKey: string): Promise<string | null> {
+        if (!imageKey) {
+            return null;
+        }
+
+        try {
+            const command = new GetObjectCommand({
+                Bucket: this.bucketName,
+                Key: imageKey,
+            });
+
+            const presignedUrl = await getSignedUrl(this.s3, command, {
+                expiresIn: 3600 // 1시간
+            });
+
+            return presignedUrl;
+        } catch (error) {
+            console.error('Error generating presigned URL for key:', imageKey, error);
+            return null;
+        }
+    }
+
     async findTrackUsersById(trackId: string) {
         // 트랙 정보와 owner 조회
         const track = await this.trackRepository.findOne({
@@ -136,6 +166,22 @@ export class TrackCollaboratorService {
             relations: ['user_id'],
         });
 
+        // Owner 이미지 presigned URL 생성
+        const ownerImageUrl = await this.generatePresignedUrl(track.owner_id.image_url);
+
+        // Collaborators 이미지 presigned URLs 생성
+        const collaboratorsWithPresignedUrls = await Promise.all(
+            collaborators.map(async (collab) => {
+                const collaboratorImageUrl = await this.generatePresignedUrl(collab.user_id.image_url);
+                return {
+                    id: collab.user_id.id,
+                    email: collab.user_id.email,
+                    username: collab.user_id.username,
+                    image_url: collaboratorImageUrl,
+                };
+            })
+        );
+
         return {
             success: true,
             data: {
@@ -143,15 +189,10 @@ export class TrackCollaboratorService {
                     id: track.owner_id.id,
                     email: track.owner_id.email,
                     username: track.owner_id.username,
-                    image_url: track.owner_id.image_url,
+                    image_url: ownerImageUrl,
                 },
                 collaborators: {
-                    collaborator: collaborators.map(collab => ({
-                        id: collab.user_id.id,
-                        email: collab.user_id.email,
-                        username: collab.user_id.username,
-                        image_url: collab.user_id.image_url,
-                    }))
+                    collaborator: collaboratorsWithPresignedUrls
                 }
             }
         };
