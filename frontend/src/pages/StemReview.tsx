@@ -343,7 +343,7 @@ const StemSetReview = () => {
       }
 
       const currentTrackId = stageResponse.data.track.id;
-      
+
       // Stage 정보 저장
       setStageInfo(stageResponse.data);
 
@@ -1661,540 +1661,544 @@ const StemSetReview = () => {
                 </div>
               </div>
             </div>
-        )}
+          )}
 
-              {/* 새로운 슬라이드 패널 - 댓글 */}
-              {activePanel === 'comments' && (
-                <div className='fixed right-0 top-0 z-40 h-full w-80 bg-gray-900/95 backdrop-blur-sm border-l border-gray-700 shadow-2xl transition-all duration-300 ease-in-out'>
-                  <div className='h-full flex flex-col'>
-                    {/* Sidebar Header */}
-                    <div className='px-6 py-4 border-b border-gray-600 bg-gray-800/50'>
-                      <div className='flex items-center justify-between'>
-                        <div>
-                          <h2 className='text-xl font-bold text-white mb-1 flex items-center gap-2'>
-                            <MessageCircle size={20} className='text-blue-400' />
-                            댓글
-                          </h2>
-                          <p className='text-sm text-gray-400'>
-                            타임스탬프 기반 댓글들
-                          </p>
-                        </div>
-                        <button
-                          onClick={() => setActivePanel('none')}
-                          className='rounded-lg p-2 text-gray-400 hover:bg-gray-700 hover:text-white transition-all duration-200'
-                          title='닫기'
-                        >
-                          <X size={20} />
-                        </button>
-                      </div>
+          {/* 새로운 슬라이드 패널 - 댓글 */}
+          {activePanel === 'comments' && (
+            <div className='fixed right-0 top-0 z-40 h-full w-80 bg-gray-900/95 backdrop-blur-sm border-l border-gray-700 shadow-2xl transition-all duration-300 ease-in-out'>
+              <div className='h-full flex flex-col'>
+                {/* Sidebar Header */}
+                <div className='px-6 py-4 border-b border-gray-600 bg-gray-800/50'>
+                  <div className='flex items-center justify-between'>
+                    <div>
+                      <h2 className='text-xl font-bold text-white mb-1 flex items-center gap-2'>
+                        <MessageCircle size={20} className='text-blue-400' />
+                        댓글
+                      </h2>
+                      <p className='text-sm text-gray-400'>
+                        타임스탬프 기반 댓글들
+                      </p>
                     </div>
-
-                    {/* Selected Upstream Info */}
-                    {selectedUpstream && (
-                      <div className='mb-6 rounded-lg bg-gray-800/50 border border-gray-700 p-4'>
-                        <div className='text-sm font-semibold text-white mb-2'>
-                          {selectedUpstream.title}
-                        </div>
-                        <div className='text-xs text-gray-300 mb-2'>
-                          {selectedUpstream.description}
-                        </div>
-                        <div className='flex items-center gap-2 text-xs'>
-                          <span className='text-blue-400'>작성자:</span>
-                          <span className='text-white font-medium'>{selectedUpstream.user?.username}</span>
-                        </div>
-                      </div>
-                    )}
-
-                    {!selectedUpstream && (
-                      <div className='mb-6 rounded-lg bg-gray-800/30 border border-gray-700 p-4 text-center'>
-                        <div className='text-sm text-gray-300'>
-                          오디오 파일을 선택하여 댓글을 확인하세요
-                        </div>
-                      </div>
-                    )}
-
-                    {/* Comments List */}
-                    <div className='flex-1 overflow-hidden'>
-                      {commentsLoading ? (
-                        <div className='flex flex-col items-center justify-center py-12'>
-                          <div className='h-8 w-8 animate-spin rounded-full border-3 border-blue-400 border-t-transparent mb-3'></div>
-                          <span className='text-white font-medium'>댓글 로딩 중...</span>
-                        </div>
-                      ) : (
-                        <div className='space-y-3 overflow-y-auto pr-2' style={{ maxHeight: 'calc(100vh - 280px)' }}>
-                          {comments.map((comment) => (
-                            <div
-                              key={comment.id}
-                              className='rounded-lg bg-gray-800/50 border border-gray-700 p-3 hover:bg-gray-800/70 transition-all duration-200'
-                            >
-                              <div className='flex items-center justify-between'>
-                                <div
-                                  className='flex flex-1 cursor-pointer items-center space-x-2'
-                                  onClick={() => seekToTime(comment.timeNumber)}
-                                >
-                                  <span className='font-mono text-blue-400'>
-                                    {comment.timeString}
-                                  </span>
-                                  <span>🗨️</span>
-                                </div>
-                                {user && comment.user?.id === user.id && (
-                                  <div className='flex items-center space-x-1'>
-                                    <button
-                                      onClick={() => handleEditComment(comment)}
-                                      className='p-1 text-gray-400 hover:text-white'
-                                    >
-                                      <Edit2 size={12} />
-                                    </button>
-                                    <button
-                                      onClick={() => handleDeleteComment(comment.id)}
-                                      className='p-1 text-gray-400 hover:text-red-400'
-                                    >
-                                      <Trash2 size={12} />
-                                    </button>
-                                  </div>
-                                )}
-                              </div>
-                              {editingComment === comment.id ? (
-                                <div className='mt-3'>
-                                  <input
-                                    type='text'
-                                    value={editCommentText}
-                                    onChange={(e) => setEditCommentText(e.target.value)}
-                                    className='w-full rounded-lg bg-gray-900 border border-gray-600 px-3 py-2 text-sm text-white focus:border-blue-500 focus:outline-none'
-                                    onKeyPress={(e) => {
-                                      if (e.key === 'Enter') {
-                                        handleSaveComment(comment.id);
-                                      }
-                                    }}
-                                    onBlur={() => handleSaveComment(comment.id)}
-                                    autoFocus
-                                  />
-                                </div>
-                              ) : (
-                                <div className='mt-2 text-gray-300'>
-                                  {comment.comment}
-                                  {comment.user && (
-                                    <div className='mt-2 text-xs text-gray-400 flex items-center gap-1'>
-                                      <span>작성자:</span>
-                                      <span className='font-medium'>{comment.user.username}</span>
-                                    </div>
-                                  )}
-                                </div>
-                              )}
-                            </div>
-                          ))}
-                        </div>
-                      )}
-                    </div>
-                  </div>
-                </div>
-              )}
-
-              {/* Main Content Area - 반응형 레이아웃 */}
-              <div className={`transition-all duration-300 ease-in-out px-4 sm:px-6 lg:px-8 py-6 sm:py-8 space-y-6 ${(activePanel as string) !== 'none' ? 'mr-80' : ''
-                }`}>
-                {/* Review Action Bar */}
-                <div className="bg-gray-900/60 backdrop-blur-sm border border-gray-700 rounded-xl p-4 shadow-xl">
-                  <div className="flex items-center justify-between">
-                    <div className="flex items-center space-x-4">
-                      <div className="flex items-center space-x-2">
-                        <div className="w-3 h-3 bg-orange-400 rounded-full animate-pulse"></div>
-                        <span className="text-white font-medium">리뷰 대기 중</span>
-                      </div>
-                      {selectedUpstream && (
-                        <div className="text-sm text-gray-300">
-                          <span className="text-blue-400">검토 대상:</span> {selectedUpstream.title}
-                        </div>
-                      )}
-                    </div>
-
-                    <div className="flex items-center space-x-3">
-                      <button
-                        onClick={handleApprove}
-                        className="px-6 py-2 bg-gradient-to-r from-green-600 to-green-700 hover:from-green-700 hover:to-green-800 text-white rounded-lg font-medium transition-all duration-200 shadow-lg hover:shadow-green-500/25 flex items-center space-x-2"
-                      >
-                        <span>✓</span>
-                        <span>승인</span>
-                      </button>
-                      <button
-                        onClick={handleReject}
-                        className="px-6 py-2 bg-gradient-to-r from-red-600 to-red-700 hover:from-red-700 hover:to-red-800 text-white rounded-lg font-medium transition-all duration-200 shadow-lg hover:shadow-red-500/25 flex items-center space-x-2"
-                      >
-                        <span>✗</span>
-                        <span>거절</span>
-                      </button>
-                    </div>
-                  </div>
-                </div>
-
-                {/* Waveform Section */}
-                <div className="space-y-6">
-                  {/* Guide Waveform */}
-                  <div className="bg-white/5 backdrop-blur-lg rounded-2xl p-6 border border-white/10 shadow-2xl transform transition-all duration-300">
-                    <div className="mb-4">
-                      <h3 className="text-lg font-semibold text-white mb-2">가이드 트랙</h3>
-                      <div className="h-1 bg-gradient-to-r from-red-500 to-red-300 rounded-full"></div>
-                    </div>
-
-                    <div
-                      ref={waveformContainerRef}
-                      onMouseMove={handleWaveformMouseMove}
-                      onMouseLeave={handleWaveformMouseLeave}
-                      className="relative cursor-pointer"
+                    <button
+                      onClick={() => setActivePanel('none')}
+                      className='rounded-lg p-2 text-gray-400 hover:bg-gray-700 hover:text-white transition-all duration-200'
+                      title='닫기'
                     >
-                      {(() => {
-                        if (guideLoading) {
-                          return (
-                            <div className="flex items-center justify-center py-12">
-                              <div className="flex items-center space-x-3">
-                                <div className="h-8 w-8 animate-spin rounded-full border-2 border-white/30 border-t-white"></div>
-                                <span className="text-white">Loading guide...</span>
-                              </div>
+                      <X size={20} />
+                    </button>
+                  </div>
+                </div>
+
+                {/* Selected Upstream Info */}
+                {selectedUpstream && (
+                  <div className='mb-6 rounded-lg bg-gray-800/50 border border-gray-700 p-4'>
+                    <div className='text-sm font-semibold text-white mb-2'>
+                      {selectedUpstream.title}
+                    </div>
+                    <div className='text-xs text-gray-300 mb-2'>
+                      {selectedUpstream.description}
+                    </div>
+                    <div className='flex items-center gap-2 text-xs'>
+                      <span className='text-blue-400'>작성자:</span>
+                      <span className='text-white font-medium'>{selectedUpstream.user?.username}</span>
+                    </div>
+                  </div>
+                )}
+
+                {!selectedUpstream && (
+                  <div className='mb-6 rounded-lg bg-gray-800/30 border border-gray-700 p-4 text-center'>
+                    <div className='text-sm text-gray-300'>
+                      오디오 파일을 선택하여 댓글을 확인하세요
+                    </div>
+                  </div>
+                )}
+
+                {/* Comments List */}
+                <div className='flex-1 overflow-hidden'>
+                  {commentsLoading ? (
+                    <div className='flex flex-col items-center justify-center py-12'>
+                      <div className='h-8 w-8 animate-spin rounded-full border-3 border-blue-400 border-t-transparent mb-3'></div>
+                      <span className='text-white font-medium'>댓글 로딩 중...</span>
+                    </div>
+                  ) : (
+                    <div className='space-y-3 overflow-y-auto pr-2' style={{ maxHeight: 'calc(100vh - 280px)' }}>
+                      {comments.map((comment) => (
+                        <div
+                          key={comment.id}
+                          className='rounded-lg bg-gray-800/50 border border-gray-700 p-3 hover:bg-gray-800/70 transition-all duration-200'
+                        >
+                          <div className='flex items-center justify-between'>
+                            <div
+                              className='flex flex-1 cursor-pointer items-center space-x-2'
+                              onClick={() => seekToTime(comment.timeNumber)}
+                            >
+                              <span className='font-mono text-blue-400'>
+                                {comment.timeString}
+                              </span>
+                              <span>🗨️</span>
                             </div>
-                          );
-                        } else if (guideLoadAttempted && guideAudioUrl) {
-
-                          const mainWaveProps = {
-                            onReady: handleReady,
-                            audioUrl: guideAudioUrl,
-                            peaks: guidePeaks,
-                            waveColor: theme.colors.waveform.main,
-                            id: 'main',
-                            isPlaying: isPlaying,
-                            currentTime: currentTime,
-                            onSolo: handleMainSolo,
-                            isSolo: soloTrack === 'main',
-                            onSeek: handleSeek,
-                          };
-
-                          return (
-                            <div className='transform rounded-2xl border border-white/10 bg-white/5 p-6 shadow-2xl backdrop-blur-lg transition-all duration-300'>
-                              <Wave {...mainWaveProps} />
-
-                              {/* 댓글 마커들 */}
-                              {selectedUpstream && comments.map((comment) => {
-                                const position = duration > 0 ? (comment.timeNumber / duration) * 100 : 0;
-                                return (
-                                  <div
-                                    key={comment.id}
-                                    className='absolute top-1/2 transform -translate-y-1/2 cursor-pointer z-20'
-                                    style={{ left: `${position}%` }}
-                                    onClick={() => seekToTime(comment.timeNumber)}
-                                    title={`${comment.user?.username}: ${comment.comment}`}
-                                  >
-                                    <div className='w-3 h-3 rounded-full bg-blue-500 border-2 border-white shadow-lg transition-transform'>
-                                      <div className='w-full h-full rounded-full bg-gradient-to-br from-blue-400 to-blue-600'></div>
-                                    </div>
-                                  </div>
-                                );
-                              })}
-
-                              {/* 기존 댓글 마커들 */}
-                              {comments.map((comment) => {
-                                const position = duration > 0 ? (comment.timeNumber / duration) * 100 : 0;
-                                return (
-                                  <div
-                                    key={`marker-${comment.id}`}
-                                    className='absolute z-20 cursor-pointer'
-                                    style={{
-                                      left: `${position}%`,
-                                      top: '10px',
-                                      transform: 'translateX(-50%)',
-                                    }}
-                                    onClick={() => {
-                                      if (wavesurferRefs.current['main']) {
-                                        wavesurferRefs.current['main'].seekTo(comment.timeNumber / duration);
-                                      }
-                                    }}
-                                    title={`${comment.user?.username}: ${comment.comment}`}
-                                  >
-                                    <div className='w-3 h-3 bg-blue-500 rounded-full border-2 border-white shadow-lg transition-transform'>
-                                      <div className='w-full h-full bg-blue-400 rounded-full animate-pulse'></div>
-                                    </div>
-                                  </div>
-                                );
-                              })}
-
-                              {/* 호버 시 나타나는 댓글 추가 아이콘 */}
-                              {hoveredPosition && !isInlineCommentOpen && (
-                                <div
-                                  className='absolute z-40 pointer-events-auto'
-                                  style={{
-                                    left: `${(hoveredPosition.x / (waveformContainerRef.current?.offsetWidth || 1)) * 100}%`,
-                                    top: '50%',
-                                    transform: 'translate(-50%, -50%)',
-                                  }}
+                            {user && comment.user?.id === user.id && (
+                              <div className='flex items-center space-x-1'>
+                                <button
+                                  onClick={() => handleEditComment(comment)}
+                                  className='p-1 text-gray-400 hover:text-white'
                                 >
-                                  <button
-                                    onClick={handleCommentIconClick}
-                                    className='w-8 h-8 bg-blue-500 hover:bg-blue-600 rounded-full flex items-center justify-center text-white shadow-lg transition-all duration-200 hover:scale-110 border-2 border-white'
-                                    title={`댓글 추가 (${Math.floor(hoveredPosition.time / 60)}:${String(Math.floor(hoveredPosition.time % 60)).padStart(2, '0')})`}
-                                  >
-                                    💬 {`(${Math.floor(hoveredPosition.time / 60)}:${String(Math.floor(hoveredPosition.time % 60)).padStart(2, '0')})`}
-                                  </button>
+                                  <Edit2 size={12} />
+                                </button>
+                                <button
+                                  onClick={() => handleDeleteComment(comment.id)}
+                                  className='p-1 text-gray-400 hover:text-red-400'
+                                >
+                                  <Trash2 size={12} />
+                                </button>
+                              </div>
+                            )}
+                          </div>
+                          {editingComment === comment.id ? (
+                            <div className='mt-3'>
+                              <input
+                                type='text'
+                                value={editCommentText}
+                                onChange={(e) => setEditCommentText(e.target.value)}
+                                className='w-full rounded-lg bg-gray-900 border border-gray-600 px-3 py-2 text-sm text-white focus:border-blue-500 focus:outline-none'
+                                onKeyPress={(e) => {
+                                  if (e.key === 'Enter') {
+                                    handleSaveComment(comment.id);
+                                  }
+                                }}
+                                onBlur={() => handleSaveComment(comment.id)}
+                                autoFocus
+                              />
+                            </div>
+                          ) : (
+                            <div className='mt-2 text-gray-300'>
+                              {comment.comment}
+                              {comment.user && (
+                                <div className='mt-2 text-xs text-gray-400 flex items-center gap-1'>
+                                  <span>작성자:</span>
+                                  <span className='font-medium'>{comment.user.username}</span>
                                 </div>
                               )}
-
-                              {/* SoundCloud 스타일 플로팅 댓글 버블들 */}
-                              {floatingComments.map((comment) => {
-                                const position = comment.position * 100;
-                                return (
-                                  <div
-                                    key={comment.id}
-                                    className='absolute z-30'
-                                    style={{
-                                      left: `${position}%`,
-                                      top: '20px',
-                                      transform: 'translateX(-50%)',
-                                      animationDelay: `${comment.delay || 0}ms`,
-                                    }}
-                                  >
-                                    {/* 개선된 댓글 버블 */}
-                                    <div className='relative'>
-                                      {/* 메인 버블 */}
-                                      <div className='bg-gradient-to-br from-blue-500 to-blue-600 text-white px-4 py-3 rounded-2xl shadow-2xl max-w-xs relative comment-bubble border border-blue-400/30'>
-                                        {/* 글리터 효과 */}
-                                        <div className='absolute inset-0 bg-gradient-to-r from-transparent via-white/10 to-transparent rounded-2xl'></div>
-
-                                        <div className='relative z-10'>
-                                          <div className='flex items-center gap-2 mb-2'>
-                                            <div className='w-7 h-7 bg-blue-400 rounded-full flex items-center justify-center text-xs font-bold shadow-lg'>
-                                              {comment.user?.username?.charAt(0).toUpperCase() || 'U'}
-                                            </div>
-                                            <div className='flex-1'>
-                                              <div className='text-xs font-semibold opacity-95'>
-                                                {comment.user?.username || 'Anonymous'}
-                                              </div>
-                                              <div className='text-xs opacity-80 font-mono'>
-                                                {Math.floor(comment.timeNumber / 60)}:{String(Math.floor(comment.timeNumber % 60)).padStart(2, '0')}
-                                              </div>
-                                            </div>
-                                          </div>
-                                          <div className='text-sm font-medium leading-relaxed'>{comment.comment}</div>
-                                        </div>
-
-                                        {/* 아래쪽 화살표 - 더 부드러운 디자인 */}
-                                        <div className='absolute top-full left-8 w-3 h-3 bg-blue-600 transform rotate-45 border-r border-b border-blue-400/30'></div>
-                                      </div>
-
-                                      {/* 연결선 - 더 세련된 스타일 */}
-                                      <div className='absolute top-full left-8 w-px h-6 bg-gradient-to-b from-blue-500 to-transparent'></div>
-                                    </div>
-                                  </div>
-                                );
-                              })}
-
                             </div>
-                          );
-                        } else {
-                          return (
-                            <div className="flex items-center justify-center py-12">
-                              <div className="text-center">
-                                <div className="w-16 h-16 mx-auto mb-4 rounded-full bg-red-500/20 flex items-center justify-center">
-                                  <svg className="w-8 h-8 text-red-400" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                                    <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M9 12h.01M12 12h.01M16 12h.01M21 12c0 4.418-4.03 8-9 8a9.863 9.863 0 01-4.255-.949L3 20l1.395-3.72C3.512 15.042 3 13.574 3 12c0-4.418 4.03-8 9-8s9 3.582 9 8z" />
-                                  </svg>
-                                </div>
-                                <span className="text-white">No guide audio available for this stage</span>
-                              </div>
-                            </div>
-                          );
-                        }
-                      })()}
-                    </div>
-                  </div>
-
-                  {/* Comparison Waveform */}
-                  {(() => {
-                    return showExtraWaveform && extraAudio;
-                  })() && (
-                      <div className="bg-white/5 backdrop-blur-lg rounded-2xl p-6 border border-white/10 shadow-2xl transform transition-all duration-300">
-                        <div className="mb-4">
-                          <h3 className="text-lg font-semibold text-white mb-2">비교 트랙</h3>
-                          <div className="h-1 bg-gradient-to-r from-blue-500 to-blue-300 rounded-full"></div>
+                          )}
                         </div>
-
-                        <Wave
-                          onReady={handleReady}
-                          audioUrl={extraAudio}
-                          peaks={extraPeaks}
-                          waveColor='#60a5fa'
-                          id='extra'
-                          isPlaying={isPlaying}
-                          currentTime={currentTime}
-                          onSolo={handleExtraSolo}
-                          isSolo={soloTrack === 'extra'}
-                          onSeek={handleSeek}
-                        />
-                      </div>
-                    )}
+                      ))}
+                    </div>
+                  )}
                 </div>
               </div>
+            </div>
+          )}
 
-              {/* Control Bar - 반응형 */}
-              <div className={`transition-all duration-300 ease-in-out bg-white/5 backdrop-blur-lg rounded-2xl p-4 border border-white/10 shadow-xl ${(activePanel as string) !== 'none' ? 'mr-80' : ''
-                }`}>
-                <div className="flex items-center justify-between">
-                  <div className="flex items-center space-x-4">
-                    {/* Playback Controls */}
-                    <div className="flex items-center space-x-3">
-                      <button
-                        onClick={memoizedStopPlayback}
-                        className="p-3 rounded-lg bg-white/10 hover:bg-white/20 text-white transition-all duration-200"
-                      >
-                        <Square size={20} />
-                      </button>
-                      <button
-                        onClick={memoizedTogglePlay}
-                        className="p-3 rounded-lg bg-gradient-to-r from-purple-600 to-purple-700 hover:from-purple-700 hover:to-purple-800 text-white transition-all duration-200 shadow-lg hover:shadow-purple-500/25"
-                      >
-                        {isPlaying ? <Pause size={20} /> : <Play size={20} />}
-                      </button>
-                    </div>
-
-                    {/* Volume Control */}
-                    <div className="flex items-center space-x-3">
-                      <Volume size={20} className="text-white/70" />
-                      <input
-                        type="range"
-                        min="0"
-                        max="1"
-                        step="0.01"
-                        value={volume}
-                        onChange={memoizedVolumeChange}
-                        className="w-24 accent-purple-500"
-                      />
-                    </div>
-
-                    {/* Time Display */}
-                    <div className="text-white/80 font-mono">
-                      {Math.floor(currentTime / 60)}:
-                      {String(Math.floor(currentTime % 60)).padStart(2, '0')} /{' '}
-                      {Math.floor(duration / 60)}:
-                      {String(Math.floor(duration % 60)).padStart(2, '0')}
-                    </div>
+          {/* Main Content Area - 반응형 레이아웃 */}
+          <div className={`transition-all duration-300 ease-in-out px-4 sm:px-6 lg:px-8 py-6 sm:py-8 space-y-6 ${(activePanel as string) !== 'none' ? 'mr-80' : ''
+            }`}>
+            {/* Review Action Bar */}
+            <div className="bg-gray-900/60 backdrop-blur-sm border border-gray-700 rounded-xl p-4 shadow-xl">
+              <div className="flex items-center justify-between">
+                <div className="flex items-center space-x-4">
+                  <div className="flex items-center space-x-2">
+                    <div className="w-3 h-3 bg-orange-400 rounded-full animate-pulse"></div>
+                    <span className="text-white font-medium">리뷰 대기 중</span>
                   </div>
-
-                  <div className="flex items-center space-x-3">
-                    {/* Speed Control */}
-                    <button className="px-3 py-1 rounded-lg bg-white/10 hover:bg-white/20 text-white text-sm transition-all duration-200">
-                      1x
-                    </button>
-
-                    {/* Zoom Controls */}
-                    <button className="p-2 rounded-lg bg-white/10 hover:bg-white/20 text-white/70 hover:text-white transition-all duration-200">
-                      <ZoomIn size={18} />
-                    </button>
-                    <button className="p-2 rounded-lg bg-white/10 hover:bg-white/20 text-white/70 hover:text-white transition-all duration-200">
-                      <ZoomOut size={18} />
-                    </button>
-                  </div>
-                </div>
-              </div>
-              {/* Keyboard Shortcuts Info */}
-              <div className='bg-gray-800/50 border-t border-gray-700 px-6 py-2'>
-                <div className='flex items-center justify-center text-xs text-gray-400'>
-                  <span className='mr-4'>␣ Space: 재생/일시정지</span>
-                  <span className='mr-4'>←/→: 5초 이동</span>
-                  <span>↑/↓: 볼륨 조절</span>
-                </div>
-              </div>
-
-
-              {/* 새로운 댓글 시스템 안내 - 반응형 */}
-              <div className={`transition-all duration-300 ease-in-out px-4 sm:px-6 lg:px-8 py-4 ${(activePanel as string) !== 'none' ? 'mr-80' : ''
-                }`}>
-                <div className='text-center'>
-                  <div className='inline-flex items-center gap-3 bg-gray-900/60 backdrop-blur-sm border border-gray-700 rounded-lg px-6 py-3'>
-                    <MessageCircle size={20} className='text-blue-400' />
-                    <div className='text-sm'>
-                      <div className='text-white font-medium'>인터랙티브 댓글 시스템</div>
-                      <div className='text-gray-400'>파형에 마우스를 올리면 💬 아이콘이 나타납니다. 재생 시 프로그레스바가 댓글을 지나가면 자동으로 표시됩니다.</div>
+                  {selectedUpstream && (
+                    <div className="text-sm text-gray-300">
+                      <span className="text-blue-400">검토 대상:</span> {selectedUpstream.title}
                     </div>
-                  </div>
+                  )}
+                </div>
+
+                <div className="flex items-center space-x-3">
+                  <button
+                    onClick={handleApprove}
+                    className="px-6 py-2 bg-gradient-to-r from-green-600 to-green-700 hover:from-green-700 hover:to-green-800 text-white rounded-lg font-medium transition-all duration-200 shadow-lg hover:shadow-green-500/25 flex items-center space-x-2"
+                  >
+                    <span>✓</span>
+                    <span>승인</span>
+                  </button>
+                  <button
+                    onClick={handleReject}
+                    className="px-6 py-2 bg-gradient-to-r from-red-600 to-red-700 hover:from-red-700 hover:to-red-800 text-white rounded-lg font-medium transition-all duration-200 shadow-lg hover:shadow-red-500/25 flex items-center space-x-2"
+                  >
+                    <span>✗</span>
+                    <span>거절</span>
+                  </button>
                 </div>
               </div>
+            </div>
 
+            {/* Waveform Section */}
+            <div className="space-y-6">
+              {/* Guide Waveform */}
+              <div className="bg-white/5 backdrop-blur-lg rounded-2xl p-6 border border-white/10 shadow-2xl transform transition-all duration-300">
+                <div className="mb-4">
+                  <h3 className="text-lg font-semibold text-white mb-2">가이드 트랙</h3>
+                  <div className="h-1 bg-gradient-to-r from-red-500 to-red-300 rounded-full"></div>
+                </div>
 
-
-
-              {/* 댓글 작성 모달 */}
-              {/* 인라인 댓글 창 */}
-              {isInlineCommentOpen && selectedUpstream && (
                 <div
-                  className='absolute z-50 animate-slide-in-right'
-                  style={{
-                    left: `${commentPosition.x}px`,
-                    top: '280px',
-                    transform: 'translateX(-50%)',
-                  }}
+                  ref={waveformContainerRef}
+                  onMouseMove={handleWaveformMouseMove}
+                  onMouseLeave={handleWaveformMouseLeave}
+                  className="relative cursor-pointer"
                 >
-                  <div className='bg-gray-900/95 backdrop-blur-sm border border-gray-600 rounded-lg shadow-2xl p-4 min-w-80 max-w-sm'>
-                    {/* 상단 화살표 */}
-                    <div className='absolute -top-2 left-1/2 transform -translate-x-1/2 w-4 h-4 bg-gray-900 border-t border-l border-gray-600 rotate-45'></div>
-
-                    {/* 헤더 */}
-                    <div className='flex items-center justify-between mb-3'>
-                      <div className='flex items-center gap-2'>
-                        <div className='w-6 h-6 bg-blue-500 rounded-full flex items-center justify-center text-white text-xs'>
-                          💬
-                        </div>
-                        <div>
-                          <span className='text-white text-sm font-medium'>댓글 추가</span>
-                          <div className='text-xs text-gray-400'>
-                            {Math.floor(commentPosition.time / 60)}:{String(Math.floor(commentPosition.time % 60)).padStart(2, '0')}
+                  {(() => {
+                    if (guideLoading) {
+                      return (
+                        <div className="flex items-center justify-center py-12">
+                          <div className="flex items-center space-x-3">
+                            <div className="h-8 w-8 animate-spin rounded-full border-2 border-white/30 border-t-white"></div>
+                            <span className="text-white">Loading guide...</span>
                           </div>
                         </div>
-                      </div>
-                      <button
-                        onClick={handleCloseInlineComment}
-                        className='text-gray-400 hover:text-white transition-colors p-1'
-                      >
-                        <X size={16} />
-                      </button>
+                      );
+                    } else if (guideLoadAttempted && guideAudioUrl) {
+
+                      const mainWaveProps = {
+                        onReady: handleReady,
+                        audioUrl: guideAudioUrl,
+                        peaks: guidePeaks,
+                        waveColor: theme.colors.waveform.main,
+                        id: 'main',
+                        isPlaying: isPlaying,
+                        currentTime: currentTime,
+                        onSolo: handleMainSolo,
+                        isSolo: soloTrack === 'main',
+                        onSeek: handleSeek,
+                      };
+
+                      return (
+                        <div className='transform rounded-2xl border border-white/10 bg-white/5 p-6 shadow-2xl backdrop-blur-lg transition-all duration-300'>
+                          <Wave {...mainWaveProps} />
+
+                          {/* 댓글 마커들 */}
+                          {selectedUpstream && comments.map((comment) => {
+                            const position = duration > 0 ? (comment.timeNumber / duration) * 100 : 0;
+                            return (
+                              <div
+                                key={comment.id}
+                                className='absolute top-1/2 transform -translate-y-1/2 cursor-pointer z-20'
+                                style={{ left: `${position}%` }}
+                                onClick={() => seekToTime(comment.timeNumber)}
+                                title={`${comment.user?.username}: ${comment.comment}`}
+                              >
+                                <div className='w-3 h-3 rounded-full bg-blue-500 border-2 border-white shadow-lg transition-transform'>
+                                  <div className='w-full h-full rounded-full bg-gradient-to-br from-blue-400 to-blue-600'></div>
+                                </div>
+                              </div>
+                            );
+                          })}
+
+                          {/* 기존 댓글 마커들 */}
+                          {comments.map((comment) => {
+                            const position = duration > 0 ? (comment.timeNumber / duration) * 100 : 0;
+                            return (
+                              <div
+                                key={`marker-${comment.id}`}
+                                className='absolute z-20 cursor-pointer'
+                                style={{
+                                  left: `${position}%`,
+                                  top: '10px',
+                                  transform: 'translateX(-50%)',
+                                }}
+                                onClick={() => {
+                                  if (wavesurferRefs.current['main']) {
+                                    wavesurferRefs.current['main'].seekTo(comment.timeNumber / duration);
+                                  }
+                                }}
+                                title={`${comment.user?.username}: ${comment.comment}`}
+                              >
+                                <div className='w-3 h-3 bg-blue-500 rounded-full border-2 border-white shadow-lg transition-transform'>
+                                  <div className='w-full h-full bg-blue-400 rounded-full animate-pulse'></div>
+                                </div>
+                              </div>
+                            );
+                          })}
+
+                          {/* 호버 시 나타나는 댓글 추가 아이콘 */}
+                          {hoveredPosition && !isInlineCommentOpen && (
+                            <div
+                              className='absolute z-40 pointer-events-auto'
+                              style={{
+                                left: `${(hoveredPosition.x / (waveformContainerRef.current?.offsetWidth || 1)) * 100}%`,
+                                top: '50%',
+                                transform: 'translate(-50%, -50%)',
+                              }}
+                            >
+                              <button
+                                onClick={handleCommentIconClick}
+                                className="w-10 h-10 bg-blue-500 hover:bg-blue-600 rounded-full flex flex-col items-center justify-center text-white shadow-lg transition-all duration-200 hover:scale-110 border-2 border-white group"
+                                title={`댓글 추가 (${Math.floor(hoveredPosition.time / 60)}:${String(Math.floor(hoveredPosition.time % 60)).padStart(2, '0')})`}
+                              >
+                                <MessageCircle size={18} className="text-white" />
+                                <span className="text-[10px] leading-none mt-0.5">
+                                  {`${Math.floor(hoveredPosition.time / 60)}:${String(Math.floor(hoveredPosition.time % 60)).padStart(2, '0')}`}
+                                </span>
+                              </button>
+
+                            </div>
+                          )}
+
+                          {/* SoundCloud 스타일 플로팅 댓글 버블들 */}
+                          {floatingComments.map((comment) => {
+                            const position = comment.position * 100;
+                            return (
+                              <div
+                                key={comment.id}
+                                className='absolute z-30'
+                                style={{
+                                  left: `${position}%`,
+                                  top: '20px',
+                                  transform: 'translateX(-50%)',
+                                  animationDelay: `${comment.delay || 0}ms`,
+                                }}
+                              >
+                                {/* 개선된 댓글 버블 */}
+                                <div className='relative'>
+                                  {/* 메인 버블 */}
+                                  <div className='bg-gradient-to-br from-blue-500 to-blue-600 text-white px-4 py-3 rounded-2xl shadow-2xl max-w-xs relative comment-bubble border border-blue-400/30'>
+                                    {/* 글리터 효과 */}
+                                    <div className='absolute inset-0 bg-gradient-to-r from-transparent via-white/10 to-transparent rounded-2xl'></div>
+
+                                    <div className='relative z-10'>
+                                      <div className='flex items-center gap-2 mb-2'>
+                                        <div className='w-7 h-7 bg-blue-400 rounded-full flex items-center justify-center text-xs font-bold shadow-lg'>
+                                          {comment.user?.username?.charAt(0).toUpperCase() || 'U'}
+                                        </div>
+                                        <div className='flex-1'>
+                                          <div className='text-xs font-semibold opacity-95'>
+                                            {comment.user?.username || 'Anonymous'}
+                                          </div>
+                                          <div className='text-xs opacity-80 font-mono'>
+                                            {Math.floor(comment.timeNumber / 60)}:{String(Math.floor(comment.timeNumber % 60)).padStart(2, '0')}
+                                          </div>
+                                        </div>
+                                      </div>
+                                      <div className='text-sm font-medium leading-relaxed'>{comment.comment}</div>
+                                    </div>
+
+                                    {/* 아래쪽 화살표 - 더 부드러운 디자인 */}
+                                    <div className='absolute top-full left-8 w-3 h-3 bg-blue-600 transform rotate-45 border-r border-b border-blue-400/30'></div>
+                                  </div>
+
+                                  {/* 연결선 - 더 세련된 스타일 */}
+                                  <div className='absolute top-full left-8 w-px h-6 bg-gradient-to-b from-blue-500 to-transparent'></div>
+                                </div>
+                              </div>
+                            );
+                          })}
+
+                        </div>
+                      );
+                    } else {
+                      return (
+                        <div className="flex items-center justify-center py-12">
+                          <div className="text-center">
+                            <div className="w-16 h-16 mx-auto mb-4 rounded-full bg-red-500/20 flex items-center justify-center">
+                              <svg className="w-8 h-8 text-red-400" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                                <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M9 12h.01M12 12h.01M16 12h.01M21 12c0 4.418-4.03 8-9 8a9.863 9.863 0 01-4.255-.949L3 20l1.395-3.72C3.512 15.042 3 13.574 3 12c0-4.418 4.03-8 9-8s9 3.582 9 8z" />
+                              </svg>
+                            </div>
+                            <span className="text-white">No guide audio available for this stage</span>
+                          </div>
+                        </div>
+                      );
+                    }
+                  })()}
+                </div>
+              </div>
+
+              {/* Comparison Waveform */}
+              {(() => {
+                return showExtraWaveform && extraAudio;
+              })() && (
+                  <div className="bg-white/5 backdrop-blur-lg rounded-2xl p-6 border border-white/10 shadow-2xl transform transition-all duration-300">
+                    <div className="mb-4">
+                      <h3 className="text-lg font-semibold text-white mb-2">비교 트랙</h3>
+                      <div className="h-1 bg-gradient-to-r from-blue-500 to-blue-300 rounded-full"></div>
                     </div>
 
-                    {/* 댓글 입력 */}
-                    <textarea
-                      value={newCommentText}
-                      onChange={(e) => setNewCommentText(e.target.value)}
-                      placeholder='댓글을 입력하세요...'
-                      className='w-full bg-gray-800 border border-gray-600 rounded-md px-3 py-2 text-white placeholder-gray-400 resize-none focus:border-blue-500 focus:outline-none text-sm'
-                      rows={3}
-                      autoFocus
-                      onKeyDown={(e) => {
-                        if (e.key === 'Enter' && e.ctrlKey) {
-                          handleAddComment();
-                        }
-                        if (e.key === 'Escape') {
-                          handleCloseInlineComment();
-                        }
-                      }}
+                    <Wave
+                      onReady={handleReady}
+                      audioUrl={extraAudio}
+                      peaks={extraPeaks}
+                      waveColor='#60a5fa'
+                      id='extra'
+                      isPlaying={isPlaying}
+                      currentTime={currentTime}
+                      onSolo={handleExtraSolo}
+                      isSolo={soloTrack === 'extra'}
+                      onSeek={handleSeek}
                     />
+                  </div>
+                )}
+            </div>
+          </div>
 
-                    {/* 버튼 */}
-                    <div className='flex justify-end gap-2 mt-3'>
-                      <button
-                        onClick={handleCloseInlineComment}
-                        className='px-3 py-1.5 text-xs bg-gray-700 hover:bg-gray-600 text-gray-300 rounded-md transition-colors'
-                      >
-                        취소
-                      </button>
-                      <button
-                        onClick={handleAddComment}
-                        disabled={!newCommentText.trim()}
-                        className='px-3 py-1.5 text-xs bg-blue-600 hover:bg-blue-700 disabled:bg-gray-600 disabled:cursor-not-allowed text-white rounded-md transition-colors'
-                      >
-                        작성 (Ctrl+Enter)
-                      </button>
+          {/* Control Bar - 반응형 */}
+          <div className={`transition-all duration-300 ease-in-out bg-white/5 backdrop-blur-lg rounded-2xl p-4 border border-white/10 shadow-xl ${(activePanel as string) !== 'none' ? 'mr-80' : ''
+            }`}>
+            <div className="flex items-center justify-between">
+              <div className="flex items-center space-x-4">
+                {/* Playback Controls */}
+                <div className="flex items-center space-x-3">
+                  <button
+                    onClick={memoizedStopPlayback}
+                    className="p-3 rounded-lg bg-white/10 hover:bg-white/20 text-white transition-all duration-200"
+                  >
+                    <Square size={20} />
+                  </button>
+                  <button
+                    onClick={memoizedTogglePlay}
+                    className="p-3 rounded-lg bg-gradient-to-r from-purple-600 to-purple-700 hover:from-purple-700 hover:to-purple-800 text-white transition-all duration-200 shadow-lg hover:shadow-purple-500/25"
+                  >
+                    {isPlaying ? <Pause size={20} /> : <Play size={20} />}
+                  </button>
+                </div>
+
+                {/* Volume Control */}
+                <div className="flex items-center space-x-3">
+                  <Volume size={20} className="text-white/70" />
+                  <input
+                    type="range"
+                    min="0"
+                    max="1"
+                    step="0.01"
+                    value={volume}
+                    onChange={memoizedVolumeChange}
+                    className="w-24 accent-purple-500"
+                  />
+                </div>
+
+                {/* Time Display */}
+                <div className="text-white/80 font-mono">
+                  {Math.floor(currentTime / 60)}:
+                  {String(Math.floor(currentTime % 60)).padStart(2, '0')} /{' '}
+                  {Math.floor(duration / 60)}:
+                  {String(Math.floor(duration % 60)).padStart(2, '0')}
+                </div>
+              </div>
+
+              <div className="flex items-center space-x-3">
+                {/* Speed Control */}
+                <button className="px-3 py-1 rounded-lg bg-white/10 hover:bg-white/20 text-white text-sm transition-all duration-200">
+                  1x
+                </button>
+
+                {/* Zoom Controls */}
+                <button className="p-2 rounded-lg bg-white/10 hover:bg-white/20 text-white/70 hover:text-white transition-all duration-200">
+                  <ZoomIn size={18} />
+                </button>
+                <button className="p-2 rounded-lg bg-white/10 hover:bg-white/20 text-white/70 hover:text-white transition-all duration-200">
+                  <ZoomOut size={18} />
+                </button>
+              </div>
+            </div>
+          </div>
+          {/* Keyboard Shortcuts Info */}
+          <div className='bg-gray-800/50 border-t border-gray-700 px-6 py-2'>
+            <div className='flex items-center justify-center text-xs text-gray-400'>
+              <span className='mr-4'>␣ Space: 재생/일시정지</span>
+              <span className='mr-4'>←/→: 5초 이동</span>
+              <span>↑/↓: 볼륨 조절</span>
+            </div>
+          </div>
+
+
+          {/* 새로운 댓글 시스템 안내 - 반응형 */}
+          <div className={`transition-all duration-300 ease-in-out px-4 sm:px-6 lg:px-8 py-4 ${(activePanel as string) !== 'none' ? 'mr-80' : ''
+            }`}>
+            <div className='text-center'>
+              <div className='inline-flex items-center gap-3 bg-gray-900/60 backdrop-blur-sm border border-gray-700 rounded-lg px-6 py-3'>
+                <MessageCircle size={20} className='text-blue-400' />
+                <div className='text-sm'>
+                  <div className='text-white font-medium'>인터랙티브 댓글 시스템</div>
+                  <div className='text-gray-400'>파형에 마우스를 올리면 💬 아이콘이 나타납니다. 재생 시 프로그레스바가 댓글을 지나가면 자동으로 표시됩니다.</div>
+                </div>
+              </div>
+            </div>
+          </div>
+
+
+
+
+          {/* 댓글 작성 모달 */}
+          {/* 인라인 댓글 창 */}
+          {isInlineCommentOpen && selectedUpstream && (
+            <div
+              className='absolute z-50 animate-slide-in-right'
+              style={{
+                left: `${commentPosition.x}px`,
+                top: '280px',
+                transform: 'translateX(-50%)',
+              }}
+            >
+              <div className='bg-gray-900/95 backdrop-blur-sm border border-gray-600 rounded-lg shadow-2xl p-4 min-w-80 max-w-sm'>
+                {/* 상단 화살표 */}
+                <div className='absolute -top-2 left-1/2 transform -translate-x-1/2 w-4 h-4 bg-gray-900 border-t border-l border-gray-600 rotate-45'></div>
+
+                {/* 헤더 */}
+                <div className='flex items-center justify-between mb-3'>
+                  <div className='flex items-center gap-2'>
+                    <div className='w-6 h-6 bg-blue-500 rounded-full flex items-center justify-center text-white text-xs'>
+                      💬
+                    </div>
+                    <div>
+                      <span className='text-white text-sm font-medium'>댓글 추가</span>
+                      <div className='text-xs text-gray-400'>
+                        {Math.floor(commentPosition.time / 60)}:{String(Math.floor(commentPosition.time % 60)).padStart(2, '0')}
+                      </div>
                     </div>
                   </div>
+                  <button
+                    onClick={handleCloseInlineComment}
+                    className='text-gray-400 hover:text-white transition-colors p-1'
+                  >
+                    <X size={16} />
+                  </button>
                 </div>
-              )}
+
+                {/* 댓글 입력 */}
+                <textarea
+                  value={newCommentText}
+                  onChange={(e) => setNewCommentText(e.target.value)}
+                  placeholder='댓글을 입력하세요...'
+                  className='w-full bg-gray-800 border border-gray-600 rounded-md px-3 py-2 text-white placeholder-gray-400 resize-none focus:border-blue-500 focus:outline-none text-sm'
+                  rows={3}
+                  autoFocus
+                  onKeyDown={(e) => {
+                    if (e.key === 'Enter' && e.ctrlKey) {
+                      handleAddComment();
+                    }
+                    if (e.key === 'Escape') {
+                      handleCloseInlineComment();
+                    }
+                  }}
+                />
+
+                {/* 버튼 */}
+                <div className='flex justify-end gap-2 mt-3'>
+                  <button
+                    onClick={handleCloseInlineComment}
+                    className='px-3 py-1.5 text-xs bg-gray-700 hover:bg-gray-600 text-gray-300 rounded-md transition-colors'
+                  >
+                    취소
+                  </button>
+                  <button
+                    onClick={handleAddComment}
+                    disabled={!newCommentText.trim()}
+                    className='px-3 py-1.5 text-xs bg-blue-600 hover:bg-blue-700 disabled:bg-gray-600 disabled:cursor-not-allowed text-white rounded-md transition-colors'
+                  >
+                    작성 (Ctrl+Enter)
+                  </button>
+                </div>
+              </div>
             </div>
+          )}
+        </div>
       </div>
-      </div>
-      );
+    </div>
+  );
 };
 
-      export default StemSetReview;
+export default StemSetReview;
