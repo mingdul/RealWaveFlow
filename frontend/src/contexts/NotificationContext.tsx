@@ -233,15 +233,15 @@ export const NotificationProvider: React.FC<NotificationProviderProps> = ({ chil
     });
   }, []); // dependency 제거하여 함수가 재생성되지 않도록 함
 
-  // 소켓 이벤트 핸들러 재등록을 위한 useEffect
+  // 소켓 이벤트 핸들러 등록 (한 번만, dependency 없이)
   useEffect(() => {
     if (socket && user) {
-      console.log('🔔 [NotificationProvider] 🔄 Re-registering socket event handlers with latest addNotification');
+      console.log('🔔 [NotificationProvider] 🔄 Registering socket event handlers');
       
       // 기존 이벤트 핸들러 제거
       socket.off('notification');
       
-      // 새로운 이벤트 핸들러 등록 (최신 addNotification 사용)
+      // 새로운 이벤트 핸들러 등록 - 함수형 업데이트 사용으로 closure 문제 해결
       socket.on('notification', (notification: Notification) => {
         console.log('🔔 [NotificationSocket] 📢 🆕 NEW NOTIFICATION RECEIVED VIA WEBSOCKET!');
         console.log('🔔 [NotificationSocket] 📋 Received notification details:', {
@@ -253,26 +253,29 @@ export const NotificationProvider: React.FC<NotificationProviderProps> = ({ chil
           createdAt: notification.createdAt
         });
         
-        // 타임스탬프로 이벤트 추적
-        const eventTimestamp = new Date().toISOString();
-        console.log(`🔔 [NotificationSocket] ⏰ Event timestamp: ${eventTimestamp}`);
-        
-        // 🔥 NEW: 현재 상태 출력 (디버깅용)
-        console.log('🔔 [NotificationSocket] 📊 BEFORE processing - Current notifications count:', notifications.length);
-        console.log('🔔 [NotificationSocket] 📊 BEFORE processing - Current unread count:', notifications.filter(n => !n.isRead).length);
-        
-        // 🔥 간소화된 알림 추가 - addNotification 함수만 사용
-        console.log('🔔 [NotificationSocket] 🚀 Calling addNotification function...');
-        addNotification(notification);
-        
-        // 🔥 NEW: 상태 업데이트 확인을 위한 비동기 체크
-        setTimeout(() => {
-          console.log('🔔 [NotificationSocket] 📊 AFTER processing (100ms later) - Badge update check:');
-          console.log('🔔 [NotificationSocket] 📊 Expected unread count should be +1 from before');
-          console.log('🔔 [NotificationSocket] ✅ Socket event processing completed!');
-        }, 100);
-        
-        console.log('🔔 [NotificationSocket] ✅ Socket event handled - Badge should update immediately!');
+        // 🔥 함수형 업데이트로 closure 문제 해결
+        setNotifications(prevNotifications => {
+          console.log('🔔 [NotificationSocket] 📊 BEFORE adding - Current count:', prevNotifications.length);
+          console.log('🔔 [NotificationSocket] 📊 BEFORE adding - Current unread:', prevNotifications.filter(n => !n.isRead).length);
+          
+          // 중복 확인
+          const exists = prevNotifications.some(n => n.id === notification.id);
+          if (exists) {
+            console.log('🔔 [NotificationSocket] ⚠️ Duplicate notification ignored:', notification.id);
+            return prevNotifications;
+          }
+          
+          // 새 알림 추가
+          const newNotifications = [notification, ...prevNotifications];
+          const newUnreadCount = newNotifications.filter(n => !n.isRead).length;
+          
+          console.log('🔔 [NotificationSocket] ✅ NOTIFICATION ADDED!');
+          console.log('🔔 [NotificationSocket] 📊 AFTER adding - New count:', newNotifications.length);
+          console.log('🔔 [NotificationSocket] 📊 AFTER adding - New unread:', newUnreadCount);
+          console.log('🔔 [NotificationSocket] 🔔 Badge should show:', newUnreadCount);
+          
+          return newNotifications;
+        });
       });
     }
     
@@ -281,7 +284,7 @@ export const NotificationProvider: React.FC<NotificationProviderProps> = ({ chil
         socket.off('notification');
       }
     };
-  }, [socket, user, addNotification]); // addNotification을 dependency에 추가
+  }, [socket, user]); // addNotification dependency 제거
 
   const markAsRead = async (notificationId: string) => {
     try {

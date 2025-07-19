@@ -1,4 +1,4 @@
-import React, { useState, useRef, useEffect } from 'react';
+import React, { useState, useRef, useEffect, useMemo } from 'react';
 import { useNotifications } from '../contexts/NotificationContext';
 import { Notification } from '../types/notification';
 import { BellRing } from 'lucide-react';
@@ -7,37 +7,29 @@ import { Button } from '../components/';
 const NotificationBell: React.FC = () => {
   const [isOpen, setIsOpen] = useState(false);
   const [isMarkingAllRead, setIsMarkingAllRead] = useState(false);
-  const [localUnreadCount, setLocalUnreadCount] = useState(0);
-  const [forceRender, setForceRender] = useState(0); // 강제 리렌더링용
   const dropdownRef = useRef<HTMLDivElement>(null);
   const { notifications, unreadCount, markAsRead, markAllRead, refreshNotifications } = useNotifications();
 
-  // 컴포넌트 렌더링 로그
-  console.log('🔔 [NotificationBell] 🎭 COMPONENT RENDERED');
-  console.log('🔔 [NotificationBell] 📊 Current props from context:', {
-    totalNotifications: notifications.length,
-    contextUnreadCount: unreadCount,
-    localUnreadCount: localUnreadCount,
-    isOpen: isOpen
-  });
-
-  // 실시간 unread count 계산 및 동기화
-  useEffect(() => {
-    const calculatedUnread = notifications.filter(n => !n.isRead).length;
-    console.log('🔔 [NotificationBell] 🔄 Notifications changed, updating badge:', {
+  // 실시간 unread count 계산 - 매번 직접 계산
+  const currentUnreadCount = useMemo(() => {
+    const count = notifications.filter(n => !n.isRead).length;
+    console.log('🔔 [NotificationBell] 📊 Badge count calculated:', {
       totalNotifications: notifications.length,
-      calculatedUnread,
-      contextUnreadCount: unreadCount,
-      previousLocalCount: localUnreadCount
+      unreadCount: count,
+      contextUnreadCount: unreadCount
     });
-    
-    // 로컬 상태 즉시 업데이트
-    if (calculatedUnread !== localUnreadCount) {
-      console.log('🔔 [NotificationBell] ✅ Badge count updating:', localUnreadCount, '→', calculatedUnread);
-      setLocalUnreadCount(calculatedUnread);
-      setForceRender(prev => prev + 1); // 강제 리렌더링 트리거
-    }
-  }, [notifications, unreadCount, localUnreadCount]);
+    return count;
+  }, [notifications, unreadCount]);
+
+  console.log('🔔 [NotificationBell] 🎭 RENDER - Badge should show:', currentUnreadCount);
+  
+  // 🔥 NEW: notifications 배열이 변경될 때마다 로깅
+  useEffect(() => {
+    console.log('🔔 [NotificationBell] 📢 NOTIFICATIONS ARRAY CHANGED!');
+    console.log('🔔 [NotificationBell] 📊 New notifications count:', notifications.length);
+    console.log('🔔 [NotificationBell] 📊 New unread count (calculated):', notifications.filter(n => !n.isRead).length);
+    console.log('🔔 [NotificationBell] 🎯 Badge will show:', currentUnreadCount);
+  }, [notifications, currentUnreadCount]);
 
   // 외부 클릭 시 드롭다운 닫기
   useEffect(() => {
@@ -76,7 +68,7 @@ const NotificationBell: React.FC = () => {
   };
 
   const handleMarkAllRead = async () => {
-    if (localUnreadCount === 0) return; // 읽지 않은 알림이 없으면 무시
+    if (currentUnreadCount === 0) return; // 읽지 않은 알림이 없으면 무시
 
     setIsMarkingAllRead(true);
     try {
@@ -156,19 +148,19 @@ const NotificationBell: React.FC = () => {
         <BellRing className="h-6 w-6" />
 
         {/* 읽지 않은 알림 개수 배지 - 실시간 업데이트 */}
-        {localUnreadCount > 0 && (
+        {currentUnreadCount > 0 && (
           <span
             className="absolute -top-1 -right-1 inline-flex items-center justify-center px-2 py-1 text-xs font-bold leading-none text-white transform translate-x-1/2 -translate-y-1/2 bg-red-600 rounded-full transition-all duration-200 ease-in-out"
-            key={`badge-${localUnreadCount}-${forceRender}`}
+            key={`badge-${currentUnreadCount}`}
           >
-            {localUnreadCount > 99 ? '99+' : localUnreadCount}
+            {currentUnreadCount > 99 ? '99+' : currentUnreadCount}
           </span>
         )}
 
         {/* 디버그용 - 개발 중에만 표시 */}
         {import.meta.env.DEV && (
           <span className="absolute -bottom-6 -right-2 text-xs text-gray-400 bg-gray-100 px-1 rounded">
-            Debug: context={unreadCount} local={localUnreadCount} render#{forceRender}
+            Debug: context={unreadCount} calculated={currentUnreadCount}
           </span>
         )}
       </Button>
@@ -183,10 +175,10 @@ const NotificationBell: React.FC = () => {
                 <h3 className="text-lg font-medium text-gray-900">알림</h3>
                 <div className="flex items-center space-x-3">
                   <span className="text-sm text-gray-500">
-                    {localUnreadCount > 0 ? `${localUnreadCount}개의 새 알림` : '모든 알림을 확인했습니다'}
+                    {currentUnreadCount > 0 ? `${currentUnreadCount}개의 새 알림` : '모든 알림을 확인했습니다'}
                   </span>
                   {/* 모두 읽음 버튼 */}
-                  {localUnreadCount > 0 && (
+                  {currentUnreadCount > 0 && (
                     <button
                       onClick={handleMarkAllRead}
                       disabled={isMarkingAllRead}
