@@ -279,8 +279,10 @@ const StagePage: React.FC = () => {
     );
   };
 
-  // 스테이지가 닫혀있는지 확인
+  // 스테이지가 닫혀있거나 승인된 상태인지 확인
   const isStageClosed = stage?.status === 'close' || stage?.status === 'closed';
+  const isStageApproved = stage?.status === 'approve' || stage?.status === 'APPROVED';
+  const isUploadDisabled = isStageClosed || isStageApproved;
 
   if (loading) {
     return (
@@ -391,7 +393,7 @@ const StagePage: React.FC = () => {
               </div>
             </div>
 
-            {!isStageClosed && !isUploadModalOpen ? (
+            {!isUploadDisabled && !isUploadModalOpen ? (
               <button
                 className='flex items-center gap-3 rounded-xl bg-gradient-to-r from-purple-600 to-purple-700 px-6 py-3 text-white transition-all duration-200 hover:from-purple-500 hover:to-purple-600 shadow-lg hover:shadow-purple-500/25 transform hover:scale-105 border border-purple-500/50'
                 onClick={() => setUploadModalOpen(true)}
@@ -399,13 +401,15 @@ const StagePage: React.FC = () => {
                 <Upload size={18} />
                 <span className='font-semibold'>UPLOAD</span>
               </button>
-            ) : isStageClosed ? (
+            ) : isUploadDisabled ? (
               <button
                 className='flex items-center gap-3 rounded-xl bg-gray-600/50 px-6 py-3 text-gray-400 cursor-not-allowed border border-gray-600/50'
                 disabled
               >
                 <Upload size={18} />
-                <span className='font-semibold'>UPLOAD (스테이지가 닫혀있습니다)</span>
+                <span className='font-semibold'>
+                  UPLOAD ({isStageClosed ? '스테이지가 닫혀있습니다' : isStageApproved ? '스테이지가 승인되었습니다' : '업로드가 비활성화되었습니다'})
+                </span>
               </button>
             ) : null}
           </div>

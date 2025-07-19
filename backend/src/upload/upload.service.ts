@@ -65,6 +65,11 @@ export class UploadService {
       pad(now.getMinutes()) +
       pad(now.getSeconds());
 
+    // 프로필 이미지용 특수 처리
+    if (projectId === '00000000-0000-0000-0000-000000000000') {
+      return `profile-images/${userId}/${timestamp}_${filename}`;
+    }
+
     // 타임스탬프가 포함된 S3 Key
     const timestampedKey = `users/${userId}/projects/${projectId}/stems/${timestamp}_${filename}`;
 
@@ -77,6 +82,11 @@ export class UploadService {
    * 프로젝트 소유권 또는 협업자 권한 검증
    */
   private async verifyProjectAccess(projectId: string, userId: string): Promise<void> {
+    // 프로필 이미지용 특수 projectId는 검증 스킵
+    if (projectId === '00000000-0000-0000-0000-000000000000') {
+      return;
+    }
+
     const track = await this.trackRepository.findOne({
       where: { id: projectId },
       relations: ['owner_id']

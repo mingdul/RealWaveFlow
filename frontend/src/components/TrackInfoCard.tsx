@@ -219,9 +219,9 @@ const TrackInfoCard: React.FC<TrackInfoCardProps> = ({
               trackId={track.id}
               imageUrl={track.image_url}
               alt={track.title}
-              className='h-48 w-48 rounded-xl object-cover shadow-lg transition-transform duration-300 group-hover:scale-105 lg:h-56 lg:w-56'
+              className='h-48 w-48 object-cover shadow-lg transition-transform duration-300 group-hover:scale-105 lg:h-56 lg:w-56'
             />
-            <div className='absolute inset-0 flex items-center justify-center rounded-xl bg-black/40 opacity-0 transition-opacity duration-300 group-hover:opacity-100'>
+            <div className='absolute inset-0 flex items-center justify-center bg-black/40 opacity-0 transition-opacity duration-300 group-hover:opacity-100'>
               <button
                 onClick={handlePlayClick}
                 className='rounded-full bg-white/20 p-4 backdrop-blur-sm transition-all duration-200 hover:scale-110 hover:bg-white/30'
@@ -236,68 +236,68 @@ const TrackInfoCard: React.FC<TrackInfoCardProps> = ({
           </div>
         </div>
 
-          {/* Track Details */}
-          <div className='min-w-0 flex-1'>
-            <h2 className='mb-2 text-2xl font-bold text-white sm:text-3xl lg:text-4xl'>
-              {track.title}
-            </h2>
-            <p className='mb-3 text-sm text-gray-400 sm:text-base md:mb-4 lg:text-lg'>
-              {new Date(track.created_date).toLocaleDateString('en-US')}
+        {/* Track Details */}
+        <div className='min-w-0 flex-1'>
+          <h2 className='mb-2 text-2xl font-bold text-white sm:text-3xl lg:text-4xl'>
+            {track.title}
+          </h2>
+          <p className='mb-3 text-sm text-gray-400 sm:text-base md:mb-4 lg:text-lg'>
+            {new Date(track.created_date).toLocaleDateString('en-US')}
+          </p>
+          <div className='mb-3 flex flex-wrap gap-2 md:mb-4'>
+            <span className='rounded-full bg-gray-100 px-2 py-1 text-xs text-gray-600 sm:text-sm md:px-3 md:py-1'>
+              {track.genre}
+            </span>
+            <span className='rounded-full bg-gray-100 px-2 py-1 text-xs text-gray-600 sm:text-sm md:px-3 md:py-1'>
+              {track.bpm} bpm
+            </span>
+            <span className='rounded-full bg-gray-100 px-2 py-1 text-xs text-gray-600 sm:text-sm md:px-3 md:py-1'>
+              {track.key_signature} key
+            </span>
+          </div>
+
+          <div className='mb-4 md:mb-6'>
+            <h3 className='mb-2 text-base font-semibold text-white sm:text-lg'>
+              Owner: {track.owner_id.username}
+            </h3>
+            <p className='text-sm leading-relaxed text-gray-300 sm:text-base'>
+              Description: {track.description}
             </p>
-            <div className='mb-3 flex flex-wrap gap-2 md:mb-4'>
-              <span className='rounded-full bg-gray-100 px-2 py-1 text-xs text-gray-600 sm:text-sm md:px-3 md:py-1'>
-                {track.genre}
-              </span>
-              <span className='rounded-full bg-gray-100 px-2 py-1 text-xs text-gray-600 sm:text-sm md:px-3 md:py-1'>
-                {track.bpm} bpm
-              </span>
-              <span className='rounded-full bg-gray-100 px-2 py-1 text-xs text-gray-600 sm:text-sm md:px-3 md:py-1'>
-                {track.key_signature} key
-              </span>
-            </div>
+          </div>
 
-            <div className='mb-4 md:mb-6'>
-              <h3 className='mb-2 text-base font-semibold text-white sm:text-lg'>
-                Owner: {track.owner_id.username}
-              </h3>
-              <p className='text-sm leading-relaxed text-gray-300 sm:text-base'>
-                Description: {track.description}
-              </p>
-            </div>
+          <div className='mb-4 md:mb-6'>
+            <h4 className='text-sm font-bold text-gray-400 sm:text-base'>
+              Version: {versionNumber}
+            </h4>
+          </div>
 
-            <div className='mb-4 md:mb-6'>
-              <h4 className='text-sm font-bold text-gray-400 sm:text-base'>
-                Version: {versionNumber}
-              </h4>
-            </div>
-
-            <div className='mb-4 flex flex-col gap-3 sm:flex-row md:mb-6 md:gap-4'>
-              <Button
-                variant='primary'
-                size='lg'
-                className='flex w-full items-center justify-center gap-2 rounded-full bg-purple-600 hover:bg-purple-700 sm:w-auto'
-                onClick={handlePlayClick}
-                disabled={stemsLoading || guideLoading}
-              >
-                {stemsLoading || guideLoading ? (
-                  <div className='h-5 w-5 animate-spin rounded-full border-2 border-white border-t-transparent' />
-                ) : isPlaying ? (
-                  <Pause size={20} />
-                ) : (
-                  <Play size={20} />
-                )}
-              </Button>
-              <Button
-                variant='waveflowbtn'
-                size='lg'
-                className='flex w-full items-center gap-2 rounded-full sm:w-auto'
-                onClick={handleShowAllStems}
-              >
-                View All Stems
-              </Button>
-            </div>
+          <div className='mb-4 flex flex-col gap-3 sm:flex-row md:mb-6 md:gap-4'>
+            <Button
+              variant='primary'
+              size='lg'
+              className='flex w-full items-center justify-center gap-2 rounded-full bg-purple-600 hover:bg-purple-700 sm:w-auto'
+              onClick={handlePlayClick}
+              disabled={stemsLoading || guideLoading}
+            >
+              {stemsLoading || guideLoading ? (
+                <div className='h-5 w-5 animate-spin rounded-full border-2 border-white border-t-transparent' />
+              ) : isPlaying ? (
+                <Pause size={20} />
+              ) : (
+                <Play size={20} />
+              )}
+            </Button>
+            <Button
+              variant='waveflowbtn'
+              size='lg'
+              className='flex w-full items-center gap-2 rounded-full sm:w-auto'
+              onClick={handleShowAllStems}
+            >
+              View All Stems
+            </Button>
           </div>
         </div>
+      </div>
 
 
       {/* Hidden Audio Element for Guide Playback */}

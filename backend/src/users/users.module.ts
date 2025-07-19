@@ -3,6 +3,7 @@ import { TypeOrmModule } from '@nestjs/typeorm';
 import { JwtModule } from '@nestjs/jwt';
 import { UsersController } from './users.controller';
 import { UsersService } from './users.service';
+import { ProfileImageService } from './profile-image.service';
 import { User } from './user.entity';
 import { ConfigModule } from '@nestjs/config';
 
@@ -18,7 +19,7 @@ import { ConfigModule } from '@nestjs/config';
     }),
   ],
   controllers: [UsersController],
-  providers: [UsersService],
-  exports: [UsersService, TypeOrmModule],
+  providers: [UsersService, ProfileImageService],
+  exports: [UsersService, ProfileImageService, TypeOrmModule],
 })
 export class UsersModule {}

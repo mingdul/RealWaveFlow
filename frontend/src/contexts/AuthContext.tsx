@@ -1,6 +1,7 @@
 import React, { createContext, useContext, useReducer, ReactNode, useEffect } from 'react';
 import { User, LoginDto, RegisterDto } from '../types/api';
 import authService from '../services/authService';
+import apiClient from '../lib/api';
 
 // 상태 타입
 interface AuthState {
@@ -121,31 +122,33 @@ export const AuthProvider: React.FC<{ children: ReactNode }> = ({ children }) =>
     
     dispatch({ type: 'AUTH_START' });
     try {
-      let imageUrl: string | undefined;
+      let imagePath: string | undefined;
       
-      // 프로필 이미지 업로드 처리 (먼저 실행)
+      // 프로필 이미지 업로드 처리 (s3UploadService 방식 사용)
       if (profileData.profileImage) {
-        imageUrl = await authService.uploadProfileImage(profileData.profileImage);
+        imagePath = await authService.uploadProfileImage(profileData.profileImage);
+        console.log('🖼️ [updateProfile] Image uploaded, S3 path:', imagePath);
       }
       
-      // 사용자 정보 업데이트 (이름 또는 이미지 URL)
+      // 사용자 정보 업데이트를 위한 데이터 준비
       const updateData: any = {};
+      
+      // 이름 변경 (username 필드 사용)
       if (profileData.name && profileData.name !== state.user.username) {
-        updateData.username = profileData.name;
-      }
-      if (imageUrl) {
-        updateData.image_url = imageUrl;
+        updateData.username = profileData.name; // ← 필드명 수정: name → username
       }
       
-      // 업데이트할 데이터가 있는 경우만 API 호출
+      // 이미지 S3 path 설정 (URL이 아닌 S3 key)
+      if (imagePath) {
+        updateData.image_url = imagePath;
+        console.log('📁 [updateProfile] Setting image_url to S3 path:', imagePath);
+      }
+      
+      // 단일 API 호출로 통합 처리
       if (Object.keys(updateData).length > 0) {
-        await authService.updateUserName(state.user.id, updateData.username);
-        
-        // 이미지 URL이 있는 경우 별도로 업데이트
-        if (updateData.image_url) {
-          // TODO: 백엔드에 이미지 URL 업데이트 API 필요
-          console.log('Image URL to update:', updateData.image_url);
-        }
+        console.log('🔄 [updateProfile] Updating profile via PUT /users/me:', updateData);
+        const response = await apiClient.put('/users/me', updateData, { withCredentials: true });
+        console.log('✅ [updateProfile] PUT /users/me response:', response.data);
       }
       
       // 업데이트된 사용자 정보 가져오기
