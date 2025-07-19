@@ -12,8 +12,12 @@
   --color-dark: #262626;
   --color-darkest: #0D0D0D;
 
-  font-family: Inter, system-ui, Avenir, Helvetica, Arial, sans-serif;
-  line-height: 1.5;
+  font-family: 'monument', Inter, system-ui, Avenir, Helvetica, Arial, sans-serif;
+}
+
+@font-face {
+  font-family: 'monument';
+  src: url('/fonts/MonumentExtended-FreeForPersonalUse/MonumentExtended-Regular.otf') format('opentype');
   font-weight: 400;
 
   color-scheme: light dark;
@@ -49,6 +53,7 @@ html, body {
 body {
   min-width: 320px;
   min-height: 100vh;
+  font-family: 'monument', Inter, system-ui, Avenir, Helvetica, Arial, sans-serif;
 }
 
 #root {

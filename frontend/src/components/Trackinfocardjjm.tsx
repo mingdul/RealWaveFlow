@@ -1,5 +1,5 @@
 import React, { useEffect, useState, useRef } from 'react';
-import { Play, Pause, Heart } from 'lucide-react';
+import { Play, Pause } from 'lucide-react';
 import { Button } from '.';
 import { Track } from '../types/api';
 import streamingService, {
@@ -89,13 +89,13 @@ const Trackinfocardjjm: React.FC<TrackinfocardjjmProps> = ({
         <div className='flex-1 space-y-4'>
           {/* Header label */}
           <div className='mb-4'>
-            <span className='inline-block rounded-full bg-white/20 px-4 py-1 text-xs font-semibold uppercase tracking-wider text-white/90 backdrop-blur-sm'>
-              CURATED PLAYLIST
-            </span>
+            <h2 className='text-lg text-white/70'>
+              Version: <span className='font-semibold text-white'>{versionNumber}</span>
+            </h2>
           </div>
 
           {/* Main title */}
-          <div className='space-y-3'>
+          <div className='space-y-5'>
             <h1 className='text-4xl font-black uppercase tracking-tight text-white lg:text-6xl xl:text-7xl'>
               {track.title}
             </h1>
@@ -104,17 +104,6 @@ const Trackinfocardjjm: React.FC<TrackinfocardjjmProps> = ({
             </p>
           </div>
 
-          {/* Stats and metadata */}
-          <div className='flex flex-wrap items-center gap-6 pt-4'>
-            <div className='flex items-center gap-2'>
-              <Heart className='h-5 w-5 fill-white text-white' />
-              <span className='text-lg font-semibold text-white'>83,012 Likes</span>
-            </div>
-            <div className='flex items-center gap-1 text-white/80'>
-              <span className='text-lg'>•</span>
-              <span className='text-lg'>18 Songs, 39 min 43 sec</span>
-            </div>
-          </div>
 
           {/* Track details tags */}
           <div className='flex flex-wrap gap-3 pt-2'>
@@ -134,9 +123,7 @@ const Trackinfocardjjm: React.FC<TrackinfocardjjmProps> = ({
             <p className='text-sm text-white/70'>
               Owner: <span className='font-semibold text-white'>{track.owner_id.username}</span>
             </p>
-            <p className='text-sm text-white/70'>
-              Version: <span className='font-semibold text-white'>{versionNumber}</span>
-            </p>
+
             <p className='text-sm text-white/70'>
               {new Date(track.created_date).toLocaleDateString('en-US')}
             </p>

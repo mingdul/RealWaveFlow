@@ -17,28 +17,28 @@ interface AItem {
 const qItems: QItem[] = [
   {
     question: '음악 작업에도 버전 관리가 필요할까요?',
-    avatarUrl: './IMG_2052.jpg',
+    avatarUrl: './person/IMG_2052.jpg',
   },
   {
     question: '버전 간 차이를 어떻게 확인할 수 있나요?',
-    avatarUrl: './IMG_6287.png',
+    avatarUrl: './person/IMG_6287.png',
   },
   {
     question: '기존 DAW에서는 이런 기능이 없던데요?',
-    avatarUrl: './IMG_6287.png',
+    avatarUrl: './person/IMG_6287.png',
   },
   {
     question: '음악 작업, 혼자서도 잘 하는데 협업 도구가 왜 필요하죠?',
-    avatarUrl: './IMG_6287.png',
+    avatarUrl: './person/IMG_6287.png',
   },
   {
     question:
       '팀원들과 파일을 주고받는 게 너무 번거로운데, 해결 방법이 있나요?',
-    avatarUrl: './IMG_6287.png',
+    avatarUrl: './person/IMG_6287.png',
   },
   {
     question: '실시간으로 팀원들과 의견을 나눌 수 있나요?',
-    avatarUrl: './IMG_6287.png',
+    avatarUrl: './person/IMG_6287.png',
   },
 ];
 
@@ -46,32 +46,32 @@ const aItems: AItem[] = [
   {
     answer:
       '물론입니다. 음악도 코드처럼 반복적으로 수정하고 발전시켜 나가는 작업이에요.WavefloW는 각 스템(stem)과 트랙의 변경 내역을 체계적으로 기록하고, 필요할 때 언제든지 이전 버전으로 돌아갈 수 있도록 도와줍니다.',
-    avatarUrl: './IMG_6287.jpg',
+    avatarUrl: './person/IMG_6287.jpg',
   },
   {
     answer:
       'WavefloW에서는 시각적인 파형 비교를 기반으로 두 버전의 차이를 쉽게 확인할 수 있어요.',
-    avatarUrl: './1750813233213.jpg',
+    avatarUrl: './person/1750813233213.jpg',
   },
   {
     answer:
       'WavefloW는 기존 DAW의 한계를 보완하는 음악 전용 버전 관리 플랫폼이에요.\n작업물을 파일로만 주고받는 시대는 끝났습니다.',
-    avatarUrl: './1750813233213.jpg',
+    avatarUrl: './person/1750813233213.jpg',
   },
   {
     answer:
       'WavefloW는 여러 아티스트, 프로듀서, 엔지니어가 동시에 작업하더라도\n버전 충돌 없이 안정적으로 협업할 수 있는 환경을 제공합니다.\n누가 언제 어떤 부분을 수정했는지 모두 기록되고, 필요한 시점으로 되돌리는 것도 간단합니다.',
-    avatarUrl: './1750813233213.jpg',
+    avatarUrl: './person/1750813233213.jpg',
   },
   {
     answer:
       'WavefloW에서는 파일 주고받기가 필요 없습니다.\n모든 트랙과 스템은 실시간으로 공유되며,\n버전마다 다른 멤버의 의견이나 수정 사항도 손쉽게 확인할 수 있어요.',
-    avatarUrl: './1750813233213.jpg',
+    avatarUrl: './person/1750813233213.jpg',
   },
   {
     answer:
       '가능합니다.\nWavefloW에서는 트랙의 특정 구간에 시간 코드 기반 코멘트를 남기고,\n동료들과 바로 피드백을 주고받을 수 있어요.\n피드백을 잃지 않고 기록으로 남기면서도, 빠르게 반영할 수 있습니다.',
-    avatarUrl: './1750813233213.jpg',
+    avatarUrl: './person/1750813233213.jpg',
   },
 ];
 
@@ -189,6 +189,14 @@ const LandingPage2: React.FC = () => {
             WavefloW
           </div>
         </div>
+        <motion.button
+            whileHover={{ scale: 1.05 }}
+            whileTap={{ scale: 0.95 }}
+            className='group flex items-center gap-2 rounded-full bg-gradient-to-r px-6 py-2.5 text-sm font-medium text-white transition-all hover:shadow-lg hover:shadow-violet-500/25'
+            onClick={() => navigate('/login')}
+          >
+            Sign In
+          </motion.button>
 
           <motion.button
             whileHover={{ scale: 1.05 }}
@@ -197,7 +205,6 @@ const LandingPage2: React.FC = () => {
             onClick={() => navigate('/signup')}
           >
             Sign Up
-            <ArrowRight className='h-4 w-4 transition-transform group-hover:translate-x-1' />
           </motion.button>
 
       </header>
