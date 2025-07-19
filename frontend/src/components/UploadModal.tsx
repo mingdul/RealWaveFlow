@@ -143,7 +143,6 @@ const StemListPanel: React.FC<{
         file
       };
       onAddFile(newFile);
-      console.log('[DEBUG] StemListPanel - newFile:', newFile);
     });
     e.target.value = '';
   };
@@ -645,7 +644,7 @@ const UploadModal: React.FC<UploadModalProps> = ({
           if (response && Array.isArray(response)) {
             // 백엔드 응답을 MasterStem 형태로 변환
             const stems = response.map((item: any) => {
-              console.log('[DEBUG] UploadModal - item instrument:', item.category.instrument);
+              console.log('[DEBUG] UploadModal - item instrument:', item.stem.category.instrument);
               console.log('[DEBUG] UploadModal - Raw stem data:', item.stem);
               console.log('[DEBUG] UploadModal - Original file_name:', item.stem.file_name);
               console.log('[DEBUG] UploadModal - Decoded file_name:', decodeFilename(item.stem.file_name));
@@ -654,7 +653,7 @@ const UploadModal: React.FC<UploadModalProps> = ({
                 id: item.stem.id,
                 file_name: item.stem.file_name, // 원본 파일명 유지 (표시할 때 디코딩)
                 file_path: item.stem.file_path,
-                tag: item.category.instrument, // category name을 tag로 사용
+                tag: item.stem.category.instrument, // category name을 tag로 사용
                 key: item.stem.key || '',
                 description: `${item.category} stem`,
                 track_id: item.stem.track?.id || '',
