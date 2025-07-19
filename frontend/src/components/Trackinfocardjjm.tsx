@@ -80,7 +80,7 @@ const Trackinfocardjjm: React.FC<TrackinfocardjjmProps> = ({
   };
 
   return (
-    <div className='relative overflow-hidden rounded-3xl bg-gradient-to-br from-gray-900 via-black to-gray-800 p-8 shadow-2xl transition-all duration-500 hover:shadow-3xl hover:scale-[1.02]'>
+    <div className='relative overflow-hidden rounded-3xl bg-black p-8 shadow-2xl transition-all duration-500 '>
       {/* Background overlay pattern */}
       <div className='absolute inset-0 bg-gradient-to-r from-black/60 via-transparent to-black/40'></div>
       

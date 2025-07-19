@@ -99,17 +99,16 @@ const TrackHeaderCopy: React.FC<TrackHeaderCopyProps> = ({
           </Button>
           <Logo />
         </div>
-        <div className="flex space-x-6">
-          <nav
-            className="text-gray-300 hover:text-white text-sm font-medium cursor-pointer transition-colors"
-            onClick={() => navigate(`/dashboard`)}
-          >
-            Dashboard
-          </nav>
-        </div>
+
         <div className="flex items-center gap-4">
           {/* 🔥 NotificationBell에 실시간 상태 표시 */}
           <div className="relative">
+            <nav
+              className="text-gray-300 hover:text-white text-sm font-medium cursor-pointer transition-colors"
+              onClick={() => navigate(`/dashboard`)}
+            >
+              Dashboard
+            </nav>
             <NotificationBell />
             {/* 개발 환경에서만 보이는 상태 표시 */}
             {import.meta.env.DEV && (
