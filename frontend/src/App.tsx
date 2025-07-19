@@ -9,15 +9,13 @@ import './styles/animations.css';
 import LandingPage2 from './pages/LandingPage2.tsx';
 import LoginPage from './pages/LoginPage.tsx';
 import SignUpPage from './pages/SignUpPage';
-import DashboardPage from './pages/DashboardPage';
+import DashboardPage from './pages/DashboardPage.tsx';
 import Notfound from './pages/Notfound';
 import StagePage from './pages/StagePage';
 import PublicRoute from './components/PublicRoute.tsx';
 import TrackPage from './pages/TrackPage.tsx';
 import StemSetReviewPage from './pages/StemSetReviewPage.tsx';
-import DashboardPageV2 from './pages/DashboardssPageV2.tsx';
 import InvitePage from './pages/InvitePage.tsx';
-import ProjectPage from './pages/ProjectPage.tsx';
 import StemReview from './pages/StemReview.tsx';
 
 // import PR_Page from './pages/PR_Page.tsx';     
@@ -41,10 +39,8 @@ const App = () => {
               <Route path="/" element={<LandingPage2 />} />
               <Route path="/login" element={<PublicRoute><LoginPage /></PublicRoute>} />
               <Route path="/signup" element={<PublicRoute><SignUpPage /></PublicRoute>} />
-              <Route path="/dashboard" element={<DashboardPageV2 />} />
-              <Route path="/newdash" element={<DashboardPage />} />
-              <Route path="/track/:trackId" element={<ProjectPage />} />
-              <Route path="/project/:trackId" element={<TrackPage />} />
+              <Route path="/dashboard" element={<DashboardPage />} />
+              <Route path="/track/:trackId" element={<TrackPage />} />
               <Route path="/invite/:token" element={<InvitePage />} />
               <Route path="/stage/:stageId" element={<StagePage />} />
               {/* <Route path="/review" element={<StemSetReviewPage />} /> */}
