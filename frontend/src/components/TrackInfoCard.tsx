@@ -219,7 +219,7 @@ const TrackInfoCard: React.FC<TrackInfoCardProps> = ({
               trackId={track.id}
               imageUrl={track.image_url}
               alt={track.title}
-              className='h-full aspect-square object-cover shadow-lg transition-transform duration-300 group-hover:scale-105 lg:h-56 lg:w-56'
+              className='h-48 w-48 object-cover shadow-lg transition-transform duration-300 group-hover:scale-105 lg:h-56 lg:w-56'
             />
             <div className='absolute inset-0 flex items-center justify-center bg-black/40 opacity-0 transition-opacity duration-300 group-hover:opacity-100'>
               <button
