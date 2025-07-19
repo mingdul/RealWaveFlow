@@ -92,7 +92,7 @@ async updateUser(
   userId: string,
   updateUserDto: UpdateUserDto
 ): Promise<User> {
-  const user = await this.findById(userId);
+  const user = await this.userRepository.findOne({ where: { id: userId } });
   if (!user) {
     throw new NotFoundException('사용자를 찾을 수 없습니다.');
   }
