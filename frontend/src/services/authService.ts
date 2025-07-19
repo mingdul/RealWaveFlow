@@ -108,7 +108,7 @@ class AuthService {
     try {
       const response = await apiClient.patch<ApiResponse<User>>(
         `/users/${userId}`,
-        { name },
+        { username: name },
         { withCredentials: true }
       );
       return response.data;

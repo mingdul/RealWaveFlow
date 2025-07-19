@@ -106,7 +106,11 @@ export class UsersService {
     await this.userRepository.update(userId, updateData);
     
     // 업데이트된 사용자 정보 반환
-    return this.findById(userId);
+    const updatedUser = await this.findById(userId);
+    if (!updatedUser) {
+      throw new NotFoundException('업데이트된 사용자 정보를 찾을 수 없습니다.');
+    }
+    return updatedUser;
   }
 
   // 사용자 이름 변경 (권한 검증 및 중복 검증 포함)
@@ -149,6 +153,10 @@ export class UsersService {
     await this.userRepository.update(userId, updateData);
     
     // 업데이트된 사용자 정보 반환
-    return this.findById(userId);
+    const updatedUser = await this.findById(userId);
+    if (!updatedUser) {
+      throw new NotFoundException('업데이트된 사용자 정보를 찾을 수 없습니다.');
+    }
+    return updatedUser;
   }
 }
