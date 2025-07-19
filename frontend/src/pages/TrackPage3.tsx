@@ -30,8 +30,6 @@ import {
   Calendar,
   Zap,
   Activity,
-  Star,
-  MoreHorizontal,
   Download,
   Share2,
   Heart,
@@ -118,7 +116,7 @@ const TrackInfoCard: React.FC<{
   onShowAllStems: () => void;
   onRollBack: () => void;
   stageId?: string;
-}> = ({ track, stems, stemsLoading, onPlay, versionNumber, onShowAllStems, onRollBack }) => {
+}> = ({ track, stems, onPlay, versionNumber, onShowAllStems, onRollBack }) => {
   const [isPlaying, setIsPlaying] = useState(false);
   
   const handlePlayClick = () => {
