@@ -4,8 +4,9 @@ import { Notification } from '../types/notification';
 
 const NotificationBell: React.FC = () => {
   const [isOpen, setIsOpen] = useState(false);
+  const [isMarkingAllRead, setIsMarkingAllRead] = useState(false);
   const dropdownRef = useRef<HTMLDivElement>(null);
-  const { notifications, unreadCount, markAsRead, refreshNotifications } = useNotifications();
+  const { notifications, unreadCount, markAsRead, markAllRead, refreshNotifications } = useNotifications();
 
   // 컴포넌트 렌더링 로그
   console.log('🔔 [NotificationBell] 🎭 COMPONENT RENDERED');
@@ -69,6 +70,21 @@ const NotificationBell: React.FC = () => {
     }
     
     setIsOpen(!isOpen);
+  };
+
+  const handleMarkAllRead = async () => {
+    if (unreadCount === 0) return; // 읽지 않은 알림이 없으면 무시
+    
+    setIsMarkingAllRead(true);
+    try {
+      console.log('📖 [NotificationBell] 모든 알림 읽음 처리 시작...');
+      await markAllRead();
+      console.log('📖 [NotificationBell] 모든 알림 읽음 처리 완료');
+    } catch (error) {
+      console.error('📖 [NotificationBell] 모든 알림 읽음 처리 실패:', error);
+    } finally {
+      setIsMarkingAllRead(false);
+    }
   };
 
   const handleNotificationClick = async (notification: Notification) => {
@@ -166,9 +182,37 @@ const NotificationBell: React.FC = () => {
             <div className="px-4 py-3 border-b border-gray-200 bg-gray-50">
               <div className="flex items-center justify-between">
                 <h3 className="text-lg font-medium text-gray-900">알림</h3>
-                <span className="text-sm text-gray-500">
-                  {unreadCount > 0 ? `${unreadCount}개의 새 알림` : '모든 알림을 확인했습니다'}
-                </span>
+                <div className="flex items-center space-x-3">
+                  <span className="text-sm text-gray-500">
+                    {unreadCount > 0 ? `${unreadCount}개의 새 알림` : '모든 알림을 확인했습니다'}
+                  </span>
+                  {/* 모두 읽음 버튼 */}
+                  {unreadCount > 0 && (
+                    <button
+                      onClick={handleMarkAllRead}
+                      disabled={isMarkingAllRead}
+                      className={`
+                        px-3 py-1 text-xs font-medium rounded-md transition-all
+                        ${isMarkingAllRead 
+                          ? 'bg-gray-300 text-gray-500 cursor-not-allowed' 
+                          : 'bg-blue-600 text-white hover:bg-blue-700 focus:outline-none focus:ring-2 focus:ring-blue-500'
+                        }
+                      `}
+                    >
+                      {isMarkingAllRead ? (
+                        <span className="flex items-center space-x-1">
+                          <svg className="animate-spin h-3 w-3 text-gray-500" xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24">
+                            <circle className="opacity-25" cx="12" cy="12" r="10" stroke="currentColor" strokeWidth="4"></circle>
+                            <path className="opacity-75" fill="currentColor" d="M4 12a8 8 0 018-8V0C5.373 0 0 5.373 0 12h4zm2 5.291A7.962 7.962 0 014 12H0c0 3.042 1.135 5.824 3 7.938l3-2.647z"></path>
+                          </svg>
+                          <span>처리중</span>
+                        </span>
+                      ) : (
+                        '모두 읽음'
+                      )}
+                    </button>
+                  )}
+                </div>
               </div>
             </div>
 

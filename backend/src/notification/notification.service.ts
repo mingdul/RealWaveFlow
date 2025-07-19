@@ -82,6 +82,23 @@ export class NotificationService {
     }
   }
 
+  // 사용자의 모든 미읽은 알림을 읽음으로 표시
+  async markAllRead(userId: string): Promise<UpdateResult> {
+    try {
+      const result = await this.notificationRepository.update(
+        { userId, isRead: false },
+        { isRead: true }
+      );
+
+      const count = result.affected || 0;
+      this.logger.log(`📖 [NotificationService] 사용자 ${userId}의 모든 알림 읽음 처리 완료: ${count}개`);
+      return result;
+    } catch (error) {
+      this.logger.error(`❌ [NotificationService] 모든 알림 읽음 처리 실패: ${error.message}`);
+      throw error;
+    }
+  }
+
   // 오래된 읽은 알림 삭제 (7일 이전)
   async purgeOldRead(): Promise<DeleteResult> {
     try {

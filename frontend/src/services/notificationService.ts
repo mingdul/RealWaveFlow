@@ -56,6 +56,26 @@ class NotificationService {
     }
   }
 
+  // 모든 미읽은 알림을 읽음으로 표시
+  async markAllRead(): Promise<{ success: boolean; message: string; count: number }> {
+    try {
+      console.log('📖 [NotificationService] 모든 알림 읽음 처리 요청');
+      
+      const response = await api.patch('/notifications/mark-all-read');
+      console.log('📖 [NotificationService] 모든 알림 읽음 처리 완료:', response.data);
+      
+      return response.data;
+    } catch (error: any) {
+      console.error('❌ [NotificationService] 모든 알림 읽음 처리 실패:', error);
+      
+      if (error.response?.status === 401) {
+        throw new Error('User authentication required');
+      }
+      
+      throw new Error(error.response?.data?.message || 'Failed to mark all notifications as read');
+    }
+  }
+
   // 미읽은 알림 개수 계산 (클라이언트에서 계산)
   getUnreadCount(notifications: Notification[]): number {
     return notifications.filter(notification => !notification.isRead).length;
