@@ -6,6 +6,7 @@ import streamingService, {
   StemStreamingInfo,
 } from '../services/streamingService';
 import PresignedImage from './PresignedImage';
+import Collaborators from './Collaborators';
 
 interface TrackinfocardjjmProps {
   track: Track;
@@ -88,35 +89,16 @@ const Trackinfocardjjm: React.FC<TrackinfocardjjmProps> = ({
         {/* Left side content */}
         <div className='flex-1 space-y-4'>
           {/* Header label */}
-          <div className='mb-4'>
-            <h2 className='text-lg text-white/70'>
-              Version: <span className='font-semibold text-white'>{versionNumber}</span>
-            </h2>
-          </div>
-
           {/* Main title */}
           <div className='space-y-5'>
-            <h1 className='text-4xl font-black uppercase tracking-tight text-white lg:text-6xl xl:text-7xl'>
+            <h1 className='text-2xl font-black uppercase tracking-tight text-white lg:text-6xl xl:text-7xl'>
               {track.title}
             </h1>
-            <p className='max-w-md text-lg leading-relaxed text-white/80 lg:text-xl'>
+            <p className='max-w-md text-sm leading-relaxed text-white/80 lg:text-xl'>
               {track.description || 'Enjoy vivid emotions with this stunning music album. Each track is a story.'}
             </p>
           </div>
 
-
-          {/* Track details tags */}
-          <div className='flex flex-wrap gap-3 pt-2'>
-            <span className='rounded-full bg-white/20 px-4 py-2 text-sm font-medium text-white backdrop-blur-sm'>
-              {track.genre}
-            </span>
-            <span className='rounded-full bg-white/20 px-4 py-2 text-sm font-medium text-white backdrop-blur-sm'>
-              {track.bpm} bpm
-            </span>
-            <span className='rounded-full bg-white/20 px-4 py-2 text-sm font-medium text-white backdrop-blur-sm'>
-              {track.key_signature} key
-            </span>
-          </div>
 
           {/* Owner and version info */}
           <div className='space-y-2 pt-2'>
@@ -127,10 +109,16 @@ const Trackinfocardjjm: React.FC<TrackinfocardjjmProps> = ({
             <p className='text-sm text-white/70'>
               {new Date(track.created_date).toLocaleDateString('en-US')}
             </p>
+            <Collaborators track={track}/>
           </div>
 
           {/* Action buttons */}
           <div className='flex flex-col gap-3 pt-6 sm:flex-row'>
+
+            <h2 className='text-lg text-white/70'>
+              Version: <span className='font-semibold text-white'>{versionNumber}</span>
+            </h2>
+
             <Button
               variant='primary'
               size='lg'
@@ -158,6 +146,18 @@ const Trackinfocardjjm: React.FC<TrackinfocardjjmProps> = ({
             >
               <span className='font-semibold'>View All Stems</span>
             </Button>
+          </div>
+           {/* Track details tags */}
+          <div className='flex flex-wrap gap-3 pt-2'>
+            <span className='rounded-full bg-white/20 px-4 py-2 text-sm font-medium text-white backdrop-blur-sm'>
+              {track.genre}
+            </span>
+            <span className='rounded-full bg-white/20 px-4 py-2 text-sm font-medium text-white backdrop-blur-sm'>
+              {track.bpm} bpm
+            </span>
+            <span className='rounded-full bg-white/20 px-4 py-2 text-sm font-medium text-white backdrop-blur-sm'>
+              {track.key_signature} key
+            </span>
           </div>
         </div>
 
