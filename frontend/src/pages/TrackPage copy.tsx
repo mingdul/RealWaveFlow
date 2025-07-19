@@ -58,6 +58,7 @@ const ErrorState: React.FC<{ message: string }> = ({ message }) => (
 const CollaboratorsCard: React.FC<{ track: Track }> = ({ track }) => (
   <div className="bg-white/10 backdrop-blur-lg border border-white/20 rounded-lg p-6 shadow-md mb-6">
     <h3 className="text-xl font-semibold text-white mb-4">Collaborators</h3>
+    
     <div className="space-y-3">
       {/* 트랙 소유자 */}
       <div className="flex items-center space-x-3">
