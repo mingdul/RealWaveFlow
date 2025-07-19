@@ -19,6 +19,7 @@ import streamingService, {
   StemStreamingInfo,
 } from '../services/streamingService';
 import trackService from '../services/trackService';
+import versionStemService from '../services/versionstemService';
  
 
 interface TrackPageCopyProps {}
@@ -48,38 +49,102 @@ const ErrorState: React.FC<{ message: string }> = ({ message }) => (
   </div>
 );
 
-// 트랙 메타정보 카드 컴포넌트
+// 트랙 메타정보 카드 컴포넌트 (기본 정보만)
 const TrackMetaCard: React.FC<{ track: Track }> = ({ track }) => (
   <div className="bg-white/10 backdrop-blur-lg border border-white/20 rounded-lg p-6 shadow-md mb-6">
     <h3 className="text-xl font-semibold text-white mb-4">Track Information</h3>
     <div className="space-y-4">
       <div>
+        <label className="text-sm font-medium text-gray-300">Title</label>
+        <p className="text-base text-white">{track.title}</p>
+      </div>
+      {track.description && (
+        <div>
+          <label className="text-sm font-medium text-gray-300">Description</label>
+          <p className="text-sm text-gray-200">{track.description}</p>
+        </div>
+      )}
+      <div>
         <label className="text-sm font-medium text-gray-300">Created Date</label>
         <p className="text-base text-white">{new Date(track.created_date).toLocaleDateString()}</p>
       </div>
+      {track.genre && (
+        <div>
+          <label className="text-sm font-medium text-gray-300">Genre</label>
+          <p className="text-base text-white">{track.genre}</p>
+        </div>
+      )}
+      {track.bpm && (
+        <div>
+          <label className="text-sm font-medium text-gray-300">BPM</label>
+          <p className="text-base text-white">{track.bpm}</p>
+        </div>
+      )}
+      {track.key_signature && (
+        <div>
+          <label className="text-sm font-medium text-gray-300">Key</label>
+          <p className="text-base text-white">{track.key_signature}</p>
+        </div>
+      )}
+    </div>
+  </div>
+);
+
+// 버전 정보 패널 컴포넌트
+const VersionInfoPanel: React.FC<{ 
+  selectedVersion: number; 
+  selectedStage: Stage | undefined;
+  totalStems: number;
+}> = ({ selectedVersion, selectedStage, totalStems }) => (
+  <div className="bg-white/10 backdrop-blur-lg border border-white/20 rounded-lg p-6 shadow-md mb-6">
+    <h3 className="text-xl font-semibold text-white mb-4">Current Version</h3>
+    <div className="space-y-4">
       <div>
-        <label className="text-sm font-medium text-gray-300">Track ID</label>
-        <p className="text-base text-white font-mono bg-white/10 rounded px-2 py-1">{track.id}</p>
+        <label className="text-sm font-medium text-gray-300">Version</label>
+        <p className="text-base text-white">v{selectedVersion}</p>
       </div>
+      {selectedStage && (
+        <>
+          <div>
+            <label className="text-sm font-medium text-gray-300">Stage Title</label>
+            <p className="text-base text-white">{selectedStage.title}</p>
+          </div>
+          <div>
+            <label className="text-sm font-medium text-gray-300">Status</label>
+            <span className={`inline-flex items-center px-2.5 py-0.5 rounded-full text-xs font-medium ${
+              selectedStage.status === 'active' 
+                ? 'bg-green-100 text-green-800' 
+                : 'bg-gray-100 text-gray-800'
+            }`}>
+              {selectedStage.status}
+            </span>
+          </div>
+          <div>
+            <label className="text-sm font-medium text-gray-300">Created</label>
+            <p className="text-base text-white">
+              {new Date(selectedStage.created_at).toLocaleDateString()}
+            </p>
+          </div>
+        </>
+      )}
       <div>
-        <label className="text-sm font-medium text-gray-300">Status</label>
-        <span className="inline-flex items-center px-2.5 py-0.5 rounded-full text-xs font-medium bg-green-100 text-green-800">
-          Active
-        </span>
+        <label className="text-sm font-medium text-gray-300">Stems Count</label>
+        <p className="text-base text-white">{totalStems}</p>
       </div>
     </div>
   </div>
 );
 
-// 콜라보레이터 카드 컴포넌트
+// 콜라보레이터 카드 컴포넌트 (실제 멤버 표시)
 const CollaboratorsCard: React.FC<{ track: Track }> = ({ track }) => (
   <div className="bg-white/10 backdrop-blur-lg border border-white/20 rounded-lg p-6 shadow-md mb-6">
     <h3 className="text-xl font-semibold text-white mb-4">Collaborators</h3>
     <div className="space-y-3">
+      {/* 트랙 소유자 */}
       <div className="flex items-center space-x-3">
         <div className="w-8 h-8 bg-gradient-to-br from-blue-400 to-blue-600 rounded-full flex items-center justify-center">
           <span className="text-white text-sm font-semibold">
-            {track.owner_id?.username?.charAt(0) || 'U'}
+            {track.owner_id?.username?.charAt(0)?.toUpperCase() || 'U'}
           </span>
         </div>
         <div>
@@ -87,6 +152,27 @@ const CollaboratorsCard: React.FC<{ track: Track }> = ({ track }) => (
           <p className="text-sm text-gray-400">Owner</p>
         </div>
       </div>
+      
+      {/* 콜라보레이터들 */}
+      {track.collaborators && track.collaborators.length > 0 ? (
+        track.collaborators.map((collaborator, index) => (
+          <div key={collaborator.id} className="flex items-center space-x-3">
+            <div className="w-8 h-8 bg-gradient-to-br from-purple-400 to-purple-600 rounded-full flex items-center justify-center">
+              <span className="text-white text-sm font-semibold">
+                {collaborator.user_id?.username?.charAt(0)?.toUpperCase() || 'C'}
+              </span>
+            </div>
+            <div>
+              <p className="text-base text-white">{collaborator.user_id?.username || 'Unknown Collaborator'}</p>
+              <p className="text-sm text-gray-400">
+                {collaborator.role} • {collaborator.status}
+              </p>
+            </div>
+          </div>
+        ))
+      ) : (
+        <p className="text-sm text-gray-400 italic">No collaborators yet</p>
+      )}
     </div>
   </div>
 );
@@ -97,14 +183,86 @@ const VersionTimeline: React.FC<{
   selectedVersion: number;
   onVersionSelect: (version: number) => void;
   stems: StemStreamingInfo[];
-}> = ({ stages, selectedVersion, onVersionSelect, stems }) => {
+  trackId: string;
+}> = ({ stages, selectedVersion, onVersionSelect, stems, trackId }) => {
   const [expandedVersion, setExpandedVersion] = useState<number | null>(null);
+  const [versionStems, setVersionStems] = useState<{[key: number]: StemStreamingInfo[]}>({});
+  const [loadingVersions, setLoadingVersions] = useState<{[key: number]: boolean}>({});
 
   const sortedStages = [...stages].sort((a, b) => b.version - a.version);
 
-  const toggleExpanded = (version: number) => {
-    setExpandedVersion(expandedVersion === version ? null : version);
+  const toggleExpanded = async (version: number) => {
+    if (expandedVersion === version) {
+      setExpandedVersion(null);
+      return;
+    }
+    
+    setExpandedVersion(version);
     onVersionSelect(version);
+    
+    // 해당 버전의 스템이 이미 로드되어 있지 않다면 로드
+    if (!versionStems[version]) {
+      await loadVersionStems(version);
+    }
+  };
+
+  const loadVersionStems = async (version: number) => {
+    setLoadingVersions(prev => ({ ...prev, [version]: true }));
+    
+    try {
+      // 먼저 마스터 스템 스트림 조회 시도
+      const masterStemsResponse = await streamingService.getMasterStemStreams(trackId, version);
+      
+      if (masterStemsResponse.data && masterStemsResponse.data.stems) {
+        setVersionStems(prev => ({ 
+          ...prev, 
+          [version]: masterStemsResponse.data!.stems 
+        }));
+      } else {
+        // 마스터 스템이 없으면 버전 스템 조회 시도
+        try {
+          const versionStemsData = await versionStemService.getLatestStemsPerCategoryByTrack(trackId, version);
+          
+          const convertedStems: StemStreamingInfo[] = versionStemsData?.map((stem: any) => ({
+            id: stem.id,
+            fileName: stem.file_name,
+            category: stem.category?.name || 'Unknown',
+            tag: stem.key,
+            key: stem.key,
+            description: '',
+            presignedUrl: '',
+            metadata: {
+              duration: 0,
+              fileSize: 0
+            },
+            uploadedBy: {
+              id: stem.user?.id || '',
+              username: stem.user?.username || 'Unknown'
+            },
+            uploadedAt: stem.uploaded_at
+          })) || [];
+          
+          setVersionStems(prev => ({ 
+            ...prev, 
+            [version]: convertedStems 
+          }));
+        } catch (error) {
+          console.error(`[ERROR] Failed to load stems for version ${version}:`, error);
+          setVersionStems(prev => ({ 
+            ...prev, 
+            [version]: [] 
+          }));
+        }
+      }
+    } catch (error) {
+      console.error(`[ERROR] Failed to load stems for version ${version}:`, error);
+      setVersionStems(prev => ({ 
+        ...prev, 
+        [version]: [] 
+      }));
+    } finally {
+      setLoadingVersions(prev => ({ ...prev, [version]: false }));
+    }
   };
 
   return (
@@ -181,19 +339,27 @@ const VersionTimeline: React.FC<{
                   {expandedVersion === stage.version && (
                     <div className="mt-4 pt-4 border-t border-white/20">
                       <h5 className="text-sm font-medium text-gray-300 mb-3">Stems in this version:</h5>
-                      {stems.length > 0 ? (
+                      {loadingVersions[stage.version] ? (
+                        <div className="flex items-center justify-center py-4">
+                          <div className="animate-spin rounded-full h-6 w-6 border-b-2 border-amber-400"></div>
+                          <span className="ml-2 text-sm text-gray-400">Loading stems...</span>
+                        </div>
+                      ) : versionStems[stage.version] && versionStems[stage.version].length > 0 ? (
                         <div className="space-y-2">
-                          {stems.map((stem, stemIndex) => (
+                          {versionStems[stage.version].map((stem, stemIndex) => (
                             <div 
                               key={stemIndex}
                               className="bg-white/5 rounded-md p-3 border border-white/10"
                             >
                               <div className="flex items-center justify-between">
                                 <div>
-                                  <p className="text-sm font-medium text-white">{stem.category}</p>
-                                  <p className="text-xs text-gray-400">
-                                    Duration: {Math.round(stem.metadata?.duration || 0)}s
-                                  </p>
+                                  <p className="text-sm font-medium text-white">{stem.fileName}</p>
+                                  <p className="text-xs text-gray-400">{stem.category}</p>
+                                  {stem.metadata?.duration && (
+                                    <p className="text-xs text-gray-400">
+                                      Duration: {Math.round(stem.metadata.duration)}s
+                                    </p>
+                                  )}
                                 </div>
                                 <div className="flex items-center space-x-2">
                                   <button className="text-xs bg-amber-600 hover:bg-amber-700 text-white px-2 py-1 rounded transition-colors">
@@ -319,21 +485,52 @@ const TrackPageCopy: React.FC<TrackPageCopyProps> = () => {
     }
   }, [stages, trackId]);
 
-  // 버전별 스템 로드
+  // 버전별 스템 로드 (개선된 버전 - 특정 스테이지의 스템만 가져오기)
   const loadStemsByVersion = async (version: number) => {
     if (!trackId) return;
 
     try {
       setStemsLoading(true);
-      const response = await streamingService.getMasterStemStreams(trackId, version);
       
-      if (response.data) {
-        console.log('[DEBUG][TrackPage] Loaded stems for version:', version);
-        setStems(response.data.stems);
+      // 먼저 마스터 스템 스트림 조회 시도
+      const masterStemsResponse = await streamingService.getMasterStemStreams(trackId, version);
+      
+      if (masterStemsResponse.data && masterStemsResponse.data.stems) {
+        console.log('[DEBUG][TrackPage] Loaded master stems for version:', version);
+        setStems(masterStemsResponse.data.stems);
         setSelectedStageVersion(version);
       } else {
-        console.error('[ERROR][TrackPage] Failed to load stems:', response.message);
-        setStems([]);
+        // 마스터 스템이 없으면 버전 스템 조회 시도
+        try {
+          const versionStems = await versionStemService.getLatestStemsPerCategoryByTrack(trackId, version);
+          console.log('[DEBUG][TrackPage] Loaded version stems for version:', version, versionStems);
+          
+          // 버전 스템 데이터를 StemStreamingInfo 형태로 변환
+          const convertedStems: StemStreamingInfo[] = versionStems?.map((stem: any) => ({
+            id: stem.id,
+            fileName: stem.file_name,
+            category: stem.category?.name || 'Unknown',
+            tag: stem.key,
+            key: stem.key,
+            description: '',
+            presignedUrl: '',
+            metadata: {
+              duration: 0,
+              fileSize: 0
+            },
+            uploadedBy: {
+              id: stem.user?.id || '',
+              username: stem.user?.username || 'Unknown'
+            },
+            uploadedAt: stem.uploaded_at
+          })) || [];
+          
+          setStems(convertedStems);
+          setSelectedStageVersion(version);
+        } catch (versionError) {
+          console.error('[ERROR][TrackPage] Error loading version stems:', versionError);
+          setStems([]);
+        }
       }
     } catch (error) {
       console.error('[ERROR][TrackPage] Error loading stems by version:', error);
@@ -593,6 +790,13 @@ const TrackPageCopy: React.FC<TrackPageCopyProps> = () => {
                   <TrackMetaCard track={track} />
                 </div>
                 <div className="transform transition-all duration-300 hover:scale-[1.02]">
+                  <VersionInfoPanel 
+                    selectedVersion={selectedStageVersion}
+                    selectedStage={getSelectedStage()}
+                    totalStems={stems.length}
+                  />
+                </div>
+                <div className="transform transition-all duration-300 hover:scale-[1.02]">
                   <CollaboratorsCard track={track} />
                 </div>
               </div>
@@ -617,6 +821,7 @@ const TrackPageCopy: React.FC<TrackPageCopyProps> = () => {
                   selectedVersion={selectedStageVersion}
                   onVersionSelect={loadStemsByVersion}
                   stems={stems}
+                  trackId={trackId || ''}
                 />
               </div>
             )}
