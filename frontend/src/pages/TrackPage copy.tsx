@@ -155,7 +155,7 @@ const CollaboratorsCard: React.FC<{ track: Track }> = ({ track }) => (
       
       {/* 콜라보레이터들 */}
       {track.collaborators && track.collaborators.length > 0 ? (
-        track.collaborators.map((collaborator, index) => (
+        track.collaborators.map((collaborator, _index) => (
           <div key={collaborator.id} className="flex items-center space-x-3">
             <div className="w-8 h-8 bg-gradient-to-br from-purple-400 to-purple-600 rounded-full flex items-center justify-center">
               <span className="text-white text-sm font-semibold">
@@ -182,9 +182,8 @@ const VersionTimeline: React.FC<{
   stages: Stage[];
   selectedVersion: number;
   onVersionSelect: (version: number) => void;
-  stems: StemStreamingInfo[];
   trackId: string;
-}> = ({ stages, selectedVersion, onVersionSelect, stems, trackId }) => {
+}> = ({ stages, selectedVersion, onVersionSelect, trackId }) => {
   const [expandedVersion, setExpandedVersion] = useState<number | null>(null);
   const [versionStems, setVersionStems] = useState<{[key: number]: StemStreamingInfo[]}>({});
   const [loadingVersions, setLoadingVersions] = useState<{[key: number]: boolean}>({});
