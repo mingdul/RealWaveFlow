@@ -10,6 +10,8 @@ import { UpdateStageDto } from 'src/stage/dto/updateStage.dto';
 import { Stage } from 'src/stage/stage.entity';
 import { CreateVersionStemDto } from 'src/version-stem/dto/createVersionStem.dto';
 import { VersionStem } from 'src/version-stem/version-stem.entity';
+import { TrackCollaborator } from 'src/track_collaborator/track_collaborator.entity';
+import { NotificationGateway } from 'src/notification/notification.gateway';
 import { DataSource } from 'typeorm';
 @Injectable()
 export class UpstreamReviewService {
@@ -27,6 +29,9 @@ export class UpstreamReviewService {
         private stageRepository: Repository<Stage>,
         @InjectRepository(VersionStem)
         private versionStemRepository: Repository<VersionStem>,
+        @InjectRepository(TrackCollaborator)
+        private trackCollaboratorRepository: Repository<TrackCollaborator>,
+        private notificationGateway: NotificationGateway,
         private dataSource: DataSource,
     ) {}
 
@@ -88,17 +93,90 @@ export class UpstreamReviewService {
         const allApproved = allReviews.every(r => r.status === 'approved');
         const hasRejected = allReviews.some(r => r.status === 'rejected');
         const hasPending = allReviews.some(r => r.status === 'pending');
+
+        // 알림 전송을 위해 upstream 정보 미리 로드
+        const upstream = await this.upstreamRepository.findOne({
+          where: { id: upstreamId },
+          relations: ['user', 'stage', 'stage.track'],
+        });
+
+        if (!upstream) {
+          throw new NotFoundException('Upstream not found');
+        }
     
         // 3) 트랜잭션 안에서 업스트림 & finalize 처리
         await this.dataSource.transaction(async manager => {
           if (allApproved) {
-            // Upstream 상태 Approved
+            // Upstream 상태 Approved로 업데이트
             await manager.update(Upstream, { id: upstreamId }, { status: 'APPROVED' });
+            
             // finalize(guide_path 반영 + version_stem 생성)
             await this.finalizeUpstream(upstreamId, manager);
+
+            // 🔔 알림 1: 트랙의 모든 멤버에게 "새 버전 생성" 알림 전송
+            try {
+              const trackCollaborators = await this.trackCollaboratorRepository.find({
+                where: { 
+                  track_id: { id: upstream.stage.track.id },
+                  status: 'accepted' // 승인된 멤버들만
+                },
+                relations: ['user_id'],
+              });
+
+              const memberUserIds = trackCollaborators.map(collab => collab.user_id.id);
+              
+              if (memberUserIds.length > 0) {
+                const trackName = upstream.stage.track.title || '트랙';
+                const stageName = upstream.stage.title || `버전 ${upstream.stage.version}`;
+                
+                await this.notificationGateway.sendNotificationToUsers(
+                  memberUserIds,
+                  'version_created',
+                  `🎵 ${trackName}의 새로운 버전 "${stageName}"이 생성되었습니다!`,
+                  {
+                    trackId: upstream.stage.track.id,
+                    stageId: upstream.stage.id,
+                    upstreamId: upstreamId,
+                    trackName: trackName,
+                    stageName: stageName,
+                  }
+                );
+
+                console.log(`🔔 [UpstreamReview] Sent version creation notification to ${memberUserIds.length} track members`);
+              }
+            } catch (error) {
+              console.error('🔔 [UpstreamReview] Failed to send version creation notification:', error);
+              // 알림 실패해도 비즈니스 로직은 계속 진행
+            }
+
           } else if (!hasPending && hasRejected) {
             // 모두 완료(pending 없음)이고 하나라도 rejected
             await manager.update(Upstream, { id: upstreamId }, { status: 'REJECTED' });
+
+            // 🔔 알림 2: 업로더에게만 "리뷰 거절" 알림 전송  
+            try {
+              const uploaderUserId = upstream.user.id;
+              const trackName = upstream.stage.track.title || '트랙';
+              const stageName = upstream.stage.title || `버전 ${upstream.stage.version}`;
+
+              await this.notificationGateway.sendNotificationToUser(
+                uploaderUserId,
+                'review_rejected',
+                `❌ ${trackName}의 "${stageName}" 업스트림이 리뷰에서 거절되었습니다.`,
+                {
+                  trackId: upstream.stage.track.id,
+                  stageId: upstream.stage.id,
+                  upstreamId: upstreamId,
+                  trackName: trackName,
+                  stageName: stageName,
+                }
+              );
+
+              console.log(`🔔 [UpstreamReview] Sent review rejection notification to uploader: ${uploaderUserId}`);
+            } catch (error) {
+              console.error('🔔 [UpstreamReview] Failed to send review rejection notification:', error);
+              // 알림 실패해도 비즈니스 로직은 계속 진행
+            }
           }
         });
     
@@ -154,6 +232,8 @@ export class UpstreamReviewService {
             uploaded_at    : new Date(),
           });
         }
+
+        // 알림 track 사용자에게
       }
     
       async approveDropReviewer(stageId: string, upstreamId: string, userId: string) {

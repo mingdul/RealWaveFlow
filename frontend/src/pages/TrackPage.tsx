@@ -135,11 +135,16 @@ const TrackPage: React.FC<TrackPageProps> = () => {
     );
     if (response.success) {
       await loadStemsByVersion(selectedStageVersion);
-      window.location.reload();
     } else {
       console.error('Failed to get back to previous stage:', response);
     }
+    navigate(0);
   };
+
+
+  const handleShowStage = (stageId: string) => {
+    navigate(`/stage/${stageId}`);
+  }
 
   const loadStemsByVersion = async (version: number) => {
     if (!trackId) return;
