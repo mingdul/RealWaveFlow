@@ -37,6 +37,8 @@ import {
   ChevronLeft,
   X,
   MoreVertical,
+  MessageCircle,
+  Volume2,
 } from 'lucide-react';
 // import { ActionButton, StatusBadge } from '../components/ui';
 import { theme } from '../styles/theme';
@@ -1724,33 +1726,74 @@ const StemSetReview = () => {
             </div>
           </div>
 
-          {/* History Sidebar */}
-          {activePanel === 'stems' && (
-            <div className="fixed right-0 top-0 z-40 h-full w-80 bg-black/40 backdrop-blur-xl border-l border-white/10 shadow-2xl">
-              <div className="p-6">
-                {/* Header */}
-                <div className="flex items-center justify-between mb-6">
-                  <h2 className="text-xl font-bold text-white">Streaming Audio Files</h2>
-                  <button
-                    onClick={() => setActivePanel('none')}
-                    className="p-2 rounded-lg bg-white/10 hover:bg-white/20 text-white/70 hover:text-white transition-all duration-200"
-                  >
-                    <X size={20} />
-                  </button>
+          {/* 새로운 슬라이드 패널 - 스템 목록 */}
+        {activePanel === 'stems' && (
+          <div 
+            className='fixed right-0 top-0 z-40 h-full bg-gray-900/95 backdrop-blur-sm border-l border-gray-700 shadow-2xl transition-all duration-300 ease-in-out'
+            style={{ 
+              width: '400px',
+              minWidth: '300px',
+              maxWidth: '500px'
+            }}
+          >
+            {/* Resize Handle */}
+            <div
+              className='absolute left-0 top-0 w-1 h-full bg-gray-600 hover:bg-blue-500 cursor-col-resize transition-colors'
+              onMouseDown={(e) => {
+                const startX = e.clientX;
+                const startWidth = 400;
+                
+                const handleMouseMove = (e: MouseEvent) => {
+                  const newWidth = startWidth - (e.clientX - startX);
+                  if (newWidth >= 300 && newWidth <= 500) {
+                    // Fixed width for now, remove resize functionality
+                  }
+                };
+                
+                const handleMouseUp = () => {
+                  document.removeEventListener('mousemove', handleMouseMove);
+                  document.removeEventListener('mouseup', handleMouseUp);
+                };
+                
+                document.addEventListener('mousemove', handleMouseMove);
+                document.addEventListener('mouseup', handleMouseUp);
+              }}
+            />
+            
+            <div className='px-6 py-6 h-full flex flex-col'>
+              {/* Header */}
+              <div className='mb-6 flex items-center justify-between'>
+                <div>
+                  <h2 className='text-xl font-bold text-white mb-1'>
+                    스템 파일 목록
+                  </h2>
+                  <p className='text-sm text-gray-400'>
+                    사용 가능한 오디오 파일들
+                  </p>
                 </div>
+                <button
+                  onClick={() => setActivePanel('none')}
+                  className='rounded-lg p-2 text-gray-400 hover:bg-gray-800 hover:text-white transition-all duration-200'
+                  title='닫기'
+                >
+                  <X size={20} />
+                </button>
+              </div>
 
-                {/* Content */}
-                <div className="space-y-4">
-                  <h3 className="text-sm font-semibold text-white/80 uppercase tracking-wide">Available Stem Files</h3>
-                  {stemsLoading ? (
-                    <div className="flex items-center justify-center py-12">
-                      <div className="flex items-center space-x-3">
-                        <div className="h-6 w-6 animate-spin rounded-full border-2 border-white/30 border-t-white"></div>
-                        <span className="text-white/80">Loading stems...</span>
-                      </div>
-                    </div>
-                  ) : (
-                    <div className="max-h-96 space-y-3 overflow-y-auto scrollbar-hide">
+              {/* Stem Files List */}
+              <div className='flex-1 overflow-hidden'>
+                <h3 className='mb-4 text-lg font-semibold text-white flex items-center gap-2'>
+                  <Volume2 size={20} className='text-blue-400' />
+                  오디오 파일들
+                </h3>
+                {stemsLoading ? (
+                  <div className='flex flex-col items-center justify-center py-12'>
+                    <div className='h-10 w-10 animate-spin rounded-full border-3 border-blue-400 border-t-transparent mb-4'></div>
+                    <span className='text-white font-medium'>스템 로딩 중...</span>
+                    <span className='text-sm text-gray-400 mt-1'>잠시만 기다려주세요</span>
+                  </div>
+                ) : (
+                  <div className='space-y-3 overflow-y-auto pr-2' style={{ maxHeight: 'calc(100vh - 240px)' }}>
                   {/* {upstreams.map((upstream, index) => {
                   // 해당 upstream의 stem 정보 찾기
                   const stemInfo = upstreamStems.find(s => s.upstreamId === upstream.id);
@@ -1836,16 +1879,15 @@ const StemSetReview = () => {
                     }
 
                     if (upstreamStems.length === 0) {
+                      console.log('⚠️ [Render] No upstreams to render');
                       return (
-                        <div className="py-12 text-center">
-                          <div className="w-16 h-16 mx-auto mb-4 rounded-full bg-purple-500/20 flex items-center justify-center">
-                            <svg className="w-8 h-8 text-purple-400" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                              <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M9 12h.01M12 12h.01M16 12h.01M21 12c0 4.418-4.03 8-9 8a9.863 9.863 0 01-4.255-.949L3 20l1.395-3.72C3.512 15.042 3 13.574 3 12c0-4.418 4.03-8 9-8s9 3.582 9 8z" />
-                            </svg>
-                          </div>
-                          <div className="text-white/60">No stems found for this upstream</div>
-                          <div className="text-xs text-white/40 mt-2">
-                            Debug: stageId={stageId}, selectedUpstream={selectedUpstream?.id}
+                        <div className='py-8 text-center text-gray-400'>
+                          <div className='space-y-2 text-center'>
+                            <div>No stems found for this upstream</div>
+                            <div className='text-xs'>
+                              Debug: stageId={stageId}, selectedUpstream=
+                              {selectedUpstream?.id}
+                            </div>
                           </div>
                         </div>
                       );
@@ -1902,64 +1944,78 @@ const StemSetReview = () => {
                           case 'new':
                             return {
                               icon: '✨',
-                              bgColor: 'bg-gradient-to-r from-green-600/20 to-green-700/20',
-                              borderColor: 'border-l-4 border-green-400',
+                              bgColor: 'bg-green-900/30',
+                              borderColor: 'border-l-4 border-green-500',
                               badgeColor: 'bg-green-600 text-white',
-                              hoverColor: 'hover:from-green-600/30 hover:to-green-700/30'
+                              hoverColor: 'hover:bg-green-900/50',
                             };
                           case 'modify':
                             return {
                               icon: '🔄',
-                              bgColor: 'bg-gradient-to-r from-yellow-600/20 to-yellow-700/20',
-                              borderColor: 'border-l-4 border-yellow-400',
+                              bgColor: 'bg-yellow-900/30',
+                              borderColor: 'border-l-4 border-yellow-500',
                               badgeColor: 'bg-yellow-600 text-white',
-                              hoverColor: 'hover:from-yellow-600/30 hover:to-yellow-700/30'
+                              hoverColor: 'hover:bg-yellow-900/50',
                             };
                           case 'unchanged':
                             return {
                               icon: '📄',
-                              bgColor: 'bg-gradient-to-r from-gray-600/20 to-gray-700/20',
-                              borderColor: 'border-l-4 border-gray-400',
+                              bgColor: 'bg-gray-800/30',
+                              borderColor: 'border-l-4 border-gray-500',
                               badgeColor: 'bg-gray-600 text-white',
-                              hoverColor: 'hover:from-gray-600/30 hover:to-gray-700/30'
+                              hoverColor: 'hover:bg-gray-800/50',
                             };
                           default:
                             return {
                               icon: '❓',
-                              bgColor: 'bg-gradient-to-r from-gray-600/20 to-gray-700/20',
-                              borderColor: 'border-l-4 border-gray-400',
+                              bgColor: 'bg-gray-800/30',
+                              borderColor: 'border-l-4 border-gray-500',
                               badgeColor: 'bg-gray-600 text-white',
-                              hoverColor: 'hover:from-gray-600/30 hover:to-gray-700/30'
+                              hoverColor: 'hover:bg-gray-800/50',
                             };
                         }
                       };
 
                       const typeStyle = getTypeStyle(stemData.type);
 
-                                              return (
+                      return (
+                        <div key={item.key} className='space-y-2'>
                           <div
-                            key={item.key}
-                            onClick={() => handleIndividualStemClick(stemData, upstream)}
-                            className={`cursor-pointer rounded-xl p-4 border border-white/10 backdrop-blur-sm transition-all duration-200 ${typeStyle.bgColor} ${typeStyle.borderColor} ${typeStyle.hoverColor} hover:shadow-lg transform hover:scale-[1.02]`}
+                            onClick={() =>
+                              handleIndividualStemClick(stemData, upstream)
+                            }
+                            className={`cursor-pointer rounded p-3 text-sm text-white transition-all duration-200 ${typeStyle.bgColor} ${typeStyle.borderColor} ${typeStyle.hoverColor}`}
                           >
-                            <div className="flex items-center justify-between mb-3">
-                              <div className="flex items-center gap-3">
-                                <span className="text-xl">{typeStyle.icon}</span>
-                                <span className="font-medium text-white">{stemData.category?.name || 'Unknown Category'}</span>
+                            <div className='flex items-center justify-between'>
+                              <div className='flex items-center gap-2 font-medium'>
+                                <span className='text-lg'>
+                                  {typeStyle.icon}
+                                </span>
+                                <span>
+                                  {stemData.category?.name ||
+                                    'Unknown Category'}
+                                </span>
                               </div>
-                              <span className={`rounded-full px-3 py-1 text-xs font-medium ${typeStyle.badgeColor}`}>
+                              <span
+                                className={`rounded px-2 py-1 text-xs font-medium ${typeStyle.badgeColor}`}
+                              >
                                 {stemData.type?.toUpperCase() || 'UNKNOWN'}
                               </span>
                             </div>
-                            <div className="text-sm text-white/70 mb-2">
+                            <div className='mt-2 text-xs text-gray-300'>
                               📁 {getDisplayFilename(stemData.stem?.file_name || 'Unknown file')}
                             </div>
-                            <div className="text-xs text-white/50">
-                              🎼 {stemData.category?.instrument || 'Unknown'} • 
-                              👤 {stemData.stem?.user?.username || upstream?.user?.username || 'Unknown'}
+                            <div className='mt-1 text-xs text-gray-400'>
+                              🎼 Instrument:{' '}
+                              {stemData.category?.instrument || 'Unknown'} | 👤
+                              By:{' '}
+                              {stemData.stem?.user?.username ||
+                                upstream?.user?.username ||
+                                'Unknown'}
                             </div>
                           </div>
-                        );
+                        </div>
+                      );
                     });
                     
                     } catch (error: any) {
@@ -1980,100 +2036,102 @@ const StemSetReview = () => {
           </div>
         )}
 
-          {/* Comments Sidebar */}
-          {activePanel === 'comments' && (
-            <div className="fixed right-0 top-0 z-40 h-full w-80 bg-black/40 backdrop-blur-xl border-l border-white/10 shadow-2xl">
-              <div className="p-6">
-                {/* Header */}
-                <div className="flex items-center justify-between mb-6">
-                  <h2 className="text-xl font-bold text-white">Comments</h2>
-                  <button
-                    onClick={() => setActivePanel('none')}
-                    className="p-2 rounded-lg bg-white/10 hover:bg-white/20 text-white/70 hover:text-white transition-all duration-200"
-                  >
-                    <X size={20} />
-                  </button>
+        {/* 새로운 슬라이드 패널 - 댓글 */}
+        {activePanel === 'comments' && (
+          <div className='fixed right-0 top-0 z-40 h-full w-80 bg-gray-900/95 backdrop-blur-sm border-l border-gray-700 shadow-2xl transition-all duration-300 ease-in-out'>
+            <div className='px-6 py-6 h-full flex flex-col'>
+              {/* Header */}
+              <div className='mb-6 flex items-center justify-between'>
+                <div>
+                  <h2 className='text-xl font-bold text-white mb-1 flex items-center gap-2'>
+                    <MessageCircle size={20} className='text-blue-400' />
+                    댓글
+                  </h2>
+                  <p className='text-sm text-gray-400'>
+                    타임스탬프 기반 댓글들
+                  </p>
                 </div>
+                <button
+                  onClick={() => setActivePanel('none')}
+                  className='rounded-lg p-2 text-gray-400 hover:bg-gray-800 hover:text-white transition-all duration-200'
+                  title='닫기'
+                >
+                  <X size={20} />
+                </button>
+              </div>
 
-                {/* Selected Upstream Info */}
-                {selectedUpstream ? (
-                  <div className="mb-6 p-4 rounded-xl bg-gradient-to-r from-purple-600/20 to-purple-700/20 border border-purple-500/30">
-                    <div className="text-sm font-medium text-white mb-1">
-                      {selectedUpstream.title}
-                    </div>
-                    <div className="text-xs text-white/60 mb-2">
-                      {selectedUpstream.description}
-                    </div>
-                    <div className="text-xs text-purple-300">
-                      by {selectedUpstream.user?.username}
-                    </div>
+              {/* Selected Upstream Info */}
+              {selectedUpstream && (
+                <div className='mb-6 rounded-lg bg-gray-800/50 border border-gray-700 p-4'>
+                  <div className='text-sm font-semibold text-white mb-2'>
+                    {selectedUpstream.title}
                   </div>
-                ) : (
-                  <div className="mb-6 p-4 rounded-xl bg-white/5 border border-white/10 text-center">
-                    <div className="text-sm text-white/60">
-                      Select an audio file to view comments
-                    </div>
+                  <div className='text-xs text-gray-300 mb-2'>
+                    {selectedUpstream.description}
                   </div>
-                )}
+                  <div className='flex items-center gap-2 text-xs'>
+                    <span className='text-blue-400'>작성자:</span>
+                    <span className='text-white font-medium'>{selectedUpstream.user?.username}</span>
+                  </div>
+                </div>
+              )}
 
-                {/* Comments List */}
+              {!selectedUpstream && (
+                <div className='mb-6 rounded-lg bg-gray-800/30 border border-gray-700 p-4 text-center'>
+                  <div className='text-sm text-gray-300'>
+                    오디오 파일을 선택하여 댓글을 확인하세요
+                  </div>
+                </div>
+              )}
+
+              {/* Comments List */}
+              <div className='flex-1 overflow-hidden'>
                 {commentsLoading ? (
-                  <div className="flex items-center justify-center py-12">
-                    <div className="flex items-center space-x-3">
-                      <div className="h-6 w-6 animate-spin rounded-full border-2 border-white/30 border-t-white"></div>
-                      <span className="text-white/80">Loading comments...</span>
-                    </div>
+                  <div className='flex flex-col items-center justify-center py-12'>
+                    <div className='h-8 w-8 animate-spin rounded-full border-3 border-blue-400 border-t-transparent mb-3'></div>
+                    <span className='text-white font-medium'>댓글 로딩 중...</span>
                   </div>
                 ) : (
-                  <div className="space-y-3 max-h-96 overflow-y-auto scrollbar-hide">
-                    {comments.length === 0 ? (
-                      <div className="py-12 text-center">
-                        <div className="w-16 h-16 mx-auto mb-4 rounded-full bg-blue-500/20 flex items-center justify-center">
-                          <svg className="w-8 h-8 text-blue-400" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                            <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M8 12h.01M12 12h.01M16 12h.01M21 12c0 4.418-4.03 8-9 8a9.863 9.863 0 01-4.255-.949L3 20l1.395-3.72C3.512 15.042 3 13.574 3 12c0-4.418 4.03-8 9-8s9 3.582 9 8z" />
-                          </svg>
-                        </div>
-                        <div className="text-white/60">No comments yet</div>
+                  <div className='space-y-3 overflow-y-auto pr-2' style={{ maxHeight: 'calc(100vh - 280px)' }}>
+                    {comments.map((comment) => (
+                      <div
+                        key={comment.id}
+                        className='rounded-lg bg-gray-800/50 border border-gray-700 p-3 hover:bg-gray-800/70 transition-all duration-200'
+                      >
+                    <div className='flex items-center justify-between'>
+                      <div
+                        className='flex flex-1 cursor-pointer items-center space-x-2'
+                        onClick={() => seekToTime(comment.timeNumber)}
+                      >
+                        <span className='font-mono text-blue-400'>
+                          {comment.timeString}
+                        </span>
+                        <span>🗨️</span>
                       </div>
-                    ) : (
-                      comments.map((comment) => (
-                        <div
-                          key={comment.id}
-                          className="p-4 rounded-xl bg-white/5 border border-white/10 hover:bg-white/10 transition-all duration-200"
-                        >
-                          <div className="flex items-center justify-between mb-2">
-                            <div
-                              className="flex items-center space-x-3 cursor-pointer"
-                              onClick={() => seekToTime(comment.timeNumber)}
-                            >
-                              <span className="px-2 py-1 rounded-lg bg-blue-600/50 text-white font-mono text-xs">
-                                {comment.timeString}
-                              </span>
-                              <span>💬</span>
-                            </div>
-                            {user && comment.user?.id === user.id && (
-                              <div className="flex items-center space-x-2">
-                                <button
-                                  onClick={() => handleEditComment(comment)}
-                                  className="p-1 rounded text-white/60 hover:text-white hover:bg-white/20 transition-all duration-200"
-                                >
-                                  <Edit2 size={12} />
-                                </button>
-                                <button
-                                  onClick={() => handleDeleteComment(comment.id)}
-                                  className="p-1 rounded text-white/60 hover:text-red-400 hover:bg-red-500/20 transition-all duration-200"
-                                >
-                                  <Trash2 size={12} />
-                                </button>
-                              </div>
-                            )}
-                          </div>
-                          {editingComment === comment.id ? (
+                      {user && comment.user?.id === user.id && (
+                        <div className='flex items-center space-x-1'>
+                          <button
+                            onClick={() => handleEditComment(comment)}
+                            className='p-1 text-gray-400 hover:text-white'
+                          >
+                            <Edit2 size={12} />
+                          </button>
+                          <button
+                            onClick={() => handleDeleteComment(comment.id)}
+                            className='p-1 text-gray-400 hover:text-red-400'
+                          >
+                            <Trash2 size={12} />
+                          </button>
+                        </div>
+                      )}
+                        </div>
+                        {editingComment === comment.id ? (
+                          <div className='mt-3'>
                             <input
-                              type="text"
+                              type='text'
                               value={editCommentText}
                               onChange={(e) => setEditCommentText(e.target.value)}
-                              className="w-full mt-2 bg-white/10 border border-white/20 rounded-lg px-3 py-2 text-white text-sm outline-none focus:border-purple-500"
+                              className='w-full rounded-lg bg-gray-900 border border-gray-600 px-3 py-2 text-sm text-white focus:border-blue-500 focus:outline-none'
                               onKeyPress={(e) => {
                                 if (e.key === 'Enter') {
                                   handleSaveComment(comment.id);
@@ -2082,24 +2140,26 @@ const StemSetReview = () => {
                               onBlur={() => handleSaveComment(comment.id)}
                               autoFocus
                             />
-                          ) : (
-                            <div className="text-white/80 text-sm">
-                              {comment.comment}
-                              {comment.user && (
-                                <div className="mt-2 text-xs text-white/50">
-                                  by {comment.user.username}
-                                </div>
-                              )}
-                            </div>
-                          )}
-                        </div>
-                      ))
-                    )}
+                          </div>
+                        ) : (
+                          <div className='mt-2 text-gray-300'>
+                            {comment.comment}
+                            {comment.user && (
+                              <div className='mt-2 text-xs text-gray-400 flex items-center gap-1'>
+                                <span>작성자:</span>
+                                <span className='font-medium'>{comment.user.username}</span>
+                              </div>
+                            )}
+                          </div>
+                        )}
+                      </div>
+                    ))}
                   </div>
                 )}
               </div>
             </div>
-          )}
+          </div>
+        )}
 
           {/* Main Content Area */}
           <div className={`px-4 sm:px-6 lg:px-8 py-6 sm:py-8 space-y-6`}>
