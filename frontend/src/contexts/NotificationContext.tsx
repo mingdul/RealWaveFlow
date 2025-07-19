@@ -228,10 +228,26 @@ export const NotificationProvider: React.FC<NotificationProviderProps> = ({ chil
       console.log('🔔 [NotificationProvider] 📊 AFTER setState - New unread count should be:', newUnreadCount);
       console.log('🔔 [NotificationProvider] 🔔 New notification isRead:', notification.isRead, '(false means it will increase badge count)');
       
+      // 🔥 NEW: 상태 업데이트 즉시 확인 및 강제 리렌더링 트리거
+      setTimeout(() => {
+        console.log('🔔 [NotificationProvider] 🔄 FORCE BADGE UPDATE CHECK (50ms after setState)');
+        console.log('🔔 [NotificationProvider] 📊 Current unread count should be:', newUnreadCount);
+        
+        // NotificationBell 컴포넌트들에게 강제 업데이트 신호 (커스텀 이벤트)
+        window.dispatchEvent(new CustomEvent('notification-badge-update', {
+          detail: { 
+            unreadCount: newUnreadCount,
+            timestamp: new Date().toISOString()
+          }
+        }));
+        
+        console.log('🔔 [NotificationProvider] 📢 Dispatched notification-badge-update event with count:', newUnreadCount);
+      }, 50);
+      
       // React 상태 업데이트 후 Badge 업데이트 확인을 위한 비동기 체크
       setTimeout(() => {
-        console.log('🔔 [NotificationProvider] 📊 ASYNC CHECK (50ms later) - Badge should now reflect new count');
-      }, 50);
+        console.log('🔔 [NotificationProvider] 📊 ASYNC CHECK (100ms later) - Badge should now reflect new count');
+      }, 100);
       
       return newNotifications;
     });
@@ -261,9 +277,20 @@ export const NotificationProvider: React.FC<NotificationProviderProps> = ({ chil
         const eventTimestamp = new Date().toISOString();
         console.log(`🔔 [NotificationSocket] ⏰ Event timestamp: ${eventTimestamp}`);
         
+        // 🔥 NEW: 현재 상태 출력 (디버깅용)
+        console.log('🔔 [NotificationSocket] 📊 BEFORE processing - Current notifications count:', notifications.length);
+        console.log('🔔 [NotificationSocket] 📊 BEFORE processing - Current unread count:', notifications.filter(n => !n.isRead).length);
+        
         // 즉시 알림 추가 (Badge 개수 실시간 업데이트)
         console.log('🔔 [NotificationSocket] 🚀 Calling addNotification with latest function...');
         addNotification(notification);
+        
+        // 🔥 NEW: 상태 업데이트 확인을 위한 비동기 체크
+        setTimeout(() => {
+          console.log('🔔 [NotificationSocket] 📊 AFTER processing (100ms later) - Badge update check:');
+          console.log('🔔 [NotificationSocket] 📊 Expected unread count should be +1 from before');
+          console.log('🔔 [NotificationSocket] ✅ addNotification processing completed!');
+        }, 100);
         
         console.log('🔔 [NotificationSocket] ✅ addNotification called - Badge should update immediately!');
       });
@@ -380,7 +407,28 @@ export const NotificationProvider: React.FC<NotificationProviderProps> = ({ chil
       };
       
       console.log('🧪 [DEBUG] Adding test notification manually...');
+      console.log('🧪 [DEBUG] Test notification data:', testNotification);
       addNotification(testNotification);
+      
+      // 추가 확인을 위한 비동기 체크
+      setTimeout(() => {
+        console.log('🧪 [DEBUG] Test notification should now be visible in Bell badge!');
+      }, 200);
+    }
+  };
+
+  // 🔧 DEBUG: 실시간 업데이트 강제 테스트
+  const debugTriggerBadgeUpdate = () => {
+    if (import.meta.env.DEV) {
+      const fakeUnreadCount = Math.floor(Math.random() * 10) + 1;
+      console.log('🧪 [DEBUG] Triggering fake badge update with count:', fakeUnreadCount);
+      
+      window.dispatchEvent(new CustomEvent('notification-badge-update', {
+        detail: { 
+          unreadCount: fakeUnreadCount,
+          timestamp: new Date().toISOString()
+        }
+      }));
     }
   };
 
@@ -406,14 +454,21 @@ export const NotificationProvider: React.FC<NotificationProviderProps> = ({ chil
     if (import.meta.env.DEV) {
       (window as any).debugNotifications = {
         addTestNotification: debugAddTestNotification,
+        triggerBadgeUpdate: debugTriggerBadgeUpdate, // 🔥 NEW: 뱃지 업데이트 테스트
         checkSocketStatus: debugSocketStatus,
         currentNotifications: notifications,
         currentUnreadCount: unreadCount,
-        socketConnected: socket?.connected
+        socketConnected: socket?.connected,
+        forceRefresh: refreshNotifications, // 🔥 NEW: 수동 새로고침 테스트
       };
       console.log('🔧 [DEBUG] Debug tools available in window.debugNotifications');
+      console.log('🔧 [DEBUG] Available methods:');
+      console.log('  - addTestNotification(): Add a test notification');
+      console.log('  - triggerBadgeUpdate(): Trigger fake badge update');
+      console.log('  - checkSocketStatus(): Check socket connection');
+      console.log('  - forceRefresh(): Force refresh notifications from API');
     }
-  }, [notifications, unreadCount, socket?.connected]);
+  }, [notifications, unreadCount, socket?.connected, debugAddTestNotification, debugTriggerBadgeUpdate]);
 
   const value: NotificationContextType = {
     notifications,

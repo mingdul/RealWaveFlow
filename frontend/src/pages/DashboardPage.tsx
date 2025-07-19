@@ -1,6 +1,15 @@
 import { useState, useEffect } from 'react';
 import { useNavigate } from 'react-router-dom';
-import { Headphones, LogOut, Plus, Loader2, AlertCircle, Edit, Trash2, Users} from 'lucide-react';
+import {
+  Headphones,
+  LogOut,
+  Plus,
+  Loader2,
+  AlertCircle,
+  Edit,
+  Trash2,
+  Users,
+} from 'lucide-react';
 // import { Wifi, WifiOff } from 'lucide-react';
 import { useAuth } from '../contexts/AuthContext';
 import { useToast } from '../contexts/ToastContext';
@@ -12,113 +21,29 @@ import Logo from '../components/Logo';
 import InitProjectModal from '../components/InitProjectModal';
 import CreateTrackModal from '../components/CreateTrackModal';
 import PresignedImage from '../components/PresignedImage';
+import ConfirmModal from '../components/ConfirmModal';
 import AnimatedModal from '../components/AnimatedModal';
 import NotificationBell from '../components/NotificationBell';
 
-// ProjectCard 컴포넌트를 별도로 정의하여 불필요한 리렌더링 방지
-interface ProjectCardProps {
-  track?: Track;
-  isNewProject?: boolean;
-  filter: 'owned' | 'collaborated';
-  onNewProject: () => void;
-  onTrackClick: (trackId: string) => void;
-  onEditTrack: (track: Track, e: React.MouseEvent) => void;
-  onDeleteTrack: (trackId: string, e: React.MouseEvent) => void;
-}
-
-const ProjectCard: React.FC<ProjectCardProps> = ({ 
-  track, 
-  isNewProject = false, 
-  filter,
-  onNewProject,
-  onTrackClick,
-  onEditTrack,
-  onDeleteTrack
-}) => {
-  if (isNewProject) {
-    return (
-      <div 
-        onClick={onNewProject}
-        className="bg-neutral-800 rounded-xl p-8 shadow-lg hover:shadow-xl hover:scale-105 transition-all duration-300 cursor-pointer group"
-      >
-        <div className="flex flex-col items-center justify-center h-48">
-          <div className="bg-white rounded-full p-6 mb-4 group-hover:bg-gray-100 transition-colors">
-            <Plus size={48} className="text-neutral-800" />
-          </div>
-          <h3 className="text-white text-xl font-semibold">New Track</h3>
-          <p className="text-gray-400 text-sm mt-2">Start a new Track</p>
-        </div>
-      </div>
-    );
-  }
-
-  if (!track) return null;
-
-  return (
-    <div 
-      onClick={() => onTrackClick(track.id)}
-      className="bg-neutral-800 rounded-xl overflow-hidden shadow-lg hover:shadow-xl hover:scale-105 transition-all duration-300 cursor-pointer relative group"
-    >
-      <div className="aspect-video bg-gradient-to-br from-purple-600 to-blue-600 flex items-center justify-center relative">
-        <Headphones size={64} className="text-white opacity-60" />
-        <PresignedImage
-          trackId={track.id}
-          imageUrl={track.image_url}
-          alt={track.title}
-          className="absolute inset-0 w-full h-full object-cover"
-        />
-      </div>
-      
-      {/* 편집/삭제 버튼 */}
-      {filter === 'owned' && (
-        <div className="absolute top-2 right-2 opacity-0 group-hover:opacity-100 transition-opacity">
-          <div className="flex space-x-2">
-            <button
-              onClick={(e) => onEditTrack(track, e)}
-              className="bg-blue-600 hover:bg-blue-700 text-white p-2 rounded-full transition-colors"
-            >
-              <Edit size={16} />
-            </button>
-            <button
-              onClick={(e) => onDeleteTrack(track.id, e)}
-              className="bg-red-600 hover:bg-red-700 text-white p-2 rounded-full transition-colors"
-            >
-              <Trash2 size={16} />
-            </button>
-          </div>
-        </div>
-      )}
-      <div className="p-4">
-        <h3 className="text-white text-lg font-semibold mb-1 truncate">{track.title}</h3>
-        <p className="text-gray-400 text-sm mb-2">{track.genre || 'Genre not specified'}</p>
-        <p className="text-gray-500 text-xs">
-          Updated {new Date(track.updated_date).toLocaleDateString('en-US')}
-        </p>
-        {track.collaborators && track.collaborators.length > 0 && (
-          <div className="flex items-center mt-2">
-            <Users size={12} className="text-gray-400 mr-1" />
-            <span className="text-xs text-gray-400">
-              {track.collaborators.length} collaborators
-            </span>
-          </div>
-        )}
-      </div>
-    </div>
-  );
-};
-
 const DashboardPage = () => {
   const navigate = useNavigate();
-  const { user, logout, isAuthenticated } = useAuth();
-  const { showError, showSuccess } = useToast();
+  const { user, logout, isAuthenticated, isLoading: authLoading } = useAuth();
+  const { showError, showSuccess} = useToast();
   // const { isConnected, onlineUsers, sendMessage, ping } = useSocket();
-  
+
   const [tracks, setTracks] = useState<Track[]>([]);
   const [isLoading, setIsLoading] = useState(true);
   const [error, setError] = useState<string | null>(null);
   const [filter, setFilter] = useState<'owned' | 'collaborated'>('owned');
   const [isCreating, setIsCreating] = useState(false);
   const [editingTrack, setEditingTrack] = useState<Track | null>(null);
+  const [deleteConfirmation, setDeleteConfirmation] = useState<{
+    isOpen: boolean;
+    trackId: string | null;
+  }>({
+    isOpen: false,
+    trackId: null,
+  });
   const [initProjectModal, setInitProjectModal] = useState<{
     isOpen: boolean;
     projectId: string;
@@ -134,12 +59,11 @@ const DashboardPage = () => {
   });
   // const [testMessage, setTestMessage] = useState('');
 
-
   useEffect(() => {
-    if (!isAuthenticated) {
+    if (!authLoading && !isAuthenticated) {
       navigate('/login');
     }
-  }, [isAuthenticated, navigate]);
+  }, [isAuthenticated, authLoading, navigate]);
 
   // 트랙 목록 로드
   useEffect(() => {
@@ -152,7 +76,9 @@ const DashboardPage = () => {
     try {
       setIsLoading(true);
       setError(null);
-      
+
+      console.log('[DEBUG] Loading tracks with filter:', filter);
+
       let result;
       if (filter === 'owned') {
         result = await trackService.getUserTracks();
@@ -160,9 +86,10 @@ const DashboardPage = () => {
         result = await trackService.getCollaboratorTracks();
       }
       console.log('[DEBUG] loadTracks response:', result);
-      
+
       // 백엔드 응답 구조: { success: true, data: { tracks: Track[] } }
       if (result && result.success && result.data && result.data.tracks) {
+        console.log('[DEBUG] Setting tracks:', result.data.tracks);
         setTracks(result.data.tracks);
       } else {
         console.error('[DEBUG] Unexpected response structure:', result);
@@ -194,15 +121,21 @@ const DashboardPage = () => {
     setEditingTrack(track);
   };
 
-  const handleDeleteTrack = async (trackId: string, e: React.MouseEvent) => {
+  const handleDeleteTrack = (trackId: string, e: React.MouseEvent) => {
     e.stopPropagation();
-    if (window.confirm('Are you sure you want to delete this track?')) {
+    setDeleteConfirmation({ isOpen: true, trackId });
+  };
+
+  const confirmDeleteTrack = async () => {
+    if (deleteConfirmation.trackId) {
       try {
-        await trackService.deleteTrack(trackId);
+        await trackService.deleteTrack(deleteConfirmation.trackId);
         showSuccess('Track deleted successfully.');
         loadTracks();
       } catch (error: any) {
         showError(error.message || 'Failed to delete track.');
+      } finally {
+        setDeleteConfirmation({ isOpen: false, trackId: null });
       }
     }
   };
@@ -210,20 +143,23 @@ const DashboardPage = () => {
   const handleCreateTrack = async (data: any) => {
     try {
       console.log('[DEBUG] DashboardPage - Creating track with data:', data);
-      
+
       // CreateTrackModal에서 이미 stem-job/init-start를 호출했으므로
       // 여기서는 결과를 받아서 InitProjectModal을 띄우기만 하면 됨
       if (data.track && data.stage) {
-        console.log('[DEBUG] DashboardPage - Track and stage created successfully:', {
-          trackId: data.track.id,
-          trackTitle: data.track.title,
-          stageId: data.stage.id,
-          stageTitle: data.stage.title
-        });
-        
+        console.log(
+          '[DEBUG] DashboardPage - Track and stage created successfully:',
+          {
+            trackId: data.track.id,
+            trackTitle: data.track.title,
+            stageId: data.stage.id,
+            stageTitle: data.stage.title,
+          }
+        );
+
         showSuccess('New track created successfully.');
         setIsCreating(false);
-        
+
         // 첫 번째 음악 파일을 업로드하기 위해 InitProjectModal 띄우기
         setInitProjectModal({
           isOpen: true,
@@ -233,7 +169,10 @@ const DashboardPage = () => {
           stageId: data.stage.id,
         });
       } else {
-        console.error('[ERROR] DashboardPage - Missing track or stage data:', data);
+        console.error(
+          '[ERROR] DashboardPage - Missing track or stage data:',
+          data
+        );
         showError('Failed to create track and stage');
       }
     } catch (error: any) {
@@ -264,28 +203,137 @@ const DashboardPage = () => {
   };
 
   const handleCompleteInitProject = async () => {
-    console.log('[DEBUG] DashboardPage - Init project completed, refreshing dashboard');
+    console.log(
+      '[DEBUG] DashboardPage - Init project completed, refreshing dashboard'
+    );
     handleCloseInitProjectModal();
     await loadTracks();
   };
 
+  const ProjectCard = ({
+    track,
+    isNewProject = false,
+  }: {
+    track?: Track;
+    isNewProject?: boolean;
+  }) => {
+    if (isNewProject) {
+      return (
+        <div
+          onClick={handleNewProject}
+          className='group flex aspect-square cursor-pointer flex-col items-center justify-center overflow-hidden rounded-none bg-neutral-800 shadow-lg transition-all duration-300 hover:shadow-xl'
+        >
+          <div className='rounded-none bg-white p-6 transition-colors group-hover:bg-gray-100'>
+            <Plus size={48} className='text-neutral-800' />
+          </div>
+          <h3 className='mt-4 text-xl font-semibold text-white'>New Track</h3>
+        </div>
+      );
+    }
 
+    if (!track) return null;
+
+    return (
+      <div
+        onClick={() => handleTrackClick(track.id)}
+        className='group cursor-pointer overflow-hidden  shadow-lg transition-all duration-300 hover:shadow-xl'
+      >
+        <div className='relative flex aspect-square items-center justify-center overflow-hidden bg-gradient-to-br from-purple-600 to-blue-600'>
+          {/* 기본 이미지 */}
+          <div className='absolute inset-0 flex items-center justify-center'>
+            <Headphones size={64} className='text-white opacity-60' />
+          </div>
+
+          {/* 실제 이미지 */}
+          <PresignedImage
+            trackId={track.id}
+            imageUrl={track.image_url}
+            alt={track.title}
+            className='absolute inset-0 h-full w-full border-none object-cover'
+          />
+
+          {/* 호버 시 나타나는 정보 오버레이 */}
+          <div className='absolute inset-0 flex items-start justify-start bg-black bg-opacity-80 p-4 opacity-0 transition-opacity duration-300 group-hover:opacity-100'>
+            {/* 상단 오른쪽 편집/삭제 버튼 */}
+            {filter === 'owned' && (
+              <div className='absolute right-4 top-4 flex space-x-2'>
+                <button
+                  onClick={(e) => handleEditTrack(track, e)}
+                  className='rounded-full bg-blue-600 p-2 text-white transition-colors hover:bg-blue-700'
+                >
+                  <Edit size={16} />
+                </button>
+                <button
+                  onClick={(e) => handleDeleteTrack(track.id, e)}
+                  className='rounded-full bg-red-600 p-2 text-white transition-colors hover:bg-red-700'
+                >
+                  <Trash2 size={16} />
+                </button>
+              </div>
+            )}
+
+            {/* 중앙 정보 */}
+            <div className='m-auto px-4 text-center text-white'>
+              <h2 className='mb-2 text-xl font-bold'>TITLE: {track.title}</h2>
+              {track.genre && (
+                <p className='mb-2 text-sm text-gray-300'>
+                  GENRE: {track.genre}
+                </p>
+              )}
+              {track.bpm && (
+                <p className='mb-2 text-sm text-gray-300'>BPM: {track.bpm}</p>
+              )}
+              {track.key_signature && (
+                <p className='mb-2 text-sm text-gray-300'>
+                  KEY: {track.key_signature}
+                </p>
+              )}
+              <p className='mb-2 text-xs text-gray-400'>
+                Updated:{' '}
+                {new Date(track.updated_date).toLocaleDateString('en-US')}
+              </p>
+              {track.collaborators && track.collaborators.length > 0 && (
+                <div className='flex items-center justify-center'>
+                  <Users size={14} className='mr-1 text-gray-400' />
+                  <span className='text-sm text-gray-400'>
+                    {track.collaborators.length} collaborators
+                  </span>
+                </div>
+              )}
+            </div>
+          </div>
+        </div>
+        <div className='p-4'>
+          <h3 className='mb-1 truncate text-lg font-semibold text-white'>
+            {track.title}
+          </h3>
+          <p className='truncate text-sm text-gray-400'>
+            {' '}
+            Updated {new Date(track.updated_date).toLocaleDateString('en-US')}
+          </p>
+        </div>
+      </div>
+    );
+  };
 
   const LoadingState = () => (
-    <div className="flex items-center justify-center py-20">
-      <div className="text-center">
-        <Loader2 className="h-12 w-12 animate-spin text-purple-500 mx-auto mb-4" />
-        <p className="text-gray-400">Loading tracks...</p>
+    <div className='flex items-center justify-center py-20'>
+      <div className='text-center'>
+        <Loader2 className='mx-auto mb-4 h-12 w-12 animate-spin text-purple-500' />
+        <p className='text-gray-400'>Loading tracks...</p>
       </div>
     </div>
   );
 
   const ErrorState = () => (
-    <div className="flex items-center justify-center py-20">
-      <div className="text-center">
-        <AlertCircle className="h-12 w-12 text-red-500 mx-auto mb-4" />
-        <p className="text-gray-400 mb-4">{error}</p>
-        <Button onClick={loadTracks} className="bg-purple-600 hover:bg-purple-700">
+    <div className='flex items-center justify-center py-20'>
+      <div className='text-center'>
+        <AlertCircle className='mx-auto mb-4 h-12 w-12 text-red-500' />
+        <p className='mb-4 text-gray-400'>{error}</p>
+        <Button
+          onClick={loadTracks}
+          className='bg-purple-600 hover:bg-purple-700'
+        >
           Retry
         </Button>
       </div>
@@ -293,20 +341,22 @@ const DashboardPage = () => {
   );
 
   const EmptyState = () => (
-    <div className="flex items-center justify-center py-20">
-      <div className="text-center">
-        <Headphones className="h-16 w-16 text-gray-500 mx-auto mb-4" />
-        <h3 className="text-xl font-semibold text-white mb-2">
+    <div className='flex items-center justify-center py-20'>
+      <div className='text-center'>
+        <Headphones className='mx-auto mb-4 h-16 w-16 text-gray-500' />
+        <h3 className='mb-2 text-xl font-semibold text-white'>
           {filter === 'owned' ? 'No tracks created' : 'No collaborative tracks'}
         </h3>
-        <p className="text-gray-400 mb-6">
-          {filter === 'owned' 
-            ? 'Start your first Track!' 
-            : 'Collaborate with other users to create Track!'
-          }
+        <p className='mb-6 text-gray-400'>
+          {filter === 'owned'
+            ? 'Start your first Track!'
+            : 'Collaborate with other users to create Track!'}
         </p>
         {filter === 'owned' && (
-          <Button onClick={handleNewProject} className="bg-purple-600 hover:bg-purple-700">
+          <Button
+            onClick={handleNewProject}
+            className='bg-purple-600 hover:bg-purple-700'
+          >
             Start New Track
           </Button>
         )}
@@ -314,15 +364,32 @@ const DashboardPage = () => {
     </div>
   );
 
+  if (authLoading) {
+    return (
+      <div className='flex h-screen items-center justify-center bg-gray-900'>
+        <div className='text-center'>
+          <Loader2 className='mx-auto mb-4 h-12 w-12 animate-spin text-purple-500' />
+          <p className='text-gray-400'>Loading...</p>
+        </div>
+      </div>
+    );
+  }
+
   if (!isAuthenticated || !user) {
     return null; // 리다이렉트 처리 중
   }
 
   return (
-    <div className="flex flex-col h-screen bg-gray-900">
-      {/* Header */}
-      <header className="flex-shrink-0 flex justify-between items-center p-6 border-b border-gray-800">
-        {/* <div className="flex items-center space-x-3">
+    <div
+      className='relative min-h-screen bg-cover bg-center'
+      style={{ backgroundImage: "url('/background.jpg')" }}
+    >
+      {/* 어두운 오버레이 */}
+      <div className='absolute inset-0 h-screen bg-black bg-opacity-80 flex flex-col'>
+
+        {/* Header */}
+        <header className='flex flex-shrink-0 items-center justify-between border-b border-gray-800 p-6'>
+          {/* <div className="flex items-center space-x-3">
           <div className="text-white text-2xl font-bold">Wave FLOW</div>
           <div className="flex space-x-1">
             {[...Array(8)].map((_, i) => (
@@ -330,11 +397,11 @@ const DashboardPage = () => {
             ))}
           </div>
         </div> */}
-        <Logo/>
-        
-        <div className="flex items-center space-x-4">
-          {/* 소켓 연결 상태 표시 */}
-          {/* <div className="flex items-center space-x-3">
+          <Logo />
+
+          <div className='flex items-center space-x-4'>
+            {/* 소켓 연결 상태 표시 */}
+            {/* <div className="flex items-center space-x-3">
             <div className="flex items-center space-x-2">
               {isConnected ? (
                 <div className="flex items-center space-x-1 text-green-400">
@@ -384,116 +451,125 @@ const DashboardPage = () => {
               </div>
             )}
           </div> */}
-          
-          
-          <button 
-            onClick={handleLogout}
-            className="bg-gradient-to-r from-pink-400 to-purple-500 text-white px-6 py-2 rounded-full hover:from-pink-500 hover:to-purple-600 transition-all duration-300 flex items-center space-x-2"
-          >
-            <LogOut size={16} />
-            <span>Logout</span>
-          </button>
-          <NotificationBell />
-        </div>
-      </header>
 
-      {/* Main Content */}
-      <main className="flex-1 overflow-y-auto scrollbar-hide p-6 max-w-7xl mx-auto w-full">
-        {/* Greeting */}
-        <div className="mb-12 mt-8">
-          <h1 className="text-5xl font-bold bg-clip-text text-transparent bg-gradient-to-r from-[#FF4E4E] to-[#2159C6] mb-2">
-            Hello, {user.username}!
-          </h1>
-          <p className="text-gray-400 text-lg">Creativity lives here</p>
-        </div>
+            {/* 알람 기능 */}
+            <NotificationBell />
 
-        {/* Filter Buttons */}
-        <div className="flex space-x-4 mb-8">
-          <Button 
-            onClick={() => setFilter('owned')}
-            variant={filter === 'owned' ? 'primary' : 'secondary'}
-            className="flex items-center space-x-2"
-          >
-            <span>My Tracks</span>
-          </Button>
-          <Button 
-            onClick={() => setFilter('collaborated')}
-            variant={filter === 'collaborated' ? 'primary' : 'secondary'}
-            className="flex items-center space-x-2"
-          >
-            <Users size={16} />
-            <span>Collaborative Tracks</span>
-          </Button>
-        </div>
-
-        {/* Content */}
-        {isLoading ? (
-          <LoadingState />
-        ) : error ? (
-          <ErrorState />
-        ) : tracks.length === 0 ? (
-          <EmptyState />
-        ) : (
-          <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 xl:grid-cols-4 gap-6">
-            {filter === 'owned' && (
-              <ProjectCard 
-                isNewProject 
-                filter={filter}
-                onNewProject={handleNewProject}
-                onTrackClick={handleTrackClick}
-                onEditTrack={handleEditTrack}
-                onDeleteTrack={handleDeleteTrack}
-              />
-            )}
-            {tracks.map((track) => (
-              <ProjectCard 
-                key={track.id} 
-                track={track} 
-                filter={filter}
-                onNewProject={handleNewProject}
-                onTrackClick={handleTrackClick}
-                onEditTrack={handleEditTrack}
-                onDeleteTrack={handleDeleteTrack}
-              />
-            ))}
+            <button
+              onClick={handleLogout}
+              className='flex items-center space-x-2 rounded-full bg-purple-500 px-6 py-2 text-white transition-all duration-300 hover:from-pink-500 hover:to-purple-600'
+            >
+              <LogOut size={16} />
+              <span>Logout</span>
+            </button>
           </div>
+        </header>
+
+        {/* Main Content */}
+        <main className='mx-auto w-full max-w-7xl flex-1 overflow-y-auto p-6 scrollbar-hide'>
+          {/* Greeting */}
+          <div className='mb-12 mt-8'>
+            <h1 className='group mb-2 cursor-pointer bg-gradient-to-r from-[#FF4E4E] to-[#2159C6] bg-clip-text text-5xl font-bold text-transparent transition-all duration-500 hover:from-[#FF6B6B] hover:to-[#4ECDC4] hover:drop-shadow-[0_0_20px_rgba(255,78,78,0.5)]'>
+              Hello,{user.username}!
+            </h1>
+            <p className='cursor-pointer text-lg text-gray-400 transition-all duration-500 hover:text-gray-300 hover:drop-shadow-[0_0_10px_rgba(255,255,255,0.3)]'>
+              Creativity lives here
+            </p>
+          </div>
+
+          {/* Filter Buttons */}
+          <div className="flex flex-row gap-4 justify-between">
+            <div className="flex gap-4">
+              <p className="text-white text-2xl">TRACKS</p>
+            </div>
+            {/* Filter Buttons */}
+            <div className="flex space-x-4 mb-8">
+              <Button
+                onClick={() => setFilter('owned')}
+                variant='waveflowbtn'
+                className="flex items-center space-x-2"
+              >
+                <span>OWNED</span>
+              </Button>
+              <Button
+                onClick={() => setFilter('collaborated')}
+                variant='waveflowbtn'
+                className="flex items-center space-x-2"
+              >
+                <span>COLLABORATED</span>
+              </Button>
+            </div>
+          </div>
+
+          {/* Content */}
+          {isLoading ? (
+            <LoadingState />
+          ) : error ? (
+            <ErrorState />
+          ) : tracks.length === 0 ? (
+            <EmptyState />
+          ) : (
+            <div className='grid grid-cols-1 gap-6 sm:grid-cols-2 md:grid-cols-2 lg:grid-cols-3 xl:grid-cols-4'>
+              {filter === 'owned' && <ProjectCard isNewProject />}
+              {tracks.map((track) => (
+                <ProjectCard key={track.id} track={track} />
+              ))}
+            </div>
+          )}
+        </main>
+
+        {/* Create Track Modal */}
+        {isCreating && (
+          <CreateTrackModal
+            isOpen={isCreating}
+            onClose={() => setIsCreating(false)}
+            onSubmit={handleCreateTrack}
+          />
         )}
-      </main>
 
-      {/* Create Track Modal */}
-      {isCreating && (
-        <CreateTrackModal 
-          isOpen={isCreating}
-          onClose={() => setIsCreating(false)}
-          onSubmit={handleCreateTrack}
+        {/* Edit Track Modal */}
+        {editingTrack && (  
+          <EditTrackModal
+            track={editingTrack}
+            onClose={() => setEditingTrack(null)}
+            onSubmit={handleUpdateTrack}
+          />
+        )}
+
+        {/* Init Project Modal */}
+        <InitProjectModal
+          isOpen={initProjectModal.isOpen}
+          onClose={handleCloseInitProjectModal}
+          projectId={initProjectModal.projectId}
+          projectName={initProjectModal.projectName}
+          projectDescription={initProjectModal.projectDescription}
+          stageId={initProjectModal.stageId}
+          onComplete={handleCompleteInitProject}
         />
-      )}
 
-      {/* Edit Track Modal */}
-      {editingTrack && (
-        <EditTrackModal 
-          track={editingTrack}
-          onClose={() => setEditingTrack(null)}
-          onSubmit={handleUpdateTrack}
+        {/* Confirm Deletion Modal */}
+        <ConfirmModal
+          isOpen={deleteConfirmation.isOpen}
+          title="Delete Track"
+          description="Are you sure you want to delete this track? This action cannot be undone."
+          onConfirm={confirmDeleteTrack}
+          onCancel={() => setDeleteConfirmation({ isOpen: false, trackId: null })}
         />
-      )}
-
-      {/* Init Project Modal */}
-      <InitProjectModal 
-        isOpen={initProjectModal.isOpen}
-        onClose={handleCloseInitProjectModal}
-        projectId={initProjectModal.projectId}
-        projectName={initProjectModal.projectName}
-        projectDescription={initProjectModal.projectDescription}
-        stageId={initProjectModal.stageId}
-        onComplete={handleCompleteInitProject}
-      />
+      </div>
     </div>
   );
 };
 
 // Edit Track Modal Component
-const EditTrackModal = ({ track, onClose, onSubmit }: { track: Track, onClose: () => void, onSubmit: (trackId: string, data: any) => void }) => {
+const EditTrackModal = ({
+  track,
+  onClose,
+  onSubmit,
+}: {
+  track: Track;
+  onClose: () => void;
+  onSubmit: (trackId: string, data: any) => void;
+}) => {
   const [formData, setFormData] = useState({
     title: track.title,
     description: track.description || '',
@@ -512,63 +588,87 @@ const EditTrackModal = ({ track, onClose, onSubmit }: { track: Track, onClose: (
       isOpen={!!track}
       onClose={onClose}
       animationType="scale"
-      className="bg-gray-800 rounded-lg p-6 w-full max-w-md"
+      className='w-full max-w-md rounded-lg bg-gray-800 p-6'
     >
-      <h2 className="text-xl font-bold text-white mb-4">Edit Track</h2>
-      <form onSubmit={handleSubmit} className="space-y-4">
+      <h2 className='mb-4 text-xl font-bold text-white'>Edit Track</h2>
+      <form onSubmit={handleSubmit} className='space-y-4'>
           <div>
-            <label className="block text-gray-300 text-sm mb-2">Track Name</label>
+            <label className='mb-2 block text-sm text-gray-300'>
+              Track Name
+            </label>
             <input
-              type="text"
+              type='text'
               value={formData.title}
-              onChange={(e) => setFormData({ ...formData, title: e.target.value })}
-              className="w-full bg-gray-700 text-white rounded px-3 py-2"
+              onChange={(e) =>
+                setFormData({ ...formData, title: e.target.value })
+              }
+              className='w-full rounded bg-gray-700 px-3 py-2 text-white'
               required
             />
           </div>
           <div>
-            <label className="block text-gray-300 text-sm mb-2">Description</label>
+            <label className='mb-2 block text-sm text-gray-300'>
+              Description
+            </label>
             <textarea
               value={formData.description}
-              onChange={(e) => setFormData({ ...formData, description: e.target.value })}
-              className="w-full bg-gray-700 text-white rounded px-3 py-2"
+              onChange={(e) =>
+                setFormData({ ...formData, description: e.target.value })
+              }
+              className='w-full rounded bg-gray-700 px-3 py-2 text-white'
               rows={3}
             />
           </div>
-          <div className="grid grid-cols-2 gap-4">
+          <div className='grid grid-cols-2 gap-4'>
             <div>
-              <label className="block text-gray-300 text-sm mb-2">Genre</label>
+              <label className='mb-2 block text-sm text-gray-300'>Genre</label>
               <input
-                type="text"
+                type='text'
                 value={formData.genre}
-                onChange={(e) => setFormData({ ...formData, genre: e.target.value })}
-                className="w-full bg-gray-700 text-white rounded px-3 py-2"
+                onChange={(e) =>
+                  setFormData({ ...formData, genre: e.target.value })
+                }
+                className='w-full rounded bg-gray-700 px-3 py-2 text-white'
               />
             </div>
             <div>
-              <label className="block text-gray-300 text-sm mb-2">BPM</label>
+              <label className='mb-2 block text-sm text-gray-300'>BPM</label>
               <input
-                type="text"
+                type='text'
                 value={formData.bpm}
-                onChange={(e) => setFormData({ ...formData, bpm: e.target.value })}
-                className="w-full bg-gray-700 text-white rounded px-3 py-2"
+                onChange={(e) =>
+                  setFormData({ ...formData, bpm: e.target.value })
+                }
+                className='w-full rounded bg-gray-700 px-3 py-2 text-white'
               />
             </div>
           </div>
           <div>
-            <label className="block text-gray-300 text-sm mb-2">Key Signature</label>
+            <label className='mb-2 block text-sm text-gray-300'>
+              Key Signature
+            </label>
             <input
-              type="text"
+              type='text'
               value={formData.key_signature}
-              onChange={(e) => setFormData({ ...formData, key_signature: e.target.value })}
-              className="w-full bg-gray-700 text-white rounded px-3 py-2"
+              onChange={(e) =>
+                setFormData({ ...formData, key_signature: e.target.value })
+              }
+              className='w-full rounded bg-gray-700 px-3 py-2 text-white'
             />
           </div>
-          <div className="flex space-x-3 pt-4">
-            <Button type="submit" className="flex-1 bg-purple-600 hover:bg-purple-700">
+          <div className='flex space-x-3 pt-4'>
+            <Button
+              type='submit'
+              className='flex-1 bg-purple-600 hover:bg-purple-700'
+            >
               Update
             </Button>
-            <Button type="button" onClick={onClose} variant="secondary" className="flex-1">
+            <Button
+              type='button'
+              onClick={onClose}
+              variant='secondary'
+              className='flex-1'
+            >
               Cancel
             </Button>
           </div>

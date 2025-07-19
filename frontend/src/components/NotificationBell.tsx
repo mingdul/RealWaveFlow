@@ -5,6 +5,7 @@ import { Notification } from '../types/notification';
 const NotificationBell: React.FC = () => {
   const [isOpen, setIsOpen] = useState(false);
   const [isMarkingAllRead, setIsMarkingAllRead] = useState(false);
+  const [forceUpdateKey, setForceUpdateKey] = useState(0); // 🔥 NEW: 강제 리렌더링용
   const dropdownRef = useRef<HTMLDivElement>(null);
   const { notifications, unreadCount, markAsRead, markAllRead, refreshNotifications } = useNotifications();
 
@@ -13,7 +14,8 @@ const NotificationBell: React.FC = () => {
   console.log('🔔 [NotificationBell] 📊 Current props from context:', {
     totalNotifications: notifications.length,
     unreadCount: unreadCount,
-    isOpen: isOpen
+    isOpen: isOpen,
+    forceUpdateKey: forceUpdateKey // 🔥 NEW: 강제 업데이트 키 추가
   });
 
   // 알림 상태 변경 시 로그 및 실시간 Badge 업데이트 확인
@@ -50,6 +52,32 @@ const NotificationBell: React.FC = () => {
       document.removeEventListener('mousedown', handleClickOutside);
     };
   }, []);
+
+  // 🔥 NEW: 커스텀 이벤트 리스너로 실시간 뱃지 업데이트 처리
+  useEffect(() => {
+    const handleBadgeUpdate = (event: CustomEvent) => {
+      const { unreadCount: newUnreadCount, timestamp } = event.detail;
+      
+      console.log('🔔 [NotificationBell] 📢 Received badge update event!');
+      console.log('🔔 [NotificationBell] 📊 New unread count from event:', newUnreadCount);
+      console.log('🔔 [NotificationBell] ⏰ Event timestamp:', timestamp);
+      
+      // 강제 리렌더링 트리거
+      setForceUpdateKey(prev => prev + 1);
+      
+      console.log('🔔 [NotificationBell] 🔄 Triggered force re-render, key:', forceUpdateKey + 1);
+    };
+
+    // 커스텀 이벤트 리스너 등록
+    window.addEventListener('notification-badge-update', handleBadgeUpdate as EventListener);
+    
+    console.log('🔔 [NotificationBell] 👂 Badge update event listener registered');
+
+    return () => {
+      window.removeEventListener('notification-badge-update', handleBadgeUpdate as EventListener);
+      console.log('🔔 [NotificationBell] 🔇 Badge update event listener removed');
+    };
+  }, [forceUpdateKey]);
 
   const toggleDropdown = async () => {
     console.log('🔔 [NotificationBell] 🖱️ Bell icon clicked!');
@@ -160,7 +188,7 @@ const NotificationBell: React.FC = () => {
         {unreadCount > 0 && (
           <span 
             className="absolute -top-1 -right-1 inline-flex items-center justify-center px-2 py-1 text-xs font-bold leading-none text-white transform translate-x-1/2 -translate-y-1/2 bg-red-600 rounded-full transition-all duration-200 ease-in-out"
-            key={`badge-${unreadCount}`} // key를 통한 강제 리렌더링
+            key={`badge-${unreadCount}-${forceUpdateKey}`} // 🔥 NEW: forceUpdateKey 추가로 강제 리렌더링
           >
             {unreadCount > 99 ? '99+' : unreadCount}
           </span>
@@ -169,7 +197,7 @@ const NotificationBell: React.FC = () => {
         {/* 디버그용 - 개발 중에만 표시 */}
         {import.meta.env.DEV && (
           <span className="absolute -bottom-6 -right-2 text-xs text-gray-400 bg-gray-100 px-1 rounded">
-            Debug: {unreadCount}
+            Debug: {unreadCount} (Key: {forceUpdateKey})
           </span>
         )}
       </button>
