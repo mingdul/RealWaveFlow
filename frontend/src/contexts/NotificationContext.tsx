@@ -116,6 +116,12 @@ export const NotificationProvider: React.FC<NotificationProviderProps> = ({ chil
         if (user?.id) {
           console.log('🔔 [NotificationSocket] 🚪 Requesting to join user room for user:', user.id);
           notificationSocket.emit('join_user_room', { userId: user.id });
+          
+          // 3초 후 room join 상태 확인
+          setTimeout(() => {
+            console.log('🔔 [NotificationSocket] 🔍 Checking room join status after 3 seconds...');
+            notificationSocket.emit('check_room_status', { userId: user.id });
+          }, 3000);
         } else {
           console.error('🔔 [NotificationSocket] ❌ No user ID available for room join!');
         }
@@ -155,8 +161,42 @@ export const NotificationProvider: React.FC<NotificationProviderProps> = ({ chil
         // showToast('error', `알림 룸 연결에 실패했습니다: ${data.message}`, 3000);
       });
 
-      // 🔥 REMOVED: notification 이벤트 핸들러는 별도 useEffect에서 처리하므로 제거
-      // 이제 소켓 이벤트는 최신 addNotification 함수를 참조하는 별도 useEffect에서 처리됩니다
+      // 🔥 NEW: notification 이벤트 핸들러를 여기서 바로 등록
+      notificationSocket.on('notification', (notification: Notification) => {
+        console.log('🔔 [NotificationSocket] 📢 🆕 NEW NOTIFICATION RECEIVED VIA WEBSOCKET!');
+        console.log('🔔 [NotificationSocket] 📋 Received notification details:', {
+          id: notification.id,
+          message: notification.message,
+          type: notification.type,
+          isRead: notification.isRead,
+          userId: notification.userId,
+          createdAt: notification.createdAt
+        });
+        
+        // 🔥 함수형 업데이트로 closure 문제 해결
+        setNotifications(prevNotifications => {
+          console.log('🔔 [NotificationSocket] 📊 BEFORE adding - Current count:', prevNotifications.length);
+          console.log('🔔 [NotificationSocket] 📊 BEFORE adding - Current unread:', prevNotifications.filter(n => !n.isRead).length);
+          
+          // 중복 확인
+          const exists = prevNotifications.some(n => n.id === notification.id);
+          if (exists) {
+            console.log('🔔 [NotificationSocket] ⚠️ Duplicate notification ignored:', notification.id);
+            return prevNotifications;
+          }
+          
+          // 새 알림 추가
+          const newNotifications = [notification, ...prevNotifications];
+          const newUnreadCount = newNotifications.filter(n => !n.isRead).length;
+          
+          console.log('🔔 [NotificationSocket] ✅ NOTIFICATION ADDED!');
+          console.log('🔔 [NotificationSocket] 📊 AFTER adding - New count:', newNotifications.length);
+          console.log('🔔 [NotificationSocket] 📊 AFTER adding - New unread:', newUnreadCount);
+          console.log('🔔 [NotificationSocket] 🔔 Badge should show:', newUnreadCount);
+          
+          return newNotifications;
+        });
+      });
 
       // 연결 오류
       notificationSocket.on('connect_error', (error) => {
@@ -233,58 +273,6 @@ export const NotificationProvider: React.FC<NotificationProviderProps> = ({ chil
     });
   }, []); // dependency 제거하여 함수가 재생성되지 않도록 함
 
-  // 소켓 이벤트 핸들러 등록 (한 번만, dependency 없이)
-  useEffect(() => {
-    if (socket && user) {
-      console.log('🔔 [NotificationProvider] 🔄 Registering socket event handlers');
-      
-      // 기존 이벤트 핸들러 제거
-      socket.off('notification');
-      
-      // 새로운 이벤트 핸들러 등록 - 함수형 업데이트 사용으로 closure 문제 해결
-      socket.on('notification', (notification: Notification) => {
-        console.log('🔔 [NotificationSocket] 📢 🆕 NEW NOTIFICATION RECEIVED VIA WEBSOCKET!');
-        console.log('🔔 [NotificationSocket] 📋 Received notification details:', {
-          id: notification.id,
-          message: notification.message,
-          type: notification.type,
-          isRead: notification.isRead,
-          userId: notification.userId,
-          createdAt: notification.createdAt
-        });
-        
-        // 🔥 함수형 업데이트로 closure 문제 해결
-        setNotifications(prevNotifications => {
-          console.log('🔔 [NotificationSocket] 📊 BEFORE adding - Current count:', prevNotifications.length);
-          console.log('🔔 [NotificationSocket] 📊 BEFORE adding - Current unread:', prevNotifications.filter(n => !n.isRead).length);
-          
-          // 중복 확인
-          const exists = prevNotifications.some(n => n.id === notification.id);
-          if (exists) {
-            console.log('🔔 [NotificationSocket] ⚠️ Duplicate notification ignored:', notification.id);
-            return prevNotifications;
-          }
-          
-          // 새 알림 추가
-          const newNotifications = [notification, ...prevNotifications];
-          const newUnreadCount = newNotifications.filter(n => !n.isRead).length;
-          
-          console.log('🔔 [NotificationSocket] ✅ NOTIFICATION ADDED!');
-          console.log('🔔 [NotificationSocket] 📊 AFTER adding - New count:', newNotifications.length);
-          console.log('🔔 [NotificationSocket] 📊 AFTER adding - New unread:', newUnreadCount);
-          console.log('🔔 [NotificationSocket] 🔔 Badge should show:', newUnreadCount);
-          
-          return newNotifications;
-        });
-      });
-    }
-    
-    return () => {
-      if (socket) {
-        socket.off('notification');
-      }
-    };
-  }, [socket, user]); // addNotification dependency 제거
 
   const markAsRead = async (notificationId: string) => {
     try {
@@ -407,13 +395,13 @@ export const NotificationProvider: React.FC<NotificationProviderProps> = ({ chil
       const fakeNotification: Notification = {
         id: `socket-test-${Date.now()}`,
         userId: user?.id || 'test-user',
-        type: 'version_created',
-        message: `🧪 소켓 알림 시뮬레이션 - ${new Date().toLocaleTimeString()}`,
+        type: 'upstream_created',
+        message: `🧪 실시간 테스트 알림 - ${new Date().toLocaleTimeString()}`,
         data: { 
           trackId: 'test-track-123',
           stageId: 'test-stage-456',
           trackName: '테스트 트랙',
-          stageVersion: '버전 1.0'
+          upstreamTitle: '테스트 업스트림'
         },
         isRead: false,
         createdAt: new Date().toISOString()
@@ -422,8 +410,58 @@ export const NotificationProvider: React.FC<NotificationProviderProps> = ({ chil
       console.log('🧪 [DEBUG] Simulating socket notification event...');
       console.log('🧪 [DEBUG] Fake notification data:', fakeNotification);
       
-      // 직접 addNotification 호출 (간소화)
-      addNotification(fakeNotification);
+      // 소켓 이벤트와 동일한 방식으로 처리
+      setNotifications(prevNotifications => {
+        console.log('🧪 [DEBUG] BEFORE adding test notification - Count:', prevNotifications.length);
+        console.log('🧪 [DEBUG] BEFORE adding test notification - Unread:', prevNotifications.filter(n => !n.isRead).length);
+        
+        const newNotifications = [fakeNotification, ...prevNotifications];
+        const newUnreadCount = newNotifications.filter(n => !n.isRead).length;
+        
+        console.log('🧪 [DEBUG] ✅ TEST NOTIFICATION ADDED!');
+        console.log('🧪 [DEBUG] AFTER adding test notification - Count:', newNotifications.length);
+        console.log('🧪 [DEBUG] AFTER adding test notification - Unread:', newUnreadCount);
+        console.log('🧪 [DEBUG] 🔔 Badge should now show:', newUnreadCount);
+        
+        return newNotifications;
+      });
+    }
+  };
+
+  // 🔧 DEBUG: 소켓 연결 상태 강화된 체크
+  const debugSocketStatus = () => {
+    if (import.meta.env.DEV) {
+      console.log('🔧 [DEBUG] ===== SOCKET STATUS DETAILED CHECK =====');
+      console.log('🔧 [DEBUG] Socket exists:', !!socket);
+      console.log('🔧 [DEBUG] Socket connected:', socket?.connected);
+      console.log('🔧 [DEBUG] Socket ID:', socket?.id);
+      console.log('🔧 [DEBUG] Socket transport:', socket?.io?.engine?.transport?.name);
+      console.log('🔧 [DEBUG] User ID:', user?.id);
+      console.log('🔧 [DEBUG] User email:', user?.email);
+      console.log('🔧 [DEBUG] Current notifications count:', notifications.length);
+      console.log('🔧 [DEBUG] Current unread count:', unreadCount);
+      console.log('🔧 [DEBUG] Socket event listeners:');
+      if (socket) {
+        console.log('🔧 [DEBUG]   - notification:', socket.hasListeners('notification'));
+        console.log('🔧 [DEBUG]   - connect:', socket.hasListeners('connect'));
+        console.log('🔧 [DEBUG]   - disconnect:', socket.hasListeners('disconnect'));
+        console.log('🔧 [DEBUG]   - join_user_room_success:', socket.hasListeners('join_user_room_success'));
+        console.log('🔧 [DEBUG]   - join_user_room_error:', socket.hasListeners('join_user_room_error'));
+      }
+      console.log('🔧 [DEBUG] ==========================================');
+      
+      if (socket && user?.id) {
+        console.log('🔧 [DEBUG] Testing room join...');
+        socket.emit('join_user_room', { userId: user.id });
+        
+        // 강제로 테스트 이벤트 emit
+        console.log('🔧 [DEBUG] Emitting test_notification...');
+        socket.emit('test_notification', {
+          userId: user.id,
+          message: 'Debug test from client',
+          timestamp: new Date().toISOString()
+        });
+      }
     }
   };
 
@@ -469,22 +507,6 @@ export const NotificationProvider: React.FC<NotificationProviderProps> = ({ chil
     }
   };
 
-  const debugSocketStatus = () => {
-    if (import.meta.env.DEV) {
-      console.log('🔧 [DEBUG] Socket Status Check:');
-      console.log('  - Socket exists:', !!socket);
-      console.log('  - Socket connected:', socket?.connected);
-      console.log('  - Socket ID:', socket?.id);
-      console.log('  - User ID:', user?.id);
-      console.log('  - Current notifications count:', notifications.length);
-      console.log('  - Current unread count:', unreadCount);
-      
-      if (socket && user?.id) {
-        console.log('🔧 [DEBUG] Testing room join...');
-        socket.emit('join_user_room', { userId: user.id });
-      }
-    }
-  };
 
   // 🔧 DEBUG: 개발 환경에서 전역 접근 가능하도록 설정
   useEffect(() => {
