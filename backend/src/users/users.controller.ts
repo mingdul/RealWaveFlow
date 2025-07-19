@@ -66,6 +66,8 @@ export class UsersController {
   @ApiResponse({ status: 404, description: '사용자를 찾을 수 없음' })
   async updateMe(@Req() req: Request, @Body(ValidationPipe) updateUserDto: UpdateUserDto) {
     const user = req.user as any;
+    console.log('🔍 [PUT /users/me] User ID:', user.id);
+    console.log('🔍 [PUT /users/me] Received updateUserDto:', updateUserDto);
     const updatedUser = await this.usersService.updateUser(user.id, updateUserDto);
     return {
       success: true,

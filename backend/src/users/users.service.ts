@@ -101,6 +101,9 @@ async updateUser(
   const updateData: Partial<User> = {};
   if (updateUserDto.username  !== undefined) updateData.username  = updateUserDto.username;
   if (updateUserDto.image_url !== undefined) updateData.image_url = updateUserDto.image_url;
+  
+  console.log('🔧 [updateUser] Input DTO:', updateUserDto);
+  console.log('🔧 [updateUser] Prepared updateData:', updateData);
 
   // 변경사항이 없으면 예외 처리
   if (Object.keys(updateData).length === 0) {
@@ -109,12 +112,14 @@ async updateUser(
 
   // ★ criteria를 명시적으로 객체로 전달
   await this.userRepository.update(
-    { id: userId },    
-    { image_url : updateUserDto.image_url, username : updateUserDto.username }
+    { id: userId },
+    updateData
   );
+  console.log('✅ [updateUser] Database update completed');
 
   // 업데이트된 유저 반환
   const updated = await this.findById(userId);
+  console.log('📄 [updateUser] Updated user image_url:', updated?.image_url);
   if (!updated) {
     throw new NotFoundException('업데이트된 사용자 정보를 찾을 수 없습니다.');
   }
@@ -162,7 +167,7 @@ async updateUser(
     // 6) 업데이트 (criteria를 { id: userId } 로 명시)
     await this.userRepository.update(
       { id: userId },
-      { image_url : updateUserDto.image_url, username : updateUserDto.username }
+      updateData
     );
   
     // 7) 결과 리턴

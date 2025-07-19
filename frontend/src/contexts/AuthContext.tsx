@@ -122,35 +122,33 @@ export const AuthProvider: React.FC<{ children: ReactNode }> = ({ children }) =>
     
     dispatch({ type: 'AUTH_START' });
     try {
-      let imageUrl: string | undefined;
+      let imagePath: string | undefined;
       
-      // 프로필 이미지 업로드 처리 (기존 multipart upload API 활용)
+      // 프로필 이미지 업로드 처리 (s3UploadService 방식 사용)
       if (profileData.profileImage) {
-        imageUrl = await authService.uploadProfileImage(profileData.profileImage);
-        console.log('🖼️ [updateProfile] Image uploaded, URL:', imageUrl);
+        imagePath = await authService.uploadProfileImage(profileData.profileImage);
+        console.log('🖼️ [updateProfile] Image uploaded, S3 path:', imagePath);
       }
       
-      // 사용자 정보 업데이트 (이름과 이미지 URL)
+      // 사용자 정보 업데이트를 위한 데이터 준비
       const updateData: any = {};
+      
+      // 이름 변경 (username 필드 사용)
       if (profileData.name && profileData.name !== state.user.username) {
-        updateData.name = profileData.name;
-      }
-      if (imageUrl) {
-        updateData.image_url = imageUrl;
+        updateData.username = profileData.name; // ← 필드명 수정: name → username
       }
       
-      // 업데이트할 데이터가 있는 경우 API 호출
+      // 이미지 S3 path 설정 (URL이 아닌 S3 key)
+      if (imagePath) {
+        updateData.image_url = imagePath;
+        console.log('📁 [updateProfile] Setting image_url to S3 path:', imagePath);
+      }
+      
+      // 단일 API 호출로 통합 처리
       if (Object.keys(updateData).length > 0) {
-        if (updateData.name) {
-          await authService.updateUserName(state.user.id, updateData.name);
-        }
-        
-        // 이미지 URL 업데이트는 별도 API 호출 (PUT /users/me 사용)
-        if (updateData.image_url) {
-          console.log('🔄 [updateProfile] Updating image_url via PUT /users/me:', updateData.image_url);
-          const response = await apiClient.put('/users/me', { image_url: updateData.image_url }, { withCredentials: true });
-          console.log('✅ [updateProfile] PUT /users/me response:', response.data);
-        }
+        console.log('🔄 [updateProfile] Updating profile via PUT /users/me:', updateData);
+        const response = await apiClient.put('/users/me', updateData, { withCredentials: true });
+        console.log('✅ [updateProfile] PUT /users/me response:', response.data);
       }
       
       // 업데이트된 사용자 정보 가져오기

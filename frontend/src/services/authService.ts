@@ -119,6 +119,7 @@ class AuthService {
 
   /**
    * 프로필 이미지 업로드 (s3UploadService.uploadImage 방식 사용)
+   * @returns S3 key(path) - URL이 아닌 S3 path만 반환
    */
   async uploadProfileImage(imageFile: File): Promise<string> {
     try {
@@ -146,7 +147,7 @@ class AuthService {
       console.log('🔗 [uploadProfileImage] Upload URL obtained');
 
       // XMLHttpRequest를 사용한 S3 직접 업로드 (s3UploadService 방식과 동일)
-      await new Promise<string>((resolve, reject) => {
+      await new Promise<void>((resolve, reject) => {
         const xhr = new XMLHttpRequest();
 
         xhr.upload.onprogress = (event) => {
@@ -158,11 +159,8 @@ class AuthService {
 
         xhr.onload = () => {
           if (xhr.status >= 200 && xhr.status < 300) {
-            // presigned URL에서 쿼리 파라미터 제거하여 실제 S3 URL 생성
-            const cleanUrl = uploadUrl.split('?')[0];
             console.log('✅ [uploadProfileImage] Upload completed successfully');
-            console.log('🔗 [uploadProfileImage] Final image URL:', cleanUrl);
-            resolve(cleanUrl);
+            resolve();
           } else {
             reject(new Error(`S3 업로드 실패: HTTP ${xhr.status}`));
           }
@@ -177,6 +175,8 @@ class AuthService {
         xhr.send(imageFile);
       });
 
+      // ⭐ S3 URL이 아닌 S3 key(path)만 반환
+      console.log('📁 [uploadProfileImage] Returning S3 key (path):', key);
       return key;
 
     } catch (error: any) {
