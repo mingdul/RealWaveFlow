@@ -115,7 +115,7 @@ const VersionTimeline: React.FC<{
         <div className="absolute left-4 top-0 bottom-0 w-0.5 bg-gradient-to-b from-amber-400 via-orange-500 to-amber-600"></div>
         
         <div className="space-y-6">
-          {sortedStages.map((stage, index) => (
+          {sortedStages.map((stage, _index) => (
             <div key={stage.id} className="relative flex items-start">
               {/* 타임라인 노드 */}
               <div 
