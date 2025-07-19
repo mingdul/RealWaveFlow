@@ -14,6 +14,7 @@ import tapeRejected from '../assets/rejectedTape.png';
 import TrackHeader from '../components/TrackHeader';
 import { useNavigate } from 'react-router-dom';
 import { useToast } from '../contexts/ToastContext';
+import PresignedImage from '../components/PresignedImage';
 
 const StagePage: React.FC = () => {
   const { trackId, stageId } = useParams<{ trackId: string; stageId: string }>();
@@ -167,7 +168,11 @@ const StagePage: React.FC = () => {
   }) => {
     const [isHovered, setIsHovered] = useState(false);
 
-    const status = upstream.status?.toUpperCase() as 'WAITING' | 'REJECTED' | 'APPROVED';
+    // ACTIVE를 WAITING으로 표시
+    let status = upstream.status?.toUpperCase() as 'WAITING' | 'REJECTED' | 'APPROVED' | 'ACTIVE';
+    if (status === 'ACTIVE') {
+      status = 'WAITING';
+    }
 
     console.log('[DEBUG] Upstream status:', upstream.status, 'Normalized:', status);
 
@@ -350,56 +355,29 @@ const StagePage: React.FC = () => {
 
       <main className='relative px-8 pb-8 pt-6'>
         {/* Stage Header */}
-        {/* <div className='mb-12'>
-          <div className="flex items-center gap-4 mb-8">
-            <div className="w-16 h-16 bg-gradient-to-br from-purple-600 to-blue-600 rounded-2xl flex items-center justify-center shadow-lg">
-              <Music className="w-8 h-8 text-white" />
-            </div>
-            <div>
-              <h1 className='text-4xl font-bold bg-gradient-to-r from-white to-gray-300 bg-clip-text text-transparent'>
-                {stage.title}
-              </h1>
-              <div className="flex items-center gap-3 mt-2">
-                <span className="px-3 py-1 bg-gradient-to-r from-purple-600 to-purple-700 text-white text-sm font-semibold rounded-full">
-                  V{stage.version}
-                </span>
-                <span className="text-gray-400 text-sm">Stage</span>
-              </div>
-            </div>
-          </div>
-        </div> */}
-
         <div className='mb-12'>
-          <div className="flex items-center gap-4 mb-4">
-            <div className="w-16 h-16 bg-gradient-to-br from-purple-600 to-blue-600 rounded-2xl flex items-center justify-center shadow-lg overflow-hidden">
-              {track?.image_url ? (
-                <>
-                  <img 
-                    src={track.image_url} 
-                    alt={`${track.title} album cover`}
-                    className="w-full h-full object-cover"
-                    onLoad={() => console.log('✅ Track image loaded successfully:', track.image_url)}
-                    onError={(e) => {
-                      console.log('❌ Track image failed to load:', track.image_url);
-                      // 이미지 로드 실패 시 기본 아이콘 표시
-                      const target = e.target as HTMLImageElement;
-                      target.style.display = 'none';
-                      target.nextElementSibling?.classList.remove('hidden');
-                    }}
-                  />
-                  <Music className="w-8 h-8 text-white hidden" />
-                </>
+          <div className="flex items-start gap-6 mb-6">
+            <div className="w-20 h-20 bg-gradient-to-br from-purple-600 to-blue-600 rounded-2xl flex items-center justify-center shadow-lg overflow-hidden flex-shrink-0">
+              {track ? (
+                <PresignedImage
+                  trackId={track.id}
+                  imageUrl={track.image_url}
+                  alt={`${track.title} album cover`}
+                  className="w-full h-full object-cover"
+                />
               ) : (
-                <Music className="w-8 h-8 text-white" />
+                <Music className="w-10 h-10 text-white" />
               )}
             </div>
-            <div>
-              <h1 className='text-3xl font-bold text-white'>
+            <div className="flex-1">
+              <h1 className='text-4xl font-bold text-white mb-3'>
                 {track?.title || 'Unknown Track'}
               </h1>
-              <div className="flex items-center gap-3 mt-1">
-                <span className="text-sm text-gray-400">
-                  Working on a new version {stage.version} <br />
+              <div className="space-y-2">
+                <p className="text-lg text-gray-300 font-medium">
+                  Working on a new version {stage.version}
+                </p>
+                <p className="text-sm text-gray-400">
                   {stage.created_at ? new Date(stage.created_at).toLocaleString('ko-KR', {
                     month: '2-digit',
                     day: '2-digit',
@@ -407,7 +385,12 @@ const StagePage: React.FC = () => {
                     minute: '2-digit',
                     hour12: false
                   }) : ''}
-                </span>
+                </p>
+                {stage.description && (
+                  <p className="text-xl text-gray-200 leading-relaxed mt-4">
+                    {stage.description}
+                  </p>
+                )}
               </div>
             </div>
           </div>
@@ -419,145 +402,6 @@ const StagePage: React.FC = () => {
           )}
         </div>
 
-
-        {/* Stage Info Cards Grid */}
-        <div className='grid grid-cols-1 lg:grid-cols-2 gap-8 mb-12'>
-          {/* Stage Description Card */}
-          <div className='group relative overflow-hidden rounded-3xl bg-gradient-to-br from-gray-800/90 via-gray-700/80 to-gray-800/90 p-8 shadow-2xl border border-gray-600/30 backdrop-blur-sm hover:border-purple-500/50 transition-all duration-500'>
-            {/* Background Pattern */}
-            <div className="absolute inset-0 opacity-5">
-              <div className="absolute top-0 left-0 w-full h-full bg-gradient-to-br from-purple-500 to-blue-500"></div>
-              <div className="absolute top-4 right-4 w-32 h-32 bg-gradient-to-br from-purple-400 to-blue-400 rounded-full blur-3xl"></div>
-            </div>
-
-            {/* Content */}
-            <div className='relative z-10'>
-              <div className='flex items-start gap-6 mb-6'>
-                <div className='flex-shrink-0'>
-                  <div className='w-16 h-16 bg-gradient-to-br from-blue-600 to-purple-600 rounded-2xl flex items-center justify-center shadow-lg group-hover:scale-110 transition-transform duration-300'>
-                    <svg className='w-8 h-8 text-white' fill='none' stroke='currentColor' viewBox='0 0 24 24'>
-                      <path strokeLinecap='round' strokeLinejoin='round' strokeWidth={2} d='M9 12h6m-6 4h6m2 5H7a2 2 0 01-2-2V5a2 2 0 012-2h5.586a1 1 0 01.707.293l5.414 5.414a1 1 0 01.293.707V19a2 2 0 01-2 2z' />
-                    </svg>
-                  </div>
-                </div>
-                <div className='flex-1'>
-                  <h4 className='text-2xl font-bold text-white mb-3 group-hover:text-purple-300 transition-colors duration-300'>Stage Description</h4>
-                  <div className="w-16 h-1 bg-gradient-to-r from-purple-500 to-blue-500 rounded-full mb-4"></div>
-                </div>
-              </div>
-              <div className='bg-gray-900/50 rounded-2xl p-6 border border-gray-700/50 backdrop-blur-sm'>
-                <p className='text-gray-200 leading-relaxed text-lg font-medium'>{stage.description || 'No description provided for this stage.'}</p>
-              </div>
-            </div>
-          </div>
-
-          {/* Stage Reviewers Card */}
-          <div className='group relative overflow-hidden rounded-3xl bg-gradient-to-br from-purple-900/80 via-blue-900/60 to-purple-900/80 p-8 shadow-2xl border border-purple-500/30 backdrop-blur-sm hover:border-purple-400/60 transition-all duration-500'>
-            {/* Background Pattern */}
-            <div className="absolute inset-0 opacity-10">
-              <div className="absolute top-0 left-0 w-full h-full bg-gradient-to-br from-purple-500 to-blue-500"></div>
-              <div className="absolute bottom-4 left-4 w-40 h-40 bg-gradient-to-br from-blue-400 to-purple-400 rounded-full blur-3xl"></div>
-            </div>
-
-            {/* Content */}
-            <div className='relative z-10'>
-              <div className='flex items-start justify-between mb-6'>
-                <div className='flex items-center gap-4'>
-                  <div className='w-16 h-16 bg-gradient-to-br from-blue-600 to-purple-600 rounded-2xl flex items-center justify-center shadow-lg group-hover:scale-110 transition-transform duration-300'>
-                    <Users className="w-8 h-8 text-white" />
-                  </div>
-                  <div>
-                    <h4 className='text-2xl font-bold text-white mb-2 group-hover:text-purple-300 transition-colors duration-300'>Stage Reviewers</h4>
-                    <p className='text-gray-300 text-sm font-medium'>Collaborative review team</p>
-                    <div className="w-16 h-1 bg-gradient-to-r from-purple-500 to-blue-500 rounded-full mt-3"></div>
-                  </div>
-                </div>
-
-                {/* Refresh Button */}
-                <button
-                  onClick={() => stageId && fetchReviewers(stageId)}
-                  disabled={reviewersLoading}
-                  className='p-3 rounded-xl bg-gray-800/50 text-white hover:bg-gray-700/50 disabled:bg-gray-900/50 disabled:cursor-not-allowed transition-all duration-300 border border-gray-600/50 hover:border-purple-500/50 hover:scale-110'
-                  title="Refresh Reviewers"
-                >
-                  <svg
-                    className={`w-5 h-5 ${reviewersLoading ? 'animate-spin' : ''}`}
-                    fill='none'
-                    stroke='currentColor'
-                    viewBox='0 0 24 24'
-                  >
-                    <path strokeLinecap='round' strokeLinejoin='round' strokeWidth={2} d='M4 4v5h.582m15.356 2A8.001 8.001 0 004.582 9m0 0H9m11 11v-5h-.581m0 0a8.003 8.003 0 01-15.357-2m15.357 2H15' />
-                  </svg>
-                </button>
-              </div>
-
-              {/* Reviewers Display */}
-              <div className='bg-gray-900/50 rounded-2xl p-6 border border-gray-700/50 backdrop-blur-sm'>
-                <div className='flex flex-wrap gap-3 justify-center'>
-                  {reviewersLoading ? (
-                    <div className="flex items-center gap-3 text-purple-300">
-                      <div className="w-12 h-12 border-4 border-purple-500/30 border-t-purple-500 rounded-full animate-spin"></div>
-                      <span className="text-sm font-medium">Loading reviewers...</span>
-                    </div>
-                  ) : reviewersError ? (
-                    <div className="flex items-center gap-3 text-red-400">
-                      <svg className='w-6 h-6' fill='none' stroke='currentColor' viewBox='0 0 24 24'>
-                        <path strokeLinecap='round' strokeLinejoin='round' strokeWidth={2} d='M12 9v2m0 4h.01m-6.938 4h13.856c1.54 0 2.502-1.667 1.732-2.5L13.732 4c-.77-.833-1.732-.833-2.464 0L4.35 16.5c-.77.833.192 2.5 1.732 2.5z' />
-                      </svg>
-                      <span className="text-sm font-medium">Failed to load reviewers</span>
-                    </div>
-                  ) : reviewers && reviewers.length > 0 ? (
-                    <>
-                      {(showAllReviewers ? reviewers : reviewers.slice(0, MAX_DISPLAYED_REVIEWERS)).map((reviewer, _index) => (
-                        <div key={reviewer.id} className='relative group/reviewer'>
-                          <div className='h-12 w-12 rounded-full border-3 border-white bg-gradient-to-br from-purple-500 to-blue-500 flex items-center justify-center text-white font-bold text-lg shadow-lg hover:scale-110 transition-all duration-300 ring-2 ring-purple-500/50 group-hover/reviewer:ring-purple-300'>
-                            {reviewer.user?.username?.charAt(0).toUpperCase() || 'U'}
-                          </div>
-                          <div className='absolute -top-12 left-1/2 transform -translate-x-1/2 bg-gray-800 text-white text-xs px-3 py-2 rounded-lg opacity-0 group-hover/reviewer:opacity-100 transition-all duration-300 whitespace-nowrap z-10 border border-gray-600 shadow-lg'>
-                            {reviewer.user?.username || 'Unknown User'}
-                            <div className="absolute top-full left-1/2 transform -translate-x-1/2 w-0 h-0 border-l-4 border-r-4 border-t-4 border-transparent border-t-gray-800"></div>
-                          </div>
-                        </div>
-                      ))}
-                      {reviewers.length > MAX_DISPLAYED_REVIEWERS && (
-                        <button
-                          onClick={() => setShowAllReviewers(!showAllReviewers)}
-                          className='h-12 w-12 rounded-full border-3 border-white bg-gradient-to-br from-gray-600 to-gray-700 hover:from-gray-500 hover:to-gray-600 flex items-center justify-center text-white font-bold text-sm shadow-lg hover:scale-110 transition-all duration-300'
-                          title={showAllReviewers ? 'Show Less' : `Show ${reviewers.length - MAX_DISPLAYED_REVIEWERS} more`}
-                        >
-                          {showAllReviewers ? (
-                            <svg className='w-5 h-5' fill='none' stroke='currentColor' viewBox='0 0 24 24'>
-                              <path strokeLinecap='round' strokeLinejoin='round' strokeWidth={2} d='M19 9l-7 7-7-7' />
-                            </svg>
-                          ) : (
-                            <span className='text-sm'>+{reviewers.length - MAX_DISPLAYED_REVIEWERS}</span>
-                          )}
-                        </button>
-                      )}
-                    </>
-                  ) : (
-                    <div className='flex items-center gap-4 text-gray-400'>
-                      <div className='flex gap-2'>
-                        <div className='h-12 w-12 rounded-full border-3 border-dashed border-gray-500 bg-gray-700/50 flex items-center justify-center'>
-                          <svg className='w-5 h-5' fill='none' stroke='currentColor' viewBox='0 0 24 24'>
-                            <path strokeLinecap='round' strokeLinejoin='round' strokeWidth={2} d='M12 6v6m0 0v6m0-6h6m-6 0H6' />
-                          </svg>
-                        </div>
-                        <div className='h-12 w-12 rounded-full border-3 border-dashed border-gray-500 bg-gray-700/50 flex items-center justify-center'>
-                          <svg className='w-5 h-5' fill='none' stroke='currentColor' viewBox='0 0 24 24'>
-                            <path strokeLinecap='round' strokeLinejoin='round' strokeWidth={2} d='M12 6v6m0 0v6m0-6h6m-6 0H6' />
-                          </svg>
-                        </div>
-                      </div>
-                      <span className="text-sm font-medium">No reviewers assigned</span>
-                    </div>
-                  )}
-                </div>
-              </div>
-            </div>
-          </div>
-        </div>
-
         {/* Stem Sets Section */}
         <div className='mb-8'>
           <div className='mb-6 flex items-center justify-between'>
@@ -567,7 +411,7 @@ const StagePage: React.FC = () => {
               </div>
               <div>
                 <h3 className='text-2xl font-bold text-white'>STEM SET LIST</h3>
-                <p className='text-gray-400 text-sm'>Upload and manage your stem sets</p>
+                <p className='text-gray-400 text-sm'>Submit your work and get feedback from your team</p>
               </div>
             </div>
 
@@ -647,9 +491,6 @@ const StagePage: React.FC = () => {
           }}
         />
       )}
-
-      {/* 오디오 엘리먼트 */}
-      {/* The audio element is removed as per the edit hint. */}
 
       {/* Custom CSS for slider */}
       <style>{`
