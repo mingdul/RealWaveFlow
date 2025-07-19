@@ -18,7 +18,6 @@ import StemSetReviewPage from './pages/StemSetReviewPage.tsx';
 import InvitePage from './pages/InvitePage.tsx';
 import StemReview from './pages/StemReview.tsx';
 import TrackPage3 from './pages/TrackPage3.tsx';
-import TrackPageJim from './pages/trackpagejim.tsx';
 import TrackPageCopy from './pages/TrackPage copy.tsx';
 
 
@@ -52,7 +51,6 @@ const App = () => {
               <Route path="*" element={<Notfound />} />
               <Route path="/stemreview/:upstreamId" element={<StemReview />} />
               <Route path="/track/:trackId" element={<TrackPage />} />
-              <Route path="/trackjimin/:trackId" element={<TrackPageJim />} />
               <Route path="/track3/:trackId" element={<TrackPage3 />} />
               <Route path="/trackcopy/:trackId" element={<TrackPageCopy />} />
 
