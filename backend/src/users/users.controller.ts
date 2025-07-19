@@ -67,9 +67,14 @@ export class UsersController {
   async updateMe(@Req() req: Request, @Body(ValidationPipe) updateUserDto: UpdateUserDto) {
     const user = req.user as any;
     console.log('🔍 [PUT /users/me] User ID:', user.id);
+    console.log('🔍 [PUT /users/me] Raw request body:', req.body);
     console.log('🔍 [PUT /users/me] Received updateUserDto:', updateUserDto);
+    console.log('🔍 [PUT /users/me] updateUserDto.image_url type:', typeof updateUserDto.image_url);
+    console.log('🔍 [PUT /users/me] updateUserDto.image_url value:', updateUserDto.image_url);
+    
     const updatedUser = await this.usersService.updateUser(user.id, updateUserDto);
-    return {
+    
+    const responseData = {
       success: true,
       message: '사용자 정보가 성공적으로 업데이트되었습니다.',
       data: {
@@ -81,6 +86,9 @@ export class UsersController {
         },
       },
     };
+    
+    console.log('📤 [PUT /users/me] Response data:', responseData);
+    return responseData;
   }
 
   @Patch(':id')

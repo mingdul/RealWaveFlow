@@ -102,8 +102,11 @@ async updateUser(
   if (updateUserDto.username  !== undefined) updateData.username  = updateUserDto.username;
   if (updateUserDto.image_url !== undefined) updateData.image_url = updateUserDto.image_url;
   
-  console.log('🔧 [updateUser] Input DTO:', updateUserDto);
-  console.log('🔧 [updateUser] Prepared updateData:', updateData);
+  console.log('🔧 [updateUser] Input DTO:', JSON.stringify(updateUserDto, null, 2));
+  console.log('🔧 [updateUser] updateUserDto.image_url:', updateUserDto.image_url);
+  console.log('🔧 [updateUser] updateUserDto.image_url type:', typeof updateUserDto.image_url);
+  console.log('🔧 [updateUser] updateUserDto.image_url undefined check:', updateUserDto.image_url !== undefined);
+  console.log('🔧 [updateUser] Prepared updateData:', JSON.stringify(updateData, null, 2));
 
   // 변경사항이 없으면 예외 처리
   if (Object.keys(updateData).length === 0) {
