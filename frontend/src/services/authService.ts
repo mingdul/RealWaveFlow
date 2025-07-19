@@ -177,7 +177,7 @@ class AuthService {
         xhr.send(imageFile);
       });
 
-      return imageUrl;
+      return key;
 
     } catch (error: any) {
       console.error('❌ [uploadProfileImage] Profile image upload error:', error);
