@@ -28,53 +28,9 @@ const TrackHeaderCopy: React.FC<TrackHeaderCopyProps> = ({
   const [forceRefreshKey, setForceRefreshKey] = useState(0);
   const [lastNotificationTime, setLastNotificationTime] = useState<string>('');
 
-  console.log('🏠 [TrackHeader] 🎭 COMPONENT RENDERED');
-  console.log('🏠 [TrackHeader] 📊 Current state:', {
-    user: user?.email,
-    notificationsCount: notifications.length,
-    unreadCount: unreadCount,
-    forceRefreshKey: forceRefreshKey,
-    lastNotificationTime: lastNotificationTime
-  });
 
-  // 🔥 TrackHeader에서 소켓 연결 상태 모니터링
-  useEffect(() => {
-    console.log('🏠 [TrackHeader] 🚀 Component mounted/updated');
-    console.log('🏠 [TrackHeader] 👤 Current user:', user ? `${user.id} (${user.email})` : 'None');
-    console.log('🏠 [TrackHeader] 🔔 Notifications count:', notifications.length);
-    console.log('🏠 [TrackHeader] 📨 Unread count:', unreadCount);
-    console.log('🏠 [TrackHeader] 📋 Notifications details:', notifications.map(n => ({
-      id: n.id,
-      type: n.type,
-      message: n.message,
-      isRead: n.isRead
-    })));
 
-    // 10초마다 상태 확인
-    const interval = setInterval(() => {
-      console.log('🏠 [TrackHeader] ⏰ Periodic status check:');
-      console.log('  - Time:', new Date().toLocaleTimeString());
-      console.log('  - User logged in:', !!user);
-      console.log('  - Notifications count:', notifications.length);
-      console.log('  - Unread count:', unreadCount);
-      console.log('  - Has NotificationContext:', !!useNotifications);
-      
-      if (notifications.length > 0) {
-        console.log('  - Latest notification:', {
-          id: notifications[0].id,
-          type: notifications[0].type,
-          message: notifications[0].message,
-          createdAt: notifications[0].createdAt,
-          isRead: notifications[0].isRead
-        });
-      }
-    }, 10000);
 
-    return () => {
-      console.log('🏠 [TrackHeader] 🔚 Component unmounting');
-      clearInterval(interval);
-    };
-  }, [user, notifications, unreadCount]);
 
   // 🔥 NEW: 소켓 알림 수신 시 TrackHeader 강제 새로고침을 위한 커스텀 이벤트 리스너
   useEffect(() => {
@@ -92,25 +48,17 @@ const TrackHeaderCopy: React.FC<TrackHeaderCopyProps> = ({
       setForceRefreshKey(newRefreshKey);
       setLastNotificationTime(timestamp);
       
-      console.log('🏠 [TrackHeader] 🔄 TrackHeader force refresh triggered!');
-      console.log('🏠 [TrackHeader] 📊 Refresh key updated:', forceRefreshKey, '→', newRefreshKey);
+
       
       // 🔥 추가: TrackHeader 전체 DOM 업데이트 확인
       setTimeout(() => {
-        console.log('🏠 [TrackHeader] 🔍 TrackHeader refresh completed');
-        console.log('🏠 [TrackHeader] 📊 Current state after refresh:', {
-          notificationsCount: notifications.length,
-          unreadCount: unreadCount,
-          refreshKey: newRefreshKey
-        });
+
       }, 100);
     };
 
     // 🔥 NEW: TrackHeader 전용 이벤트 리스너 추가
     const handleTrackHeaderSpecificRefresh = (event: CustomEvent) => {
-      console.log('🏠 [TrackHeader] 🎯 Received TrackHeader-specific refresh event!');
-      console.log('🏠 [TrackHeader] Event details:', event.detail);
-      
+
       // 기존 핸들러와 동일한 로직 실행
       handleTrackHeaderRefresh(event);
     };
@@ -141,7 +89,7 @@ const TrackHeaderCopy: React.FC<TrackHeaderCopyProps> = ({
 
   return (
     <div 
-      className="bg-gradient-to-r from-black via-gray-900 to-black border-b border-gray-800"
+      className="bg-black"
       key={`track-header-${forceRefreshKey}`} // 🔥 NEW: 강제 리렌더링을 위한 key
     >
       {/* 상단 네비게이션 바 */}
