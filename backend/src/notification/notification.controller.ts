@@ -87,4 +87,37 @@ export class NotificationController {
       throw new BadRequestException('Failed to mark notification as read');
     }
   }
+
+  // 사용자의 모든 미읽은 알림을 읽음으로 표시
+  @Patch('mark-all-read')
+  async markAllRead(@Request() req: any): Promise<{ success: boolean; message: string; count: number }> {
+    try {
+      const userId = req.user?.id || req.user?.sub;
+      
+      if (!userId) {
+        throw new UnauthorizedException('User authentication required');
+      }
+      
+      this.logger.log(`📖 [NotificationController] 모든 알림 읽음 처리 요청 by user ${userId}`);
+
+      const result = await this.notificationService.markAllRead(userId);
+      const count = result.affected || 0;
+
+      this.logger.log(`📖 [NotificationController] 모든 알림 읽음 처리 완료: ${count}개`);
+      
+      return {
+        success: true,
+        message: `${count}개의 알림을 모두 읽음으로 표시했습니다.`,
+        count
+      };
+    } catch (error) {
+      this.logger.error(`❌ [NotificationController] 모든 알림 읽음 처리 실패: ${error.message}`);
+      
+      if (error instanceof UnauthorizedException) {
+        throw error;
+      }
+      
+      throw new BadRequestException('Failed to mark all notifications as read');
+    }
+  }
 } 

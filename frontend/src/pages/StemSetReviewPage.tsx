@@ -24,7 +24,6 @@ import {
   updateUpstreamComment,
 } from '../services/upstreamCommentService';
 import {
-  Bell,
   Settings,
   Play,
   Pause,
@@ -44,6 +43,7 @@ import {
 } from 'lucide-react';
 import { ActionButton, StatusBadge } from '../components/ui';
 import { theme } from '../styles/theme';
+import NotificationBell from '../components/NotificationBell';
 
 // Comment interface updated to match backend response
 interface Comment {
@@ -1651,12 +1651,7 @@ const StemSetReviewPage = () => {
           {/* Right section - Secondary Actions */}
           <div className='flex items-center space-x-2'>
             <div className='flex items-center space-x-1 rounded bg-gray-800 p-1'>
-              <button
-                className='rounded p-2 text-gray-300 hover:bg-gray-700 hover:text-white transition-colors'
-                title='알림'
-              >
-                <Bell size={18} />
-              </button>
+              <NotificationBell />
               <button
                 className='rounded p-2 text-gray-300 hover:bg-gray-700 hover:text-white transition-colors'
                 title='설정'

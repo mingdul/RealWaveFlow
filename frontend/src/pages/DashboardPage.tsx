@@ -13,6 +13,7 @@ import InitProjectModal from '../components/InitProjectModal';
 import CreateTrackModal from '../components/CreateTrackModal';
 import PresignedImage from '../components/PresignedImage';
 import AnimatedModal from '../components/AnimatedModal';
+import NotificationBell from '../components/NotificationBell';
 
 // ProjectCard 컴포넌트를 별도로 정의하여 불필요한 리렌더링 방지
 interface ProjectCardProps {
@@ -392,6 +393,7 @@ const DashboardPage = () => {
             <LogOut size={16} />
             <span>Logout</span>
           </button>
+          <NotificationBell />
         </div>
       </header>
 

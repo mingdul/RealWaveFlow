@@ -316,6 +316,48 @@ export const NotificationProvider: React.FC<NotificationProviderProps> = ({ chil
     setNotifications([]);
   };
 
+  // 모든 미읽은 알림을 읽음으로 표시
+  const markAllRead = async () => {
+    try {
+      console.log('📖 [NotificationProvider] 모든 알림 읽음 처리 시작...');
+      
+      // 로컬 상태 먼저 업데이트 (즉시 반영 - Badge 개수 0으로)
+      setNotifications(prev => 
+        prev.map(notification => ({ ...notification, isRead: true }))
+      );
+      
+      // API 호출로 서버에도 반영
+      const result = await notificationService.markAllRead();
+      console.log('📖 [NotificationProvider] 모든 알림 읽음 처리 완료:', result);
+      
+      // 토스트 메시지 표시
+      if (result.count > 0) {
+        showToast('success', `${result.count}개의 알림을 모두 읽음으로 표시했습니다.`);
+      } else {
+        showToast('info', '읽지 않은 알림이 없습니다.');
+      }
+      
+      return result;
+    } catch (error) {
+      console.error('📖 [NotificationProvider] 모든 알림 읽음 처리 실패:', error);
+      
+      // 에러 시 상태 롤백 (알림들을 다시 읽지 않은 상태로)
+      setNotifications(prev => 
+        prev.map(notification => ({ ...notification, isRead: false }))
+      );
+      
+      showToast('error', '알림 읽음 처리에 실패했습니다.');
+      
+      // 인증 에러인 경우 로그아웃 처리
+      if (error instanceof Error && error.message.includes('authentication required')) {
+        showToast('error', '인증이 만료되었습니다. 다시 로그인해주세요.');
+        logout();
+      }
+      
+      throw error;
+    }
+  };
+
   // API에서 최신 알림 새로고침 (Bell 클릭 시 호출)
   const refreshNotifications = async () => {
     console.log('🔔 [NotificationProvider] 📋 Manually refreshing notifications from API...');
@@ -378,6 +420,7 @@ export const NotificationProvider: React.FC<NotificationProviderProps> = ({ chil
     unreadCount,
     addNotification,
     markAsRead,
+    markAllRead,
     clearNotifications,
     refreshNotifications,
   };

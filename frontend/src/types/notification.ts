@@ -13,6 +13,7 @@ export interface NotificationContextType {
   unreadCount: number;
   addNotification: (notification: Notification) => void;
   markAsRead: (notificationId: string) => void;
+  markAllRead: () => Promise<{ success: boolean; message: string; count: number }>;
   clearNotifications: () => void;
   refreshNotifications: () => Promise<void>; // API에서 최신 알림 가져오기
 } 
