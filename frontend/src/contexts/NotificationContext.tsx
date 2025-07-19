@@ -281,18 +281,64 @@ export const NotificationProvider: React.FC<NotificationProviderProps> = ({ chil
         console.log('🔔 [NotificationSocket] 📊 BEFORE processing - Current notifications count:', notifications.length);
         console.log('🔔 [NotificationSocket] 📊 BEFORE processing - Current unread count:', notifications.filter(n => !n.isRead).length);
         
-        // 즉시 알림 추가 (Badge 개수 실시간 업데이트)
+        // 🔥 강화된 알림 추가 - 즉시 상태 업데이트와 리렌더링 보장
         console.log('🔔 [NotificationSocket] 🚀 Calling addNotification with latest function...');
+        
+        // 즉시 상태 업데이트 (React의 함수형 업데이트 사용)
+        setNotifications(prevNotifications => {
+          console.log('🔔 [NotificationSocket] 📊 INSIDE setState - Previous count:', prevNotifications.length);
+          
+          // 중복 확인
+          const exists = prevNotifications.some(n => n.id === notification.id);
+          if (exists) {
+            console.log('🔔 [NotificationSocket] ⚠️ Duplicate notification ignored:', notification.id);
+            return prevNotifications;
+          }
+          
+          const newNotifications = [notification, ...prevNotifications];
+          const newUnreadCount = newNotifications.filter(n => !n.isRead).length;
+          
+          console.log('🔔 [NotificationSocket] ✅ NOTIFICATION ADDED DIRECTLY TO STATE!');
+          console.log('🔔 [NotificationSocket] 📊 New notifications count:', newNotifications.length);
+          console.log('🔔 [NotificationSocket] 📊 New unread count:', newUnreadCount);
+          
+          // 🔥 즉시 커스텀 이벤트 발생 (Bell 컴포넌트 강제 업데이트)
+          setTimeout(() => {
+            window.dispatchEvent(new CustomEvent('notification-badge-update', {
+              detail: { 
+                unreadCount: newUnreadCount,
+                timestamp: new Date().toISOString(),
+                source: 'socket-event'
+              }
+            }));
+            console.log('🔔 [NotificationSocket] 📢 Dispatched badge update event from socket handler');
+            
+            // 🔥 NEW: TrackHeader 새로고침을 위한 별도 이벤트
+            window.dispatchEvent(new CustomEvent('track-header-refresh', {
+              detail: { 
+                unreadCount: newUnreadCount,
+                timestamp: new Date().toISOString(),
+                source: 'socket-event',
+                notificationsCount: newNotifications.length
+              }
+            }));
+            console.log('🔔 [NotificationSocket] 🏠 Dispatched TrackHeader refresh event');
+          }, 10);
+          
+          return newNotifications;
+        });
+        
+        // 🔥 추가: addNotification도 함께 호출 (기존 로직 유지)
         addNotification(notification);
         
         // 🔥 NEW: 상태 업데이트 확인을 위한 비동기 체크
         setTimeout(() => {
           console.log('🔔 [NotificationSocket] 📊 AFTER processing (100ms later) - Badge update check:');
           console.log('🔔 [NotificationSocket] 📊 Expected unread count should be +1 from before');
-          console.log('🔔 [NotificationSocket] ✅ addNotification processing completed!');
+          console.log('🔔 [NotificationSocket] ✅ Socket event processing completed!');
         }, 100);
         
-        console.log('🔔 [NotificationSocket] ✅ addNotification called - Badge should update immediately!');
+        console.log('🔔 [NotificationSocket] ✅ Socket event handled - Badge should update immediately!');
       });
     }
     
@@ -426,9 +472,105 @@ export const NotificationProvider: React.FC<NotificationProviderProps> = ({ chil
       window.dispatchEvent(new CustomEvent('notification-badge-update', {
         detail: { 
           unreadCount: fakeUnreadCount,
-          timestamp: new Date().toISOString()
+          timestamp: new Date().toISOString(),
+          source: 'debug-test'
         }
       }));
+    }
+  };
+
+  // 🔧 DEBUG: 소켓 알림 시뮬레이션
+  const debugSimulateSocketNotification = () => {
+    if (import.meta.env.DEV) {
+      const fakeNotification: Notification = {
+        id: `socket-test-${Date.now()}`,
+        userId: user?.id || 'test-user',
+        type: 'version_created',
+        message: `🧪 소켓 알림 시뮬레이션 - ${new Date().toLocaleTimeString()}`,
+        data: { 
+          trackId: 'test-track-123',
+          stageId: 'test-stage-456',
+          trackName: '테스트 트랙',
+          stageVersion: '버전 1.0'
+        },
+        isRead: false,
+        createdAt: new Date().toISOString()
+      };
+      
+      console.log('🧪 [DEBUG] Simulating socket notification event...');
+      console.log('🧪 [DEBUG] Fake notification data:', fakeNotification);
+      
+      // 소켓 이벤트 시뮬레이션
+      if (socket) {
+        socket.emit('test-notification', fakeNotification);
+        console.log('🧪 [DEBUG] Emitted test notification to socket');
+      } else {
+        // 소켓이 없으면 직접 핸들러 호출
+        console.log('🧪 [DEBUG] No socket available, triggering handler directly');
+        
+        // 소켓 이벤트 핸들러와 동일한 로직 실행
+        setNotifications(prevNotifications => {
+          const exists = prevNotifications.some(n => n.id === fakeNotification.id);
+          if (exists) return prevNotifications;
+          
+          const newNotifications = [fakeNotification, ...prevNotifications];
+          const newUnreadCount = newNotifications.filter(n => !n.isRead).length;
+          
+          setTimeout(() => {
+            window.dispatchEvent(new CustomEvent('notification-badge-update', {
+              detail: { 
+                unreadCount: newUnreadCount,
+                timestamp: new Date().toISOString(),
+                source: 'debug-socket-simulation'
+              }
+            }));
+          }, 10);
+          
+          return newNotifications;
+        });
+      }
+    }
+  };
+
+  // 🔧 DEBUG: 현재 상태 전체 출력
+  const debugPrintCurrentState = () => {
+    if (import.meta.env.DEV) {
+      console.log('🔧 [DEBUG] ===== NOTIFICATION SYSTEM STATE =====');
+      console.log('🔧 [DEBUG] User:', user?.email || 'Not logged in');
+      console.log('🔧 [DEBUG] Socket connected:', socket?.connected || false);
+      console.log('🔧 [DEBUG] Socket ID:', socket?.id || 'N/A');
+      console.log('🔧 [DEBUG] Total notifications:', notifications.length);
+      console.log('🔧 [DEBUG] Unread count:', unreadCount);
+      console.log('🔧 [DEBUG] Recent notifications (first 3):');
+      notifications.slice(0, 3).forEach((notif, index) => {
+        console.log(`🔧 [DEBUG]   ${index + 1}. ${notif.message} (read: ${notif.isRead})`);
+      });
+      console.log('🔧 [DEBUG] =====================================');
+    }
+  };
+
+  // 🔧 DEBUG: TrackHeader 강제 새로고침 테스트
+  const debugTriggerTrackHeaderRefresh = () => {
+    if (import.meta.env.DEV) {
+      const timestamp = new Date().toISOString();
+      console.log('🧪 [DEBUG] Triggering TrackHeader refresh test...');
+      
+      // TrackHeader 전용 이벤트 발생
+      window.dispatchEvent(new CustomEvent('track-header-refresh', {
+        detail: { 
+          unreadCount: unreadCount,
+          timestamp: timestamp,
+          source: 'debug-track-header-test',
+          notificationsCount: notifications.length
+        }
+      }));
+      
+      console.log('🧪 [DEBUG] TrackHeader refresh event dispatched');
+      console.log('🧪 [DEBUG] Event details:', {
+        unreadCount: unreadCount,
+        timestamp: timestamp,
+        notificationsCount: notifications.length
+      });
     }
   };
 
@@ -460,6 +602,9 @@ export const NotificationProvider: React.FC<NotificationProviderProps> = ({ chil
         currentUnreadCount: unreadCount,
         socketConnected: socket?.connected,
         forceRefresh: refreshNotifications, // 🔥 NEW: 수동 새로고침 테스트
+        simulateSocketNotification: debugSimulateSocketNotification, // 🔥 NEW: 소켓 알림 시뮬레이션
+        printCurrentState: debugPrintCurrentState, // 🔥 NEW: 현재 상태 출력
+        triggerTrackHeaderRefresh: debugTriggerTrackHeaderRefresh, // 🔥 NEW: TrackHeader 새로고침 테스트
       };
       console.log('🔧 [DEBUG] Debug tools available in window.debugNotifications');
       console.log('🔧 [DEBUG] Available methods:');
@@ -467,8 +612,11 @@ export const NotificationProvider: React.FC<NotificationProviderProps> = ({ chil
       console.log('  - triggerBadgeUpdate(): Trigger fake badge update');
       console.log('  - checkSocketStatus(): Check socket connection');
       console.log('  - forceRefresh(): Force refresh notifications from API');
+      console.log('  - simulateSocketNotification(): Simulate a socket notification event');
+      console.log('  - printCurrentState(): Print the current state of the notification system');
+      console.log('  - triggerTrackHeaderRefresh(): Force TrackHeader to refresh');
     }
-  }, [notifications, unreadCount, socket?.connected, debugAddTestNotification, debugTriggerBadgeUpdate]);
+  }, [notifications, unreadCount, socket?.connected, debugAddTestNotification, debugTriggerBadgeUpdate, debugSimulateSocketNotification, debugPrintCurrentState, debugTriggerTrackHeaderRefresh]);
 
   const value: NotificationContextType = {
     notifications,
