@@ -146,7 +146,7 @@ class AuthService {
       console.log('🔗 [uploadProfileImage] Upload URL obtained');
 
       // XMLHttpRequest를 사용한 S3 직접 업로드 (s3UploadService 방식과 동일)
-      const imageUrl = await new Promise<string>((resolve, reject) => {
+      await new Promise<string>((resolve, reject) => {
         const xhr = new XMLHttpRequest();
 
         xhr.upload.onprogress = (event) => {
