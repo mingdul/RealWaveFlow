@@ -1,14 +1,33 @@
-import React, { useState } from 'react';
-import { Plus, X } from 'lucide-react';
+import React, { useState, useEffect } from 'react';
+import { Plus, X, Crown } from 'lucide-react';
 import { Button } from './';
 import { Track } from '../types/api';
 import inviteService from '../services/inviteService';
+import apiClient from '../lib/api';
 
 interface CollaboratorsProps {
   track: Track;
 }
 
+interface TrackUser {
+  id: string;
+  email: string;
+  username: string;
+  image_url: string | null;
+}
+
+interface TrackUsersData {
+  owner: TrackUser;
+  collaborators: {
+    collaborator: TrackUser[];
+  };
+}
+
 const Collaborators: React.FC<CollaboratorsProps> = ({ track }) => {
+  // API 데이터 state
+  const [trackUsers, setTrackUsers] = useState<TrackUsersData | null>(null);
+  const [loading, setLoading] = useState(true);
+
   // 초대 관련 state
   const [showInviteModal, setShowInviteModal] = useState(false);
   const [inviteLoading, setInviteLoading] = useState(false);
@@ -17,7 +36,31 @@ const Collaborators: React.FC<CollaboratorsProps> = ({ track }) => {
   const [emailList, setEmailList] = useState<string[]>([]);
   const [currentInput, setCurrentInput] = useState('');
 
-  // 목업 데이터 - 실제 collaborators와 매핑할 이미지들
+  // API에서 트랙 사용자 정보 가져오기
+  useEffect(() => {
+    const fetchTrackUsers = async () => {
+      try {
+        setLoading(true);
+        const response = await apiClient.get(`/track-collaborator/track-users/${track.id}`, {
+          withCredentials: true
+        });
+        
+        if (response.data.success) {
+          setTrackUsers(response.data.data);
+        }
+      } catch (error) {
+        console.error('Failed to fetch track users:', error);
+      } finally {
+        setLoading(false);
+      }
+    };
+
+    if (track.id) {
+      fetchTrackUsers();
+    }
+  }, [track.id]);
+
+  // 목업 데이터 - fallback용
   const mockImages = [
     '/person/1750813233213.jpg',
     '/person/IMG_2052.jpg',
@@ -158,61 +201,107 @@ const Collaborators: React.FC<CollaboratorsProps> = ({ track }) => {
     setInviteSuccess('');
   };
 
+  if (loading) {
+    return (
+      <div className='flex items-center space-x-4'>
+        {/* Loading skeleton */}
+        {[...Array(4)].map((_, i) => (
+          <div key={i} className='h-12 w-12 animate-pulse rounded-full bg-gray-600'></div>
+        ))}
+      </div>
+    );
+  }
+
   return (
     <>
       {/* Collaborators Card */}
       <div className='flex items-center space-x-4'>
-        {/* 트랙 소유자 */}
-        <div className='relative h-12 w-12 overflow-hidden rounded-full'>
-          <img
-            src={mockImages[0]}
-            alt={track.owner_id?.username || 'Owner'}
-            className='h-full w-full object-cover'
-            onError={(e) =>
-              handleImageError(e, track.owner_id?.username || 'U')
-            }
-          />
-          {/* Fallback div */}
-          <div
-            className='absolute inset-0 flex items-center justify-center bg-gradient-to-br from-blue-400 to-blue-600'
-            style={{ display: 'none' }}
-          >
-            <span className='text-sm font-semibold text-white'>
-              {track.owner_id?.username?.charAt(0)?.toUpperCase() || 'U'}
-            </span>
-          </div>
-        </div>
-
-        {/* 콜라보레이터들 */}
-        {track.collaborators && track.collaborators.length > 0 ? (
-          track.collaborators.map((collaborator, index) => (
-            <div
-              key={collaborator.id}
-              className='relative h-12 w-12 overflow-hidden rounded-full'
-            >
-              <img
-                src={mockImages[(index + 1) % mockImages.length]}
-                alt={collaborator.user_id?.username || 'Collaborator'}
-                className='h-full w-full object-cover'
-                onError={(e) =>
-                  handleImageError(e, collaborator.user_id?.username || 'C')
-                }
-              />
+        {trackUsers ? (
+          <>
+            {/* 트랙 소유자 */}
+            <div className='relative h-12 w-12 overflow-hidden rounded-full border-2 border-yellow-400'>
+              {trackUsers.owner.image_url ? (
+                <img
+                  src={trackUsers.owner.image_url}
+                  alt={trackUsers.owner.username}
+                  className='h-full w-full object-cover'
+                  onError={(e) => handleImageError(e, trackUsers.owner.username)}
+                />
+              ) : (
+                <div className='flex h-full w-full items-center justify-center bg-gradient-to-br from-blue-400 to-blue-600'>
+                  <span className='text-sm font-semibold text-white'>
+                    {trackUsers.owner.username?.charAt(0)?.toUpperCase() || 'O'}
+                  </span>
+                </div>
+              )}
+              
+              {/* Owner Crown */}
+              <div className='absolute -top-1 -right-1 h-5 w-5 rounded-full bg-yellow-400 flex items-center justify-center'>
+                <Crown size={12} className='text-yellow-800' />
+              </div>
+              
               {/* Fallback div */}
               <div
-                className='absolute inset-0 flex items-center justify-center bg-gradient-to-br from-purple-400 to-purple-600'
+                className='absolute inset-0 flex items-center justify-center bg-gradient-to-br from-blue-400 to-blue-600'
                 style={{ display: 'none' }}
               >
                 <span className='text-sm font-semibold text-white'>
-                  {collaborator.user_id?.username?.charAt(0)?.toUpperCase() ||
-                    'C'}
+                  {trackUsers.owner.username?.charAt(0)?.toUpperCase() || 'O'}
                 </span>
               </div>
             </div>
-          ))
+
+            {/* 콜라보레이터들 */}
+            {trackUsers.collaborators.collaborator.map((collaborator, index) => (
+              <div
+                key={collaborator.id}
+                className='relative h-12 w-12 overflow-hidden rounded-full'
+              >
+                {collaborator.image_url ? (
+                  <img
+                    src={collaborator.image_url}
+                    alt={collaborator.username}
+                    className='h-full w-full object-cover'
+                    onError={(e) => handleImageError(e, collaborator.username)}
+                  />
+                ) : (
+                  <div className='flex h-full w-full items-center justify-center bg-gradient-to-br from-purple-400 to-purple-600'>
+                    <span className='text-sm font-semibold text-white'>
+                      {collaborator.username?.charAt(0)?.toUpperCase() || 'C'}
+                    </span>
+                  </div>
+                )}
+                
+                {/* Fallback div */}
+                <div
+                  className='absolute inset-0 flex items-center justify-center bg-gradient-to-br from-purple-400 to-purple-600'
+                  style={{ display: 'none' }}
+                >
+                  <span className='text-sm font-semibold text-white'>
+                    {collaborator.username?.charAt(0)?.toUpperCase() || 'C'}
+                  </span>
+                </div>
+              </div>
+            ))}
+            
+            <Button onClick={() => setShowInviteModal(true)}>
+              <Plus size={20} />
+            </Button>
+          </>
         ) : (
-          // 목업 데이터로 샘플 collaborators 표시 (실제 데이터가 없는 경우)
+          // 목업 데이터로 샘플 collaborators 표시 (API 실패 시)
           <>
+            <div className='relative h-12 w-12 overflow-hidden rounded-full border-2 border-yellow-400'>
+              <img
+                src={mockImages[0]}
+                alt='Owner'
+                className='h-full w-full object-cover'
+              />
+              <div className='absolute -top-1 -right-1 h-5 w-5 rounded-full bg-yellow-400 flex items-center justify-center'>
+                <Crown size={12} className='text-yellow-800' />
+              </div>
+            </div>
+
             <div className='h-12 w-12 overflow-hidden rounded-full'>
               <img
                 src={mockImages[1]}
@@ -224,14 +313,6 @@ const Collaborators: React.FC<CollaboratorsProps> = ({ track }) => {
             <div className='h-12 w-12 overflow-hidden rounded-full'>
               <img
                 src={mockImages[2]}
-                alt='Sample Collaborator'
-                className='h-full w-full object-cover'
-              />
-            </div>
-
-            <div className='h-12 w-12 overflow-hidden rounded-full'>
-              <img
-                src={mockImages[3]}
                 alt='Sample Collaborator'
                 className='h-full w-full object-cover'
               />
