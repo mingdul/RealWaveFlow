@@ -31,6 +31,20 @@ const NotificationBell: React.FC = () => {
     console.log('🔔 [NotificationBell] 🎯 Badge will show:', currentUnreadCount);
   }, [notifications, currentUnreadCount]);
 
+  // 🔥 NEW: 실시간 알림 업데이트 이벤트 리스너
+  useEffect(() => {
+    const handleRealtimeUpdate = (event: CustomEvent) => {
+      console.log('🔔 [NotificationBell] 📢 Realtime update event received:', event.detail);
+      // 강제 리렌더링은 이미 notifications 변경으로 자동 발생됨
+    };
+
+    window.addEventListener('notification-realtime-update', handleRealtimeUpdate as EventListener);
+    
+    return () => {
+      window.removeEventListener('notification-realtime-update', handleRealtimeUpdate as EventListener);
+    };
+  }, []);
+
   // 외부 클릭 시 드롭다운 닫기
   useEffect(() => {
     const handleClickOutside = (event: MouseEvent) => {

@@ -161,7 +161,7 @@ export const NotificationProvider: React.FC<NotificationProviderProps> = ({ chil
         // showToast('error', `알림 룸 연결에 실패했습니다: ${data.message}`, 3000);
       });
 
-      // 🔥 NEW: notification 이벤트 핸들러를 여기서 바로 등록
+      // 🔥 NEW: notification 이벤트 핸들러를 여기서 바로 등록 (디버깅 강화)
       notificationSocket.on('notification', (notification: Notification) => {
         console.log('🔔 [NotificationSocket] 📢 🆕 NEW NOTIFICATION RECEIVED VIA WEBSOCKET!');
         console.log('🔔 [NotificationSocket] 📋 Received notification details:', {
@@ -172,6 +172,9 @@ export const NotificationProvider: React.FC<NotificationProviderProps> = ({ chil
           userId: notification.userId,
           createdAt: notification.createdAt
         });
+        
+        // 🔥 알림 토스트 표시
+        showToast('info', `새 알림: ${notification.message}`, 3000);
         
         // 🔥 함수형 업데이트로 closure 문제 해결
         setNotifications(prevNotifications => {
@@ -194,8 +197,39 @@ export const NotificationProvider: React.FC<NotificationProviderProps> = ({ chil
           console.log('🔔 [NotificationSocket] 📊 AFTER adding - New unread:', newUnreadCount);
           console.log('🔔 [NotificationSocket] 🔔 Badge should show:', newUnreadCount);
           
+          // 🔥 강제 DOM 업데이트 이벤트 발생
+          setTimeout(() => {
+            window.dispatchEvent(new CustomEvent('notification-realtime-update', {
+              detail: { 
+                newUnreadCount,
+                totalCount: newNotifications.length,
+                timestamp: new Date().toISOString(),
+                source: 'socket-notification-received'
+              }
+            }));
+          }, 100);
+          
           return newNotifications;
         });
+      });
+
+      // 🔥 NEW: 소켓 이벤트 감지 강화
+      notificationSocket.onAny((eventName, ...args) => {
+        console.log('🔔 [NotificationSocket] 🎯 ANY EVENT RECEIVED:', eventName, args);
+      });
+
+      // 🔥 NEW: 테스트용 이벤트 핸들러들
+      notificationSocket.on('test_notification_result', (data) => {
+        console.log('🧪 [NotificationSocket] Test notification result:', data);
+      });
+
+      notificationSocket.on('server_test', (data) => {
+        console.log('🧪 [NotificationSocket] Server test event:', data);
+      });
+
+      notificationSocket.on('ping', (data) => {
+        console.log('🏓 [NotificationSocket] Ping received:', data);
+        notificationSocket.emit('pong', { timestamp: new Date().toISOString() });
       });
 
       // 연결 오류
@@ -454,12 +488,25 @@ export const NotificationProvider: React.FC<NotificationProviderProps> = ({ chil
         console.log('🔧 [DEBUG] Testing room join...');
         socket.emit('join_user_room', { userId: user.id });
         
-        // 강제로 테스트 이벤트 emit
+        // 🔥 NEW: 더 강력한 테스트 이벤트들 emit
         console.log('🔧 [DEBUG] Emitting test_notification...');
         socket.emit('test_notification', {
           userId: user.id,
           message: 'Debug test from client',
           timestamp: new Date().toISOString()
+        });
+
+        console.log('🔧 [DEBUG] Emitting force_notification_test...');
+        socket.emit('force_notification_test', {
+          userId: user.id,
+          testMessage: 'Force notification test',
+          timestamp: new Date().toISOString()
+        });
+
+        console.log('🔧 [DEBUG] Emitting request_server_ping...');
+        socket.emit('request_server_ping', {
+          userId: user.id,
+          clientTimestamp: new Date().toISOString()
         });
       }
     }
@@ -508,6 +555,36 @@ export const NotificationProvider: React.FC<NotificationProviderProps> = ({ chil
   };
 
 
+  // 🔧 DEBUG: 소켓 강제 알림 이벤트 발생 테스트
+  const debugForceSocketEvent = () => {
+    if (import.meta.env.DEV && socket && socket.connected) {
+      console.log('🧪 [DEBUG] Manually triggering socket notification event...');
+      
+      // 소켓에서 notification 이벤트를 강제로 발생시킴
+      const testNotification: Notification = {
+        id: `forced-socket-${Date.now()}`,
+        userId: user?.id || 'test-user',
+        type: 'upstream_created',
+        message: `🧪 강제 소켓 알림 테스트 - ${new Date().toLocaleTimeString()}`,
+        data: { 
+          trackId: 'test-track-123',
+          stageId: 'test-stage-456',
+          trackName: '테스트 트랙',
+          upstreamTitle: '테스트 업스트림'
+        },
+        isRead: false,
+        createdAt: new Date().toISOString()
+      };
+      
+      // notification 이벤트 핸들러를 직접 호출
+      socket.emit('notification', testNotification);
+      
+      console.log('🧪 [DEBUG] Socket notification event manually triggered');
+    } else {
+      console.warn('🧪 [DEBUG] Cannot force socket event - socket not connected');
+    }
+  };
+
   // 🔧 DEBUG: 개발 환경에서 전역 접근 가능하도록 설정
   useEffect(() => {
     if (import.meta.env.DEV) {
@@ -521,6 +598,8 @@ export const NotificationProvider: React.FC<NotificationProviderProps> = ({ chil
         simulateSocketNotification: debugSimulateSocketNotification,
         printCurrentState: debugPrintCurrentState,
         triggerTrackHeaderRefresh: debugTriggerTrackHeaderRefresh,
+        forceSocketEvent: debugForceSocketEvent,
+        socket: socket, // 소켓 객체 직접 노출
       };
       console.log('🔧 [DEBUG] Debug tools available in window.debugNotifications');
       console.log('🔧 [DEBUG] Available methods:');
@@ -530,8 +609,10 @@ export const NotificationProvider: React.FC<NotificationProviderProps> = ({ chil
       console.log('  - simulateSocketNotification(): Simulate a socket notification event');
       console.log('  - printCurrentState(): Print the current state of the notification system');
       console.log('  - triggerTrackHeaderRefresh(): Force TrackHeader to refresh');
+      console.log('  - forceSocketEvent(): Force trigger socket notification event');
+      console.log('  - socket: Direct access to socket object');
     }
-  }, [notifications, unreadCount, socket?.connected, debugAddTestNotification, debugSimulateSocketNotification, debugPrintCurrentState, debugTriggerTrackHeaderRefresh]);
+  }, [notifications, unreadCount, socket?.connected, debugAddTestNotification, debugSimulateSocketNotification, debugPrintCurrentState, debugTriggerTrackHeaderRefresh, debugForceSocketEvent, socket]);
 
   const value: NotificationContextType = {
     notifications,
