@@ -281,54 +281,8 @@ export const NotificationProvider: React.FC<NotificationProviderProps> = ({ chil
         console.log('🔔 [NotificationSocket] 📊 BEFORE processing - Current notifications count:', notifications.length);
         console.log('🔔 [NotificationSocket] 📊 BEFORE processing - Current unread count:', notifications.filter(n => !n.isRead).length);
         
-        // 🔥 강화된 알림 추가 - 즉시 상태 업데이트와 리렌더링 보장
-        console.log('🔔 [NotificationSocket] 🚀 Calling addNotification with latest function...');
-        
-        // 즉시 상태 업데이트 (React의 함수형 업데이트 사용)
-        setNotifications(prevNotifications => {
-          console.log('🔔 [NotificationSocket] 📊 INSIDE setState - Previous count:', prevNotifications.length);
-          
-          // 중복 확인
-          const exists = prevNotifications.some(n => n.id === notification.id);
-          if (exists) {
-            console.log('🔔 [NotificationSocket] ⚠️ Duplicate notification ignored:', notification.id);
-            return prevNotifications;
-          }
-          
-          const newNotifications = [notification, ...prevNotifications];
-          const newUnreadCount = newNotifications.filter(n => !n.isRead).length;
-          
-          console.log('🔔 [NotificationSocket] ✅ NOTIFICATION ADDED DIRECTLY TO STATE!');
-          console.log('🔔 [NotificationSocket] 📊 New notifications count:', newNotifications.length);
-          console.log('🔔 [NotificationSocket] 📊 New unread count:', newUnreadCount);
-          
-          // 🔥 즉시 커스텀 이벤트 발생 (Bell 컴포넌트 강제 업데이트)
-          setTimeout(() => {
-            window.dispatchEvent(new CustomEvent('notification-badge-update', {
-              detail: { 
-                unreadCount: newUnreadCount,
-                timestamp: new Date().toISOString(),
-                source: 'socket-event'
-              }
-            }));
-            console.log('🔔 [NotificationSocket] 📢 Dispatched badge update event from socket handler');
-            
-            // 🔥 NEW: TrackHeader 새로고침을 위한 별도 이벤트
-            window.dispatchEvent(new CustomEvent('track-header-refresh', {
-              detail: { 
-                unreadCount: newUnreadCount,
-                timestamp: new Date().toISOString(),
-                source: 'socket-event',
-                notificationsCount: newNotifications.length
-              }
-            }));
-            console.log('🔔 [NotificationSocket] 🏠 Dispatched TrackHeader refresh event');
-          }, 10);
-          
-          return newNotifications;
-        });
-        
-        // 🔥 추가: addNotification도 함께 호출 (기존 로직 유지)
+        // 🔥 간소화된 알림 추가 - addNotification 함수만 사용
+        console.log('🔔 [NotificationSocket] 🚀 Calling addNotification function...');
         addNotification(notification);
         
         // 🔥 NEW: 상태 업데이트 확인을 위한 비동기 체크

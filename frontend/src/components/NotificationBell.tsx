@@ -7,7 +7,7 @@ import { Button } from '../components/';
 const NotificationBell: React.FC = () => {
   const [isOpen, setIsOpen] = useState(false);
   const [isMarkingAllRead, setIsMarkingAllRead] = useState(false);
-  const [forceUpdateKey, setForceUpdateKey] = useState(0); // 🔥 NEW: 강제 리렌더링용
+  const [localUnreadCount, setLocalUnreadCount] = useState(0); // 로컬 상태로 실시간 업데이트 보장
   const dropdownRef = useRef<HTMLDivElement>(null);
   const { notifications, unreadCount, markAsRead, markAllRead, refreshNotifications } = useNotifications();
 
@@ -15,31 +15,24 @@ const NotificationBell: React.FC = () => {
   console.log('🔔 [NotificationBell] 🎭 COMPONENT RENDERED');
   console.log('🔔 [NotificationBell] 📊 Current props from context:', {
     totalNotifications: notifications.length,
-    unreadCount: unreadCount,
-    isOpen: isOpen,
-    forceUpdateKey: forceUpdateKey // 🔥 NEW: 강제 업데이트 키 추가
+    contextUnreadCount: unreadCount,
+    localUnreadCount: localUnreadCount,
+    isOpen: isOpen
   });
 
-  // 알림 상태 변경 시 로그 및 실시간 Badge 업데이트 확인
+  // Context의 unreadCount 변경 시 localUnreadCount 동기화
   useEffect(() => {
-    console.log('🔔 [NotificationBell] 🔄 Badge update triggered!');
-    console.log('🔔 [NotificationBell] Current unreadCount:', unreadCount);
-    console.log('🔔 [NotificationBell] Total notifications:', notifications.length);
+    console.log('🔔 [NotificationBell] 🔄 Context unreadCount changed:', unreadCount);
+    setLocalUnreadCount(unreadCount);
+  }, [unreadCount]);
 
-    if (unreadCount > 0) {
-      console.log('🔔 [NotificationBell] 🔴 Badge should show:', unreadCount);
-    } else {
-      console.log('🔔 [NotificationBell] ⚪ Badge should be hidden (no unread)');
-    }
-
-    // 최근 알림 몇 개 로깅 (디버깅용)
-    if (notifications.length > 0) {
-      console.log('🔔 [NotificationBell] 📋 Recent notifications (first 3):');
-      notifications.slice(0, 3).forEach((notif, index) => {
-        console.log(`   ${index + 1}. ${notif.message} (isRead: ${notif.isRead}, id: ${notif.id})`);
-      });
-    }
-  }, [unreadCount, notifications.length, notifications]);
+  // 소켓을 통한 실시간 업데이트 감지
+  useEffect(() => {
+    console.log('🔔 [NotificationBell] 🔄 Notifications array changed, recalculating unread count');
+    const calculatedUnread = notifications.filter(n => !n.isRead).length;
+    console.log('🔔 [NotificationBell] 📊 Calculated unread count:', calculatedUnread);
+    setLocalUnreadCount(calculatedUnread);
+  }, [notifications]);
 
   // 외부 클릭 시 드롭다운 닫기
   useEffect(() => {
@@ -55,44 +48,6 @@ const NotificationBell: React.FC = () => {
     };
   }, []);
 
-  // 🔥 NEW: 커스텀 이벤트 리스너로 실시간 뱃지 업데이트 처리
-  useEffect(() => {
-    const handleBadgeUpdate = (event: CustomEvent) => {
-      const { unreadCount: newUnreadCount, timestamp, source } = event.detail;
-
-      console.log('🔔 [NotificationBell] 📢 Received badge update event!');
-      console.log('🔔 [NotificationBell] 📊 New unread count from event:', newUnreadCount);
-      console.log('🔔 [NotificationBell] ⏰ Event timestamp:', timestamp);
-      console.log('🔔 [NotificationBell] 📡 Event source:', source || 'unknown');
-      console.log('🔔 [NotificationBell] 📊 Current context unread count:', unreadCount);
-
-      // 🔥 강제 리렌더링 트리거 (확실한 업데이트 보장)
-      const newForceKey = forceUpdateKey + 1;
-      setForceUpdateKey(newForceKey);
-
-      console.log('🔔 [NotificationBell] 🔄 Triggered force re-render, key updated:', forceUpdateKey, '→', newForceKey);
-
-      // 🔥 추가: DOM 강제 업데이트 확인
-      setTimeout(() => {
-        const badgeElement = document.querySelector('[class*="bg-red-600"]');
-        console.log('🔔 [NotificationBell] 🔍 Badge element check after update:', {
-          exists: !!badgeElement,
-          textContent: badgeElement?.textContent,
-          className: badgeElement?.className
-        });
-      }, 50);
-    };
-
-    // 커스텀 이벤트 리스너 등록
-    window.addEventListener('notification-badge-update', handleBadgeUpdate as EventListener);
-
-    console.log('🔔 [NotificationBell] 👂 Badge update event listener registered');
-
-    return () => {
-      window.removeEventListener('notification-badge-update', handleBadgeUpdate as EventListener);
-      console.log('🔔 [NotificationBell] 🔇 Badge update event listener removed');
-    };
-  }, [forceUpdateKey, unreadCount]);
 
   const toggleDropdown = async () => {
     console.log('🔔 [NotificationBell] 🖱️ Bell icon clicked!');
@@ -116,7 +71,7 @@ const NotificationBell: React.FC = () => {
   };
 
   const handleMarkAllRead = async () => {
-    if (unreadCount === 0) return; // 읽지 않은 알림이 없으면 무시
+    if (localUnreadCount === 0) return; // 읽지 않은 알림이 없으면 무시
 
     setIsMarkingAllRead(true);
     try {
@@ -196,19 +151,19 @@ const NotificationBell: React.FC = () => {
         <BellRing className="h-6 w-6" />
 
         {/* 읽지 않은 알림 개수 배지 - 실시간 업데이트 */}
-        {unreadCount > 0 && (
+        {localUnreadCount > 0 && (
           <span
             className="absolute -top-1 -right-1 inline-flex items-center justify-center px-2 py-1 text-xs font-bold leading-none text-white transform translate-x-1/2 -translate-y-1/2 bg-red-600 rounded-full transition-all duration-200 ease-in-out"
-            key={`badge-${unreadCount}-${forceUpdateKey}`} // 🔥 NEW: forceUpdateKey 추가로 강제 리렌더링
+            key={`badge-${localUnreadCount}`}
           >
-            {unreadCount > 99 ? '99+' : unreadCount}
+            {localUnreadCount > 99 ? '99+' : localUnreadCount}
           </span>
         )}
 
         {/* 디버그용 - 개발 중에만 표시 */}
         {import.meta.env.DEV && (
           <span className="absolute -bottom-6 -right-2 text-xs text-gray-400 bg-gray-100 px-1 rounded">
-            Debug: {unreadCount} (Key: {forceUpdateKey})
+            Debug: context={unreadCount} local={localUnreadCount}
           </span>
         )}
       </Button>
@@ -223,10 +178,10 @@ const NotificationBell: React.FC = () => {
                 <h3 className="text-lg font-medium text-gray-900">알림</h3>
                 <div className="flex items-center space-x-3">
                   <span className="text-sm text-gray-500">
-                    {unreadCount > 0 ? `${unreadCount}개의 새 알림` : '모든 알림을 확인했습니다'}
+                    {localUnreadCount > 0 ? `${localUnreadCount}개의 새 알림` : '모든 알림을 확인했습니다'}
                   </span>
                   {/* 모두 읽음 버튼 */}
-                  {unreadCount > 0 && (
+                  {localUnreadCount > 0 && (
                     <button
                       onClick={handleMarkAllRead}
                       disabled={isMarkingAllRead}
