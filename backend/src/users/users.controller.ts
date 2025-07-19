@@ -10,6 +10,7 @@ import { UpdateUserDto } from './dto/update-user.dto';
 import { ProfileImageUploadDto } from './dto/profile-image-upload.dto';
 import { ProfileImageCompleteDto } from './dto/profile-image-complete.dto';
 import { JwtAuthGuard } from '../auth/jwt-auth.guard'; 
+import { AuthGuard } from '@nestjs/passport';
 
 @ApiTags('users')
 @Controller('users')
@@ -133,7 +134,7 @@ export class UsersController {
   }
 
   @Post('profile-image/upload-url')
-  @UseGuards(JwtAuthGuard)
+  @UseGuards(AuthGuard('jwt'))
   @ApiBearerAuth()
   @ApiOperation({ 
     summary: '프로필 이미지 업로드 URL 생성',
@@ -158,7 +159,7 @@ export class UsersController {
   @ApiResponse({ status: 400, description: '잘못된 파일 형식 또는 크기' })
   async generateProfileImageUploadUrl(
     @Body(ValidationPipe) dto: ProfileImageUploadDto, 
-    @Req() req: Request
+    @Req() req
   ) {
     const user = req.user as any;
     const data = await this.profileImageService.generateUploadUrl(dto, user.id);
