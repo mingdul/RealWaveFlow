@@ -35,18 +35,41 @@ const StagePage: React.FC = () => {
 
   // 트랙 정보 가져오기
   useEffect(() => {
-    if (trackId) {
-      trackService.getTrackById(trackId)
-        .then((response: any) => {
+    const fetchTrackData = async () => {
+      try {
+        let trackData = null;
+        
+        // trackId가 있으면 trackId로 트랙 정보 가져오기
+        if (trackId) {
+          console.log('🔍 Fetching track by trackId:', trackId);
+          const response = await trackService.getTrackById(trackId);
           if (response.success) {
-            setTrack(response.data || null);
+            trackData = response.data;
+            console.log('✅ Track fetched by trackId:', trackData);
           } else {
-            console.error("Failed to fetch track details");
+            console.error("❌ Failed to fetch track by trackId");
           }
-        })
-        .catch((error: any) => console.error("Error fetching track details:", error));
+        }
+        
+        // trackId가 없거나 실패했고, stage가 있으면 stage에서 트랙 정보 가져오기
+        if (!trackData && stage?.track) {
+          console.log('🔍 Using track info from stage:', stage.track);
+          trackData = stage.track;
+        }
+        
+        setTrack(trackData || null);
+        console.log('🎵 Final track data set:', trackData);
+        
+      } catch (error) {
+        console.error("❌ Error fetching track details:", error);
+      }
+    };
+
+    // stage 정보가 로드된 후에 트랙 정보 가져오기
+    if (stage || trackId) {
+      fetchTrackData();
     }
-  }, [trackId]);
+  }, [trackId, stage]);
 
   // 리뷰어 정보 가져오기 함수
   const fetchReviewers = async (stageId: string) => {
@@ -355,7 +378,9 @@ const StagePage: React.FC = () => {
                     src={track.image_url} 
                     alt={`${track.title} album cover`}
                     className="w-full h-full object-cover"
+                    onLoad={() => console.log('✅ Track image loaded successfully:', track.image_url)}
                     onError={(e) => {
+                      console.log('❌ Track image failed to load:', track.image_url);
                       // 이미지 로드 실패 시 기본 아이콘 표시
                       const target = e.target as HTMLImageElement;
                       target.style.display = 'none';
@@ -386,6 +411,12 @@ const StagePage: React.FC = () => {
               </div>
             </div>
           </div>
+          {/* 디버깅 정보 */}
+          {import.meta.env.DEV && (
+            <div className="text-xs text-gray-500 mt-2">
+              Debug: Track ID: {track?.id}, Title: {track?.title}, Image URL: {track?.image_url || 'None'}
+            </div>
+          )}
         </div>
 
 
