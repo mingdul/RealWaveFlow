@@ -248,7 +248,7 @@ const StagePage: React.FC = () => {
         <div className="absolute top-[70px] left-0 w-full text-center z-20">
           <div className="bg-gradient-to-r from-transparent via-black/60 to-transparent py-2">
             <h3 className="text-xl font-bold text-white drop-shadow-lg px-4">
-              {getSafeTitle(upstream)}
+              {upstream.title && typeof upstream.title === 'string' && upstream.title.trim() ? upstream.title : `STEM SET #${upstream.id}`}
             </h3>
           </div>
         </div>
@@ -267,8 +267,8 @@ const StagePage: React.FC = () => {
               </p>
             </div>
 
-            {/* Detail Button */}
-            <div className="flex items-center justify-center">
+            {/* Detail Button - 오른쪽 정렬 */}
+            <div className="flex items-center justify-end">
               <button
                 type="button"
                 onClick={handleDetailClick}
@@ -340,8 +340,8 @@ const StagePage: React.FC = () => {
       
       <main className='relative px-8 pb-8 pt-6'>
         {/* Stage Header */}
-        <div className='mb-8'>
-          <div className="flex items-center gap-4 mb-6">
+        <div className='mb-12'>
+          <div className="flex items-center gap-4 mb-8">
             <div className="w-16 h-16 bg-gradient-to-br from-purple-600 to-blue-600 rounded-2xl flex items-center justify-center shadow-lg">
               <Music className="w-8 h-8 text-white" />
             </div>
@@ -359,7 +359,7 @@ const StagePage: React.FC = () => {
           </div>
           
           {/* Stage Description Card */}
-          <div className='rounded-2xl bg-gradient-to-r from-gray-800/80 to-gray-700/80 p-8 shadow-2xl border border-gray-600/50 backdrop-blur-sm'>
+          <div className='rounded-2xl bg-gradient-to-r from-gray-800/80 to-gray-700/80 p-8 shadow-2xl border border-gray-600/50 backdrop-blur-sm mb-8'>
             <div className='flex items-start gap-6'>
               <div className='flex-shrink-0'>
                 <div className='w-14 h-14 bg-gradient-to-br from-blue-600 to-purple-600 rounded-2xl flex items-center justify-center shadow-lg'>
@@ -369,7 +369,7 @@ const StagePage: React.FC = () => {
                 </div>
               </div>
               <div className='flex-1'>
-                <h4 className='text-xl font-semibold text-white mb-3'>Stage Description</h4>
+                <h4 className='text-xl font-semibold text-white mb-4'>Stage Description</h4>
                 <p className='text-gray-300 leading-relaxed text-lg'>{stage.description || 'No description provided for this stage.'}</p>
               </div>
             </div>
@@ -377,15 +377,15 @@ const StagePage: React.FC = () => {
         </div>
 
         {/* Reviewers Section */}
-        <div className='mb-8'>
+        <div className='mb-12'>
           <div className='rounded-2xl bg-gradient-to-r from-purple-900/60 to-blue-900/60 p-8 shadow-2xl border border-purple-500/30 backdrop-blur-sm'>
-            <div className='flex items-center justify-between mb-6'>
+            <div className='flex items-center justify-between mb-8'>
               <div className='flex items-center gap-4'>
                 <div className='w-14 h-14 bg-gradient-to-br from-blue-600 to-purple-600 rounded-2xl flex items-center justify-center shadow-lg'>
                   <Users className="w-7 h-7 text-white" />
                 </div>
                 <div>
-                  <h4 className='text-xl font-semibold text-white mb-1'>Stage Reviewers</h4>
+                  <h4 className='text-xl font-semibold text-white mb-2'>Stage Reviewers</h4>
                   <p className='text-gray-300 text-sm'>Collaborative review team</p>
                 </div>
               </div>
