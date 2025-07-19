@@ -56,7 +56,7 @@ const SettingsDropdown = () => {
   return (
     <div className="relative" ref={dropdownRef}>
       {/* Settings icon button */}
-      <Button size="sm" className="p-2 bg-purple-500 text-white" onClick={handleToggleDropdown}>
+      <Button size="sm" className="p-2 bg-black text-white" onClick={handleToggleDropdown}>
         <Settings size={20} />
       </Button>
 
