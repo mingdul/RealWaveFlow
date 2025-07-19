@@ -2,6 +2,7 @@ import React, { useState, useRef, useEffect } from 'react';
 import { useNotifications } from '../contexts/NotificationContext';
 import { Notification } from '../types/notification';
 import { BellRing } from 'lucide-react';
+import { Button } from '../components/';
 
 const NotificationBell: React.FC = () => {
   const [isOpen, setIsOpen] = useState(false);
@@ -24,7 +25,7 @@ const NotificationBell: React.FC = () => {
     console.log('🔔 [NotificationBell] 🔄 Badge update triggered!');
     console.log('🔔 [NotificationBell] Current unreadCount:', unreadCount);
     console.log('🔔 [NotificationBell] Total notifications:', notifications.length);
-    
+
     if (unreadCount > 0) {
       console.log('🔔 [NotificationBell] 🔴 Badge should show:', unreadCount);
     } else {
@@ -58,19 +59,19 @@ const NotificationBell: React.FC = () => {
   useEffect(() => {
     const handleBadgeUpdate = (event: CustomEvent) => {
       const { unreadCount: newUnreadCount, timestamp, source } = event.detail;
-      
+
       console.log('🔔 [NotificationBell] 📢 Received badge update event!');
       console.log('🔔 [NotificationBell] 📊 New unread count from event:', newUnreadCount);
       console.log('🔔 [NotificationBell] ⏰ Event timestamp:', timestamp);
       console.log('🔔 [NotificationBell] 📡 Event source:', source || 'unknown');
       console.log('🔔 [NotificationBell] 📊 Current context unread count:', unreadCount);
-      
+
       // 🔥 강제 리렌더링 트리거 (확실한 업데이트 보장)
       const newForceKey = forceUpdateKey + 1;
       setForceUpdateKey(newForceKey);
-      
+
       console.log('🔔 [NotificationBell] 🔄 Triggered force re-render, key updated:', forceUpdateKey, '→', newForceKey);
-      
+
       // 🔥 추가: DOM 강제 업데이트 확인
       setTimeout(() => {
         const badgeElement = document.querySelector('[class*="bg-red-600"]');
@@ -84,7 +85,7 @@ const NotificationBell: React.FC = () => {
 
     // 커스텀 이벤트 리스너 등록
     window.addEventListener('notification-badge-update', handleBadgeUpdate as EventListener);
-    
+
     console.log('🔔 [NotificationBell] 👂 Badge update event listener registered');
 
     return () => {
@@ -96,7 +97,7 @@ const NotificationBell: React.FC = () => {
   const toggleDropdown = async () => {
     console.log('🔔 [NotificationBell] 🖱️ Bell icon clicked!');
     console.log('🔔 [NotificationBell] Current state - isOpen:', isOpen, ', unreadCount:', unreadCount);
-    
+
     // 드롭다운을 열 때만 API에서 최신 알림 목록을 가져옴
     // (Badge 개수는 소켓 이벤트로 실시간 업데이트됨)
     if (!isOpen) {
@@ -110,13 +111,13 @@ const NotificationBell: React.FC = () => {
     } else {
       console.log('🔔 [NotificationBell] 📋 Closing dropdown');
     }
-    
+
     setIsOpen(!isOpen);
   };
 
   const handleMarkAllRead = async () => {
     if (unreadCount === 0) return; // 읽지 않은 알림이 없으면 무시
-    
+
     setIsMarkingAllRead(true);
     try {
       console.log('📖 [NotificationBell] 모든 알림 읽음 처리 시작...');
@@ -133,11 +134,11 @@ const NotificationBell: React.FC = () => {
     if (!notification.isRead) {
       await markAsRead(notification.id);
     }
-    
+
     // 알림 데이터에 따라 적절한 페이지로 이동
     if (notification.data) {
       const { trackId, stageId } = notification.data;
-      
+
       switch (notification.type) {
         case 'stage_created':
           if (trackId) {
@@ -186,30 +187,31 @@ const NotificationBell: React.FC = () => {
   return (
     <div className="relative" ref={dropdownRef}>
       {/* 알림 벨 아이콘 */}
-      <button
+      <Button
         onClick={toggleDropdown}
-        className="relative p-2 text-gray-400 hover:text-gray-500 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-blue-500 rounded-full"
+        size="sm"
+        className="p-2 bg-black text-white"
       >
         <span className="sr-only">View notifications</span>
         <BellRing className="h-6 w-6" />
-        
+
         {/* 읽지 않은 알림 개수 배지 - 실시간 업데이트 */}
         {unreadCount > 0 && (
-          <span 
+          <span
             className="absolute -top-1 -right-1 inline-flex items-center justify-center px-2 py-1 text-xs font-bold leading-none text-white transform translate-x-1/2 -translate-y-1/2 bg-red-600 rounded-full transition-all duration-200 ease-in-out"
             key={`badge-${unreadCount}-${forceUpdateKey}`} // 🔥 NEW: forceUpdateKey 추가로 강제 리렌더링
           >
             {unreadCount > 99 ? '99+' : unreadCount}
           </span>
         )}
-        
+
         {/* 디버그용 - 개발 중에만 표시 */}
         {import.meta.env.DEV && (
           <span className="absolute -bottom-6 -right-2 text-xs text-gray-400 bg-gray-100 px-1 rounded">
             Debug: {unreadCount} (Key: {forceUpdateKey})
           </span>
         )}
-      </button>
+      </Button>
 
       {/* 드롭다운 메뉴 */}
       {isOpen && (
@@ -230,8 +232,8 @@ const NotificationBell: React.FC = () => {
                       disabled={isMarkingAllRead}
                       className={`
                         px-3 py-1 text-xs font-medium rounded-md transition-all
-                        ${isMarkingAllRead 
-                          ? 'bg-gray-300 text-gray-500 cursor-not-allowed' 
+                        ${isMarkingAllRead
+                          ? 'bg-gray-300 text-gray-500 cursor-not-allowed'
                           : 'bg-blue-600 text-white hover:bg-blue-700 focus:outline-none focus:ring-2 focus:ring-blue-500'
                         }
                       `}
@@ -282,7 +284,7 @@ const NotificationBell: React.FC = () => {
                           {getNotificationIcon(notification.type)}
                         </span>
                       </div>
-                      
+
                       {/* 알림 내용 */}
                       <div className="flex-1 min-w-0">
                         <div className="flex items-center justify-between">
@@ -297,7 +299,7 @@ const NotificationBell: React.FC = () => {
                           {notification.data?.stageTitle || notification.data?.upstreamTitle || ''}
                         </p>
                       </div>
-                      
+
                       {/* 읽지 않은 알림 표시 */}
                       {!notification.isRead && (
                         <div className="flex-shrink-0">
@@ -327,4 +329,4 @@ const NotificationBell: React.FC = () => {
   );
 };
 
-export default NotificationBell; 
+export default NotificationBell;
