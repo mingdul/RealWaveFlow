@@ -1,13 +1,12 @@
 import React, { useState, useEffect } from 'react';
 import { useParams } from 'react-router-dom';
-import { Upload, Users, Music, Clock, Award, Eye, CheckCircle, XCircle } from 'lucide-react';
+import { Upload, Music, Clock, Award, Eye, CheckCircle, XCircle } from 'lucide-react';
 // import Logo from '../components/Logo';
 import UploadModal from '../components/UploadModal';
 import trackService from '../services/trackService';
 import { getStageDetail } from '../services/stageService';
 import { getStageUpstreams } from '../services/upstreamService';
-import { getStageReviewers } from '../services/stageReviewerService';
-import { Track, Stage, Upstream, StageReviewer } from '../types/api';
+import { Track, Stage, Upstream } from '../types/api';
 import tapeActive from '../assets/activeTape.png';
 import tapeApproved from '../assets/approveTape.png';
 import tapeRejected from '../assets/rejectedTape.png';
@@ -23,16 +22,9 @@ const StagePage: React.FC = () => {
   // 상태 관리
   const [stage, setStage] = useState<Stage | null>(null);
   const [upstreams, setUpstreams] = useState<Upstream[]>([]);
-  const [reviewers, setReviewers] = useState<StageReviewer[]>([]);
   const [loading, setLoading] = useState(true);
-  const [reviewersLoading, setReviewersLoading] = useState(false);
-  const [reviewersError, setReviewersError] = useState<string | null>(null);
   const [isUploadModalOpen, setUploadModalOpen] = useState(false);
   const [track, setTrack] = useState<Track | null>(null);
-  const [showAllReviewers, setShowAllReviewers] = useState(false);
-
-  // Constants
-  const MAX_DISPLAYED_REVIEWERS = 5;
 
   // 트랙 정보 가져오기
   useEffect(() => {
@@ -72,21 +64,6 @@ const StagePage: React.FC = () => {
     }
   }, [trackId, stage]);
 
-  // 리뷰어 정보 가져오기 함수
-  const fetchReviewers = async (stageId: string) => {
-    setReviewersLoading(true);
-    setReviewersError(null);
-    try {
-      const reviewersResponse = await getStageReviewers(stageId);
-      setReviewers(reviewersResponse || []);
-    } catch (error) {
-      console.error("Error fetching reviewers:", error);
-      setReviewersError("Failed to load reviewers");
-    } finally {
-      setReviewersLoading(false);
-    }
-  };
-
   // 스테이지 정보 가져오기
   useEffect(() => {
     const fetchStageData = async () => {
@@ -105,9 +82,6 @@ const StagePage: React.FC = () => {
         // 업스트림 목록 가져오기
         const upstreamsResponse = await getStageUpstreams(stageId);
         setUpstreams(upstreamsResponse || []);
-
-        // 리뷰어 목록 가져오기
-        await fetchReviewers(stageId);
 
       } catch (error) {
         console.error("Error fetching stage data:", error);

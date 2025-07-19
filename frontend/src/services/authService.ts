@@ -179,7 +179,7 @@ class AuthService {
       }
 
       // S3 이미지 URL 반환
-      const s3ImageUrl = `https://${process.env.VITE_AWS_S3_BUCKET || 'waveflow-uploads'}.s3.amazonaws.com/${uploadData.s3_key}`;
+      const s3ImageUrl = `https://${import.meta.env.VITE_AWS_S3_BUCKET || 'waveflow-uploads'}.s3.amazonaws.com/${uploadData.s3_key}`;
       return s3ImageUrl;
 
     } catch (error: any) {
