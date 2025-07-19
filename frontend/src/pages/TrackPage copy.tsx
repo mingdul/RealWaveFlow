@@ -2,7 +2,7 @@ import React, { useState, useEffect } from 'react';
 import { useParams, useNavigate } from 'react-router-dom';
 import { Track, Stage } from '../types/api';
 import {
-  TrackHeader,
+  TrackHeaderCopy,
   TrackInfoCard,
   OpenStageModal,
   StemListModal,
@@ -52,50 +52,7 @@ const ErrorState: React.FC<{ message: string }> = ({ message }) => (
 
 
 
-// 버전 정보 패널 컴포넌트
-const VersionInfoPanel: React.FC<{ 
-  selectedVersion: number; 
-  selectedStage: Stage | undefined;
-  totalStems: number;
-}> = ({ selectedVersion, selectedStage, totalStems }) => (
-  <div className="bg-white/10 backdrop-blur-lg border border-white/20 rounded-lg p-6 shadow-md mb-6">
-    <h3 className="text-xl font-semibold text-white mb-4">Current Version</h3>
-    <div className="space-y-4">
-      <div>
-        <label className="text-sm font-medium text-gray-300">Version</label>
-        <p className="text-base text-white">v{selectedVersion}</p>
-      </div>
-      {selectedStage && (
-        <>
-          <div>
-            <label className="text-sm font-medium text-gray-300">Stage Title</label>
-            <p className="text-base text-white">{selectedStage.title}</p>
-          </div>
-          <div>
-            <label className="text-sm font-medium text-gray-300">Status</label>
-            <span className={`inline-flex items-center px-2.5 py-0.5 rounded-full text-xs font-medium ${
-              selectedStage.status === 'active' 
-                ? 'bg-green-100 text-green-800' 
-                : 'bg-gray-100 text-gray-800'
-            }`}>
-              {selectedStage.status}
-            </span>
-          </div>
-          <div>
-            <label className="text-sm font-medium text-gray-300">Created</label>
-            <p className="text-base text-white">
-              {new Date(selectedStage.created_at).toLocaleDateString()}
-            </p>
-          </div>
-        </>
-      )}
-      <div>
-        <label className="text-sm font-medium text-gray-300">Stems Count</label>
-        <p className="text-base text-white">{totalStems}</p>
-      </div>
-    </div>
-  </div>
-);
+
 
 // 콜라보레이터 카드 컴포넌트 (실제 멤버 표시)
 const CollaboratorsCard: React.FC<{ track: Track }> = ({ track }) => (
@@ -757,9 +714,10 @@ const TrackPageCopy: React.FC<TrackPageCopyProps> = () => {
       {/* 메인 컨텐츠 */}
       <div className="relative z-10 overflow-y-auto scrollbar-hide">
         <div className="backdrop-blur-sm">
-          <TrackHeader
+          <TrackHeaderCopy
             onBack={handleBack}
             onSettingsClick={() => console.log('Settings clicked')}
+            track={track}
           />
 
           <div className="px-4 sm:px-6 lg:px-8 py-6 sm:py-8">
@@ -779,15 +737,8 @@ const TrackPageCopy: React.FC<TrackPageCopyProps> = () => {
                 />
               </div>
 
-              {/* 오른쪽 영역 - 정보 카드들 (1/3 width) */}
+              {/* 오른쪽 영역 - 콜라보레이터 카드 */}
               <div className="space-y-6">
-                <div className="transform transition-all duration-300 hover:scale-[1.02]">
-                  <VersionInfoPanel 
-                    selectedVersion={selectedStageVersion}
-                    selectedStage={getSelectedStage()}
-                    totalStems={stems.length}
-                  />
-                </div>
                 <div className="transform transition-all duration-300 hover:scale-[1.02]">
                   <CollaboratorsCard track={track} />
                 </div>

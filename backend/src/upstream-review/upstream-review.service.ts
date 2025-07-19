@@ -11,6 +11,7 @@ import { Stage } from 'src/stage/stage.entity';
 import { CreateVersionStemDto } from 'src/version-stem/dto/createVersionStem.dto';
 import { VersionStem } from 'src/version-stem/version-stem.entity';
 import { TrackCollaborator } from 'src/track_collaborator/track_collaborator.entity';
+import { Track } from 'src/track/track.entity';
 import { NotificationGateway } from 'src/notification/notification.gateway';
 import { DataSource } from 'typeorm';
 @Injectable()
@@ -31,6 +32,8 @@ export class UpstreamReviewService {
         private versionStemRepository: Repository<VersionStem>,
         @InjectRepository(TrackCollaborator)
         private trackCollaboratorRepository: Repository<TrackCollaborator>,
+        @InjectRepository(Track)
+        private trackRepository: Repository<Track>,
         private notificationGateway: NotificationGateway,
         private dataSource: DataSource,
     ) {}
@@ -117,7 +120,24 @@ export class UpstreamReviewService {
             try {
               console.log(`🔔 [UpstreamReview] Starting version creation notification process...`);
               console.log(`🔔 [UpstreamReview] Track ID: ${upstream.stage.track.id}`);
+              console.log(`🔔 [UpstreamReview] Track Title: ${upstream.stage.track.title}`);
+              console.log(`🔔 [UpstreamReview] Stage ID: ${upstream.stage.id}`);
+              console.log(`🔔 [UpstreamReview] Stage Version: ${upstream.stage.version}`);
               
+              // 트랙 정보 다시 조회 (owner 포함)
+              const trackWithOwner = await this.trackRepository.findOne({
+                where: { id: upstream.stage.track.id },
+                relations: ['owner_id'],
+              });
+
+              if (!trackWithOwner) {
+                console.error(`🔔 [UpstreamReview] ❌ Track not found: ${upstream.stage.track.id}`);
+                return;
+              }
+
+              console.log(`🔔 [UpstreamReview] Track Owner ID: ${trackWithOwner.owner_id?.id}`);
+              
+              // 트랙 collaborators 조회
               const trackCollaborators = await this.trackCollaboratorRepository.find({
                 where: { 
                   track_id: { id: upstream.stage.track.id },
@@ -128,31 +148,56 @@ export class UpstreamReviewService {
 
               console.log(`🔔 [UpstreamReview] Found ${trackCollaborators.length} track collaborators`);
 
-              const memberUserIds = trackCollaborators.map(collab => collab.user_id.id);
-              console.log(`🔔 [UpstreamReview] Member user IDs:`, memberUserIds);
+              // 알림을 받을 사용자 ID 목록 생성 (트랙 owner + collaborators)
+              const memberUserIds: string[] = [];
+              
+              // 트랙 owner 추가
+              if (trackWithOwner.owner_id?.id) {
+                memberUserIds.push(trackWithOwner.owner_id.id);
+                console.log(`🔔 [UpstreamReview] Added track owner: ${trackWithOwner.owner_id.id}`);
+              }
+              
+              // collaborators 추가 (owner와 중복 제거)
+              trackCollaborators.forEach(collab => {
+                if (collab.user_id?.id && !memberUserIds.includes(collab.user_id.id)) {
+                  memberUserIds.push(collab.user_id.id);
+                  console.log(`🔔 [UpstreamReview] Added collaborator: ${collab.user_id.id}`);
+                }
+              });
+
+              console.log(`🔔 [UpstreamReview] Final member user IDs:`, memberUserIds);
               
               if (memberUserIds.length > 0) {
                 const trackName = upstream.stage.track.title || '트랙';
-                const stageVersion = upstream.stage.version || `버전 ${upstream.stage.version}`;
+                const stageVersion = upstream.stage.version ? `버전 ${upstream.stage.version}` : '새 버전';
                 
                 console.log(`🔔 [UpstreamReview] Sending notification for track: "${trackName}", version: "${stageVersion}"`);
+                
+                // 알림 데이터 준비
+                const notificationData = {
+                  trackId: upstream.stage.track.id,
+                  stageId: upstream.stage.id,
+                  upstreamId: upstreamId,
+                  trackName: trackName,
+                  stageVersion: stageVersion,
+                  trackTitle: trackName, // 추가 호환성
+                  stageTitle: upstream.stage.title || stageVersion,
+                };
+
+                console.log(`🔔 [UpstreamReview] Notification data:`, JSON.stringify(notificationData, null, 2));
                 
                 await this.notificationGateway.sendNotificationToUsers(
                   memberUserIds,
                   'version_created',
                   `🆕 ${trackName}의 새로운 버전 "${stageVersion}"이 생성되었습니다!`,
-                  {
-                    trackId: upstream.stage.track.id,
-                    stageId: upstream.stage.id,
-                    upstreamId: upstreamId,
-                    trackName: trackName,
-                    stageVersion: stageVersion,
-                  }
+                  notificationData
                 );
 
                 console.log(`🔔 [UpstreamReview] ✅ Successfully sent version creation notification to ${memberUserIds.length} track members`);
               } else {
                 console.log(`🔔 [UpstreamReview] ⚠️ No track members found to notify`);
+                console.log(`🔔 [UpstreamReview] Track owner exists: ${!!trackWithOwner.owner_id?.id}`);
+                console.log(`🔔 [UpstreamReview] Collaborators count: ${trackCollaborators.length}`);
               }
             } catch (error) {
               console.error('🔔 [UpstreamReview] ❌ Failed to send version creation notification:', error);
@@ -160,7 +205,8 @@ export class UpstreamReviewService {
                 message: error.message,
                 stack: error.stack,
                 trackId: upstream?.stage?.track?.id,
-                upstreamId: upstreamId
+                upstreamId: upstreamId,
+                stageId: upstream?.stage?.id
               });
               // 알림 실패해도 비즈니스 로직은 계속 진행
             }

@@ -13,6 +13,7 @@ export { default as InitProjectModal } from './InitProjectModal';
 export { default as S3FileUploader } from './S3FileUploader';
 export { default as S3UploadProgress } from './S3UploadProgress';
 export { default as TrackHeader } from './TrackHeader';
+export { default as TrackHeaderCopy } from './TrackHeadercopy';
 export { default as TrackInfoCard } from './TrackInfoCard';
 export { default as VersionHistory } from './VersionHistory';
 export { default as VersionCard } from './VersionCard';
