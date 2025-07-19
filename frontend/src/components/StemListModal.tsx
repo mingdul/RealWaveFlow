@@ -88,10 +88,10 @@ const StemListModal: React.FC<StemListModalProps> = ({
             <Button 
               variant="secondary" 
               size="sm" 
-              className="bg-red-600 hover:bg-red-700"
+              className="bg-blue-600 hover:bg-blue-700"
               onClick={() => onShowStage(stageId || '')}
             >
-              Roll Back
+              STAGE HISTORY
             </Button>
           </div>
         )}
