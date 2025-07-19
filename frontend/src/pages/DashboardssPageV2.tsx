@@ -23,6 +23,7 @@ import CreateTrackModal from '../components/CreateTrackModal';
 import PresignedImage from '../components/PresignedImage';
 import ConfirmModal from '../components/ConfirmModal';
 import AnimatedModal from '../components/AnimatedModal';
+import NotificationBell from '../components/NotificationBell';
 
 const DashboardPageV2 = () => {
   const navigate = useNavigate();
@@ -451,7 +452,8 @@ const DashboardPageV2 = () => {
             )}
           </div> */}
 
-
+            {/* 알람 기능 */}
+            <NotificationBell />
 
             <button
               onClick={handleLogout}
