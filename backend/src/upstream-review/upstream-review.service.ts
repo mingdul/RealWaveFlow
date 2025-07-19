@@ -127,18 +127,18 @@ export class UpstreamReviewService {
               
               if (memberUserIds.length > 0) {
                 const trackName = upstream.stage.track.title || '트랙';
-                const stageName = upstream.stage.title || `버전 ${upstream.stage.version}`;
+                const stageVersion = upstream.stage.version || `버전 ${upstream.stage.version}`;
                 
                 await this.notificationGateway.sendNotificationToUsers(
                   memberUserIds,
                   'version_created',
-                  `🎵 ${trackName}의 새로운 버전 "${stageName}"이 생성되었습니다!`,
+                  `🆕 ${trackName}의 새로운 버전 "${stageVersion}"이 생성되었습니다!`,
                   {
                     trackId: upstream.stage.track.id,
                     stageId: upstream.stage.id,
                     upstreamId: upstreamId,
                     trackName: trackName,
-                    stageName: stageName,
+                    stageVersion: stageVersion,
                   }
                 );
 
