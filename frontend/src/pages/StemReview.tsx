@@ -120,6 +120,7 @@ const StemSetReview = () => {
   const [extraPeaks, setExtraPeaks] = useState<any>(null); // extra/stem waveform 데이터
   const [stemLoading, setStemLoading] = useState(false); // 개별 스템 로딩 상태 추가
   const [waveformLoading, setWaveformLoading] = useState(false); // waveform 데이터 로딩 상태 추가
+  const [stageInfo, setStageInfo] = useState<any>(null); // Stage 정보 상태 추가
 
   const wavesurferRefs = useRef<{ [id: string]: WaveSurfer }>({});
   const [readyStates, setReadyStates] = useState<{ [id: string]: boolean }>({});
@@ -534,6 +535,10 @@ const StemSetReview = () => {
 
       const currentTrackId = stageResponse.data.track.id;
       console.log('✅ [loadStemsData] Track ID obtained:', currentTrackId);
+      
+      // Stage 정보 저장
+      setStageInfo(stageResponse.data);
+      console.log('✅ [loadStemsData] Stage info saved:', stageResponse.data);
 
       // 2. 스템 정보 가져오기
       console.log('🔍 [loadStemsData] Fetching upstream stems...');
@@ -1524,12 +1529,25 @@ const StemSetReview = () => {
     }
   }, [currentTime, readyStates, isPlaying]);
 
+  // Stage 상태가 APPROVED인지 확인하는 함수
+  const isStageApproved = () => {
+    if (!stageInfo) return false;
+    const status = stageInfo.status?.toUpperCase();
+    return status === 'APPROVED' || status === 'APPROVE';
+  };
+
   const handleApprove = async () => {
     console.log('🔍 Stage ID:', stageId);
     console.log('🔍 Selected Upstream:', upstreamId);
 
     if (!stageId || !upstreamId) {
       showWarning('Stage 또는 Upstream이 선택되지 않았습니다.');
+      return;
+    }
+
+    // Stage가 이미 승인된 경우 버튼 동작 방지
+    if (isStageApproved()) {
+      showWarning('이미 승인된 Stage입니다.');
       return;
     }
 
@@ -1545,6 +1563,12 @@ const StemSetReview = () => {
   const handleReject = async () => {
     if (!stageId || !upstreamId) {
       showWarning('Stage 또는 Upstream이 선택되지 않았습니다.');
+      return;
+    }
+
+    // Stage가 이미 승인된 경우 버튼 동작 방지
+    if (isStageApproved()) {
+      showWarning('이미 승인된 Stage입니다.');
       return;
     }
 
@@ -1668,9 +1692,22 @@ const StemSetReview = () => {
                 <Logo />
               </div>
 
-              {/* Center Section - Page Title */}
-              <div className="flex items-center justify-center">
-                <h1 className="text-2xl font-bold text-white">Review</h1>
+              {/* Center Section - Action Buttons */}
+              <div className="flex items-center space-x-3">
+                <button
+                  onClick={handleApprove}
+                  disabled={isStageApproved()}
+                  className={`px-6 py-2 bg-gradient-to-r from-green-600 to-green-700 hover:from-green-700 hover:to-green-800 text-white rounded-lg font-medium transition-all duration-200 shadow-lg hover:shadow-green-500/25 ${isStageApproved() ? 'opacity-50 cursor-not-allowed' : ''}`}
+                >
+                  {isStageApproved() ? 'APPROVED' : 'APPROVE'}
+                </button>
+                <button
+                  onClick={handleReject}
+                  disabled={isStageApproved()}
+                  className={`px-6 py-2 bg-gradient-to-r from-red-600 to-red-700 hover:from-red-700 hover:to-red-800 text-white rounded-lg font-medium transition-all duration-200 shadow-lg hover:shadow-red-500/25 ${isStageApproved() ? 'opacity-50 cursor-not-allowed' : ''}`}
+                >
+                  REJECT
+                </button>
               </div>
 
               {/* Right Section */}

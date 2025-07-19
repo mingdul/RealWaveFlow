@@ -122,6 +122,7 @@ const StemSetReviewPage = () => {
   const [extraPeaks, setExtraPeaks] = useState<any>(null); // extra/stem waveform 데이터
   const [stemLoading, setStemLoading] = useState(false); // 개별 스템 로딩 상태 추가
   const [waveformLoading, setWaveformLoading] = useState(false); // waveform 데이터 로딩 상태 추가
+  const [stageInfo, setStageInfo] = useState<any>(null); // Stage 정보 상태 추가
 
   const wavesurferRefs = useRef<{ [id: string]: WaveSurfer }>({});
   const [readyStates, setReadyStates] = useState<{ [id: string]: boolean }>({});
@@ -536,6 +537,10 @@ const StemSetReviewPage = () => {
 
       const currentTrackId = stageResponse.data.track.id;
       console.log('✅ [loadStemsData] Track ID obtained:', currentTrackId);
+      
+      // Stage 정보 저장
+      setStageInfo(stageResponse.data);
+      console.log('✅ [loadStemsData] Stage info saved:', stageResponse.data);
 
       // 2. 스템 정보 가져오기
       console.log('🔍 [loadStemsData] Fetching upstream stems...');
@@ -1526,12 +1531,25 @@ const StemSetReviewPage = () => {
     }
   }, [currentTime, readyStates, isPlaying]);
 
+  // Stage 상태가 APPROVED인지 확인하는 함수
+  const isStageApproved = () => {
+    if (!stageInfo) return false;
+    const status = stageInfo.status?.toUpperCase();
+    return status === 'APPROVED' || status === 'APPROVE';
+  };
+
   const handleApprove = async () => {
     console.log('🔍 Stage ID:', stageId);
     console.log('🔍 Selected Upstream:', upstreamId);
 
     if (!stageId || !upstreamId) {
       showWarning('Stage 또는 Upstream이 선택되지 않았습니다.');
+      return;
+    }
+
+    // Stage가 이미 승인된 경우 버튼 동작 방지
+    if (isStageApproved()) {
+      showWarning('이미 승인된 Stage입니다.');
       return;
     }
 
@@ -1547,6 +1565,12 @@ const StemSetReviewPage = () => {
   const handleReject = async () => {
     if (!stageId || !upstreamId) {
       showWarning('Stage 또는 Upstream이 선택되지 않았습니다.');
+      return;
+    }
+
+    // Stage가 이미 승인된 경우 버튼 동작 방지
+    if (isStageApproved()) {
+      showWarning('이미 승인된 Stage입니다.');
       return;
     }
 
@@ -1634,17 +1658,19 @@ const StemSetReviewPage = () => {
           <div className='flex items-center space-x-4'>
             <ActionButton
               icon={<Check size={20} />}
-              label='승인'
+              label={isStageApproved() ? '승인됨' : '승인'}
               onClick={handleApprove}
               variant='success'
-              className='px-6 py-3 font-semibold'
+              className={`px-6 py-3 font-semibold ${isStageApproved() ? 'opacity-50 cursor-not-allowed' : ''}`}
+              disabled={isStageApproved()}
             />
             <ActionButton
               icon={<X size={20} />}
               label='거절'
               onClick={handleReject}
               variant='danger'
-              className='px-6 py-3 font-semibold'
+              className={`px-6 py-3 font-semibold ${isStageApproved() ? 'opacity-50 cursor-not-allowed' : ''}`}
+              disabled={isStageApproved()}
             />
           </div>
 
