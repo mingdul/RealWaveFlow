@@ -57,27 +57,18 @@ interface Comment {
 }
 
 const StemSetReview = () => {
-  console.log('🎬 [StemSetReviewPage] Component initializing...');
-
   const { user } = useAuth();
   const { showError, showSuccess, showWarning } = useToast();
   const navigate = useNavigate();
 
-  console.log('🔍 [StemSetReviewPage] Initial user:', user?.username || 'No user');
-
   // 전역 에러 핸들러 설정
   useEffect(() => {
     const handleError = (event: ErrorEvent) => {
-      console.error('🚨 [Global Error Handler] Uncaught error:', event.error);
-      console.error('🚨 [Global Error Handler] Error message:', event.message);
-      console.error('🚨 [Global Error Handler] Error filename:', event.filename);
-      console.error('🚨 [Global Error Handler] Error line:', event.lineno);
-      console.error('🚨 [Global Error Handler] Error column:', event.colno);
+      // Error handler
     };
 
     const handleUnhandledRejection = (event: PromiseRejectionEvent) => {
-      console.error('🚨 [Global Promise Rejection] Unhandled rejection:', event.reason);
-      console.error('🚨 [Global Promise Rejection] Promise:', event.promise);
+      // Promise rejection handler
     };
 
     window.addEventListener('error', handleError);
@@ -134,51 +125,23 @@ const StemSetReview = () => {
   const urlStageId = searchParams.get('stageId');
   const [stageId, setStageId] = useState<string | undefined>(urlStageId || undefined);
 
-  console.log('🔍 [StemSetReviewPage] Initial params:', {
-    upstreamId,
-    urlStageId,
-    stageId
-  });
-
   // stageId 결정 로직 (쿼리 파라미터 우선, 없으면 upstream API 사용)
   useEffect(() => {
     const determineStageId = async () => {
-      console.log('🔍 [determineStageId] Starting with:', { upstreamId, urlStageId });
-
       // 쿼리 파라미터에 stageId가 있으면 바로 사용
       if (urlStageId) {
-        console.log('✅ [determineStageId] Using stageId from query params:', urlStageId);
         setStageId(urlStageId);
 
         // stageId가 있어도 upstreamId로 upstream 정보를 가져와서 selectedUpstream 설정
         if (upstreamId) {
           try {
-            console.log(
-              '🔍 [determineStageId] Fetching upstream details for selectedUpstream:',
-              upstreamId
-            );
             const upstreamData = await getUpstreamByUpstreamId(upstreamId);
-            console.log(
-              '📦 [determineStageId] Upstream data response:',
-              upstreamData
-            );
 
             if (upstreamData.success && upstreamData.data?.upstream) {
-              console.log(
-                '✅ [determineStageId] Setting selected upstream:',
-                upstreamData.data.upstream
-              );
               setSelectedUpstream(upstreamData.data.upstream);
-            } else {
-              console.error(
-                '❌ [determineStageId] No upstream data found in response'
-              );
             }
           } catch (error) {
-            console.error(
-              '❌ [determineStageId] Error fetching upstream details:',
-              error
-            );
+            // Error handling
           }
         }
         return;
@@ -187,112 +150,42 @@ const StemSetReview = () => {
       // URL에서 stageId가 없는 경우에만 upstream에서 추출
       if (upstreamId) {
         try {
-          console.log(
-            '🔍 [determineStageId] Found upstreamId in URL params, fetching upstream details:',
-            upstreamId
-          );
           // upstream 정보를 가져와서 stageId 추출
           const upstreamData = await getUpstreamByUpstreamId(upstreamId);
-          console.log(
-            '📦 [determineStageId] Upstream data response:',
-            upstreamData
-          );
 
           if (upstreamData.success && upstreamData.data?.upstream) {
-            console.log(
-              '📦 [determineStageId] Upstream object:',
-              upstreamData.data.upstream
-            );
-            console.log(
-              '📦 [determineStageId] Upstream keys:',
-              Object.keys(upstreamData.data.upstream)
-            );
-
             // stage 정보가 있는지 확인
             if (upstreamData.data.upstream.stage) {
               const extractedStageId = upstreamData.data.upstream.stage.id;
-              console.log(
-                '✅ [determineStageId] Extracted stageId from upstream:',
-                extractedStageId
-              );
               setStageId(extractedStageId); // stageId state 업데이트
-            } else {
-              console.warn(
-                '⚠️ [determineStageId] No stage information in upstream'
-              );
             }
 
             // 선택된 upstream 설정
-            console.log(
-              '✅ [determineStageId] Setting selected upstream:',
-              upstreamData.data.upstream
-            );
             setSelectedUpstream(upstreamData.data.upstream);
 
             // stageId가 설정되었으므로 즉시 스템 데이터 로드 (함수 정의 후에 호출)
-          } else {
-            console.error(
-              '❌ [determineStageId] No upstream data found in response'
-            );
           }
         } catch (error) {
-          console.error(
-            '❌ [determineStageId] Error fetching upstream details:',
-            error
-          );
-          console.error(
-            '❌ [determineStageId] Error details:',
-            (error as any)?.message
-          );
+          // Error handling
         }
         return;
       }
-
-      console.log('⚠️ [determineStageId] No stageId or upstreamId found');
     };
 
     determineStageId();
   }, [upstreamId, urlStageId]);
 
-  // 상태 변경 추적을 위한 로그
-  useEffect(() => {
-    console.log('📊 [State Change] activePanel:', activePanel);
-  }, [activePanel]);
 
-  useEffect(() => {
-    console.log('📊 [State Change] selectedUpstream:', selectedUpstream?.id || 'null');
-  }, [selectedUpstream]);
-
-  useEffect(() => {
-    console.log('📊 [State Change] stageId:', stageId);
-  }, [stageId]);
-
-  useEffect(() => {
-    console.log('📊 [State Change] stemsLoading:', stemsLoading);
-  }, [stemsLoading]);
-
-
-  useEffect(() => {
-    console.log('📊 [State] UpstreamStems data:', upstreamStems);
-    if (upstreamStems.length > 0) {
-      console.log('📊 [State] First upstream sample:', upstreamStems[0]);
-    }
-  }, [upstreamStems]);
 
   // 현재 버전의 가이드 스템 URL 가져오기
   useEffect(() => {
     const fetchGuideUrl = async () => {
       if (!stageId || !upstreamId) {
-        console.warn('🔍 [fetchGuideUrl] Missing required parameters:', {
-          stageId,
-          upstreamId,
-        });
         return;
       }
 
       // 타임아웃 설정 (15초)
       const timeoutId = setTimeout(() => {
-        console.error('⏰ [fetchGuideUrl] Request timeout after 15 seconds');
         setGuideLoading(false);
         showError('로딩 시간이 초과되었습니다. 새로고침 후 다시 시도해주세요.');
       }, 15000);
@@ -300,25 +193,15 @@ const StemSetReview = () => {
       try {
         setGuideLoading(true);
         setGuideLoadAttempted(true);
-        console.log(
-          '🔍 [fetchGuideUrl] Starting fetch with stageId:',
-          stageId,
-          'upstreamId:',
-          upstreamId
-        );
 
         // 캐시 키 생성
         const cacheKey = `guide-${upstreamId}`;
 
         // 임시: 항상 새로운 데이터를 가져오도록 캐시 클리어 (presigned URL 만료 문제 해결)
-        console.log(
-          '🔄 [fetchGuideUrl] Clearing cache and fetching fresh presigned URLs'
-        );
         sessionStorage.removeItem(`audio-${cacheKey}`);
         sessionStorage.removeItem(`peaks-${cacheKey}`);
 
         // 1. 현재 스테이지 정보 가져오기
-        console.log('🔍 [fetchGuideUrl] Fetching stage details...');
         const currentStageResponse = await getStageDetail(stageId);
 
         // 응답 구조 검증 강화
@@ -336,26 +219,11 @@ const StemSetReview = () => {
           throw new Error('Stage API returned no data');
         }
 
-        console.log('✅ [fetchGuideUrl] Stage details fetched successfully');
-
         // 2. guide audio URL 및 waveform 데이터 가져오기 (병렬 처리)
-        console.log(
-          '🔍 [fetchGuideUrl] Fetching guide audio and waveform data...'
-        );
-
         const [audioResponse, waveformUrlResponse] = await Promise.all([
           streamingService.getUpstreamGuideStreamingUrl(upstreamId),
           streamingService.getGuideWaveformPresignedUrl(upstreamId),
         ]);
-
-        console.log(
-          '📦 [fetchGuideUrl] Audio response:',
-          audioResponse?.success ? '✅ Success' : '❌ Failed'
-        );
-        console.log(
-          '📦 [fetchGuideUrl] Waveform URL response:',
-          waveformUrlResponse?.success ? '✅ Success' : '❌ Failed'
-        );
 
         // 오디오 URL 처리 - 응답 구조 검증 강화
         if (audioResponse?.success && audioResponse.data?.presignedUrl) {
@@ -363,14 +231,10 @@ const StemSetReview = () => {
           if (typeof audioUrl === 'string' && audioUrl.length > 0) {
             setGuideAudioUrl(audioUrl);
             sessionStorage.setItem(`audio-${cacheKey}`, audioUrl);
-            console.log('🎵 [fetchGuideUrl] Guide audio URL set successfully');
           } else {
             throw new Error('Invalid audio URL format received');
           }
         } else {
-          console.warn(
-            '⚠️ [fetchGuideUrl] Guide audio not available, using fallback'
-          );
           setGuideAudioUrl('/audio/track_ex.wav');
           showWarning(
             '가이드 오디오를 불러올 수 없어 기본 오디오를 사용합니다.'
@@ -382,9 +246,6 @@ const StemSetReview = () => {
           waveformUrlResponse?.success &&
           waveformUrlResponse.data?.presignedUrl
         ) {
-          console.log(
-            '🔍 [fetchGuideUrl] Downloading waveform data from presigned URL...'
-          );
           const waveformDataResponse =
             await streamingService.downloadWaveformData(
               waveformUrlResponse.data.presignedUrl
@@ -403,33 +264,16 @@ const StemSetReview = () => {
                 `peaks-${cacheKey}`,
                 JSON.stringify(waveformData)
               );
-              console.log(
-                '🌊 [fetchGuideUrl] Guide waveform data downloaded and set successfully'
-              );
             } else {
-              console.warn(
-                '⚠️ [fetchGuideUrl] Invalid waveform data structure:',
-                waveformData
-              );
               setGuidePeaks(null);
             }
           } else {
-            console.warn('⚠️ [fetchGuideUrl] Failed to download waveform data');
             setGuidePeaks(null);
           }
         } else {
-          console.warn(
-            '⚠️ [fetchGuideUrl] Guide waveform presigned URL not available'
-          );
           setGuidePeaks(null);
         }
-
-        console.log(
-          '✅ [fetchGuideUrl] Guide URL fetch completed successfully'
-        );
       } catch (error) {
-        console.error('❌ [fetchGuideUrl] Error:', error);
-
         // 에러 타입별 처리
         const errorMessage =
           error instanceof Error ? error.message : 'Unknown error occurred';
@@ -456,9 +300,6 @@ const StemSetReview = () => {
       } finally {
         clearTimeout(timeoutId);
         setGuideLoading(false);
-        console.log(
-          '🏁 [fetchGuideUrl] Fetch process completed, loading state cleared'
-        );
       }
     };
 
@@ -468,9 +309,6 @@ const StemSetReview = () => {
   // 강제로 guideLoading 상태 해제 - API 호출이 성공했는데도 로딩이 계속되는 문제 해결
   useEffect(() => {
     if (guideAudioUrl && guidePeaks && guideLoading) {
-      console.log(
-        '🔧 [Force Guide Loading Clear] Audio and peaks available but still loading, forcing clear'
-      );
       setGuideLoading(false);
     }
   }, [guideAudioUrl, guidePeaks, guideLoading]);
@@ -480,9 +318,6 @@ const StemSetReview = () => {
     if (guideLoading) {
       const forceStopTimer = setTimeout(() => {
         if (guideLoading) {
-          console.log(
-            '🔧 [Force Guide Loading Clear Timer] Loading too long, forcing clear after 5 seconds'
-          );
           setGuideLoading(false);
         }
       }, 5000);
@@ -493,15 +328,8 @@ const StemSetReview = () => {
 
   // 스템 데이터 로드 함수 분리
   const loadStemsData = async (stageId: string, upstream: any) => {
-    console.log('🎯 [loadStemsData] Starting stems load:', {
-      stageId,
-      upstreamId: upstream?.id,
-      upstreamTitle: upstream?.title,
-    });
-
     // 타임아웃 설정 (15초)
     const timeoutId = setTimeout(() => {
-      console.error('⏰ [loadStemsData] Request timeout after 15 seconds');
       setStemsLoading(false);
       showError('스템 데이터 로딩 시간이 초과되었습니다.');
     }, 15000);
@@ -515,7 +343,6 @@ const StemSetReview = () => {
       }
 
       // 1. 스테이지 정보 가져오기
-      console.log('🔍 [loadStemsData] Fetching stage details...');
       const stageResponse = await getStageDetail(stageId);
 
       // 응답 구조 검증
@@ -534,14 +361,11 @@ const StemSetReview = () => {
       }
 
       const currentTrackId = stageResponse.data.track.id;
-      console.log('✅ [loadStemsData] Track ID obtained:', currentTrackId);
       
       // Stage 정보 저장
       setStageInfo(stageResponse.data);
-      console.log('✅ [loadStemsData] Stage info saved:', stageResponse.data);
 
       // 2. 스템 정보 가져오기
-      console.log('🔍 [loadStemsData] Fetching upstream stems...');
       const stemResponse = await getUpstreamStems(currentTrackId, upstream.id);
 
       // 스템 응답 구조 검증
@@ -550,23 +374,10 @@ const StemSetReview = () => {
       }
 
       if (!stemResponse.success) {
-        console.warn(
-          '⚠️ [loadStemsData] Stems API failed, but continuing with empty data'
-        );
         // 스템이 없는 경우는 에러가 아님
       }
 
       const stemData = stemResponse?.data?.data || null;
-
-      if (stemData && Array.isArray(stemData) && stemData.length > 0) {
-        console.log('✅ [loadStemsData] Stems found:', {
-          count: stemData.length,
-          types: stemData.map((s) => s.type),
-          categories: stemData.map((s) => s.category?.name),
-        });
-      } else {
-        console.log('⚠️ [loadStemsData] No stems found for this upstream');
-      }
 
       // 3. 결과 구성
       const stemsResult = [
@@ -578,10 +389,7 @@ const StemSetReview = () => {
       ];
 
       setUpstreamStems(stemsResult);
-      console.log('✅ [loadStemsData] Stems data loaded successfully');
     } catch (error) {
-      console.error('❌ [loadStemsData] Error:', error);
-
       // 에러 타입별 처리
       const errorMessage =
         error instanceof Error ? error.message : 'Unknown error';
@@ -606,40 +414,26 @@ const StemSetReview = () => {
     } finally {
       clearTimeout(timeoutId);
       setStemsLoading(false);
-      console.log('🏁 [loadStemsData] Loading completed');
     }
   };
 
   useEffect(() => {
     // stageId와 selectedUpstream이 모두 설정되면 스템 데이터 로드
     if (stageId && selectedUpstream) {
-      console.log(
-        '🎬 useEffect triggered with stageId:',
-        stageId,
-        'selectedUpstream:',
-        selectedUpstream.id
-      );
       loadStemsData(stageId, selectedUpstream);
-    } else {
-      console.log('⚠️ No stageId or selectedUpstream provided');
     }
   }, [stageId, selectedUpstream]);
 
   const handleReady = useCallback(
     (ws: WaveSurfer, id: string) => {
       try {
-        console.log(`🎯 [handleReady] Ready callback for ${id} START`);
-        console.log(`🎯 [handleReady] WaveSurfer instance:`, ws ? 'valid' : 'null');
-
         wavesurferRefs.current[id] = ws;
 
         // ready 상태 업데이트
         setReadyStates((prev) => {
           if (prev[id] === true) {
-            console.log(`⚠️ [handleReady] ${id} already ready, skipping`);
             return prev;
           }
-          console.log(`✅ [handleReady] Setting ${id} ready state`);
           return { ...prev, [id]: true };
         });
 
@@ -668,10 +462,8 @@ const StemSetReview = () => {
           }
         }
 
-        console.log(`🎯 [handleReady] Ready callback for ${id} END`);
       } catch (error: any) {
-        console.error(`❌ [handleReady] Error in ${id} ready callback:`, error);
-        console.error(`❌ [handleReady] Error stack:`, error?.stack);
+        // Error handling
       }
     },
     [] // dependencies 제거로 재생성 방지
@@ -691,9 +483,7 @@ const StemSetReview = () => {
             try {
               extraPlayer.pause();
             } catch (error: any) {
-              if (error.name !== 'AbortError') {
-                console.warn('Extra player pause error:', error);
-              }
+              // Error handling
             }
           }
         } else {
@@ -704,16 +494,12 @@ const StemSetReview = () => {
             try {
               extraPlayer.play();
             } catch (error: any) {
-              if (error.name !== 'AbortError') {
-                console.warn('Extra player play error:', error);
-              }
+              // Error handling
             }
           }
         }
       } catch (error: any) {
-        if (error.name !== 'AbortError') {
-          console.error('Toggle play error:', error);
-        }
+        // Error handling
       }
     }
   }, [isPlaying, readyStates]);
@@ -839,7 +625,6 @@ const StemSetReview = () => {
       setIsInlineCommentOpen(false);
       showSuccess('댓글이 추가되었습니다!');
     } catch (error) {
-      console.error('댓글 추가 실패:', error);
       showError('댓글 추가 중 오류가 발생했습니다.');
     }
   }, [newCommentText, commentPosition, user, selectedUpstream, showSuccess, showError]);
@@ -852,21 +637,12 @@ const StemSetReview = () => {
 
   // 재생 중 댓글 표시 로직 - SoundCloud 스타일 프로그레스바 기반
   useEffect(() => {
-    console.log('💬 [Comment Effect] State check:', {
-      isPlaying,
-      commentsCount: comments.length,
-      currentTime: currentTime.toFixed(2),
-      duration: duration.toFixed(2)
-    });
-
     if (!isPlaying) {
-      console.log('💬 [Comment Effect] Not playing, clearing comments');
       setFloatingComments([]);
       return;
     }
 
     if (comments.length === 0) {
-      console.log('💬 [Comment Effect] No comments available');
       setFloatingComments([]);
       return;
     }
@@ -875,23 +651,10 @@ const StemSetReview = () => {
     const triggeredComments = comments.filter(comment => {
       const timeDiff = currentTime - comment.timeNumber;
       const shouldShow = timeDiff >= 0 && timeDiff <= 0.2;
-
-      if (shouldShow) {
-        console.log('💬 [Comment Match] Found comment to show:', {
-          comment: comment.comment.substring(0, 30),
-          commentTime: comment.timeNumber.toFixed(2),
-          currentTime: currentTime.toFixed(2),
-          timeDiff: timeDiff.toFixed(2)
-        });
-      }
-
       return shouldShow;
     });
 
     if (triggeredComments.length > 0) {
-      console.log('💬 [SoundCloud Style] 🎉 SHOWING COMMENTS at time:', currentTime.toFixed(2),
-        'Total triggered:', triggeredComments.length);
-
       setFloatingComments(triggeredComments.map((comment, index) => ({
         ...comment,
         id: `floating-${comment.id}-${Math.floor(currentTime * 10)}`,
@@ -901,18 +664,10 @@ const StemSetReview = () => {
 
       // SoundCloud 스타일: 3초 후 자동 제거
       const timer = setTimeout(() => {
-        console.log('💬 [SoundCloud Style] ⏰ Hiding comments after 3 seconds');
         setFloatingComments([]);
       }, 3000);
 
       return () => clearTimeout(timer);
-    } else {
-      // 활성 댓글이 없는 경우에만 로그
-      const hasNearComments = comments.some(c => Math.abs(currentTime - c.timeNumber) <= 1);
-      if (hasNearComments && Math.floor(currentTime * 4) % 4 === 0) { // 0.25초마다 한 번씩만 로그
-        console.log('💬 [Comment Effect] No active comments at time:', currentTime.toFixed(2),
-          'Available comments:', comments.map(c => c.timeNumber.toFixed(2)));
-      }
     }
   }, [currentTime, isPlaying, comments, duration]);
 
@@ -929,15 +684,11 @@ const StemSetReview = () => {
         try {
           extraPlayer.stop();
         } catch (error: any) {
-          if (error.name !== 'AbortError') {
-            console.warn('Extra player stop error:', error);
-          }
+          // Error handling
         }
       }
     } catch (error: any) {
-      if (error.name !== 'AbortError') {
-        console.error('Stop playback error:', error);
-      }
+      // Error handling
     }
 
     setIsPlaying(false);
@@ -949,21 +700,17 @@ const StemSetReview = () => {
     (trackId: 'main' | 'extra') => {
       // 같은 트랙이 이미 솔로 중이면 무시 (불필요한 업데이트 방지)
       if (soloTrack === trackId) {
-        console.log(`🔊 ${trackId} is already solo, skipping`);
         return;
       }
 
       const mainPlayer = wavesurferRefs.current['main'];
       const extraPlayer = wavesurferRefs.current['extra'];
 
-      console.log(`🔊 Solo request for: ${trackId}`);
-
       // 엄격한 준비 상태 체크
       if (!mainPlayer || !readyStates['main']) {
         showWarning(
           '메인 플레이어가 준비되지 않았습니다. 잠시 후 다시 시도해주세요.'
         );
-        console.warn('🔊 Main player not ready for solo operation');
         return;
       }
 
@@ -973,29 +720,21 @@ const StemSetReview = () => {
           showWarning(
             '선택한 스템이 준비되지 않았습니다. 스템을 먼저 로드해주세요.'
           );
-          console.warn('🔊 Extra player not ready for solo operation');
           return;
         }
       }
 
       try {
-        console.log(
-          `🔊 Solo mode changing from '${soloTrack}' to '${trackId}'`
-        );
-
         // 상태 업데이트만 하고 useEffect에서 볼륨 적용을 처리
         setSoloTrack(trackId);
-
-        console.log(`✅ Solo mode changed to: ${trackId}`);
       } catch (error) {
-        console.error('❌ Error in solo operation:', error);
         showError('Solo 기능 실행 중 오류가 발생했습니다.');
 
         // 오류 발생 시 안전한 상태로 복구 (기본값: main)
         try {
           setSoloTrack('main');
         } catch (recoveryError) {
-          console.error('❌ Error during solo recovery:', recoveryError);
+          // Error handling
         }
       }
     },
@@ -1008,12 +747,10 @@ const StemSetReview = () => {
 
       // 볼륨 값 유효성 검사
       if (isNaN(vol) || vol < 0 || vol > 1) {
-        console.warn('🔊 Invalid volume value:', vol);
         return;
       }
 
       setVolume(vol);
-      console.log(`🔊 Volume slider changed to: ${vol}`);
       // volume 상태 변경은 useEffect(volume 의존성)에서 자동으로 볼륨 적용 처리
     },
     []
@@ -1022,20 +759,15 @@ const StemSetReview = () => {
 
   // 댓글 로드 함수
   const loadComments = useCallback(async (upstreamId: string) => {
-    console.log('🔍🔍🔍🔍 loadComments:', upstreamId);
     try {
       setCommentsLoading(true);
       const response = await getUpstreamComments(upstreamId);
-      console.log('🔍🔍🔍🔍 response comments:', response);
 
       // API 응답 구조에 맞게 수정: upstreamComments 배열 사용
       const commentsData = response.upstreamComments || response.data || [];
-      console.log('📦 [loadComments] Comments data:', commentsData);
 
       if (commentsData && Array.isArray(commentsData)) {
         const formattedComments = commentsData.map((comment: any) => {
-          console.log('📝 [loadComments] Processing comment:', comment);
-
           // time 문자열을 파싱하여 숫자로 변환 (MM:SS 형식)
           const [minutes, seconds] = comment.time.split(':').map(Number);
           const timeNumber = minutes * 60 + seconds;
@@ -1055,14 +787,11 @@ const StemSetReview = () => {
           };
         });
 
-        console.log('✅ [loadComments] Formatted comments:', formattedComments);
         setComments(formattedComments);
       } else {
-        console.warn('⚠️ [loadComments] No comments data found');
         setComments([]);
       }
     } catch (error) {
-      console.error('댓글 로드 실패:', error);
       showError('댓글을 불러오는 중 오류가 발생했습니다.');
       setComments([]);
     } finally {
@@ -1071,16 +800,8 @@ const StemSetReview = () => {
   }, []);
 
   useEffect(() => {
-    console.log('🔍🔍 selectedUpstream:', selectedUpstream);
-
     if (selectedUpstream?.id) {
-      console.log(
-        '💬 [useEffect] Loading comments for upstream:',
-        selectedUpstream.id
-      );
       loadComments(selectedUpstream.id);
-    } else {
-      console.log('⚠️ [useEffect] No selectedUpstream or missing id');
     }
   }, [selectedUpstream, loadComments]);
 
@@ -1090,7 +811,6 @@ const StemSetReview = () => {
       await deleteUpstreamComment(commentId);
       setComments((prev) => prev.filter((comment) => comment.id !== commentId));
     } catch (error) {
-      console.error('댓글 삭제 실패:', error);
       showError('댓글 삭제 중 오류가 발생했습니다.');
     }
   }, []);
@@ -1127,7 +847,6 @@ const StemSetReview = () => {
         setEditingComment(null);
         setEditCommentText('');
       } catch (error) {
-        console.error('댓글 수정 실패:', error);
         showError('댓글 수정 중 오류가 발생했습니다.');
       }
     },
@@ -1177,7 +896,7 @@ const StemSetReview = () => {
                   extraPlayer.seekTo(progress);
                 } catch (error: any) {
                   if (error.name !== 'AbortError') {
-                    console.warn('Extra player seek error:', error);
+                    // Extra player seek error
                   }
                 }
               }
@@ -1188,14 +907,14 @@ const StemSetReview = () => {
                 mainPlayer.seekTo(progress);
               } catch (error: any) {
                 if (error.name !== 'AbortError') {
-                  console.warn('Main player seek error:', error);
+                  // Main player seek error
                 }
               }
             }
           }
         } catch (error: any) {
           if (error.name !== 'AbortError') {
-            console.warn('Seek synchronization error:', error);
+            // Seek synchronization error
           }
         }
       }
@@ -1211,17 +930,8 @@ const StemSetReview = () => {
   // 개별 스템 클릭 핸들러
   const handleIndividualStemClick = useCallback(
     async (stemData: any, upstream: any) => {
-      console.log('🎵 [handleIndividualStemClick] Stem clicked:', {
-        stemId: stemData.stem?.id,
-        type: stemData.type,
-        category: stemData.category?.name,
-      });
-
       // 타임아웃 설정 (20초)
       const timeoutId = setTimeout(() => {
-        console.error(
-          '⏰ [handleIndividualStemClick] Request timeout after 20 seconds'
-        );
         setStemLoading(false);
         setWaveformLoading(false);
         showError('스템 로딩 시간이 초과되었습니다. 다시 시도해주세요.');
@@ -1249,14 +959,11 @@ const StemSetReview = () => {
         const stemType = stemData.type;
         const cacheKey = `${stemType}-${stemId}`;
 
-        console.log('🔍 [handleIndividualStemClick] Cache key:', cacheKey);
-
         // 캐시된 데이터 확인
         const cachedUrl = sessionStorage.getItem(`audio-${cacheKey}`);
         const cachedPeaks = sessionStorage.getItem(`peaks-${cacheKey}`);
 
         if (cachedUrl) {
-          console.log('📦 [handleIndividualStemClick] Using cached audio URL');
           setExtraAudio(cachedUrl);
           setStemLoading(false);
 
@@ -1266,15 +973,8 @@ const StemSetReview = () => {
               setExtraPeaks(parsedPeaks);
               setWaveformLoading(false);
               clearTimeout(timeoutId);
-              console.log(
-                '✅ [handleIndividualStemClick] Loaded from cache successfully'
-              );
               return;
             } catch (parseError) {
-              console.warn(
-                '⚠️ [handleIndividualStemClick] Cache parse error:',
-                parseError
-              );
               sessionStorage.removeItem(`peaks-${cacheKey}`);
             }
           }
@@ -1298,37 +998,19 @@ const StemSetReview = () => {
 
         const [getStreamingUrl, getWaveformData] = getApiCalls();
 
-        console.log('🔍 [handleIndividualStemClick] Fetching stem data...');
-
         // 순차적으로 API 호출 (병렬 처리 시 경쟁 상태 방지)
         let audioResponse: any;
         let waveformResponse: any;
 
         try {
           audioResponse = await getStreamingUrl();
-          console.log(
-            '📦 [handleIndividualStemClick] Audio response:',
-            audioResponse?.success ? '✅' : '❌'
-          );
         } catch (audioError) {
-          console.error(
-            '❌ [handleIndividualStemClick] Audio fetch error:',
-            audioError
-          );
           audioResponse = { success: false, error: audioError };
         }
 
         try {
           waveformResponse = await getWaveformData();
-          console.log(
-            '📦 [handleIndividualStemClick] Waveform response:',
-            waveformResponse?.success ? '✅' : '❌'
-          );
         } catch (waveformError) {
-          console.error(
-            '❌ [handleIndividualStemClick] Waveform fetch error:',
-            waveformError
-          );
           waveformResponse = { success: false, error: waveformError };
         }
 
@@ -1339,14 +1021,10 @@ const StemSetReview = () => {
           if (typeof audioUrl === 'string' && audioUrl.length > 0) {
             setExtraAudio(audioUrl);
             sessionStorage.setItem(`audio-${cacheKey}`, audioUrl);
-            console.log(
-              '🎵 [handleIndividualStemClick] Audio URL set successfully'
-            );
           } else {
             throw new Error('Invalid audio URL format');
           }
         } else {
-          console.warn('⚠️ [handleIndividualStemClick] Audio not available');
           setExtraAudio('');
           showWarning('이 스템의 오디오 파일을 불러올 수 없습니다.');
         }
@@ -1366,27 +1044,13 @@ const StemSetReview = () => {
               `peaks-${cacheKey}`,
               JSON.stringify(waveformData)
             );
-            console.log(
-              '🌊 [handleIndividualStemClick] Waveform data set successfully'
-            );
           } else {
-            console.warn(
-              '⚠️ [handleIndividualStemClick] Invalid waveform structure:',
-              waveformData
-            );
             setExtraPeaks(null);
           }
         } else {
-          console.warn(
-            '⚠️ [handleIndividualStemClick] Waveform data not available'
-          );
           setExtraPeaks(null);
         }
-
-        console.log('✅ [handleIndividualStemClick] Stem loading completed');
       } catch (error) {
-        console.error('❌ [handleIndividualStemClick] Error:', error);
-
         // 에러 타입별 처리
         const errorMessage =
           error instanceof Error ? error.message : 'Unknown error';
@@ -1419,7 +1083,6 @@ const StemSetReview = () => {
         clearTimeout(timeoutId);
         setStemLoading(false);
         setWaveformLoading(false);
-        console.log('🏁 [handleIndividualStemClick] Loading states cleared');
       }
     },
     [showWarning, showError]
@@ -1441,11 +1104,6 @@ const StemSetReview = () => {
       return;
     }
 
-    console.log('🔊 Volume changed, applying to current solo track:', {
-      soloTrack,
-      volume,
-    });
-
     const mainPlayer = wavesurferRefs.current['main'];
     const extraPlayer = wavesurferRefs.current['extra'];
 
@@ -1457,7 +1115,6 @@ const StemSetReview = () => {
       id: string
     ) => {
       if (!player || !readyStates[id]) {
-        console.log(`🔊 Skipping volume for ${name}: player not ready`);
         return;
       }
 
@@ -1469,13 +1126,12 @@ const StemSetReview = () => {
         }
 
         player.setVolume(vol);
-        console.log(`🔊 Set ${name} volume to ${vol}`);
       } catch (error: any) {
         if (
           error.name !== 'AbortError' &&
           !error.message?.includes('destroyed')
         ) {
-          console.warn(`Volume setting error for ${name}:`, error);
+          // Volume setting error
         }
       }
     };
@@ -1537,9 +1193,6 @@ const StemSetReview = () => {
   };
 
   const handleApprove = async () => {
-    console.log('🔍 Stage ID:', stageId);
-    console.log('🔍 Selected Upstream:', upstreamId);
-
     if (!stageId || !upstreamId) {
       showWarning('Stage 또는 Upstream이 선택되지 않았습니다.');
       return;
@@ -1555,7 +1208,6 @@ const StemSetReview = () => {
       await approveDropReviewer(stageId, upstreamId);
       showSuccess('승인 완료!');
     } catch (error) {
-      console.error('승인 실패:', error);
       showError('승인 중 오류 발생');
     }
   };
@@ -1576,33 +1228,20 @@ const StemSetReview = () => {
       await rejectDropReviewer(stageId, upstreamId);
       showSuccess('거절 완료!');
     } catch (error) {
-      console.error('거절 실패:', error);
       showError('거절 중 오류 발생');
     }
   };
 
   // 컴포넌트 언마운트 시 정리
   useEffect(() => {
-    console.log('🎬 [StemSetReviewPage] Component mounted, setting up cleanup');
-
     return () => {
-      console.log('🧹 [Cleanup] Component unmounting, cleaning up resources...');
-      console.log('🧹 [Cleanup] Final state:', {
-        stageId,
-        upstreamId,
-        selectedUpstream: selectedUpstream?.id || 'null',
-        activePanel,
-        upstreamStemsCount: upstreamStems.length
-      });
-
       // WaveSurfer 인스턴스 정리
       Object.values(wavesurferRefs.current).forEach((ws) => {
         if (ws && typeof ws.destroy === 'function') {
           try {
             ws.destroy();
-            console.log('🧹 [Cleanup] WaveSurfer instance destroyed');
           } catch (error) {
-            console.warn('⚠️ [Cleanup] Error destroying WaveSurfer:', error);
+            // Error destroying WaveSurfer
           }
         }
       });
@@ -1612,23 +1251,11 @@ const StemSetReview = () => {
 
       // seeking 플래그 초기화
       isSeeking.current = false;
-
-      console.log('✅ [Cleanup] Component cleanup completed');
     };
   }, []);
 
   // 렌더링 로그 최적화 (무한 리렌더링 방지)
   if (debugRef.current.lastState !== `${activePanel}-${stemsLoading}-${upstreamStems.length}`) {
-    console.log('🎨 [StemSetReviewPage] Starting render, current state:', {
-      stageId,
-      upstreamId,
-      selectedUpstream: selectedUpstream?.id || 'null',
-      activePanel,
-      stemsLoading,
-      guideLoading,
-      upstreamStemsCount: upstreamStems.length,
-      isReady: readyStates
-    });
     debugRef.current.lastState = `${activePanel}-${stemsLoading}-${upstreamStems.length}`;
   }
 
@@ -1693,7 +1320,7 @@ const StemSetReview = () => {
               </div>
 
               {/* Center Section - Action Buttons */}
-              <div className="flex items-center space-x-3">
+              {/* <div className="flex items-center space-x-3">
                 <button
                   onClick={handleApprove}
                   disabled={isStageApproved()}
@@ -1708,7 +1335,7 @@ const StemSetReview = () => {
                 >
                   REJECT
                 </button>
-              </div>
+              </div> */}
 
               {/* Right Section */}
               <div className="flex items-center gap-3">
@@ -1881,38 +1508,16 @@ const StemSetReview = () => {
 
                         {(() => {
                           try {
-                            console.log('🎨 [Render IIFE] Starting render function');
-
                             // Reduce excessive logging (only log once per state change)
                             const currentState = `${activePanel}-${stemsLoading}-${upstreamStems.length}`;
                             const now = Date.now();
 
-                            console.log('🎨 [Render IIFE] Current state:', {
-                              currentState,
-                              activePanel,
-                              stemsLoading,
-                              upstreamStemsLength: upstreamStems.length,
-                              stageId,
-                              selectedUpstreamId: selectedUpstream?.id,
-                              debugRefState: debugRef.current.lastState
-                            });
-
                             if (currentState !== debugRef.current.lastState || now - debugRef.current.lastLog > 2000) {
-                              console.log('🎨 [Render] State:', {
-                                activePanel,
-                                stemsLoading,
-                                stemsCount: upstreamStems.length,
-                                stageId,
-                                selectedUpstreamId: selectedUpstream?.id
-                              });
                               debugRef.current.lastLog = now;
                               debugRef.current.lastState = currentState;
                             }
 
-                            console.log('🎨 [Render IIFE] About to check loading state');
-
                             if (stemsLoading) {
-                              console.log('🎨 [Render] Showing loading state');
                               return (
                                 <div className='py-8 text-center text-gray-400'>
                                   <div className='mx-auto mb-2 h-8 w-8 animate-spin rounded-full border-b-2 border-white'></div>
@@ -1922,7 +1527,6 @@ const StemSetReview = () => {
                             }
 
                             if (upstreamStems.length === 0) {
-                              console.log('⚠️ [Render] No upstreams to render');
                               return (
                                 <div className='py-8 text-center text-gray-400'>
                                   <div className='space-y-2 text-center'>
@@ -2062,8 +1666,6 @@ const StemSetReview = () => {
                             });
 
                           } catch (error: any) {
-                            console.error('❌ [Render IIFE] Error in render function:', error);
-                            console.error('❌ [Render IIFE] Error stack:', error?.stack);
                             return (
                               <div className='py-8 text-center text-red-400'>
                                 <div>렌더링 중 오류가 발생했습니다.</div>
@@ -2247,7 +1849,7 @@ const StemSetReview = () => {
                 {/* Waveform Section */}
                 <div className="space-y-6">
                   {/* Guide Waveform */}
-                  <div className="bg-white/5 backdrop-blur-lg rounded-2xl p-6 border border-white/10 shadow-2xl transform transition-all duration-300 hover:scale-[1.01]">
+                  <div className="bg-white/5 backdrop-blur-lg rounded-2xl p-6 border border-white/10 shadow-2xl transform transition-all duration-300">
                     <div className="mb-4">
                       <h3 className="text-lg font-semibold text-white mb-2">가이드 트랙</h3>
                       <div className="h-1 bg-gradient-to-r from-red-500 to-red-300 rounded-full"></div>
@@ -2260,15 +1862,7 @@ const StemSetReview = () => {
                       className="relative cursor-pointer"
                     >
                       {(() => {
-                        console.log('🎨 [Waveform Render] Checking conditions:', {
-                          guideLoading,
-                          guideLoadAttempted,
-                          guideAudioUrl: !!guideAudioUrl,
-                          guidePeaks: !!guidePeaks
-                        });
-
                         if (guideLoading) {
-                          console.log('🎨 [Waveform Render] Showing loading state');
                           return (
                             <div className="flex items-center justify-center py-12">
                               <div className="flex items-center space-x-3">
@@ -2278,11 +1872,6 @@ const StemSetReview = () => {
                             </div>
                           );
                         } else if (guideLoadAttempted && guideAudioUrl) {
-                          console.log('🎨 [Waveform Render] Rendering Wave component with props:', {
-                            audioUrl: !!guideAudioUrl,
-                            peaks: !!guidePeaks,
-                            id: 'main'
-                          });
 
                           const mainWaveProps = {
                             onReady: handleReady,
@@ -2298,7 +1887,7 @@ const StemSetReview = () => {
                           };
 
                           return (
-                            <div className='transform rounded-2xl border border-white/10 bg-white/5 p-6 shadow-2xl backdrop-blur-lg transition-all duration-300 hover:scale-[1.01]'>
+                            <div className='transform rounded-2xl border border-white/10 bg-white/5 p-6 shadow-2xl backdrop-blur-lg transition-all duration-300'>
                               <Wave {...mainWaveProps} />
 
                               {/* 댓글 마커들 */}
@@ -2312,7 +1901,7 @@ const StemSetReview = () => {
                                     onClick={() => seekToTime(comment.timeNumber)}
                                     title={`${comment.user?.username}: ${comment.comment}`}
                                   >
-                                    <div className='w-3 h-3 rounded-full bg-blue-500 border-2 border-white shadow-lg hover:scale-125 transition-transform'>
+                                    <div className='w-3 h-3 rounded-full bg-blue-500 border-2 border-white shadow-lg transition-transform'>
                                       <div className='w-full h-full rounded-full bg-gradient-to-br from-blue-400 to-blue-600'></div>
                                     </div>
                                   </div>
@@ -2338,7 +1927,7 @@ const StemSetReview = () => {
                                     }}
                                     title={`${comment.user?.username}: ${comment.comment}`}
                                   >
-                                    <div className='w-3 h-3 bg-blue-500 rounded-full border-2 border-white shadow-lg hover:scale-125 transition-transform'>
+                                    <div className='w-3 h-3 bg-blue-500 rounded-full border-2 border-white shadow-lg transition-transform'>
                                       <div className='w-full h-full bg-blue-400 rounded-full animate-pulse'></div>
                                     </div>
                                   </div>
@@ -2360,7 +1949,7 @@ const StemSetReview = () => {
                                     className='w-8 h-8 bg-blue-500 hover:bg-blue-600 rounded-full flex items-center justify-center text-white shadow-lg transition-all duration-200 hover:scale-110 border-2 border-white'
                                     title={`댓글 추가 (${Math.floor(hoveredPosition.time / 60)}:${String(Math.floor(hoveredPosition.time % 60)).padStart(2, '0')})`}
                                   >
-                                    💬
+                                    💬 {`(${Math.floor(hoveredPosition.time / 60)}:${String(Math.floor(hoveredPosition.time % 60)).padStart(2, '0')})`}
                                   </button>
                                 </div>
                               )}
@@ -2417,7 +2006,6 @@ const StemSetReview = () => {
                             </div>
                           );
                         } else {
-                          console.log('🎨 [Waveform Render] Showing fallback message');
                           return (
                             <div className="flex items-center justify-center py-12">
                               <div className="text-center">
@@ -2437,16 +2025,9 @@ const StemSetReview = () => {
 
                   {/* Comparison Waveform */}
                   {(() => {
-                    console.log('🎨 [Extra Waveform Check] Conditions:', {
-                      showExtraWaveform,
-                      hasExtraAudio: !!extraAudio,
-                      extraAudioUrl: extraAudio,
-                      stemLoading,
-                      waveformLoading
-                    });
                     return showExtraWaveform && extraAudio;
                   })() && (
-                      <div className="bg-white/5 backdrop-blur-lg rounded-2xl p-6 border border-white/10 shadow-2xl transform transition-all duration-300 hover:scale-[1.01]">
+                      <div className="bg-white/5 backdrop-blur-lg rounded-2xl p-6 border border-white/10 shadow-2xl transform transition-all duration-300">
                         <div className="mb-4">
                           <h3 className="text-lg font-semibold text-white mb-2">비교 트랙</h3>
                           <div className="h-1 bg-gradient-to-r from-blue-500 to-blue-300 rounded-full"></div>
