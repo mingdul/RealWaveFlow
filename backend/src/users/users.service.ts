@@ -97,36 +97,16 @@ async updateUser(
     throw new NotFoundException('사용자를 찾을 수 없습니다.');
   }
 
-  // 업데이트할 필드들만 추출
-  const updateData: Partial<User> = {};
-  if (updateUserDto.username  !== undefined) updateData.username  = updateUserDto.username;
-  if (updateUserDto.image_url !== undefined) updateData.image_url = updateUserDto.image_url;
+
+  if (updateUserDto.username  !== undefined) user.username  = updateUserDto.username;
+  if (updateUserDto.image_url !== undefined) user.image_url = updateUserDto.image_url;
   
   console.log('🔧 [updateUser] Input DTO:', JSON.stringify(updateUserDto, null, 2));
   console.log('🔧 [updateUser] updateUserDto.image_url:', updateUserDto.image_url);
   console.log('🔧 [updateUser] updateUserDto.image_url type:', typeof updateUserDto.image_url);
   console.log('🔧 [updateUser] updateUserDto.image_url undefined check:', updateUserDto.image_url !== undefined);
-  console.log('🔧 [updateUser] Prepared updateData:', JSON.stringify(updateData, null, 2));
 
-  // 변경사항이 없으면 예외 처리
-  if (Object.keys(updateData).length === 0) {
-    throw new BadRequestException('변경할 필드를 하나 이상 제공해주세요.');
-  }
-
-  // ★ criteria를 명시적으로 객체로 전달
-  await this.userRepository.update(
-    { id: userId },
-    updateData
-  );
-  console.log('✅ [updateUser] Database update completed');
-
-  // 업데이트된 유저 반환
-  const updated = await this.findById(userId);
-  console.log('📄 [updateUser] Updated user image_url:', updated?.image_url);
-  if (!updated) {
-    throw new NotFoundException('업데이트된 사용자 정보를 찾을 수 없습니다.');
-  }
-  return updated;
+  return this.userRepository.save(user);
 }
 
 

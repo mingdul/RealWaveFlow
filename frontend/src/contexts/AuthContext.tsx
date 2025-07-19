@@ -149,7 +149,10 @@ export const AuthProvider: React.FC<{ children: ReactNode }> = ({ children }) =>
         console.log('🔄 [updateProfile] Updating profile via PUT /users/me:', updateData);
         console.log('🔄 [updateProfile] Request headers:', { 'Content-Type': 'application/json' });
         
-        const response = await apiClient.put('/users/me', updateData, { 
+        const response = await apiClient.put('/users/me', {
+          image_url: imagePath,
+          username: profileData.name,
+        }, { 
           withCredentials: true,
           headers: {
             'Content-Type': 'application/json'
