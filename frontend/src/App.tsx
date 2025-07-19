@@ -51,7 +51,7 @@ const App = () => {
               <Route path="/review/:upstreamId" element={<StemSetReviewPage />} />
               <Route path="*" element={<Notfound />} />
               <Route path="/stemreview/:upstreamId" element={<StemReview />} />
-              <Route path="/track3/:trackId" element={<TrackPage3 />} />
+              {/* <Route path="/track3/:trackId" element={<TrackPage3 />} /> */}
               {/* <Route path="/master" element={<MasterPage />} />
               <Route path="/commit" element={<CommitPage />} />
               <Route path="/pr" element={<PR_Page />} /> 
