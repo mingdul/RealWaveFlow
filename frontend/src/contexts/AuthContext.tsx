@@ -127,6 +127,7 @@ export const AuthProvider: React.FC<{ children: ReactNode }> = ({ children }) =>
       // 프로필 이미지 업로드 처리 (기존 multipart upload API 활용)
       if (profileData.profileImage) {
         imageUrl = await authService.uploadProfileImage(profileData.profileImage);
+        console.log('🖼️ [updateProfile] Image uploaded, URL:', imageUrl);
       }
       
       // 사용자 정보 업데이트 (이름과 이미지 URL)
@@ -146,7 +147,9 @@ export const AuthProvider: React.FC<{ children: ReactNode }> = ({ children }) =>
         
         // 이미지 URL 업데이트는 별도 API 호출 (PUT /users/me 사용)
         if (updateData.image_url) {
-          await apiClient.put('/users/me', { image_url: updateData.image_url }, { withCredentials: true });
+          console.log('🔄 [updateProfile] Updating image_url via PUT /users/me:', updateData.image_url);
+          const response = await apiClient.put('/users/me', { image_url: updateData.image_url }, { withCredentials: true });
+          console.log('✅ [updateProfile] PUT /users/me response:', response.data);
         }
       }
       

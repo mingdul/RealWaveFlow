@@ -118,78 +118,69 @@ class AuthService {
   }
 
   /**
-   * 프로필 이미지 업로드 (기존 multipart upload API 활용)
+   * 프로필 이미지 업로드 (s3UploadService.uploadImage 방식 사용)
    */
   async uploadProfileImage(imageFile: File): Promise<string> {
     try {
-      // 한국어 파일명 처리 (기존 업로드 로직 참고)
-      const sanitizedFileName = `profile_${Date.now()}_${imageFile.name.replace(/[^\w\s.-]/g, '_')}`;
-      
-      // 프로필 전용 더미 projectId 생성 (UUID v4 형식)
-      const profileProjectId = '00000000-0000-0000-0000-000000000000';
-      
-      // 1. 업로드 추가 (S3 multipart upload 세션 생성)
-      const addUploadResponse = await apiClient.post('/uploads/add-upload', {
-        projectId: profileProjectId,
-        filename: sanitizedFileName,
+      // 프로필 이미지용 파일명 생성 (타임스탬프 포함)
+      const timestamp = Date.now();
+      const sanitizedName = imageFile.name.replace(/[^\w\s.-]/g, '_');
+      const profileFileName = `profile_${timestamp}_${sanitizedName}`;
+
+      console.log('🖼️ [uploadProfileImage] Starting profile image upload...');
+      console.log('🖼️ [uploadProfileImage] Original filename:', imageFile.name);
+      console.log('🖼️ [uploadProfileImage] Profile filename:', profileFileName);
+
+      // s3UploadService의 이미지 업로드 API 사용 (/images/upload-url)
+      const presignedResponse = await apiClient.post('/images/upload-url', {
+        fileName: profileFileName,
         contentType: imageFile.type,
-        fileSize: imageFile.size
       }, { withCredentials: true });
 
-      if (!addUploadResponse.data.success) {
-        throw new Error('업로드 요청 생성에 실패했습니다.');
+      if (!presignedResponse.data.success || !presignedResponse.data.data) {
+        throw new Error('프로필 이미지 presigned URL 요청 실패');
       }
 
-      const uploadData = addUploadResponse.data.data;
-      
-      // 2. Presigned URL 생성
-      const presignedResponse = await apiClient.post('/uploads/presigned-urls', {
-        uploadId: uploadData.uploadId,
-        key: uploadData.key,
-        projectId: profileProjectId,
-        parts: [{ partNumber: 1 }]
-      }, { withCredentials: true });
+      const { uploadUrl, key } = presignedResponse.data.data;
+      console.log('🔑 [uploadProfileImage] S3 key:', key);
+      console.log('🔗 [uploadProfileImage] Upload URL obtained');
 
-      if (!presignedResponse.data.success) {
-        throw new Error('업로드 URL 생성에 실패했습니다.');
-      }
+      // XMLHttpRequest를 사용한 S3 직접 업로드 (s3UploadService 방식과 동일)
+      const imageUrl = await new Promise<string>((resolve, reject) => {
+        const xhr = new XMLHttpRequest();
 
-      const presignedUrl = presignedResponse.data.data.urls[0].url;
+        xhr.upload.onprogress = (event) => {
+          if (event.lengthComputable) {
+            const progress = Math.round((event.loaded * 100) / event.total);
+            console.log(`🔄 [uploadProfileImage] Upload progress: ${progress}%`);
+          }
+        };
 
-      // 3. S3에 직접 업로드
-      const uploadResponse = await fetch(presignedUrl, {
-        method: 'PUT',
-        body: imageFile,
-        headers: {
-          'Content-Type': imageFile.type
-        }
+        xhr.onload = () => {
+          if (xhr.status >= 200 && xhr.status < 300) {
+            // presigned URL에서 쿼리 파라미터 제거하여 실제 S3 URL 생성
+            const cleanUrl = uploadUrl.split('?')[0];
+            console.log('✅ [uploadProfileImage] Upload completed successfully');
+            console.log('🔗 [uploadProfileImage] Final image URL:', cleanUrl);
+            resolve(cleanUrl);
+          } else {
+            reject(new Error(`S3 업로드 실패: HTTP ${xhr.status}`));
+          }
+        };
+
+        xhr.onerror = () => {
+          reject(new Error('프로필 이미지 업로드 중 네트워크 오류'));
+        };
+
+        xhr.open('PUT', uploadUrl);
+        xhr.setRequestHeader('Content-Type', imageFile.type);
+        xhr.send(imageFile);
       });
 
-      if (!uploadResponse.ok) {
-        throw new Error('S3 업로드에 실패했습니다.');
-      }
-
-      // 4. 업로드 완료 처리
-      const completeResponse = await apiClient.post('/uploads/complete', {
-        uploadId: uploadData.uploadId,
-        key: uploadData.key,
-        projectId: profileProjectId,
-        parts: [{
-          partNumber: 1,
-          eTag: uploadResponse.headers.get('ETag') || '"completed"'
-        }]
-      }, { withCredentials: true });
-
-      if (!completeResponse.data.success) {
-        throw new Error('업로드 완료 처리에 실패했습니다.');
-      }
-
-      // S3 이미지 URL 생성
-      const s3ImageUrl = `https://${import.meta.env.VITE_AWS_S3_BUCKET || 'waveflow-uploads'}.s3.amazonaws.com/${uploadData.key}`;
-      return s3ImageUrl;
+      return imageUrl;
 
     } catch (error: any) {
-      console.error('Profile image upload error:', error);
+      console.error('❌ [uploadProfileImage] Profile image upload error:', error);
       throw new Error(error.response?.data?.message || error.message || '프로필 이미지 업로드에 실패했습니다.');
     }
   }
