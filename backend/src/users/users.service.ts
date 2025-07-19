@@ -1,4 +1,4 @@
-import { Injectable, ConflictException, UnauthorizedException, NotFoundException, ForbiddenException } from '@nestjs/common';
+import { Injectable, ConflictException, UnauthorizedException, NotFoundException, ForbiddenException, BadRequestException } from '@nestjs/common';
 import { InjectRepository } from '@nestjs/typeorm';
 import { Repository } from 'typeorm';
 import { JwtService } from '@nestjs/jwt';
@@ -87,80 +87,85 @@ export class UsersService {
   }
 
   // 사용자 정보 업데이트
-  async updateUser(userId: string, updateUserDto: UpdateUserDto): Promise<User> {
-    const user = await this.findById(userId);
-    if (!user) {
-      throw new NotFoundException('사용자를 찾을 수 없습니다.');
-    }
-
-    // 업데이트할 필드들만 추출
-    const updateData: Partial<User> = {};
-    if (updateUserDto.username !== undefined) {
-      updateData.username = updateUserDto.username;
-    }
-    if (updateUserDto.image_url !== undefined) {
-      updateData.image_url = updateUserDto.image_url;
-    }
-
-    // 업데이트할 데이터가 있는 경우에만 업데이트 실행
-    if (Object.keys(updateData).length > 0) {
-      await this.userRepository.update(userId, updateData);
-    }
-    
-    // 업데이트된 사용자 정보 반환
-    const updatedUser = await this.findById(userId);
-    if (!updatedUser) {
-      throw new NotFoundException('업데이트된 사용자 정보를 찾을 수 없습니다.');
-    }
-    return updatedUser;
+  // 사용자 정보 업데이트
+async updateUser(
+  userId: string,
+  updateUserDto: UpdateUserDto
+): Promise<User> {
+  const user = await this.findById(userId);
+  if (!user) {
+    throw new NotFoundException('사용자를 찾을 수 없습니다.');
   }
 
+  // 업데이트할 필드들만 추출
+  const updateData: Partial<User> = {};
+  if (updateUserDto.username  !== undefined) updateData.username  = updateUserDto.username;
+  if (updateUserDto.image_url !== undefined) updateData.image_url = updateUserDto.image_url;
+
+  // 변경사항이 없으면 예외 처리
+  if (Object.keys(updateData).length === 0) {
+    throw new BadRequestException('변경할 필드를 하나 이상 제공해주세요.');
+  }
+
+  // ★ criteria를 명시적으로 객체로 전달
+  await this.userRepository.update(
+    { id: userId },    // ← 여기!
+    updateData
+  );
+
+  // 업데이트된 유저 반환
+  const updated = await this.findById(userId);
+  if (!updated) {
+    throw new NotFoundException('업데이트된 사용자 정보를 찾을 수 없습니다.');
+  }
+  return updated;
+}
+
+
   // 사용자 이름 변경 (권한 검증 및 중복 검증 포함)
-  async updateUserName(userId: string, currentUserId: string, updateUserDto: UpdateUserDto): Promise<User> {
-    // 권한 검증: 본인만 수정 가능
+  async updateUserName(
+    userId: string,
+    currentUserId: string,
+    updateUserDto: UpdateUserDto,
+  ): Promise<User> {
+    // 1) 본인 검증
     if (userId !== currentUserId) {
       throw new ForbiddenException('본인의 정보만 수정할 수 있습니다.');
     }
-
-    // 사용자 존재 여부 확인
+  
+    // 2) 존재 여부
     const user = await this.findById(userId);
     if (!user) {
       throw new NotFoundException('사용자를 찾을 수 없습니다.');
     }
-
-    // username이 제공된 경우에만 중복 검증 수행
-    if (updateUserDto.username !== undefined) {
-      // 현재 사용자명과 동일한 경우는 허용
-      if (updateUserDto.username !== user.username) {
-        // 다른 사용자가 이미 사용하고 있는 사용자명인지 확인
-        const existingUser = await this.userRepository.findOne({ 
-          where: { username: updateUserDto.username } 
-        });
-        if (existingUser) {
-          throw new ConflictException('이미 존재하는 사용자명입니다.');
-        }
+  
+    // 3) 중복 검증
+    if (updateUserDto.username !== undefined && updateUserDto.username !== user.username) {
+      const existing = await this.userRepository.findOne({
+        where: { username: updateUserDto.username }
+      });
+      if (existing) {
+        throw new ConflictException('이미 존재하는 사용자명입니다.');
       }
     }
-
-    // 업데이트할 필드들만 추출
+  
+    // 4) updateData 구성
     const updateData: Partial<User> = {};
-    if (updateUserDto.username !== undefined) {
-      updateData.username = updateUserDto.username;
+    if (updateUserDto.username  !== undefined) updateData.username  = updateUserDto.username;
+    if (updateUserDto.image_url !== undefined) updateData.image_url = updateUserDto.image_url;
+  
+    // 5) 빈 객체 방지
+    if (Object.keys(updateData).length === 0) {
+      throw new BadRequestException('변경할 필드를 하나 이상 제공해주세요.');
     }
-    if (updateUserDto.image_url !== undefined) {
-      updateData.image_url = updateUserDto.image_url;
-    }
-
-    // 업데이트할 데이터가 있는 경우에만 업데이트 실행
-    if (Object.keys(updateData).length > 0) {
-      await this.userRepository.update(userId, updateData);
-    }
-    
-    // 업데이트된 사용자 정보 반환
-    const updatedUser = await this.findById(userId);
-    if (!updatedUser) {
-      throw new NotFoundException('업데이트된 사용자 정보를 찾을 수 없습니다.');
-    }
-    return updatedUser;
+  
+    // 6) 업데이트 (criteria를 { id: userId } 로 명시)
+    await this.userRepository.update(
+      { id: userId },
+      updateData
+    );
+  
+    // 7) 결과 리턴
+    return this.findById(userId);
   }
 }
