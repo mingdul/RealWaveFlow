@@ -1620,7 +1620,7 @@ const StemSetReview = () => {
                                           {typeStyle.icon}
                                         </span>
                                         <span>
-                                          {stemData.category?.name ||
+                                          {stemData.category?.instrument ||
                                             'Unknown Category'}
                                         </span>
                                       </div>

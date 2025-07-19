@@ -652,7 +652,7 @@ const UploadModal: React.FC<UploadModalProps> = ({
                 id: item.stem.id,
                 file_name: item.stem.file_name, // 원본 파일명 유지 (표시할 때 디코딩)
                 file_path: item.stem.file_path,
-                tag: item.category, // category name을 tag로 사용
+                tag: item.category.instrument, // category name을 tag로 사용
                 key: item.stem.key || '',
                 description: `${item.category} stem`,
                 track_id: item.stem.track?.id || '',
