@@ -1,15 +1,7 @@
-import { IsString, IsNotEmpty } from 'class-validator';
+import { IsString, IsNotEmpty, IsOptional } from 'class-validator';
 import { ApiProperty } from '@nestjs/swagger';
 
 export class ProfileImageCompleteDto {
-  @ApiProperty({ 
-    description: 'S3 업로드 ID',
-    example: 'example-upload-id'
-  })
-  @IsString()
-  @IsNotEmpty()
-  uploadId: string;
-
   @ApiProperty({ 
     description: 'S3 객체 키',
     example: 'profile-images/user-123/20241215_143022_profile.jpg'
@@ -19,10 +11,20 @@ export class ProfileImageCompleteDto {
   key: string;
 
   @ApiProperty({ 
-    description: 'ETag 값',
-    example: 'example-etag-value'
+    description: 'S3 업로드 ID (Simple upload에서는 선택사항)',
+    example: 'simple-upload',
+    required: false
   })
   @IsString()
-  @IsNotEmpty()
-  eTag: string;
+  @IsOptional()
+  uploadId?: string;
+
+  @ApiProperty({ 
+    description: 'ETag 값 (Simple upload에서는 선택사항)',
+    example: '"completed"',
+    required: false
+  })
+  @IsString()
+  @IsOptional()
+  eTag?: string;
 }
