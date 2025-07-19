@@ -102,8 +102,10 @@ export class UsersService {
       updateData.image_url = updateUserDto.image_url;
     }
 
-    // 업데이트 실행
-    await this.userRepository.update(userId, updateData);
+    // 업데이트할 데이터가 있는 경우에만 업데이트 실행
+    if (Object.keys(updateData).length > 0) {
+      await this.userRepository.update(userId, updateData);
+    }
     
     // 업데이트된 사용자 정보 반환
     const updatedUser = await this.findById(userId);
@@ -149,8 +151,10 @@ export class UsersService {
       updateData.image_url = updateUserDto.image_url;
     }
 
-    // 업데이트 실행
-    await this.userRepository.update(userId, updateData);
+    // 업데이트할 데이터가 있는 경우에만 업데이트 실행
+    if (Object.keys(updateData).length > 0) {
+      await this.userRepository.update(userId, updateData);
+    }
     
     // 업데이트된 사용자 정보 반환
     const updatedUser = await this.findById(userId);
