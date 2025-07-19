@@ -4,12 +4,15 @@ import { Repository } from 'typeorm';
 import { TrackCollaborator } from './track_collaborator.entity';
 import { CreateTrackCollaboratorDto } from './dto/create-track-collaborator.dto';
 import { UpdateTrackCollaboratorDto } from './dto/update-track-collaborator.dto';
+import { Track } from '../track/track.entity';
 
 @Injectable()
 export class TrackCollaboratorService { 
     constructor(
         @InjectRepository(TrackCollaborator)
         private trackCollaboratorRepository: Repository<TrackCollaborator>,
+        @InjectRepository(Track)
+        private trackRepository: Repository<Track>,
     ) {}
 
     async createCollaborator(createTrackCollaboratorDto: CreateTrackCollaboratorDto) {
@@ -111,5 +114,46 @@ export class TrackCollaboratorService {
         await this.trackCollaboratorRepository.save(collaborator);
 
         return { message: 'Collaboration rejected successfully', collaborator };
+    }
+
+    async findTrackUsersById(trackId: string) {
+        // 트랙 정보와 owner 조회
+        const track = await this.trackRepository.findOne({
+            where: { id: trackId },
+            relations: ['owner_id'],
+        });
+
+        if (!track) {
+            throw new NotFoundException('트랙을 찾을 수 없습니다.');
+        }
+
+        // collaborators 조회 (accepted 상태만)
+        const collaborators = await this.trackCollaboratorRepository.find({
+            where: { 
+                track_id: { id: trackId },
+                status: 'accepted'
+            },
+            relations: ['user_id'],
+        });
+
+        return {
+            success: true,
+            data: {
+                owner: {
+                    id: track.owner_id.id,
+                    email: track.owner_id.email,
+                    username: track.owner_id.username,
+                    image_url: track.owner_id.image_url,
+                },
+                collaborators: {
+                    collaborator: collaborators.map(collab => ({
+                        id: collab.user_id.id,
+                        email: collab.user_id.email,
+                        username: collab.user_id.username,
+                        image_url: collab.user_id.image_url,
+                    }))
+                }
+            }
+        };
     }
 }
