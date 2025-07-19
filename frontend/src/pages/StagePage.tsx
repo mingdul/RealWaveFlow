@@ -73,7 +73,7 @@ const StagePage: React.FC = () => {
 
       try {
         setLoading(true);
-        
+
         // 스테이지 상세 정보 가져오기
         const stageResponse = await getStageDetail(stageId);
         setStage(stageResponse.data);
@@ -98,14 +98,14 @@ const StagePage: React.FC = () => {
   const handleUploadComplete = async () => {
     try {
       console.log('🔄 Refreshing upstreams after upload completion...');
-      
+
       if (stageId) {
         // 로딩 상태 설정
         setLoading(true);
-        
+
         const response = await getStageUpstreams(stageId);
         console.log('✅ Upstreams refreshed successfully:', response);
-        
+
         if (response && Array.isArray(response)) {
           setUpstreams(response);
         } else {
@@ -145,9 +145,9 @@ const StagePage: React.FC = () => {
     const [isHovered, setIsHovered] = useState(false);
 
     const status = upstream.status?.toUpperCase() as 'WAITING' | 'REJECTED' | 'APPROVED';
-    
+
     console.log('[DEBUG] Upstream status:', upstream.status, 'Normalized:', status);
-    
+
     const statusConfig = {
       WAITING: {
         color: 'bg-gradient-to-r from-purple-500 to-indigo-600',
@@ -205,7 +205,7 @@ const StagePage: React.FC = () => {
             <span className="font-medium">{status}</span>
           </div>
         </div>
-        
+
         {/* Creation Time */}
         <div className="absolute top-4 left-4 z-30">
           <div className="flex items-center gap-2 px-3 py-1.5 rounded-full bg-black/40 backdrop-blur-sm">
@@ -233,7 +233,7 @@ const StagePage: React.FC = () => {
 
         {/* Title Overlay - 항상 표시 */}
         <div className="absolute top-[70px] left-0 w-full text-center z-20">
-          <div className="bg-gradient-to-r from-transparent via-black/60 to-transparent py-2">
+          <div>
             <h3 className="text-xl font-bold text-black drop-shadow-lg px-4">
               {upstream.title && typeof upstream.title === 'string' && upstream.title.trim() ? upstream.title : `STEM SET #${upstream.title}`}
             </h3>
@@ -324,10 +324,10 @@ const StagePage: React.FC = () => {
           }
         }}
       />
-      
+
       <main className='relative px-8 pb-8 pt-6'>
         {/* Stage Header */}
-        <div className='mb-12'>
+        {/* <div className='mb-12'>
           <div className="flex items-center gap-4 mb-8">
             <div className="w-16 h-16 bg-gradient-to-br from-purple-600 to-blue-600 rounded-2xl flex items-center justify-center shadow-lg">
               <Music className="w-8 h-8 text-white" />
@@ -344,7 +344,50 @@ const StagePage: React.FC = () => {
               </div>
             </div>
           </div>
+        </div> */}
+
+        <div className='mb-12'>
+          <div className="flex items-center gap-4 mb-4">
+            <div className="w-16 h-16 bg-gradient-to-br from-purple-600 to-blue-600 rounded-2xl flex items-center justify-center shadow-lg overflow-hidden">
+              {track?.image_url ? (
+                <>
+                  <img 
+                    src={track.image_url} 
+                    alt={`${track.title} album cover`}
+                    className="w-full h-full object-cover"
+                    onError={(e) => {
+                      // 이미지 로드 실패 시 기본 아이콘 표시
+                      const target = e.target as HTMLImageElement;
+                      target.style.display = 'none';
+                      target.nextElementSibling?.classList.remove('hidden');
+                    }}
+                  />
+                  <Music className="w-8 h-8 text-white hidden" />
+                </>
+              ) : (
+                <Music className="w-8 h-8 text-white" />
+              )}
+            </div>
+            <div>
+              <h1 className='text-3xl font-bold text-white'>
+                {track?.title || 'Unknown Track'}
+              </h1>
+              <div className="flex items-center gap-3 mt-1">
+                <span className="text-sm text-gray-400">
+                  Working on a new version {stage.version} <br />
+                  {stage.created_at ? new Date(stage.created_at).toLocaleString('ko-KR', {
+                    month: '2-digit',
+                    day: '2-digit',
+                    hour: '2-digit',
+                    minute: '2-digit',
+                    hour12: false
+                  }) : ''}
+                </span>
+              </div>
+            </div>
+          </div>
         </div>
+
 
         {/* Stage Info Cards Grid */}
         <div className='grid grid-cols-1 lg:grid-cols-2 gap-8 mb-12'>
@@ -355,7 +398,7 @@ const StagePage: React.FC = () => {
               <div className="absolute top-0 left-0 w-full h-full bg-gradient-to-br from-purple-500 to-blue-500"></div>
               <div className="absolute top-4 right-4 w-32 h-32 bg-gradient-to-br from-purple-400 to-blue-400 rounded-full blur-3xl"></div>
             </div>
-            
+
             {/* Content */}
             <div className='relative z-10'>
               <div className='flex items-start gap-6 mb-6'>
@@ -384,7 +427,7 @@ const StagePage: React.FC = () => {
               <div className="absolute top-0 left-0 w-full h-full bg-gradient-to-br from-purple-500 to-blue-500"></div>
               <div className="absolute bottom-4 left-4 w-40 h-40 bg-gradient-to-br from-blue-400 to-purple-400 rounded-full blur-3xl"></div>
             </div>
-            
+
             {/* Content */}
             <div className='relative z-10'>
               <div className='flex items-start justify-between mb-6'>
@@ -398,7 +441,7 @@ const StagePage: React.FC = () => {
                     <div className="w-16 h-1 bg-gradient-to-r from-purple-500 to-blue-500 rounded-full mt-3"></div>
                   </div>
                 </div>
-                
+
                 {/* Refresh Button */}
                 <button
                   onClick={() => stageId && fetchReviewers(stageId)}
@@ -406,17 +449,17 @@ const StagePage: React.FC = () => {
                   className='p-3 rounded-xl bg-gray-800/50 text-white hover:bg-gray-700/50 disabled:bg-gray-900/50 disabled:cursor-not-allowed transition-all duration-300 border border-gray-600/50 hover:border-purple-500/50 hover:scale-110'
                   title="Refresh Reviewers"
                 >
-                  <svg 
-                    className={`w-5 h-5 ${reviewersLoading ? 'animate-spin' : ''}`} 
-                    fill='none' 
-                    stroke='currentColor' 
+                  <svg
+                    className={`w-5 h-5 ${reviewersLoading ? 'animate-spin' : ''}`}
+                    fill='none'
+                    stroke='currentColor'
                     viewBox='0 0 24 24'
                   >
                     <path strokeLinecap='round' strokeLinejoin='round' strokeWidth={2} d='M4 4v5h.582m15.356 2A8.001 8.001 0 004.582 9m0 0H9m11 11v-5h-.581m0 0a8.003 8.003 0 01-15.357-2m15.357 2H15' />
                   </svg>
                 </button>
               </div>
-              
+
               {/* Reviewers Display */}
               <div className='bg-gray-900/50 rounded-2xl p-6 border border-gray-700/50 backdrop-blur-sm'>
                 <div className='flex flex-wrap gap-3 justify-center'>
@@ -496,7 +539,7 @@ const StagePage: React.FC = () => {
                 <p className='text-gray-400 text-sm'>Upload and manage your stem sets</p>
               </div>
             </div>
-            
+
             {!isStageClosed && !isUploadModalOpen ? (
               <button
                 className='flex items-center gap-3 rounded-xl bg-gradient-to-r from-purple-600 to-purple-700 px-6 py-3 text-white transition-all duration-200 hover:from-purple-500 hover:to-purple-600 shadow-lg hover:shadow-purple-500/25 transform hover:scale-105 border border-purple-500/50'
@@ -570,10 +613,10 @@ const StagePage: React.FC = () => {
             setTimeout(() => {
               handleUploadComplete();
             }, 100);
-          }} 
+          }}
         />
       )}
-      
+
       {/* 오디오 엘리먼트 */}
       {/* The audio element is removed as per the edit hint. */}
 
