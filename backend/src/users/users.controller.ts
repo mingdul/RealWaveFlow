@@ -1,4 +1,4 @@
-import { Controller, Post, Body, ValidationPipe, Res, UseGuards, Req, Get, Put, Patch, Param } from '@nestjs/common';
+import { Controller, Post, Body, ValidationPipe, Res, UseGuards, Req, Get, Put, Patch, Param, NotFoundException, BadRequestException } from '@nestjs/common';
 import { ApiTags, ApiOperation, ApiResponse, ApiBody, ApiParam, ApiBearerAuth } from '@nestjs/swagger';
 import { UsersService } from './users.service';
 import { ProfileImageService } from './profile-image.service';
