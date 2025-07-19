@@ -121,31 +121,14 @@ export const AuthProvider: React.FC<{ children: ReactNode }> = ({ children }) =>
     
     dispatch({ type: 'AUTH_START' });
     try {
-      let imageUrl: string | undefined;
-      
-      // 프로필 이미지 업로드 처리 (먼저 실행)
+      // 프로필 이미지 업로드 처리 (새로운 전용 API 사용)
       if (profileData.profileImage) {
-        imageUrl = await authService.uploadProfileImage(profileData.profileImage);
+        await authService.uploadProfileImage(profileData.profileImage);
       }
       
-      // 사용자 정보 업데이트 (이름 또는 이미지 URL)
-      const updateData: any = {};
+      // 사용자 이름 변경 처리
       if (profileData.name && profileData.name !== state.user.username) {
-        updateData.username = profileData.name;
-      }
-      if (imageUrl) {
-        updateData.image_url = imageUrl;
-      }
-      
-      // 업데이트할 데이터가 있는 경우만 API 호출
-      if (Object.keys(updateData).length > 0) {
-        await authService.updateUserName(state.user.id, updateData.username);
-        
-        // 이미지 URL이 있는 경우 별도로 업데이트
-        if (updateData.image_url) {
-          // TODO: 백엔드에 이미지 URL 업데이트 API 필요
-          console.log('Image URL to update:', updateData.image_url);
-        }
+        await authService.updateUserName(state.user.id, profileData.name);
       }
       
       // 업데이트된 사용자 정보 가져오기

@@ -1,16 +1,22 @@
 import { Controller, Post, Body, ValidationPipe, Res, UseGuards, Req, Get, Put, Patch, Param } from '@nestjs/common';
-import { ApiTags, ApiOperation, ApiResponse, ApiBody, ApiParam } from '@nestjs/swagger';
+import { ApiTags, ApiOperation, ApiResponse, ApiBody, ApiParam, ApiBearerAuth } from '@nestjs/swagger';
 import { UsersService } from './users.service';
+import { ProfileImageService } from './profile-image.service';
 import { RegisterDto } from './dto/register.dto';
 import { Response, Request } from 'express';
 import { ForgotPasswordDto } from './dto/forgot-password.dto';
 import { UpdateUserDto } from './dto/update-user.dto';
+import { ProfileImageUploadDto } from './dto/profile-image-upload.dto';
+import { ProfileImageCompleteDto } from './dto/profile-image-complete.dto';
 import { JwtAuthGuard } from '../auth/jwt-auth.guard'; 
 
 @ApiTags('users')
 @Controller('users')
 export class UsersController {
-  constructor(private readonly usersService: UsersService) {}
+  constructor(
+    private readonly usersService: UsersService,
+    private readonly profileImageService: ProfileImageService
+  ) {}
 
   @Post('register')
   @ApiOperation({ summary: '회원가입', description: '새로운 사용자 계정을 생성합니다.' })
@@ -112,5 +118,82 @@ export class UsersController {
   async logout(@Res({ passthrough: true }) res: Response) {
     res.clearCookie('jwt');
     return { success: true, message: '로그아웃 완료' };
+  }
+
+  @Post('profile-image/upload-url')
+  @UseGuards(JwtAuthGuard)
+  @ApiBearerAuth()
+  @ApiOperation({ 
+    summary: '프로필 이미지 업로드 URL 생성',
+    description: '프로필 이미지 업로드를 위한 S3 Presigned URL을 생성합니다.'
+  })
+  @ApiBody({ type: ProfileImageUploadDto })
+  @ApiResponse({ 
+    status: 201, 
+    description: '프로필 이미지 업로드 URL 생성 성공',
+    schema: {
+      example: {
+        success: true,
+        data: {
+          uploadUrl: "https://s3.amazonaws.com/bucket/profile-images/user-123/20241215_143022_profile.jpg?presigned-params",
+          key: "profile-images/user-123/20241215_143022_profile.jpg",
+          expiresIn: 3600
+        }
+      }
+    }
+  })
+  @ApiResponse({ status: 401, description: '인증 실패' })
+  @ApiResponse({ status: 400, description: '잘못된 파일 형식 또는 크기' })
+  async generateProfileImageUploadUrl(
+    @Body(ValidationPipe) dto: ProfileImageUploadDto, 
+    @Req() req: Request
+  ) {
+    const user = req.user as any;
+    const data = await this.profileImageService.generateUploadUrl(dto, user.id);
+    return {
+      success: true,
+      data
+    };
+  }
+
+  @Post('profile-image/complete')
+  @UseGuards(JwtAuthGuard)
+  @ApiBearerAuth()
+  @ApiOperation({ 
+    summary: '프로필 이미지 업로드 완료',
+    description: '프로필 이미지 업로드 완료 후 사용자 프로필을 업데이트합니다.'
+  })
+  @ApiBody({ type: ProfileImageCompleteDto })
+  @ApiResponse({ 
+    status: 201, 
+    description: '프로필 이미지 업로드 완료 성공',
+    schema: {
+      example: {
+        success: true,
+        data: {
+          imageUrl: "https://s3.amazonaws.com/bucket/profile-images/user-123/20241215_143022_profile.jpg",
+          message: "프로필 이미지가 성공적으로 업데이트되었습니다.",
+          user: {
+            id: "user-123",
+            username: "testuser",
+            email: "test@example.com",
+            image_url: "https://s3.amazonaws.com/bucket/profile-images/user-123/20241215_143022_profile.jpg"
+          }
+        }
+      }
+    }
+  })
+  @ApiResponse({ status: 401, description: '인증 실패' })
+  @ApiResponse({ status: 400, description: '업로드 완료 처리 실패' })
+  async completeProfileImageUpload(
+    @Body(ValidationPipe) dto: ProfileImageCompleteDto, 
+    @Req() req: Request
+  ) {
+    const user = req.user as any;
+    const data = await this.profileImageService.completeUpload(dto, user.id);
+    return {
+      success: true,
+      data
+    };
   }
 }
