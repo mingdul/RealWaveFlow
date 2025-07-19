@@ -5,7 +5,6 @@ import Logo from './Logo';
 import NotificationBell from './NotificationBell';
 import { useNavigate } from 'react-router-dom';
 import { useNotifications } from '../contexts/NotificationContext';
-import { useAuth } from '../contexts/AuthContext';
 import { Track } from '../types/api';
 
 
@@ -22,7 +21,7 @@ const TrackHeaderCopy: React.FC<TrackHeaderCopyProps> = ({
 }) => {
   const navigate = useNavigate();
   const { notifications, unreadCount } = useNotifications();
-  const { user } = useAuth();
+
   
   // 🔥 NEW: 강제 리렌더링을 위한 상태
   const [forceRefreshKey, setForceRefreshKey] = useState(0);
