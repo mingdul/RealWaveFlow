@@ -331,7 +331,7 @@ const StagePage: React.FC = () => {
         {/* Stage Header */}
         <div className='mb-12'>
           <div className="flex items-start gap-8 mb-8">
-            <div className="w-32 h-32 bg-gradient-to-br from-purple-600 to-blue-600 rounded-3xl flex items-center justify-center shadow-lg overflow-hidden flex-shrink-0">
+            <div className="h-full bg-gradient-to-br from-purple-600 to-blue-600 rounded-3xl flex items-center justify-center shadow-lg overflow-hidden flex-shrink-0" style={{ aspectRatio: '1/1', minHeight: '200px' }}>
               {track ? (
                 <PresignedImage
                   trackId={track.id}
