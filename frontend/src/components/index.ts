@@ -30,3 +30,4 @@ export { default as StemPlayer } from './StemPlayer';
 export { default as AnimatedModal } from './AnimatedModal';
 export { default as Trackinfocardjjm } from './Trackinfocardjjm';
 export { default as Collaborators } from './Collaborators';
+export { default as SettingsDropdown } from './SettingsDropdown';

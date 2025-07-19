@@ -2,7 +2,6 @@ import { useState, useEffect } from 'react';
 import { useNavigate } from 'react-router-dom';
 import {
   Headphones,
-  LogOut,
   Plus,
   Loader2,
   AlertCircle,
@@ -12,6 +11,7 @@ import {
 } from 'lucide-react';
 // import { Wifi, WifiOff } from 'lucide-react';
 import { useAuth } from '../contexts/AuthContext';
+import SettingsDropdown from '../components/SettingsDropdown';
 import { useToast } from '../contexts/ToastContext';
 // import { useSocket } from '../contexts/SocketContext';
 import Button from '../components/Button';
@@ -27,7 +27,7 @@ import NotificationBell from '../components/NotificationBell';
 
 const DashboardPage = () => {
   const navigate = useNavigate();
-  const { user, logout, isAuthenticated, isLoading: authLoading } = useAuth();
+  const { user, isAuthenticated, isLoading: authLoading } = useAuth();
   const { showError, showSuccess} = useToast();
   // const { isConnected, onlineUsers, sendMessage, ping } = useSocket();
 
@@ -102,10 +102,6 @@ const DashboardPage = () => {
     } finally {
       setIsLoading(false);
     }
-  };
-
-  const handleLogout = () => {
-    logout();
   };
 
   const handleNewProject = () => {
@@ -455,13 +451,8 @@ const DashboardPage = () => {
             {/* 알람 기능 */}
             <NotificationBell />
 
-            <button
-              onClick={handleLogout}
-              className='flex items-center space-x-2 rounded-full bg-purple-500 px-6 py-2 text-white transition-all duration-300 hover:from-pink-500 hover:to-purple-600'
-            >
-              <LogOut size={16} />
-              <span>Logout</span>
-            </button>
+            {/* Settings dropdown replacing logout button */}
+            <SettingsDropdown />
           </div>
         </header>
 
