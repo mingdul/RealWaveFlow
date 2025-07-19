@@ -18,7 +18,6 @@ import streamingService, {
 import trackService from '../services/trackService';
 import { 
   ChevronLeft, 
-  Settings, 
   Play, 
   Pause, 
   Clock, 
@@ -67,7 +66,7 @@ const ErrorState: React.FC<{ message: string }> = ({ message }) => (
 );
 
 // 내부 TrackHeader 컴포넌트
-const TrackHeader: React.FC<{ onBack: () => void; onSettingsClick: () => void }> = ({ onBack, onSettingsClick }) => {
+const TrackHeader: React.FC<{ onBack: () => void }> = ({ onBack }) => {
   const navigate = useNavigate();
   
   return (
@@ -94,12 +93,6 @@ const TrackHeader: React.FC<{ onBack: () => void; onSettingsClick: () => void }>
         
         <div className="flex items-center gap-3">
           <NotificationBell />
-          <button
-            onClick={onSettingsClick}
-            className="p-2 rounded-xl bg-white/10 hover:bg-white/20 text-white transition-all duration-200 hover:scale-105"
-          >
-            <Settings size={20} />
-          </button>
         </div>
       </div>
     </header>
@@ -661,7 +654,6 @@ const TrackPage: React.FC<TrackPageProps> = () => {
         {/* Header */}
         <TrackHeader
           onBack={handleBack}
-          onSettingsClick={() => console.log('Settings clicked')}
         />
 
         {/* Main Content */}

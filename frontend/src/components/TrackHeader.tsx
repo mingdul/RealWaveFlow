@@ -10,12 +10,10 @@ import { useAuth } from '../contexts/AuthContext';
 
 interface TrackHeaderProps {
   onBack?: () => void;
-  onSettingsClick?: () => void;
 }
 
 const TrackHeader: React.FC<TrackHeaderProps> = ({
   onBack,
-  onSettingsClick,
 }) => {
   const navigate = useNavigate();
   const { notifications, unreadCount } = useNotifications();
