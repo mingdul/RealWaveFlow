@@ -1,6 +1,7 @@
 import React, { useState, useRef, useEffect } from 'react';
 import { useNotifications } from '../contexts/NotificationContext';
 import { Notification } from '../types/notification';
+import { BellRing } from 'lucide-react';
 
 const NotificationBell: React.FC = () => {
   const [isOpen, setIsOpen] = useState(false);
@@ -190,12 +191,7 @@ const NotificationBell: React.FC = () => {
         className="relative p-2 text-gray-400 hover:text-gray-500 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-blue-500 rounded-full"
       >
         <span className="sr-only">View notifications</span>
-        <svg className="h-6 w-6" fill="none" viewBox="0 0 24 24" stroke="currentColor">
-          <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M15 17h5l-5 5v-5z" />
-          <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M5 17h5l-5 5v-5z" />
-          <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M12 19v-7" />
-          <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M12 12V5a3 3 0 116 0v7" />
-        </svg>
+        <BellRing className="h-6 w-6" />
         
         {/* 읽지 않은 알림 개수 배지 - 실시간 업데이트 */}
         {unreadCount > 0 && (
