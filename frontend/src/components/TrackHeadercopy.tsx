@@ -7,7 +7,7 @@ import { useNavigate } from 'react-router-dom';
 import { useNotifications } from '../contexts/NotificationContext';
 import { useAuth } from '../contexts/AuthContext';
 import { Track } from '../types/api';
-import PresignedImage from './PresignedImage';
+
 
 interface TrackHeaderCopyProps {
   onBack?: () => void;
@@ -18,7 +18,7 @@ interface TrackHeaderCopyProps {
 const TrackHeaderCopy: React.FC<TrackHeaderCopyProps> = ({
   onBack,
   onSettingsClick,
-  track,
+
 }) => {
   const navigate = useNavigate();
   const { notifications, unreadCount } = useNotifications();
@@ -182,67 +182,6 @@ const TrackHeaderCopy: React.FC<TrackHeaderCopyProps> = ({
         </div>
       </div>
 
-      {/* 트랙 정보 섹션 */}
-      {track && (
-        <div className="px-6 py-6 bg-gradient-to-r from-gray-900/50 to-gray-800/50 backdrop-blur-sm">
-          <div className="flex items-center gap-6">
-            {/* 트랙 이미지 */}
-            <div className="flex-shrink-0">
-              <PresignedImage
-                trackId={track.id}
-                imageUrl={track.image_url}
-                alt={track.title}
-                className="w-20 h-20 rounded-xl shadow-lg object-cover border border-gray-700"
-              />
-            </div>
-
-            {/* 트랙 메타정보 */}
-            <div className="flex-1 min-w-0">
-              <div className="flex items-center gap-3 mb-2">
-                <Music className="w-5 h-5 text-amber-400" />
-                <h1 className="text-2xl font-bold text-white truncate">{track.title}</h1>
-              </div>
-              
-              <div className="flex items-center gap-6 text-sm text-gray-300 mb-3">
-                <div className="flex items-center gap-2">
-                  <User className="w-4 h-4 text-blue-400" />
-                  <span>{track.owner_id?.username || 'Unknown'}</span>
-                </div>
-                <div className="flex items-center gap-2">
-                  <Calendar className="w-4 h-4 text-green-400" />
-                  <span>{new Date(track.created_date).toLocaleDateString()}</span>
-                </div>
-              </div>
-
-              {/* 트랙 태그들 */}
-              <div className="flex items-center gap-2 flex-wrap">
-                {track.genre && (
-                  <span className="px-3 py-1 bg-purple-600/20 text-purple-300 text-xs font-medium rounded-full border border-purple-600/30">
-                    {track.genre}
-                  </span>
-                )}
-                {track.bpm && (
-                  <span className="px-3 py-1 bg-amber-600/20 text-amber-300 text-xs font-medium rounded-full border border-amber-600/30">
-                    {track.bpm} BPM
-                  </span>
-                )}
-                {track.key_signature && (
-                  <span className="px-3 py-1 bg-emerald-600/20 text-emerald-300 text-xs font-medium rounded-full border border-emerald-600/30">
-                    {track.key_signature}
-                  </span>
-                )}
-              </div>
-            </div>
-          </div>
-
-          {/* 트랙 설명 */}
-          {track.description && (
-            <div className="mt-4 p-4 bg-black/30 rounded-lg border border-gray-700">
-              <p className="text-gray-300 text-sm leading-relaxed">{track.description}</p>
-            </div>
-          )}
-        </div>
-      )}
     </div>
   );
 };
