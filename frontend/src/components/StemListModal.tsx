@@ -78,20 +78,20 @@ const StemListModal: React.FC<StemListModalProps> = ({
               </p>
             </div>
           ) : (
-            <StemPlayer stems={stems} stageId={stageId} />
+            <StemPlayer stems={stems} stageId={stageId} onShowStage={onShowStage}/>
           )}
         </div>
 
         {/* Roll Back Button */}
-        {onShowStage && (
+        {onRollBack && (
           <div className="mt-6 pt-6 border-t border-[#595959] flex">
             <Button 
               variant="secondary" 
               size="sm" 
-              className="bg-blue-600 hover:bg-blue-700"
-              onClick={() => onShowStage(stageId || '')}
+              className="bg-red-600 hover:bg-red-700"
+              onClick={() => setShowRollbackConfirm(true)}
             >
-              STAGE HISTORY
+              Roll Back
             </Button>
           </div>
         )}

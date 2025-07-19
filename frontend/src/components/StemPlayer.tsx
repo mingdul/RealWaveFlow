@@ -11,6 +11,7 @@ interface StemPlayerProps {
   className?: string;
   stageId?: string; // Optional stageId for guide playback
   guideUrl?: string;
+  onShowStage?: (stageId: string) => void;
 }
 
 interface StemState {
@@ -21,7 +22,7 @@ interface StemState {
   isPlaying: boolean;
 }
 
-const StemPlayer: React.FC<StemPlayerProps> = ({ stems, className = '', stageId}) => {
+const StemPlayer: React.FC<StemPlayerProps> = ({ stems, className = '', stageId, onShowStage}) => {
   const [isPlaying, setIsPlaying] = useState(false);
   const [currentTime, setCurrentTime] = useState(0);
   const [stemStates, setStemStates] = useState<Record<string, StemState>>({});
@@ -667,8 +668,10 @@ const StemPlayer: React.FC<StemPlayerProps> = ({ stems, className = '', stageId}
 
       {/* 툴바 */}
       <div className="mt-6 pt-6 border-t border-[#595959] flex justify-end">
-        <button className="inline-flex items-center justify-center font-medium transition-all duration-200 focus:outline-none focus:ring-2 focus:ring-offset-2 disabled:opacity-50 disabled:cursor-not-allowed bg-[#595959] text-[#D9D9D9] hover:bg-[#BFBFBF] hover:text-[#0D0D0D] focus:ring-[#BFBFBF] px-3 py-2 text-sm rounded-lg bg-red-600 hover:bg-red-700">
-          Roll Back
+        <button 
+        onClick = {() => onShowStage?.(stageId || '')}
+        className="inline-flex items-center justify-center font-medium transition-all duration-200 focus:outline-none focus:ring-2 focus:ring-offset-2 disabled:opacity-50 disabled:cursor-not-allowed bg-[#595959] text-[#D9D9D9] hover:bg-[#BFBFBF] hover:text-[#0D0D0D] focus:ring-[#BFBFBF] px-3 py-2 text-sm rounded-lg bg-blue-600 hover:bg-blue-700">
+          History
         </button>
       </div>
 

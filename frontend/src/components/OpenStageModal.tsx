@@ -156,8 +156,8 @@ const OpenStageModal: React.FC<OpenStageModalProps> = ({
               <CirclePlus size={16} className="sm:w-5 sm:h-5 text-white" />
             </div>
             <div>
-              <h2 className="text-xl sm:text-2xl font-bold text-[#D9D9D9]">Open Stage</h2>
-              <p className="text-[#BFBFBF] text-sm">Create a new review session</p>
+              <h2 className="text-xl sm:text-2xl font-bold text-[#D9D9D9]">New Stage</h2>
+              <p className="text-[#BFBFBF] text-sm">Create a new stage</p>
             </div>
           </div>
           <button 

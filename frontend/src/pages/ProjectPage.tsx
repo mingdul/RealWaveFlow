@@ -174,6 +174,10 @@ const ProjectPage: React.FC<ProjectPageProps> = () => {
 
   // Event handlers
   const handleBack = () => navigate('/dashboard');
+
+  const handleShowStage = (stageId: string) => {
+    navigate(`/stage/${stageId}`);
+  }
   
   const handlePlay = () => {
     console.log('[DEBUG][TrackPage] Playing track:', track?.id);
@@ -191,10 +195,11 @@ const ProjectPage: React.FC<ProjectPageProps> = () => {
       
       if (response.success) {
         await loadStemsByVersion(selectedStageVersion);
-        window.location.reload();
+        
       } else {
         console.error('[ERROR][TrackPage] Failed to rollback:', response);
       }
+      navigate(0);
     } catch (error) {
       console.error('[ERROR][TrackPage] Rollback error:', error);
     }
@@ -437,6 +442,7 @@ const ProjectPage: React.FC<ProjectPageProps> = () => {
           versionNumber={selectedStageVersion.toString()}
           loading={stemsLoading}
           onRollBack={handleRollBack}
+          onShowStage={handleShowStage}
           stageId={getSelectedStage()?.id}
         />
       </div>
