@@ -234,7 +234,7 @@ const StagePage: React.FC = () => {
         {/* Title Overlay - 항상 표시 */}
         <div className="absolute top-[70px] left-0 w-full text-center z-20">
           <div className="bg-gradient-to-r from-transparent via-black/60 to-transparent py-2">
-            <h3 className="text-xl font-bold text-white drop-shadow-lg px-4">
+            <h3 className="text-xl font-bold text-black drop-shadow-lg px-4">
               {upstream.title && typeof upstream.title === 'string' && upstream.title.trim() ? upstream.title : `STEM SET #${upstream.title}`}
             </h3>
           </div>
