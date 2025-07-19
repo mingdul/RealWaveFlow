@@ -115,6 +115,9 @@ export class UpstreamReviewService {
 
             // 🔔 알림 1: 트랙의 모든 멤버에게 "새 버전 생성" 알림 전송
             try {
+              console.log(`🔔 [UpstreamReview] Starting version creation notification process...`);
+              console.log(`🔔 [UpstreamReview] Track ID: ${upstream.stage.track.id}`);
+              
               const trackCollaborators = await this.trackCollaboratorRepository.find({
                 where: { 
                   track_id: { id: upstream.stage.track.id },
@@ -123,11 +126,16 @@ export class UpstreamReviewService {
                 relations: ['user_id'],
               });
 
+              console.log(`🔔 [UpstreamReview] Found ${trackCollaborators.length} track collaborators`);
+
               const memberUserIds = trackCollaborators.map(collab => collab.user_id.id);
+              console.log(`🔔 [UpstreamReview] Member user IDs:`, memberUserIds);
               
               if (memberUserIds.length > 0) {
                 const trackName = upstream.stage.track.title || '트랙';
                 const stageVersion = upstream.stage.version || `버전 ${upstream.stage.version}`;
+                
+                console.log(`🔔 [UpstreamReview] Sending notification for track: "${trackName}", version: "${stageVersion}"`);
                 
                 await this.notificationGateway.sendNotificationToUsers(
                   memberUserIds,
@@ -142,10 +150,18 @@ export class UpstreamReviewService {
                   }
                 );
 
-                console.log(`🔔 [UpstreamReview] Sent version creation notification to ${memberUserIds.length} track members`);
+                console.log(`🔔 [UpstreamReview] ✅ Successfully sent version creation notification to ${memberUserIds.length} track members`);
+              } else {
+                console.log(`🔔 [UpstreamReview] ⚠️ No track members found to notify`);
               }
             } catch (error) {
-              console.error('🔔 [UpstreamReview] Failed to send version creation notification:', error);
+              console.error('🔔 [UpstreamReview] ❌ Failed to send version creation notification:', error);
+              console.error('🔔 [UpstreamReview] Error details:', {
+                message: error.message,
+                stack: error.stack,
+                trackId: upstream?.stage?.track?.id,
+                upstreamId: upstreamId
+              });
               // 알림 실패해도 비즈니스 로직은 계속 진행
             }
 

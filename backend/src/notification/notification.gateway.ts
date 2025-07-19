@@ -185,9 +185,9 @@ export class NotificationGateway
     let savedNotification;
     try {
       savedNotification = await this.notificationService.create(userId, type, message, data);
-      this.logger.log(`🔔 [NotificationGateway] Notification saved to DB with ID: ${savedNotification.id}`);
+      this.logger.log(`🔔 [NotificationGateway] ✅ Notification saved to DB with ID: ${savedNotification.id}`);
     } catch (error) {
-      this.logger.error(`🔔 [NotificationGateway] Failed to save to DB: ${error.message}`);
+      this.logger.error(`🔔 [NotificationGateway] ❌ Failed to save to DB: ${error.message}`);
       return;
     }
     
@@ -204,13 +204,21 @@ export class NotificationGateway
           createdAt: savedNotification.createdAt,
         };
         
+        this.logger.log(`🔔 [NotificationGateway] 📡 Sending payload via websocket:`, JSON.stringify(payload, null, 2));
         this.server.to(`user_${userId}`).emit('notification', payload);
-        this.logger.log(`🔔 [NotificationGateway] ✅ Notification sent via websocket to user_${userId}`);
+        this.logger.log(`🔔 [NotificationGateway] ✅ Notification sent via websocket to room: user_${userId}`);
+        
+        // 연결된 소켓 정보도 로그
+        const userSocket = this.connectedUsers.get(userId);
+        this.logger.log(`🔔 [NotificationGateway] 📱 User socket ID: ${userSocket?.id}, Connected: ${userSocket?.connected}`);
+        
       } catch (error) {
-        this.logger.error(`🔔 [NotificationGateway] Websocket send error: ${error.message}`);
+        this.logger.error(`🔔 [NotificationGateway] ❌ Websocket send error: ${error.message}`);
+        this.logger.error(`🔔 [NotificationGateway] Error details:`, error);
       }
     } else {
-      this.logger.log(`🔔 [NotificationGateway] ⏳ User not connected, notification saved to DB: ${userId}`);
+      this.logger.log(`🔔 [NotificationGateway] ⏳ User not connected, notification saved to DB only: ${userId}`);
+      this.logger.log(`🔔 [NotificationGateway] 📊 Currently connected users: ${Array.from(this.connectedUsers.keys())}`);
     }
   }
 

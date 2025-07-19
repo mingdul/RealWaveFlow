@@ -56,16 +56,29 @@ const NotificationBell: React.FC = () => {
   // 🔥 NEW: 커스텀 이벤트 리스너로 실시간 뱃지 업데이트 처리
   useEffect(() => {
     const handleBadgeUpdate = (event: CustomEvent) => {
-      const { unreadCount: newUnreadCount, timestamp } = event.detail;
+      const { unreadCount: newUnreadCount, timestamp, source } = event.detail;
       
       console.log('🔔 [NotificationBell] 📢 Received badge update event!');
       console.log('🔔 [NotificationBell] 📊 New unread count from event:', newUnreadCount);
       console.log('🔔 [NotificationBell] ⏰ Event timestamp:', timestamp);
+      console.log('🔔 [NotificationBell] 📡 Event source:', source || 'unknown');
+      console.log('🔔 [NotificationBell] 📊 Current context unread count:', unreadCount);
       
-      // 강제 리렌더링 트리거
-      setForceUpdateKey(prev => prev + 1);
+      // 🔥 강제 리렌더링 트리거 (확실한 업데이트 보장)
+      const newForceKey = forceUpdateKey + 1;
+      setForceUpdateKey(newForceKey);
       
-      console.log('🔔 [NotificationBell] 🔄 Triggered force re-render, key:', forceUpdateKey + 1);
+      console.log('🔔 [NotificationBell] 🔄 Triggered force re-render, key updated:', forceUpdateKey, '→', newForceKey);
+      
+      // 🔥 추가: DOM 강제 업데이트 확인
+      setTimeout(() => {
+        const badgeElement = document.querySelector('[class*="bg-red-600"]');
+        console.log('🔔 [NotificationBell] 🔍 Badge element check after update:', {
+          exists: !!badgeElement,
+          textContent: badgeElement?.textContent,
+          className: badgeElement?.className
+        });
+      }, 50);
     };
 
     // 커스텀 이벤트 리스너 등록
@@ -77,7 +90,7 @@ const NotificationBell: React.FC = () => {
       window.removeEventListener('notification-badge-update', handleBadgeUpdate as EventListener);
       console.log('🔔 [NotificationBell] 🔇 Badge update event listener removed');
     };
-  }, [forceUpdateKey]);
+  }, [forceUpdateKey, unreadCount]);
 
   const toggleDropdown = async () => {
     console.log('🔔 [NotificationBell] 🖱️ Bell icon clicked!');
