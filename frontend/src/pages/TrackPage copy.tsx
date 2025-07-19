@@ -13,9 +13,10 @@ import {
   getTrackStages,
   createStage,
   getBackToPreviousStage,
+  getStageByTrackIdAndVersion,
 } from '../services/stageService';
 import { createStageReviewer } from '../services/stageReviewerService';
-import streamingService, {
+import {
   StemStreamingInfo,
 } from '../services/streamingService';
 import trackService from '../services/trackService';
@@ -209,52 +210,57 @@ const VersionTimeline: React.FC<{
     setLoadingVersions(prev => ({ ...prev, [version]: true }));
     
     try {
-      // 먼저 마스터 스템 스트림 조회 시도
-      const masterStemsResponse = await streamingService.getMasterStemStreams(trackId, version);
+      console.log(`[DEBUG][VersionTimeline] Loading version-stems for version: ${version}`);
       
-      if (masterStemsResponse.data && masterStemsResponse.data.stems) {
+      // 해당 버전의 스테이지 정보 조회
+      const stageInfo = await getStageByTrackIdAndVersion(trackId, version);
+      
+      if (!stageInfo) {
+        console.error(`[ERROR][VersionTimeline] No stage found for version: ${version}`);
+        setVersionStems(prev => ({ ...prev, [version]: [] }));
+        return;
+      }
+
+      console.log(`[DEBUG][VersionTimeline] Found stage info for version ${version}:`, stageInfo);
+      
+      // 해당 스테이지의 version-stem만 조회
+      const versionStemsData = await versionStemService.getLatestStemsPerCategoryByTrack(trackId, version);
+      
+      if (versionStemsData && Array.isArray(versionStemsData)) {
+        const convertedStems: StemStreamingInfo[] = versionStemsData.map((stem: any) => ({
+          id: stem.id,
+          fileName: stem.file_name,
+          category: stem.category?.name || 'Unknown',
+          tag: stem.key || '',
+          key: stem.key || '',
+          description: stem.description || '',
+          presignedUrl: '', // 실제 재생 시 로딩
+          metadata: {
+            duration: 0, // 실제 재생 시 로딩
+            fileSize: 0
+          },
+          uploadedBy: {
+            id: stem.user?.id || '',
+            username: stem.user?.username || 'Unknown'
+          },
+          uploadedAt: stem.uploaded_at
+        }));
+        
         setVersionStems(prev => ({ 
           ...prev, 
-          [version]: masterStemsResponse.data!.stems 
+          [version]: convertedStems 
         }));
+        
+        console.log(`[DEBUG][VersionTimeline] Successfully loaded ${convertedStems.length} version-stems for stage version: ${version}`);
       } else {
-        // 마스터 스템이 없으면 버전 스템 조회 시도
-        try {
-          const versionStemsData = await versionStemService.getLatestStemsPerCategoryByTrack(trackId, version);
-          
-          const convertedStems: StemStreamingInfo[] = versionStemsData?.map((stem: any) => ({
-            id: stem.id,
-            fileName: stem.file_name,
-            category: stem.category?.name || 'Unknown',
-            tag: stem.key,
-            key: stem.key,
-            description: '',
-            presignedUrl: '',
-            metadata: {
-              duration: 0,
-              fileSize: 0
-            },
-            uploadedBy: {
-              id: stem.user?.id || '',
-              username: stem.user?.username || 'Unknown'
-            },
-            uploadedAt: stem.uploaded_at
-          })) || [];
-          
-          setVersionStems(prev => ({ 
-            ...prev, 
-            [version]: convertedStems 
-          }));
-        } catch (error) {
-          console.error(`[ERROR] Failed to load stems for version ${version}:`, error);
-          setVersionStems(prev => ({ 
-            ...prev, 
-            [version]: [] 
-          }));
-        }
+        console.warn(`[WARN][VersionTimeline] No version-stems found for version: ${version}`);
+        setVersionStems(prev => ({ 
+          ...prev, 
+          [version]: [] 
+        }));
       }
     } catch (error) {
-      console.error(`[ERROR] Failed to load stems for version ${version}:`, error);
+      console.error(`[ERROR][VersionTimeline] Failed to load version-stems for version ${version}:`, error);
       setVersionStems(prev => ({ 
         ...prev, 
         [version]: [] 
@@ -438,39 +444,64 @@ const TrackPageCopy: React.FC<TrackPageCopyProps> = () => {
     loadTrackData();
   }, [trackId]);
 
-  // 승인된 스테이지의 스템들 로드
+  // 최신 스테이지의 version-stem들 로드
   const loadApproveStems = async () => {
     if (!trackId || stages.length === 0) return;
 
     try {
       setStemsLoading(true);
+      console.log('[DEBUG][TrackPage] Loading initial stems for stages:', stages);
 
-      // active가 아닌 모든 스테이지 중 가장 높은 버전 선택
-      const nonActiveStages = stages.filter(stage => stage.status !== 'active');
-      if (nonActiveStages.length === 0) {
-        console.warn('[WARN][TrackPage] No non-active stages found');
+      // 가장 높은 버전의 스테이지 선택 (active 스테이지 우선)
+      const activeStage = stages.find(stage => stage.status === 'active');
+      const targetStage = activeStage || stages.reduce((prev, current) => 
+        current.version > prev.version ? current : prev
+      );
+
+      if (!targetStage) {
+        console.warn('[WARN][TrackPage] No stages found');
         setStems([]);
         return;
       }
 
-      const latestNonActiveStage = nonActiveStages.reduce((prev, current) => 
-        current.version > prev.version ? current : prev
-      );
+      console.log('[DEBUG][TrackPage] Loading stems for target stage:', targetStage);
 
-      const response = await streamingService.getMasterStemStreams(
+      // 해당 스테이지의 version-stem만 조회
+      const versionStems = await versionStemService.getLatestStemsPerCategoryByTrack(
         trackId,
-        latestNonActiveStage.version
+        targetStage.version
       );
       
-      if (response.data) {
-        setStems(response.data.stems);
-        setSelectedStageVersion(latestNonActiveStage.version);
+      if (versionStems && Array.isArray(versionStems)) {
+        // 버전 스템 데이터를 StemStreamingInfo 형태로 변환
+        const convertedStems: StemStreamingInfo[] = versionStems.map((stem: any) => ({
+          id: stem.id,
+          fileName: stem.file_name,
+          category: stem.category?.name || 'Unknown',
+          tag: stem.key || '',
+          key: stem.key || '',
+          description: stem.description || '',
+          presignedUrl: '', // 실제 재생 시 로딩
+          metadata: {
+            duration: 0, // 실제 재생 시 로딩
+            fileSize: 0
+          },
+          uploadedBy: {
+            id: stem.user?.id || '',
+            username: stem.user?.username || 'Unknown'
+          },
+          uploadedAt: stem.uploaded_at
+        }));
+        
+        setStems(convertedStems);
+        setSelectedStageVersion(targetStage.version);
+        console.log('[DEBUG][TrackPage] Successfully loaded', convertedStems.length, 'initial version-stems for stage version:', targetStage.version);
       } else {
-        console.error('[ERROR][TrackPage] Failed to load stems:', response.message);
+        console.warn('[WARN][TrackPage] No version-stems found for target stage:', targetStage);
         setStems([]);
       }
     } catch (error) {
-      console.error('[ERROR][TrackPage] Error loading stems:', error);
+      console.error('[ERROR][TrackPage] Error loading initial version-stems:', error);
       setStems([]);
     } finally {
       setStemsLoading(false);
@@ -484,56 +515,63 @@ const TrackPageCopy: React.FC<TrackPageCopyProps> = () => {
     }
   }, [stages, trackId]);
 
-  // 버전별 스템 로드 (개선된 버전 - 특정 스테이지의 스템만 가져오기)
+  // 스테이지별 version-stem만 로드 (개선된 버전)
   const loadStemsByVersion = async (version: number) => {
     if (!trackId) return;
 
     try {
       setStemsLoading(true);
+      console.log('[DEBUG][TrackPage] Loading stems for version:', version);
       
-      // 먼저 마스터 스템 스트림 조회 시도
-      const masterStemsResponse = await streamingService.getMasterStemStreams(trackId, version);
+      // 해당 버전의 스테이지 정보 조회
+      const stageInfo = await getStageByTrackIdAndVersion(trackId, version);
       
-      if (masterStemsResponse.data && masterStemsResponse.data.stems) {
-        console.log('[DEBUG][TrackPage] Loaded master stems for version:', version);
-        setStems(masterStemsResponse.data.stems);
+      if (!stageInfo) {
+        console.error('[ERROR][TrackPage] No stage found for version:', version);
+        setStems([]);
         setSelectedStageVersion(version);
-      } else {
-        // 마스터 스템이 없으면 버전 스템 조회 시도
-        try {
-          const versionStems = await versionStemService.getLatestStemsPerCategoryByTrack(trackId, version);
-          console.log('[DEBUG][TrackPage] Loaded version stems for version:', version, versionStems);
-          
-          // 버전 스템 데이터를 StemStreamingInfo 형태로 변환
-          const convertedStems: StemStreamingInfo[] = versionStems?.map((stem: any) => ({
-            id: stem.id,
-            fileName: stem.file_name,
-            category: stem.category?.name || 'Unknown',
-            tag: stem.key,
-            key: stem.key,
-            description: '',
-            presignedUrl: '',
-            metadata: {
-              duration: 0,
-              fileSize: 0
-            },
-            uploadedBy: {
-              id: stem.user?.id || '',
-              username: stem.user?.username || 'Unknown'
-            },
-            uploadedAt: stem.uploaded_at
-          })) || [];
-          
-          setStems(convertedStems);
-          setSelectedStageVersion(version);
-        } catch (versionError) {
-          console.error('[ERROR][TrackPage] Error loading version stems:', versionError);
-          setStems([]);
-        }
+        return;
       }
+
+      console.log('[DEBUG][TrackPage] Found stage info:', stageInfo);
+      
+      // 해당 스테이지의 version-stem만 조회
+      const versionStems = await versionStemService.getLatestStemsPerCategoryByTrack(trackId, version);
+      console.log('[DEBUG][TrackPage] Loaded version stems for stage:', stageInfo.id, versionStems);
+      
+      if (versionStems && Array.isArray(versionStems)) {
+        // 버전 스템 데이터를 StemStreamingInfo 형태로 변환
+        const convertedStems: StemStreamingInfo[] = versionStems.map((stem: any) => ({
+          id: stem.id,
+          fileName: stem.file_name,
+          category: stem.category?.name || 'Unknown',
+          tag: stem.key || '',
+          key: stem.key || '',
+          description: stem.description || '',
+          presignedUrl: '', // 실제 재생 시 로딩
+          metadata: {
+            duration: 0, // 실제 재생 시 로딩
+            fileSize: 0
+          },
+          uploadedBy: {
+            id: stem.user?.id || '',
+            username: stem.user?.username || 'Unknown'
+          },
+          uploadedAt: stem.uploaded_at
+        }));
+        
+        setStems(convertedStems);
+        console.log('[DEBUG][TrackPage] Successfully loaded', convertedStems.length, 'version-stems for stage version:', version);
+      } else {
+        console.warn('[WARN][TrackPage] No version-stems found for version:', version);
+        setStems([]);
+      }
+      
+      setSelectedStageVersion(version);
     } catch (error) {
-      console.error('[ERROR][TrackPage] Error loading stems by version:', error);
+      console.error('[ERROR][TrackPage] Error loading version-stems for stage:', error);
       setStems([]);
+      setSelectedStageVersion(version);
     } finally {
       setStemsLoading(false);
     }
@@ -819,7 +857,6 @@ const TrackPageCopy: React.FC<TrackPageCopyProps> = () => {
                   stages={stages}
                   selectedVersion={selectedStageVersion}
                   onVersionSelect={loadStemsByVersion}
-                  stems={stems}
                   trackId={trackId || ''}
                 />
               </div>
