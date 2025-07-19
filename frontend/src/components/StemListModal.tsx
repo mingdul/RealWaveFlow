@@ -12,6 +12,7 @@ interface StemListModalProps {
   versionNumber: string;
   loading?: boolean;
   onRollBack?: () => void;
+  onShowStage?: (stageId: string) => void;
   stageId?: string; // 가이드 재생을 위한 스테이지 ID
 }
 
@@ -22,6 +23,7 @@ const StemListModal: React.FC<StemListModalProps> = ({
   versionNumber,
   loading = false,
   onRollBack,
+  onShowStage,
   stageId
 }) => {
   const [showRollbackConfirm, setShowRollbackConfirm] = useState(false);
@@ -81,13 +83,13 @@ const StemListModal: React.FC<StemListModalProps> = ({
         </div>
 
         {/* Roll Back Button */}
-        {onRollBack && (
+        {onShowStage && (
           <div className="mt-6 pt-6 border-t border-[#595959] flex">
             <Button 
               variant="secondary" 
               size="sm" 
               className="bg-red-600 hover:bg-red-700"
-              onClick={() => setShowRollbackConfirm(true)}
+              onClick={() => onShowStage(stageId || '')}
             >
               Roll Back
             </Button>

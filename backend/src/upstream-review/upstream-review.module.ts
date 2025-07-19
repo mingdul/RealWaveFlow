@@ -8,9 +8,22 @@ import { Stem } from 'src/stem/stem.entity';
 import { Upstream } from 'src/upstream/upstream.entity';
 import { Stage } from 'src/stage/stage.entity';
 import { VersionStem } from 'src/version-stem/version-stem.entity';
+import { TrackCollaborator } from 'src/track_collaborator/track_collaborator.entity';
+import { NotificationModule } from 'src/notification/notification.module';
 
 @Module({
-  imports: [TypeOrmModule.forFeature([UpstreamReview, StageReviewer, Stem, Upstream, Stage, VersionStem])], 
+  imports: [
+    TypeOrmModule.forFeature([
+      UpstreamReview, 
+      StageReviewer, 
+      Stem, 
+      Upstream, 
+      Stage, 
+      VersionStem,
+      TrackCollaborator
+    ]),
+    NotificationModule, // 알림 기능을 위해 추가
+  ], 
   controllers: [UpstreamReviewController],
   providers: [UpstreamReviewService],
   exports: [UpstreamReviewService],
