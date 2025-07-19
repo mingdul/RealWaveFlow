@@ -9,7 +9,6 @@ import { ForgotPasswordDto } from './dto/forgot-password.dto';
 import { UpdateUserDto } from './dto/update-user.dto';
 import { ProfileImageUploadDto } from './dto/profile-image-upload.dto';
 import { ProfileImageCompleteDto } from './dto/profile-image-complete.dto';
-import { JwtAuthGuard } from '../auth/jwt-auth.guard'; 
 import { AuthGuard } from '@nestjs/passport';
 
 @ApiTags('users')
@@ -41,7 +40,7 @@ export class UsersController {
   }
 
   @Get('me')
-  @UseGuards(JwtAuthGuard)
+  @UseGuards(AuthGuard('jwt'))
   @ApiOperation({ summary: '현재 사용자 정보', description: 'JWT 토큰을 검증하여 현재 사용자 정보를 반환합니다.' })
   @ApiResponse({ status: 200, description: '사용자 정보 반환 성공' })
   @ApiResponse({ status: 401, description: '인증되지 않은 사용자' })
@@ -61,7 +60,7 @@ export class UsersController {
   }
 
   @Put('me')
-  @UseGuards(JwtAuthGuard)
+  @UseGuards(AuthGuard('jwt'))
   @ApiOperation({ summary: '사용자 정보 업데이트', description: '현재 사용자의 정보를 업데이트합니다.' })
   @ApiBody({ type: UpdateUserDto })
   @ApiResponse({ status: 200, description: '사용자 정보 업데이트 성공' })
@@ -95,7 +94,7 @@ export class UsersController {
   }
 
   @Patch(':id')
-  @UseGuards(JwtAuthGuard)
+  @UseGuards(AuthGuard('jwt'))
   @ApiOperation({ summary: '사용자 이름 변경', description: '특정 사용자의 이름을 변경합니다. 본인만 수정 가능합니다.' })
   @ApiParam({ name: 'id', description: '사용자 ID', type: 'string' })
   @ApiBody({ type: UpdateUserDto })
@@ -170,7 +169,7 @@ export class UsersController {
   }
 
   @Post('profile-image/complete')
-  @UseGuards(JwtAuthGuard)
+  @UseGuards(AuthGuard('jwt'))
   @ApiBearerAuth()
   @ApiOperation({ 
     summary: '프로필 이미지 업로드 완료',
@@ -211,7 +210,7 @@ export class UsersController {
   }
 
   @Get('me/profile-image')
-  @UseGuards(JwtAuthGuard)
+  @UseGuards(AuthGuard('jwt'))
   @ApiOperation({ 
     summary: '현재 사용자 프로필 이미지 조회',
     description: '현재 사용자의 프로필 이미지 presigned URL을 반환합니다. 이미지가 없으면 null을 반환합니다.'
