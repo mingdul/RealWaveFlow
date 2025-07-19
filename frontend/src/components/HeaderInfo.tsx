@@ -1,15 +1,16 @@
 import React, { useState, useEffect } from 'react';
 import Logo from './Logo';
 import NotificationBell from './NotificationBell';
-import { useSocket } from '../contexts/SocketContext';
-import socketService from '../services/socketService';
+import { useNotifications } from '../contexts/NotificationContext';
 
 const HeaderInfo: React.FC = () => {
   const [activeTab, setActiveTab] = useState('MASTER');
   const [tabs, setTabs] = useState(['MASTER']);
   const [newTab, setNewTab] = useState<string>('');
   const [notificationTrigger, setNotificationTrigger] = useState(0); // 재렌더링 트리거용
-  const { isConnected } = useSocket();
+  
+  // NotificationContext 사용 (올바른 소켓 연결)
+  const { notifications, unreadCount, refreshNotifications } = useNotifications();
 
   const handleAddTab = () => {
     const trimmedTab = newTab.trim();
@@ -19,91 +20,73 @@ const HeaderInfo: React.FC = () => {
     }
   };
 
-  // 소켓 이벤트 처리
+  // 알림 개수 변경 시 재렌더링 트리거
   useEffect(() => {
-    if (!isConnected) return;
+    console.log('[HeaderInfo] 알림 개수 변경:', unreadCount);
+    setNotificationTrigger(prev => prev + 1);
+    
+    // NotificationBell 강제 업데이트를 위한 이벤트 발생
+    window.dispatchEvent(new CustomEvent('notification-badge-update', {
+      detail: { 
+        unreadCount: unreadCount,
+        timestamp: new Date().toISOString(),
+        source: 'header-info-context',
+        triggerCount: notificationTrigger + 1
+      }
+    }));
+  }, [unreadCount, notifications.length]);
 
-    console.log('[HeaderInfo] 소켓 이벤트 리스너 등록');
+  // 커스텀 이벤트 리스너 등록 (다른 컴포넌트에서 발생하는 이벤트 감지)
+  useEffect(() => {
+    console.log('[HeaderInfo] 커스텀 이벤트 리스너 등록');
 
-    // 파일 처리 완료 이벤트 (InitProjectModal과 동일)
-    const handleFileProcessingCompleted = (data: {
-      trackId: string;
-      fileName: string;
-      result: any;
-      processingTime: number;
-    }) => {
-      console.log('[HeaderInfo] File processing completed event received:', data);
+    // 파일 처리 완료 이벤트
+    const handleFileProcessingCompleted = (event: CustomEvent) => {
+      console.log('[HeaderInfo] File processing completed event received:', event.detail);
       
       // 재렌더링 트리거
       setNotificationTrigger(prev => prev + 1);
       
-      // NotificationBell 업데이트를 위한 커스텀 이벤트 발생
-      window.dispatchEvent(new CustomEvent('notification-badge-update', {
-        detail: { 
-          timestamp: new Date().toISOString(),
-          source: 'header-info-socket',
-          triggerCount: notificationTrigger + 1
-        }
-      }));
+      // 알림 새로고침 (새 알림이 있을 수 있음)
+      setTimeout(() => {
+        refreshNotifications();
+      }, 1000);
     };
 
-    // 알림 이벤트
-    const handleNotification = (notification: any) => {
-      console.log('[HeaderInfo] Notification event received:', notification);
+    // 프로젝트 상태 업데이트 이벤트
+    const handleProjectUpdate = (event: CustomEvent) => {
+      console.log('[HeaderInfo] Project update event received:', event.detail);
       
       // 재렌더링 트리거
       setNotificationTrigger(prev => prev + 1);
       
-      // NotificationBell 업데이트를 위한 커스텀 이벤트 발생
-      window.dispatchEvent(new CustomEvent('notification-badge-update', {
-        detail: { 
-          timestamp: new Date().toISOString(),
-          source: 'header-info-notification',
-          triggerCount: notificationTrigger + 1
-        }
-      }));
+      // 알림 새로고침
+      setTimeout(() => {
+        refreshNotifications();
+      }, 1000);
     };
 
-    // 프로젝트 상태 변경 이벤트
-    const handleProjectStatusUpdate = (data: {
-      projectId: string;
-      status: string;
-      message?: string;
-    }) => {
-      console.log('[HeaderInfo] Project status update event received:', data);
+    // 일반 헤더 업데이트 이벤트
+    const handleHeaderUpdate = (event: CustomEvent) => {
+      console.log('[HeaderInfo] Header update event received:', event.detail);
       
       // 재렌더링 트리거
       setNotificationTrigger(prev => prev + 1);
     };
 
-    // 일반적인 업데이트 이벤트
-    const handleGeneralUpdate = (data: any) => {
-      console.log('[HeaderInfo] General update event received:', data);
-      
-      // 재렌더링 트리거
-      setNotificationTrigger(prev => prev + 1);
-    };
+    // 이벤트 리스너 등록
+    window.addEventListener('file-processing-completed', handleFileProcessingCompleted as EventListener);
+    window.addEventListener('project-status-update', handleProjectUpdate as EventListener);
+    window.addEventListener('header-update', handleHeaderUpdate as EventListener);
 
-    // 소켓 이벤트 리스너 등록
-    socketService.on('file-processing-completed', handleFileProcessingCompleted);
-    socketService.on('notification', handleNotification);
-    socketService.on('project-status-update', handleProjectStatusUpdate);
-    socketService.on('header-update', handleGeneralUpdate);
-
-    // Cleanup 함수
+    // Cleanup
     return () => {
-      socketService.off('file-processing-completed', handleFileProcessingCompleted);
-      socketService.off('notification', handleNotification);
-      socketService.off('project-status-update', handleProjectStatusUpdate);
-      socketService.off('header-update', handleGeneralUpdate);
-      console.log('[HeaderInfo] 소켓 이벤트 리스너 제거');
+      window.removeEventListener('file-processing-completed', handleFileProcessingCompleted as EventListener);
+      window.removeEventListener('project-status-update', handleProjectUpdate as EventListener);
+      window.removeEventListener('header-update', handleHeaderUpdate as EventListener);
+      console.log('[HeaderInfo] 커스텀 이벤트 리스너 제거');
     };
-  }, [isConnected, notificationTrigger]);
-
-  // 소켓 연결 상태 변경 시 로그
-  useEffect(() => {
-    console.log('[HeaderInfo] 소켓 연결 상태:', isConnected ? '연결됨' : '연결 안됨');
-  }, [isConnected]);
+  }, [refreshNotifications]);
 
   return (
     <div>
@@ -159,10 +142,10 @@ const HeaderInfo: React.FC = () => {
             {/* Notification Bell - key prop으로 재렌더링 강제 */}
             <NotificationBell key={`notification-${notificationTrigger}`} />
             
-            {/* 개발 환경에서만 소켓 상태 표시 */}
+            {/* 개발 환경에서만 알림 상태 표시 */}
             {import.meta.env.DEV && (
               <div className='text-xs text-gray-400'>
-                Socket: {isConnected ? '🟢' : '🔴'} | Trigger: {notificationTrigger}
+                알림: {unreadCount} | Total: {notifications.length} | Trigger: {notificationTrigger}
               </div>
             )}
           </div>
