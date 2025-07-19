@@ -2,6 +2,7 @@ import { Controller, Post, Body, ValidationPipe, Res, UseGuards, Req, Get, Put, 
 import { ApiTags, ApiOperation, ApiResponse, ApiBody, ApiParam, ApiBearerAuth } from '@nestjs/swagger';
 import { UsersService } from './users.service';
 import { ProfileImageService } from './profile-image.service';
+import { S3Service } from '../download/s3.service';
 import { RegisterDto } from './dto/register.dto';
 import { Response, Request } from 'express';
 import { ForgotPasswordDto } from './dto/forgot-password.dto';
@@ -15,7 +16,8 @@ import { JwtAuthGuard } from '../auth/jwt-auth.guard';
 export class UsersController {
   constructor(
     private readonly usersService: UsersService,
-    private readonly profileImageService: ProfileImageService
+    private readonly profileImageService: ProfileImageService,
+    private readonly s3Service: S3Service
   ) {}
 
   @Post('register')
@@ -205,5 +207,83 @@ export class UsersController {
       success: true,
       data
     };
+  }
+
+  @Get('me/profile-image')
+  @UseGuards(JwtAuthGuard)
+  @ApiOperation({ 
+    summary: '현재 사용자 프로필 이미지 조회',
+    description: '현재 사용자의 프로필 이미지 presigned URL을 반환합니다. 이미지가 없으면 null을 반환합니다.'
+  })
+  @ApiResponse({ 
+    status: 200, 
+    description: '프로필 이미지 URL 조회 성공',
+    schema: {
+      example: {
+        success: true,
+        data: {
+          imageUrl: "https://s3.amazonaws.com/bucket/images/user-123/profile.jpg?presigned-params",
+          expiresIn: 3600
+        }
+      }
+    }
+  })
+  @ApiResponse({ 
+    status: 200, 
+    description: '프로필 이미지가 없는 경우',
+    schema: {
+      example: {
+        success: true,
+        data: {
+          imageUrl: null,
+          message: "프로필 이미지가 설정되지 않았습니다."
+        }
+      }
+    }
+  })
+  @ApiResponse({ status: 401, description: '인증 실패' })
+  async getCurrentUserProfileImage(@Req() req: Request) {
+    const user = req.user as any;
+    console.log('🖼️ [GET /users/me/profile-image] User ID:', user.id);
+    
+    // 현재 사용자 정보 조회
+    const currentUser = await this.usersService.findById(user.id);
+    if (!currentUser) {
+      throw new NotFoundException('사용자를 찾을 수 없습니다.');
+    }
+    
+    console.log('🖼️ [GET /users/me/profile-image] User image_url:', currentUser.image_url);
+    
+    // 프로필 이미지가 설정되지 않은 경우
+    if (!currentUser.image_url) {
+      return {
+        success: true,
+        data: {
+          imageUrl: null,
+          message: '프로필 이미지가 설정되지 않았습니다.'
+        }
+      };
+    }
+    
+    try {
+      // S3 presigned URL 생성 (1시간 유효)
+      const imageUrl = await this.s3Service.getPresignedDownloadUrl(
+        currentUser.image_url, 
+        3600
+      );
+      
+      console.log('🖼️ [GET /users/me/profile-image] Generated presigned URL');
+      
+      return {
+        success: true,
+        data: {
+          imageUrl,
+          expiresIn: 3600
+        }
+      };
+    } catch (error) {
+      console.error('🖼️ [GET /users/me/profile-image] S3 presigned URL 생성 실패:', error);
+      throw new BadRequestException('프로필 이미지를 가져올 수 없습니다.');
+    }
   }
 }
