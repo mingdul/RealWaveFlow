@@ -35,14 +35,10 @@ import {
   Edit2,
   Square,
   ChevronLeft,
-  Check,
   X,
   MoreVertical,
-  MessageCircle,
-  VolumeX,
-  Volume2,
 } from 'lucide-react';
-import { ActionButton, StatusBadge } from '../components/ui';
+// import { ActionButton, StatusBadge } from '../components/ui';
 import { theme } from '../styles/theme';
 
 // Comment interface updated to match backend response
