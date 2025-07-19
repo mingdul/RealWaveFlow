@@ -3,6 +3,8 @@ export interface User {
   id: string;
   email: string;
   username: string;
+  image_url?: string;
+  profileImageUrl?: string; // 임시 호환성을 위한 필드
   created_at: string;
   updated_at: string;
 }

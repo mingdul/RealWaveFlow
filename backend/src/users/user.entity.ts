@@ -30,6 +30,9 @@ export class User {
   @Column({ type: 'varchar', default : null })
   provider_id: string;
 
+  @Column({ type: 'varchar', nullable: true, default: null })
+  image_url: string;
+
   @CreateDateColumn({ type: 'date' })
   created_date: Date;
 

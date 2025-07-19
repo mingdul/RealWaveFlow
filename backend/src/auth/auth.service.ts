@@ -13,9 +13,10 @@ export class AuthService {
 
   async validateOAuthLogin(profile: any) {
     try {
-      const { id, displayName, emails, provider } = profile;
+      const { id, displayName, emails, photos, provider } = profile;
 
       const email = emails?.[0]?.value;
+      const profileImage = photos?.[0]?.value;
 
       if (!email) {
         throw new UnauthorizedException('이메일 정보가 없어 로그인할 수 없습니다.');
@@ -28,6 +29,7 @@ export class AuthService {
           username: displayName,
           provider,
           provider_id: id,
+          image_url: profileImage,
         });
       }
 
@@ -40,6 +42,7 @@ export class AuthService {
           id: user.id,
           email: user.email,
           username: user.username,
+          image_url: user.image_url,
         },
       };
     } catch (error) {
@@ -63,6 +66,7 @@ export class AuthService {
       id: user.id,
       email: user.email,
       username: user.username,
+      image_url: user.image_url,
     };
   }
 }

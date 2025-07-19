@@ -1,10 +1,11 @@
-import { Injectable, ConflictException, UnauthorizedException, NotFoundException } from '@nestjs/common';
+import { Injectable, ConflictException, UnauthorizedException, NotFoundException, ForbiddenException } from '@nestjs/common';
 import { InjectRepository } from '@nestjs/typeorm';
 import { Repository } from 'typeorm';
 import { JwtService } from '@nestjs/jwt';
 import { User } from './user.entity';
 import { RegisterDto } from './dto/register.dto';
 import { ForgotPasswordDto } from './dto/forgot-password.dto';
+import { UpdateUserDto } from './dto/update-user.dto';
 import { emailTransporter } from '../config/email.config';
 import * as bcrypt from 'bcrypt';
 
@@ -69,6 +70,7 @@ export class UsersService {
     username: string;
     provider: string;
     provider_id: string;
+    image_url?: string;
   }) {
     const user = this.userRepository.create(data);
     return await this.userRepository.save(user);
@@ -82,5 +84,71 @@ export class UsersService {
   // ID로 사용자 찾기
   async findById(id: string): Promise<User | undefined> {
     return this.userRepository.findOne({ where: { id } });
+  }
+
+  // 사용자 정보 업데이트
+  async updateUser(userId: string, updateUserDto: UpdateUserDto): Promise<User> {
+    const user = await this.findById(userId);
+    if (!user) {
+      throw new NotFoundException('사용자를 찾을 수 없습니다.');
+    }
+
+    // 업데이트할 필드들만 추출
+    const updateData: Partial<User> = {};
+    if (updateUserDto.username !== undefined) {
+      updateData.username = updateUserDto.username;
+    }
+    if (updateUserDto.image_url !== undefined) {
+      updateData.image_url = updateUserDto.image_url;
+    }
+
+    // 업데이트 실행
+    await this.userRepository.update(userId, updateData);
+    
+    // 업데이트된 사용자 정보 반환
+    return this.findById(userId);
+  }
+
+  // 사용자 이름 변경 (권한 검증 및 중복 검증 포함)
+  async updateUserName(userId: string, currentUserId: string, updateUserDto: UpdateUserDto): Promise<User> {
+    // 권한 검증: 본인만 수정 가능
+    if (userId !== currentUserId) {
+      throw new ForbiddenException('본인의 정보만 수정할 수 있습니다.');
+    }
+
+    // 사용자 존재 여부 확인
+    const user = await this.findById(userId);
+    if (!user) {
+      throw new NotFoundException('사용자를 찾을 수 없습니다.');
+    }
+
+    // username이 제공된 경우에만 중복 검증 수행
+    if (updateUserDto.username !== undefined) {
+      // 현재 사용자명과 동일한 경우는 허용
+      if (updateUserDto.username !== user.username) {
+        // 다른 사용자가 이미 사용하고 있는 사용자명인지 확인
+        const existingUser = await this.userRepository.findOne({ 
+          where: { username: updateUserDto.username } 
+        });
+        if (existingUser) {
+          throw new ConflictException('이미 존재하는 사용자명입니다.');
+        }
+      }
+    }
+
+    // 업데이트할 필드들만 추출
+    const updateData: Partial<User> = {};
+    if (updateUserDto.username !== undefined) {
+      updateData.username = updateUserDto.username;
+    }
+    if (updateUserDto.image_url !== undefined) {
+      updateData.image_url = updateUserDto.image_url;
+    }
+
+    // 업데이트 실행
+    await this.userRepository.update(userId, updateData);
+    
+    // 업데이트된 사용자 정보 반환
+    return this.findById(userId);
   }
 }

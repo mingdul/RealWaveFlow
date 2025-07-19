@@ -51,6 +51,7 @@ interface AuthContextType extends AuthState {
   logout: () => Promise<void>;
   loginWithGoogle: () => void;
   clearError: () => void;
+  updateProfile: (profileData: { name?: string; profileImage?: File }) => Promise<void>;
 }
 
 const AuthContext = createContext<AuthContextType | undefined>(undefined);
@@ -115,6 +116,49 @@ export const AuthProvider: React.FC<{ children: ReactNode }> = ({ children }) =>
 
   const clearError = () => dispatch({ type: 'CLEAR_ERROR' });
 
+  const updateProfile = async (profileData: { name?: string; profileImage?: File }) => {
+    if (!state.user) throw new Error('로그인이 필요합니다.');
+    
+    dispatch({ type: 'AUTH_START' });
+    try {
+      let imageUrl: string | undefined;
+      
+      // 프로필 이미지 업로드 처리 (먼저 실행)
+      if (profileData.profileImage) {
+        imageUrl = await authService.uploadProfileImage(profileData.profileImage);
+      }
+      
+      // 사용자 정보 업데이트 (이름 또는 이미지 URL)
+      const updateData: any = {};
+      if (profileData.name && profileData.name !== state.user.username) {
+        updateData.username = profileData.name;
+      }
+      if (imageUrl) {
+        updateData.image_url = imageUrl;
+      }
+      
+      // 업데이트할 데이터가 있는 경우만 API 호출
+      if (Object.keys(updateData).length > 0) {
+        await authService.updateUserName(state.user.id, updateData.username);
+        
+        // 이미지 URL이 있는 경우 별도로 업데이트
+        if (updateData.image_url) {
+          // TODO: 백엔드에 이미지 URL 업데이트 API 필요
+          console.log('Image URL to update:', updateData.image_url);
+        }
+      }
+      
+      // 업데이트된 사용자 정보 가져오기
+      const updatedUser = await authService.getCurrentUserFromServer();
+      if (!updatedUser) throw new Error('업데이트된 사용자 정보를 가져올 수 없습니다.');
+      
+      dispatch({ type: 'AUTH_SUCCESS', payload: updatedUser });
+    } catch (err: any) {
+      dispatch({ type: 'AUTH_FAILURE', payload: err.message });
+      throw err;
+    }
+  };
+
   return (
     <AuthContext.Provider
       value={{
@@ -124,6 +168,7 @@ export const AuthProvider: React.FC<{ children: ReactNode }> = ({ children }) =>
         logout,
         loginWithGoogle,
         clearError,
+        updateProfile,
       }}
     >
       {children}
