@@ -61,24 +61,6 @@ const StemSetReview = () => {
   const { showError, showSuccess, showWarning } = useToast();
   const navigate = useNavigate();
 
-  // 전역 에러 핸들러 설정
-  useEffect(() => {
-    const handleError = (event: ErrorEvent) => {
-      // Error handler
-    };
-
-    const handleUnhandledRejection = (event: PromiseRejectionEvent) => {
-      // Promise rejection handler
-    };
-
-    window.addEventListener('error', handleError);
-    window.addEventListener('unhandledrejection', handleUnhandledRejection);
-
-    return () => {
-      window.removeEventListener('error', handleError);
-      window.removeEventListener('unhandledrejection', handleUnhandledRejection);
-    };
-  }, []);
   // const wavesurferRef = useRef<any>(null);
   const [volume, setVolume] = useState(1);
   const [currentTime, setCurrentTime] = useState(0);
@@ -109,8 +91,8 @@ const StemSetReview = () => {
   const [guideLoadAttempted, setGuideLoadAttempted] = useState(false); // 가이드 로드 시도 여부 추가
   const [guidePeaks, setGuidePeaks] = useState<any>(null); // guide waveform 데이터
   const [extraPeaks, setExtraPeaks] = useState<any>(null); // extra/stem waveform 데이터
-  const [stemLoading, setStemLoading] = useState(false); // 개별 스템 로딩 상태 추가
-  const [waveformLoading, setWaveformLoading] = useState(false); // waveform 데이터 로딩 상태 추가
+  const [, setStemLoading] = useState(false); // 개별 스템 로딩 상태 추가
+  const [, setWaveformLoading] = useState(false); // waveform 데이터 로딩 상태 추가
   const [stageInfo, setStageInfo] = useState<any>(null); // Stage 정보 상태 추가
 
   const wavesurferRefs = useRef<{ [id: string]: WaveSurfer }>({});
@@ -1111,7 +1093,6 @@ const StemSetReview = () => {
     const safeSetVolume = (
       player: any,
       vol: number,
-      name: string,
       id: string
     ) => {
       if (!player || !readyStates[id]) {
@@ -1138,11 +1119,11 @@ const StemSetReview = () => {
 
     // Solo 모드에 따른 볼륨 적용
     if (soloTrack === 'main') {
-      safeSetVolume(mainPlayer, volume, 'main', 'main');
-      safeSetVolume(extraPlayer, 0, 'extra', 'extra');
+      safeSetVolume(mainPlayer, volume, 'main');
+      safeSetVolume(extraPlayer, 0, 'extra');
     } else if (soloTrack === 'extra' && readyStates['extra']) {
-      safeSetVolume(mainPlayer, 0, 'main', 'main');
-      safeSetVolume(extraPlayer, volume, 'extra', 'extra');
+      safeSetVolume(mainPlayer, 0, 'main');
+      safeSetVolume(extraPlayer, volume, 'extra');
     }
   }, [volume, soloTrack, readyStates]);
 
