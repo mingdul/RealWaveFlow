@@ -53,7 +53,7 @@ const Collaborators: React.FC<CollaboratorsProps> = ({ track }) => {
         const response = await apiClient.get(`/track-collaborator/track-users/${track.id}`, {
           withCredentials: true
         });
-        
+
         if (response.data.success) {
           setTrackUsers(response.data.data);
         }
@@ -230,7 +230,7 @@ const Collaborators: React.FC<CollaboratorsProps> = ({ track }) => {
       alert('권한이 없습니다. 트랙 소유자만 역할을 수정할 수 있습니다.');
       return;
     }
-    
+
     setSelectedCollaborator(collaborator);
     setNewRole(collaborator.role || '');
     setShowRoleModal(true);
@@ -275,12 +275,12 @@ const Collaborators: React.FC<CollaboratorsProps> = ({ track }) => {
 
       if (response.data.success) {
         setRoleSuccess('역할이 성공적으로 수정되었습니다.');
-        
+
         // 트랙 사용자 정보 새로고침
         const trackResponse = await apiClient.get(`/track-collaborator/track-users/${track.id}`, {
           withCredentials: true
         });
-        
+
         if (trackResponse.data.success) {
           setTrackUsers(trackResponse.data.data);
         }
@@ -341,7 +341,7 @@ const Collaborators: React.FC<CollaboratorsProps> = ({ track }) => {
                     </span>
                   </div>
                 )}
-                
+
                 {/* Fallback div */}
                 <div
                   className='absolute inset-0 flex items-center justify-center bg-gradient-to-br from-blue-400 to-blue-600'
@@ -352,12 +352,12 @@ const Collaborators: React.FC<CollaboratorsProps> = ({ track }) => {
                   </span>
                 </div>
               </div>
-              
+
               {/* Owner Crown - 크라운을 프로필 밖으로 이동 */}
               <div className='absolute -top-2 -right-2 h-6 w-6 rounded-full bg-yellow-400 flex items-center justify-center shadow-lg border-2 border-white z-10'>
                 <Crown size={14} className='text-yellow-800' />
               </div>
-              
+
               {/* Owner Tooltip */}
               <div className='absolute bottom-full mb-2 left-1/2 transform -translate-x-1/2 opacity-0 group-hover:opacity-100 transition-opacity duration-200 pointer-events-none z-20'>
                 <div className='bg-gray-900 text-white text-xs rounded-lg py-2 px-3 whitespace-nowrap shadow-xl border border-gray-700'>
@@ -393,7 +393,7 @@ const Collaborators: React.FC<CollaboratorsProps> = ({ track }) => {
                       </span>
                     </div>
                   )}
-                  
+
                   {/* Fallback div */}
                   <div
                     className='absolute inset-0 flex items-center justify-center bg-gradient-to-br from-purple-400 to-purple-600 transition-all duration-200 hover:from-purple-500 hover:to-purple-700'
@@ -404,7 +404,7 @@ const Collaborators: React.FC<CollaboratorsProps> = ({ track }) => {
                     </span>
                   </div>
                 </div>
-                
+
                 {/* Collaborator Tooltip */}
                 <div className='absolute bottom-full mb-2 left-1/2 transform -translate-x-1/2 opacity-0 group-hover:opacity-100 transition-opacity duration-200 pointer-events-none z-20'>
                   <div className='bg-gray-900 text-white text-xs rounded-lg py-2 px-3 whitespace-nowrap shadow-xl border border-gray-700'>
@@ -416,7 +416,7 @@ const Collaborators: React.FC<CollaboratorsProps> = ({ track }) => {
                 </div>
               </div>
             ))}
-            
+
             <Button onClick={handleAddCollaboratorClick}>
               <Plus size={20} />
             </Button>
@@ -479,10 +479,11 @@ const Collaborators: React.FC<CollaboratorsProps> = ({ track }) => {
                 </div>
               </div>
             </div>
-
-            <Button onClick={handleAddCollaboratorClick}>
-              <Plus size={20} />
-            </Button>
+            <div className='z-30 relative'>
+              <Button onClick={handleAddCollaboratorClick}>
+                <Plus size={20} />
+              </Button>
+            </div>
           </>
         )}
       </div>
