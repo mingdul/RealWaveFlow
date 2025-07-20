@@ -1162,7 +1162,7 @@ const UploadModal: React.FC<UploadModalProps> = ({
           </button>
           
           <div className="flex space-x-3">
-            {!state.isUploading && state.uploadedFiles.length > 0 && (
+            {!state.isUploading && state.uploadedFiles.length > 0 && !state.uploadedFiles.every(f => f.isComplete) && (
               <button
                 onClick={handleStartUpload}
                 disabled={state.isUploading}
@@ -1171,7 +1171,7 @@ const UploadModal: React.FC<UploadModalProps> = ({
                 }`}
               >
                 <Upload size={20} className="mr-2" />
-                Upload ({state.uploadedFiles.length})
+                Upload ({state.uploadedFiles.filter(f => !f.isComplete).length})
               </button>
             )}
             

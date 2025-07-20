@@ -467,13 +467,9 @@ const StagePage: React.FC = () => {
           </div>
           
           {/* Reviewers Section - 두 번째 행 */}
-          <div className="flex items-start gap-8">
-            <div className="flex-1 max-w-[830px]">
-              {/* 빈 공간 - 첫 번째 행과 동일한 높이 유지 */}
-            </div>
-            
+          <div className="mt-8">
             {/* Reviewers Section */}
-            <div className="flex-shrink-0 w-[1100px]">
+            <div className="w-full">
               <h2 className="text-3xl font-bold text-white mb-6">Reviewers</h2>
               {reviewersLoading ? (
                 <div className="flex items-center justify-center py-8">
