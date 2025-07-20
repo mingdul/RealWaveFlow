@@ -2298,6 +2298,7 @@ const StemSetReview = () => {
             {/* Playback Controls */}
             <div className="flex items-center space-x-3">
               <button
+<<<<<<< Updated upstream
                 onClick={memoizedTogglePlay}
                 className="p-3 rounded-lg bg-gradient-to-r from-purple-600 to-purple-700 hover:from-purple-700 hover:to-purple-800 text-white transition-all duration-200 shadow-lg hover:shadow-purple-500/25"
               >
@@ -2308,6 +2309,18 @@ const StemSetReview = () => {
                 className="p-3 rounded-lg bg-white/10 hover:bg-white/20 text-white transition-all duration-200"
               >
                 <Square size={24} />
+=======
+                onClick={memoizedStopPlayback}
+                className="p-3 rounded-lg bg-white/10 hover:bg-white/20 text-white transition-all duration-200"
+              >
+              <Square size={50} />
+              </button>
+              <button
+                onClick={memoizedTogglePlay}
+                className="p-3 rounded-lg bg-gradient-to-r from-purple-600 to-purple-700 hover:from-purple-700 hover:to-purple-800 text-white transition-all duration-200 shadow-lg hover:shadow-purple-500/25"
+              >
+                {isPlaying ? <Pause size={20} /> : <Play size={20} />}
+>>>>>>> Stashed changes
               </button>
             </div>
 

@@ -550,9 +550,9 @@ const StemPlayer: React.FC<StemPlayerProps> = ({ stems, className = '', stageId,
             {guideLoading ? (
               <div className="border-2 border-white border-t-transparent rounded-full animate-spin" />
             ) : isPlaying ? (
-              <Pause size={20}/>
+              <Pause size={28} strokeWidth={3} className="text-white" />
             ) : (
-              <Play size={20} />
+              <Play size={28} strokeWidth={3} className="text-white" />
             )}
             <div className="absolute inset-0 rounded-full bg-white opacity-0 group-hover:opacity-10 transition-opacity duration-200"></div>
           </button>
@@ -561,7 +561,7 @@ const StemPlayer: React.FC<StemPlayerProps> = ({ stems, className = '', stageId,
             onClick={handleMasterStop}
             className="group relative flex items-center justify-center w-12 h-12 bg-gradient-to-br from-slate-600 to-slate-700 hover:from-slate-500 hover:to-slate-600 rounded-full shadow-md hover:shadow-lg transition-all duration-200 transform hover:scale-105"
           >
-            <Square size={20} />
+            <Square size={24} strokeWidth={3} className="text-white" />
             <div className="absolute inset-0 rounded-full bg-white opacity-0 group-hover:opacity-10 transition-opacity duration-200"></div>
           </button>
           
