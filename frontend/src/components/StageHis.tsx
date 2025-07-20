@@ -120,20 +120,7 @@ const StageHis: React.FC<StageHisProps> = ({
     });
   };
 
-  const scrollToCenter = (element: HTMLElement) => {
-    const container = scrollRef.current;
-    if (!container) return;
 
-    const containerWidth = container.offsetWidth;
-    const elementWidth = element.offsetWidth;
-    const elementLeft = element.offsetLeft;
-    
-    const scrollPosition = elementLeft - (containerWidth / 2) + (elementWidth / 2);
-    container.scrollTo({
-      left: scrollPosition,
-      behavior: 'smooth'
-    });
-  };
 
   const getStatusConfig = (status: string) => {
     switch (status) {
@@ -231,22 +218,28 @@ const StageHis: React.FC<StageHisProps> = ({
     if (event) {
       event.stopPropagation(); // 카드 클릭 이벤트 방지
     }
-    console.log('[DEBUG][StageHis] Show All Stems button clicked for stage:', stageId);
+    
+    console.log('[DEBUG][StageHis] === Show All Stems 버튼 클릭 ===');
+    console.log('[DEBUG][StageHis] Target stageId:', stageId);
     
     // 1. 해당 스테이지를 자동으로 선택
     const targetStage = stages.find(stage => stage.id === stageId);
     if (targetStage) {
       setSelectedStage(targetStage);
       setUserHasManuallySelected(true);
-      console.log('[DEBUG][StageHis] Auto-selected stage for stems:', targetStage.version);
+      console.log('[DEBUG][StageHis] Auto-selected stage for stems - Version:', targetStage.version, 'Status:', targetStage.status);
+    } else {
+      console.error('[ERROR][StageHis] Target stage not found in stages list:', stageId);
+      return;
     }
     
     // 2. Show All Stems 함수 실행 (해당 stageId의 stems만 조회)
     if (onShowAllStems) {
-      console.log('[DEBUG][StageHis] Calling onShowAllStems with stageId:', stageId);
+      console.log('[DEBUG][StageHis] 🎯 Calling onShowAllStems with SPECIFIC stageId:', stageId);
+      console.log('[DEBUG][StageHis] 📋 Should load stems ONLY for Stage Version:', targetStage.version);
       onShowAllStems(stageId);
     } else {
-      console.warn('[WARN][StageHis] onShowAllStems prop not provided');
+      console.error('[ERROR][StageHis] onShowAllStems prop not provided - cannot load stage-specific stems');
     }
   };
 
@@ -274,19 +267,24 @@ const StageHis: React.FC<StageHisProps> = ({
 
       setSelectedStage(targetStage);
 
-      // 2. 선택된 스테이지 카드로 자동 스크롤 (약간의 지연 후 DOM이 완전히 렌더링되도록)
+      // 2. 선택된 스테이지 카드로 자동 스크롤 (DOM 렌더링 완료 후)
       setTimeout(() => {
         const cardElement = document.getElementById(`stage-card-${targetStage.id}`);
         if (cardElement && scrollRef.current) {
-          // 스크롤 컨테이너의 오른쪽 끝에 카드가 보이도록 스크롤
+          console.log('[DEBUG][StageHis] Found target card element for scrolling:', targetStage.version);
+          
+          // 스크롤 컨테이너 중앙에 카드가 보이도록 스크롤
           cardElement.scrollIntoView({ 
             behavior: 'smooth', 
-            inline: 'end',
+            inline: 'center',  // 중앙 정렬로 변경
             block: 'nearest'
           });
-          console.log('[DEBUG][StageHis] Auto-scrolled to selected stage card:', targetStage.version);
+          
+          console.log('[DEBUG][StageHis] Auto-scrolled to approved stage card (center):', targetStage.version);
+        } else {
+          console.warn('[WARN][StageHis] Card element or scroll container not found for auto-scroll');
         }
-      }, 100);
+      }, 200);  // 지연 시간을 200ms로 증가 (더 안정적인 DOM 렌더링 대기)
     }
   }, [stages, selectedStage, userHasManuallySelected]);
 
@@ -308,11 +306,18 @@ const StageHis: React.FC<StageHisProps> = ({
     // 약간의 지연을 두어 DOM이 완전히 렌더링된 후 스크롤
     const timeoutId = setTimeout(() => {
       const cardElement = document.getElementById(`stage-card-${selectedStage.id}`);
-      if (cardElement) {
-        scrollToCenter(cardElement as HTMLElement);
-        console.log('[DEBUG][StageHis] Scrolled to center for stage:', selectedStage.version);
+      if (cardElement && scrollRef.current) {
+        // 선택된 카드를 중앙으로 스크롤
+        cardElement.scrollIntoView({ 
+          behavior: 'smooth', 
+          inline: 'center',
+          block: 'nearest'
+        });
+        console.log('[DEBUG][StageHis] Manually selected stage - scrolled to center for version:', selectedStage.version);
+      } else {
+        console.warn('[WARN][StageHis] Card element or scroll container not found for manual selection scroll');
       }
-    }, 100);
+    }, 150);
 
     return () => clearTimeout(timeoutId);
   }, [selectedStage]);
