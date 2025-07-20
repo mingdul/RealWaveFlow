@@ -1,6 +1,6 @@
 import React, { useEffect, useState, useRef } from 'react';
-import { Play, Pause } from 'lucide-react';
-import { Button } from '.';
+import { Play, Pause, Grid3X3 } from 'lucide-react';
+// import { Button } from '.';
 import { Track } from '../types/api';
 import streamingService, {
   StemStreamingInfo,
@@ -18,6 +18,8 @@ interface TrackinfocardjjmProps {
   versionNumber?: string;
   stageId?: string;
   guideUrl?: string;
+  onNavigateToStageHistory?: () => void;
+  onNavigateToVersionHistory?: () => void;
 }
 
 const Trackinfocardjjm: React.FC<TrackinfocardjjmProps> = ({
@@ -26,6 +28,8 @@ const Trackinfocardjjm: React.FC<TrackinfocardjjmProps> = ({
   versionNumber,
   stemsLoading = false,
   stageId,
+  onNavigateToStageHistory,
+  onNavigateToVersionHistory,
 }) => {
   const [isPlaying, setIsPlaying] = useState(false);
   const [guideUrl, setGuideUrl] = useState<string | undefined>(undefined);
@@ -88,6 +92,21 @@ const Trackinfocardjjm: React.FC<TrackinfocardjjmProps> = ({
       <div className='relative z-10 flex flex-col gap-6 lg:flex-row justify-center'>
         {/* Left side content */}
         <div className='w-full md:w-2/3 space-y-4 pl-10'>
+          {/* Navigation */}
+          <div className='flex gap-6 mb-4'>
+            <button
+              onClick={onNavigateToStageHistory}
+              className='text-white/70 hover:text-white transition-all duration-200 hover:border-b hover:border-white pb-1'
+            >
+              Stage History
+            </button>
+            <button
+              onClick={onNavigateToVersionHistory}
+              className='text-white/70 hover:text-white transition-all duration-200 hover:border-b hover:border-white pb-1'
+            >
+              Version History
+            </button>
+          </div>
           {/* Header label */}
           {/* Main title */}
           <div className='space-y-5'>
@@ -117,10 +136,8 @@ const Trackinfocardjjm: React.FC<TrackinfocardjjmProps> = ({
               Version: <span className='text-white'>{versionNumber}</span>
             </h2>
 
-            <Button
-              variant='primary'
-              size='sm'
-              className='flex items-center justify-center gap-2 rounded-full bg-white px-4 py-1.5 text-lg leading-none text-black shadow-xl transition-all duration-300 hover:scale-105 hover:bg-white/90 hover:shadow-2xl'
+            <button
+              className='p-3 rounded-full bg-white text-black shadow-xl transition-all duration-300 hover:scale-105 hover:bg-white/90 hover:shadow-2xl'
               onClick={handlePlayClick}
               disabled={stemsLoading || guideLoading}
             >
@@ -131,19 +148,14 @@ const Trackinfocardjjm: React.FC<TrackinfocardjjmProps> = ({
               ) : (
                 <Play size={20} />
               )}
-              <span className='font-semibold'>
-                {isPlaying ? 'PAUSE' : 'PLAY'}
-              </span>
-            </Button>
+            </button>
 
-            <Button
-              variant='waveflowbtn'
-              size='sm'
-              className='flex items-center justify-center gap-2 rounded-full border-2 border-white/30 bg-white/10 px-4 py-1.5 text-lg leading-none text-white backdrop-blur-sm transition-all duration-300 hover:scale-105 hover:bg-white/20'
+            <button
+              className='p-3 rounded-full border-2 border-white/30 bg-white/10 text-white backdrop-blur-sm transition-all duration-300 hover:scale-105 hover:bg-white/20'
               onClick={handleShowAllStems}
             >
-              <span className='font-semibold'>View All Stems</span>
-            </Button>
+              <Grid3X3 size={20} />
+            </button>
           </div>
           <div className='flex items-center gap-4 pt-2'>
             <p className='text-sm text-white/70'>
@@ -165,7 +177,7 @@ const Trackinfocardjjm: React.FC<TrackinfocardjjmProps> = ({
         </div>
 
         {/* Right side - Album cover */}
-        <div className='w-full md:w-1/3 flex-shrink-0 lg:ml-8 flex justify-center'>
+        <div className='w-full md:w-1/3 flex-shrink-0 lg:ml-4 flex justify-center'>
           <div className='group relative'>
             <PresignedImage
               trackId={track.id}

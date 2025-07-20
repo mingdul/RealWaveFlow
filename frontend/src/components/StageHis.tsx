@@ -145,12 +145,12 @@ const StageHis: React.FC<StageHisProps> = ({
           };
       case 'pending':
         return {
-          color: 'from-yellow-500 to-orange-500',
-          bgColor: 'bg-yellow-500/10',
-          textColor: 'text-yellow-400',
+          color: 'from-[#D7BDFF] to-[#9650FF]',
+          bgColor: 'bg-[#9650FF]/10',
+          textColor: 'text-[#9650FF]',
           icon: <Clock className="w-4 h-4" />,
           label: 'Pending',
-          dotColor: 'bg-yellow-500'
+          dotColor: 'bg-[#9650FF]'
         };
       default:
         return {
