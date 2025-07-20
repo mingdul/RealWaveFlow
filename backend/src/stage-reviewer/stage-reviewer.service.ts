@@ -67,7 +67,7 @@ export class StageReviewerService {
     async getStageReviewers(stage_id: string) {
         const stageReviewers = await this.stageReviewerRepository.find({
             where: { stage: { id: stage_id } },
-            relations: ['user', 'stage', 'stage.track'],
+            relations: ['user', 'stage', 'stage.track', 'stage.track.owner_id'],
         });
 
         // 각 reviewer에 대해 track collaborator 정보와 presigned URL 추가
@@ -81,6 +81,17 @@ export class StageReviewerService {
                     }
                 });
 
+                // Track owner 정보 조회 (stage.track에 이미 포함되어 있음)
+                // Role 결정 로직
+                let userRole = trackCollaborator?.role || 'Collaborator';
+                
+                // Role이 없거나 기본 'Collaborator'인 경우 Owner 확인
+                if (!trackCollaborator?.role || trackCollaborator.role === 'Collaborator') {
+                    if (reviewer.stage.track.owner_id && reviewer.stage.track.owner_id.id === reviewer.user.id) {
+                        userRole = 'Owner';
+                    }
+                }
+
                 // Presigned URL 생성
                 const imageUrl = await this.generatePresignedUrl(reviewer.user.image_url);
 
@@ -92,7 +103,7 @@ export class StageReviewerService {
                         email: reviewer.user.email,
                         image_url: imageUrl,
                     },
-                    role: trackCollaborator?.role || 'Collaborator',
+                    role: userRole,
                     stage: {
                         id: reviewer.stage.id,
                         track: {

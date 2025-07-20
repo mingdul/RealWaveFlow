@@ -111,7 +111,7 @@ export class UpstreamReviewService {
     async getUpstreamReviewsWithReviewers(upstream_id: string) {
         const upstreamReviews = await this.upstreamReviewRepository.find({
             where: { upstream: { id: upstream_id } },
-            relations: ['upstream', 'stage_reviewer', 'stage_reviewer.user', 'stage_reviewer.stage', 'stage_reviewer.stage.track'],
+            relations: ['upstream', 'stage_reviewer', 'stage_reviewer.user', 'stage_reviewer.stage', 'stage_reviewer.stage.track', 'stage_reviewer.stage.track.owner_id'],
         });
 
         if (upstreamReviews.length === 0) {
@@ -133,6 +133,17 @@ export class UpstreamReviewService {
                     }
                 });
 
+                // Role 결정 로직
+                let userRole = trackCollaborator?.role || 'Collaborator';
+                
+                // Role이 없거나 기본 'Collaborator'인 경우 Owner 확인
+                if (!trackCollaborator?.role || trackCollaborator.role === 'Collaborator') {
+                    if (review.stage_reviewer.stage.track.owner_id && 
+                        review.stage_reviewer.stage.track.owner_id.id === review.stage_reviewer.user.id) {
+                        userRole = 'Owner';
+                    }
+                }
+
                 // Presigned URL 생성
                 const imageUrl = await this.generatePresignedUrl(review.stage_reviewer.user.image_url);
 
@@ -144,7 +155,7 @@ export class UpstreamReviewService {
                         username: review.stage_reviewer.user.username,
                         email: review.stage_reviewer.user.email,
                         image_url: imageUrl,
-                        role: trackCollaborator?.role || 'Collaborator',
+                        role: userRole,
                     },
                     upstream: {
                         id: review.upstream.id

@@ -1,7 +1,7 @@
 import { useEffect, useRef, useState, useCallback } from 'react';
 import WaveSurfer from 'wavesurfer.js';
 import Wave from '../components/wave';
-import ReviewerStatus from '../components/ReviewerStatus';
+import UpstreamInfo from '../components/UpstreamInfo';
 import {
   getUpstreamStems,
   getUpstreamByUpstreamId,
@@ -1922,32 +1922,11 @@ const StemSetReview = () => {
                   </div>
                 </div>
 
-                {/* Selected Upstream Info */}
-                {selectedUpstream && (
-                  <div className='mb-6 rounded-lg bg-gray-800/50 border border-gray-700 p-4'>
-                    <div className='text-sm font-semibold text-white mb-2'>
-                      {selectedUpstream.title}
-                    </div>
-                    <div className='text-xs text-gray-300 mb-2'>
-                      {selectedUpstream.description}
-                    </div>
-                    <div className='flex items-center gap-2 text-xs mb-3'>
-                      <span className='text-blue-400'>작성자:</span>
-                      <span className='text-white font-medium'>{selectedUpstream.user?.username}</span>
-                    </div>
-                    
-                    {/* Reviewer Status */}
-                    <div className='border-t border-gray-600 pt-3'>
-                      <div className='text-xs text-gray-400 mb-2'>리뷰어 상태</div>
-                      <ReviewerStatus upstreamId={selectedUpstream.id} />
-                    </div>
-                  </div>
-                )}
 
                 {!selectedUpstream && (
                   <div className='mb-6 rounded-lg bg-gray-800/30 border border-gray-700 p-4 text-center'>
                     <div className='text-sm text-gray-300'>
-                      오디오 파일을 선택하여 댓글을 확인하세요
+                      오디오 파일을 선택하여 리뷰를 확인하세요
                     </div>
                   </div>
                 )}
@@ -2044,6 +2023,11 @@ const StemSetReview = () => {
           {/* Main Content Area - 반응형 레이아웃 */}
           <div className={`transition-all duration-300 ease-in-out px-4 sm:px-6 lg:px-8 py-6 sm:py-8 space-y-6 ${(activePanel as string) !== 'none' ? 'mr-80' : ''
             }`}>
+
+            {/* Upstream Info - 가이드 트랙 위에 표시 */}
+            {selectedUpstream && (
+              <UpstreamInfo upstream={selectedUpstream} />
+            )}
 
             {/* Waveform Section */}
             <div className="space-y-6">

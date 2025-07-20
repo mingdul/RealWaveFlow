@@ -1,5 +1,5 @@
 import React, { useState, useEffect } from 'react';
-import { Check, X, Clock } from 'lucide-react';
+import { Check, X, Clock, Crown } from 'lucide-react';
 import { getUpstreamReviews, ReviewerWithStatus } from '../services/upstreamReviewService';
 
 interface ReviewerStatusProps {
@@ -41,7 +41,12 @@ const ReviewerStatus: React.FC<ReviewerStatusProps> = ({ upstreamId }) => {
   };
 
   // 상태별 스타일링 함수들
-  const getStatusBorder = (status: string) => {
+  const getStatusBorder = (status: string, role: string) => {
+    // Owner인 경우 황금색 테두리
+    if (role === 'Owner') {
+      return 'border-yellow-400';
+    }
+    
     switch (status) {
       case 'approved':
         return 'border-green-400';
@@ -125,7 +130,7 @@ const ReviewerStatus: React.FC<ReviewerStatusProps> = ({ upstreamId }) => {
       {reviewers.map((review) => (
         <div key={review.id} className='relative group'>
           <div
-            className={`h-12 w-12 rounded-full border-2 overflow-hidden relative transition-all duration-200 hover:scale-110 ${getStatusBorder(review.status)}`}
+            className={`h-12 w-12 rounded-full border-2 overflow-hidden relative transition-all duration-200 hover:scale-110 ${getStatusBorder(review.status, review.reviewer.role)}`}
           >
             {review.reviewer.image_url ? (
               <img
@@ -152,6 +157,13 @@ const ReviewerStatus: React.FC<ReviewerStatusProps> = ({ upstreamId }) => {
               </span>
             </div>
           </div>
+
+          {/* Owner Crown - 왕관을 프로필 밖으로 이동 */}
+          {review.reviewer.role === 'Owner' && (
+            <div className='absolute -top-2 -left-2 h-6 w-6 rounded-full bg-yellow-400 flex items-center justify-center shadow-lg border-2 border-white z-10'>
+              <Crown size={12} className='text-yellow-800' />
+            </div>
+          )}
 
           {/* Status Icon */}
           <div className='absolute -top-2 -right-2'>
