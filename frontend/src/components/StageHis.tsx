@@ -208,10 +208,16 @@ const StageHis: React.FC<StageHisProps> = ({
       event.stopPropagation(); // 카드 클릭 이벤트 방지
     }
     console.log('[DEBUG][StageHis] Play button clicked for stage:', stageId);
-    console.log('[DEBUG][StageHis] onPlay prop available:', !!onPlay);
-    console.log('[DEBUG][StageHis] selectedStage:', selectedStage);
-    console.log('[DEBUG][StageHis] currentPlayingId:', currentPlayingId);
     
+    // 1. 해당 스테이지를 자동으로 선택
+    const targetStage = stages.find(stage => stage.id === stageId);
+    if (targetStage) {
+      setSelectedStage(targetStage);
+      setUserHasManuallySelected(true);
+      console.log('[DEBUG][StageHis] Auto-selected stage for play:', targetStage.version);
+    }
+    
+    // 2. Play 함수 실행
     if (onPlay) {
       console.log('[DEBUG][StageHis] Calling onPlay with stageId:', stageId);
       onPlay(stageId);
@@ -226,9 +232,16 @@ const StageHis: React.FC<StageHisProps> = ({
       event.stopPropagation(); // 카드 클릭 이벤트 방지
     }
     console.log('[DEBUG][StageHis] Show All Stems button clicked for stage:', stageId);
-    console.log('[DEBUG][StageHis] onShowAllStems prop available:', !!onShowAllStems);
-    console.log('[DEBUG][StageHis] selectedStage:', selectedStage);
     
+    // 1. 해당 스테이지를 자동으로 선택
+    const targetStage = stages.find(stage => stage.id === stageId);
+    if (targetStage) {
+      setSelectedStage(targetStage);
+      setUserHasManuallySelected(true);
+      console.log('[DEBUG][StageHis] Auto-selected stage for stems:', targetStage.version);
+    }
+    
+    // 2. Show All Stems 함수 실행 (해당 stageId의 stems만 조회)
     if (onShowAllStems) {
       console.log('[DEBUG][StageHis] Calling onShowAllStems with stageId:', stageId);
       onShowAllStems(stageId);
@@ -237,14 +250,43 @@ const StageHis: React.FC<StageHisProps> = ({
     }
   };
 
-  // 초기 렌더링 시 마지막(최신) 스테이지 자동 선택 (사용자가 직접 선택하지 않은 경우에만)
+  // 초기 렌더링 시 최신 승인된 스테이지 자동 선택 및 스크롤 (사용자가 직접 선택하지 않은 경우에만)
   useEffect(() => {
     if (stages.length > 0 && !selectedStage && !userHasManuallySelected) {
-      // 버전 순으로 정렬하여 마지막(최신) 스테이지 선택
-      const sortedStagesByVersion = [...stages].sort((a, b) => b.version - a.version);
-      const latestStage = sortedStagesByVersion[0];
-      setSelectedStage(latestStage);
-      console.log('[DEBUG][StageHis] Auto-selected latest stage:', latestStage);
+      // 1. 승인된 스테이지들 필터링
+      const approvedStages = stages.filter(
+        stage => stage.status === 'approved' || stage.status === 'APPROVED' || stage.status === 'approve'
+      );
+
+      let targetStage;
+      if (approvedStages.length > 0) {
+        // 승인된 스테이지 중 가장 높은 버전 선택
+        targetStage = approvedStages.reduce((prev, current) =>
+          current.version > prev.version ? current : prev
+        );
+        console.log('[DEBUG][StageHis] Auto-selected latest approved stage:', targetStage.version);
+      } else {
+        // 승인된 스테이지가 없으면 전체 중 최신 선택
+        const sortedStagesByVersion = [...stages].sort((a, b) => b.version - a.version);
+        targetStage = sortedStagesByVersion[0];
+        console.log('[DEBUG][StageHis] No approved stages, auto-selected latest stage:', targetStage.version);
+      }
+
+      setSelectedStage(targetStage);
+
+      // 2. 선택된 스테이지 카드로 자동 스크롤 (약간의 지연 후 DOM이 완전히 렌더링되도록)
+      setTimeout(() => {
+        const cardElement = document.getElementById(`stage-card-${targetStage.id}`);
+        if (cardElement && scrollRef.current) {
+          // 스크롤 컨테이너의 오른쪽 끝에 카드가 보이도록 스크롤
+          cardElement.scrollIntoView({ 
+            behavior: 'smooth', 
+            inline: 'end',
+            block: 'nearest'
+          });
+          console.log('[DEBUG][StageHis] Auto-scrolled to selected stage card:', targetStage.version);
+        }
+      }, 100);
     }
   }, [stages, selectedStage, userHasManuallySelected]);
 
@@ -427,11 +469,10 @@ const StageHis: React.FC<StageHisProps> = ({
                             <Button
                               onClick={(e) => handlePlayClick(stage.id, e)}
                               variant="waveflowbtn2"
-                              disabled={!selectedStage || selectedStage.id !== stage.id}
                               className={`flex items-center space-x-2 px-3 py-2 rounded-full transition-all duration-300 ${
                                 selectedStage && selectedStage.id === stage.id
                                   ? 'bg-purple-500/20 text-purple-300 hover:text-white hover:bg-purple-500/30'
-                                  : 'bg-gray-500/10 text-gray-500 cursor-not-allowed'
+                                  : 'bg-purple-500/10 text-purple-200 hover:text-white hover:bg-purple-500/20'
                               }`}
                             >
                               {currentPlayingId === stage.id ? (
@@ -447,11 +488,10 @@ const StageHis: React.FC<StageHisProps> = ({
                             <Button
                               onClick={(e) => handleShowAllStemsClick(stage.id, e)}
                               variant="waveflowbtn2"
-                              disabled={!selectedStage || selectedStage.id !== stage.id}
                               className={`flex items-center space-x-2 px-3 py-2 rounded-full transition-all duration-300 ${
                                 selectedStage && selectedStage.id === stage.id
                                   ? 'bg-green-500/20 text-green-300 hover:text-white hover:bg-green-500/30'
-                                  : 'bg-gray-500/10 text-gray-500 cursor-not-allowed'
+                                  : 'bg-green-500/10 text-green-200 hover:text-white hover:bg-green-500/20'
                               }`}
                             >
                               <List className="w-4 h-4" />
