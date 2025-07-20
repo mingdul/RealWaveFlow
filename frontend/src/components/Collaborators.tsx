@@ -4,7 +4,6 @@ import { Button } from './';
 import { Track } from '../types/api';
 import inviteService from '../services/inviteService';
 import apiClient from '../lib/api';
-import RoleModal from './RoleModal';
 
 interface CollaboratorsProps {
   track: Track;
@@ -15,7 +14,6 @@ interface TrackUser {
   email: string;
   username: string;
   image_url: string | null;
-  role?: string;
 }
 
 interface TrackUsersData {
@@ -37,12 +35,6 @@ const Collaborators: React.FC<CollaboratorsProps> = ({ track }) => {
   const [inviteSuccess, setInviteSuccess] = useState('');
   const [emailList, setEmailList] = useState<string[]>([]);
   const [currentInput, setCurrentInput] = useState('');
-
-  // 역할 설정 관련 state
-  const [showRoleModal, setShowRoleModal] = useState(false);
-  const [selectedUser, setSelectedUser] = useState<TrackUser | null>(null);
-  const [currentUserId, setCurrentUserId] = useState<string | null>(null);
-  const [isCurrentUserOwner, setIsCurrentUserOwner] = useState(false);
 
   // API에서 트랙 사용자 정보 가져오기
   useEffect(() => {
@@ -67,78 +59,6 @@ const Collaborators: React.FC<CollaboratorsProps> = ({ track }) => {
       fetchTrackUsers();
     }
   }, [track.id]);
-
-  // 현재 사용자 정보 가져오기
-  useEffect(() => {
-    const fetchCurrentUser = async () => {
-      try {
-        const response = await apiClient.get('/auth/me', {
-          withCredentials: true
-        });
-        if (response.data.success) {
-          setCurrentUserId(response.data.data.id);
-          // 현재 사용자가 트랙 소유자인지 확인
-          if (trackUsers?.owner?.id === response.data.data.id) {
-            setIsCurrentUserOwner(true);
-          }
-        }
-      } catch (error) {
-        console.error('Failed to fetch current user:', error);
-      }
-    };
-
-    fetchCurrentUser();
-  }, [trackUsers]);
-
-  // 역할 설정 핸들러
-  const handleUserClick = (user: TrackUser) => {
-    setSelectedUser(user);
-    setShowRoleModal(true);
-  };
-
-  const handleRoleSave = async (newRole: string) => {
-    if (!selectedUser || !currentUserId) return;
-
-    try {
-      const response = await apiClient.put(
-        `/track-collaborator/track/${track.id}/user/${selectedUser.id}/role`,
-        { role: newRole },
-        { withCredentials: true }
-      );
-
-      if (response.data.success) {
-        // 성공 시 로컬 state 업데이트
-        setTrackUsers(prev => {
-          if (!prev) return prev;
-          
-          // Owner 업데이트
-          if (prev.owner.id === selectedUser.id) {
-            return {
-              ...prev,
-              owner: { ...prev.owner, role: newRole }
-            };
-          }
-          
-          // Collaborator 업데이트
-          const updatedCollaborators = prev.collaborators.collaborator.map(collab => 
-            collab.id === selectedUser.id 
-              ? { ...collab, role: newRole }
-              : collab
-          );
-          
-          return {
-            ...prev,
-            collaborators: {
-              collaborator: updatedCollaborators
-            }
-          };
-        });
-      }
-    } catch (error) {
-      console.error('Failed to update role:', error);
-      throw error;
-    }
-  };
 
   // 목업 데이터 - fallback용
   const mockImages = [
@@ -299,92 +219,68 @@ const Collaborators: React.FC<CollaboratorsProps> = ({ track }) => {
         {trackUsers ? (
           <>
             {/* 트랙 소유자 */}
-            <div className='relative flex flex-col items-center space-y-1'>
-              <div 
-                className='relative h-12 w-12 overflow-hidden rounded-full border-2 border-yellow-400 cursor-pointer hover:scale-105 transition-transform'
-                onClick={() => handleUserClick(trackUsers.owner)}
-              >
-                {trackUsers.owner.image_url ? (
-                  <img
-                    src={trackUsers.owner.image_url}
-                    alt={trackUsers.owner.username}
-                    className='h-full w-full object-cover'
-                    onError={(e) => handleImageError(e, trackUsers.owner.username)}
-                  />
-                ) : (
-                  <div className='flex h-full w-full items-center justify-center bg-gradient-to-br from-blue-400 to-blue-600'>
-                    <span className='text-sm font-semibold text-white'>
-                      {trackUsers.owner.username?.charAt(0)?.toUpperCase() || 'O'}
-                    </span>
-                  </div>
-                )}
-                
-                {/* Owner Crown */}
-                <div className='absolute -top-1 -right-1 h-5 w-5 rounded-full bg-yellow-400 flex items-center justify-center'>
-                  <Crown size={12} className='text-yellow-800' />
-                </div>
-                
-                {/* Fallback div */}
-                <div
-                  className='absolute inset-0 flex items-center justify-center bg-gradient-to-br from-blue-400 to-blue-600'
-                  style={{ display: 'none' }}
-                >
+            <div className='relative h-12 w-12 overflow-hidden rounded-full border-2 border-yellow-400'>
+              {trackUsers.owner.image_url ? (
+                <img
+                  src={trackUsers.owner.image_url}
+                  alt={trackUsers.owner.username}
+                  className='h-full w-full object-cover'
+                  onError={(e) => handleImageError(e, trackUsers.owner.username)}
+                />
+              ) : (
+                <div className='flex h-full w-full items-center justify-center bg-gradient-to-br from-blue-400 to-blue-600'>
                   <span className='text-sm font-semibold text-white'>
                     {trackUsers.owner.username?.charAt(0)?.toUpperCase() || 'O'}
                   </span>
                 </div>
+              )}
+              
+              {/* Owner Crown */}
+              <div className='absolute -top-1 -right-1 h-5 w-5 rounded-full bg-yellow-400 flex items-center justify-center'>
+                <Crown size={12} className='text-yellow-800' />
               </div>
               
-              {/* 역할 표시 */}
-              {trackUsers.owner.role && (
-                <div className='px-2 py-1 text-xs bg-yellow-600 text-white rounded-full max-w-[80px] truncate'>
-                  {trackUsers.owner.role}
-                </div>
-              )}
+              {/* Fallback div */}
+              <div
+                className='absolute inset-0 flex items-center justify-center bg-gradient-to-br from-blue-400 to-blue-600'
+                style={{ display: 'none' }}
+              >
+                <span className='text-sm font-semibold text-white'>
+                  {trackUsers.owner.username?.charAt(0)?.toUpperCase() || 'O'}
+                </span>
+              </div>
             </div>
 
             {/* 콜라보레이터들 */}
             {trackUsers.collaborators.collaborator.map((collaborator) => (
               <div
                 key={collaborator.id}
-                className='relative flex flex-col items-center space-y-1'
+                className='relative h-12 w-12 overflow-hidden rounded-full'
               >
-                <div 
-                  className='relative h-12 w-12 overflow-hidden rounded-full cursor-pointer hover:scale-105 transition-transform'
-                  onClick={() => handleUserClick(collaborator)}
-                >
-                  {collaborator.image_url ? (
-                    <img
-                      src={collaborator.image_url}
-                      alt={collaborator.username}
-                      className='h-full w-full object-cover'
-                      onError={(e) => handleImageError(e, collaborator.username)}
-                    />
-                  ) : (
-                    <div className='flex h-full w-full items-center justify-center bg-gradient-to-br from-purple-400 to-purple-600'>
-                      <span className='text-sm font-semibold text-white'>
-                        {collaborator.username?.charAt(0)?.toUpperCase() || 'C'}
-                      </span>
-                    </div>
-                  )}
-                  
-                  {/* Fallback div */}
-                  <div
-                    className='absolute inset-0 flex items-center justify-center bg-gradient-to-br from-purple-400 to-purple-600'
-                    style={{ display: 'none' }}
-                  >
+                {collaborator.image_url ? (
+                  <img
+                    src={collaborator.image_url}
+                    alt={collaborator.username}
+                    className='h-full w-full object-cover'
+                    onError={(e) => handleImageError(e, collaborator.username)}
+                  />
+                ) : (
+                  <div className='flex h-full w-full items-center justify-center bg-gradient-to-br from-purple-400 to-purple-600'>
                     <span className='text-sm font-semibold text-white'>
                       {collaborator.username?.charAt(0)?.toUpperCase() || 'C'}
                     </span>
                   </div>
-                </div>
-                
-                {/* 역할 표시 */}
-                {collaborator.role && (
-                  <div className='px-2 py-1 text-xs bg-purple-600 text-white rounded-full max-w-[80px] truncate'>
-                    {collaborator.role}
-                  </div>
                 )}
+                
+                {/* Fallback div */}
+                <div
+                  className='absolute inset-0 flex items-center justify-center bg-gradient-to-br from-purple-400 to-purple-600'
+                  style={{ display: 'none' }}
+                >
+                  <span className='text-sm font-semibold text-white'>
+                    {collaborator.username?.charAt(0)?.toUpperCase() || 'C'}
+                  </span>
+                </div>
               </div>
             ))}
             
@@ -524,21 +420,6 @@ const Collaborators: React.FC<CollaboratorsProps> = ({ track }) => {
             </div>
           </div>
         </div>
-      )}
-
-      {/* Role Modal */}
-      {selectedUser && (
-        <RoleModal
-          isOpen={showRoleModal}
-          onClose={() => {
-            setShowRoleModal(false);
-            setSelectedUser(null);
-          }}
-          onSave={handleRoleSave}
-          currentRole={selectedUser.role}
-          username={selectedUser.username}
-          isOwner={isCurrentUserOwner}
-        />
       )}
     </>
   );
