@@ -13,13 +13,10 @@ import DashboardPage from './pages/DashboardPage.tsx';
 import Notfound from './pages/Notfound';
 import StagePage from './pages/StagePage';
 import PublicRoute from './components/PublicRoute.tsx';
-import TrackPage from './pages/TrackPage.tsx';
-import StemSetReviewPage from './pages/StemSetReviewPage.tsx';
+import TrackPage from './pages/Trackpage.tsx';
+// import StemSetReviewPage from './pages/StemSetReviewPage.tsx';
 import InvitePage from './pages/InvitePage.tsx';
 import StemReview from './pages/StemReview.tsx';
-import TrackPage3 from './pages/TrackPage3.tsx';
-import TrackPageCopy from './pages/TrackPage copy.tsx';
-import TrackPagejjm from './pages/Trackpagejjm.tsx';
 
 
 
@@ -48,13 +45,11 @@ const App = () => {
               <Route path="/invite/:token" element={<InvitePage />} />
               <Route path="/stage/:stageId" element={<StagePage />} />
               {/* <Route path="/review" element={<StemSetReviewPage />} /> */}
-              <Route path="/stemreview/:upstreamId" element={<StemSetReviewPage />} />
+              {/* <Route path="/stemreview/:upstreamId" element={<StemSetReviewPage />} /> */}
               <Route path="*" element={<Notfound />} />
               <Route path="/review/:upstreamId" element={<StemReview />} />
-              <Route path="/trackjjm/:trackId" element={<TrackPage />} />
-              <Route path="/track3/:trackId" element={<TrackPage3 />} />
-              <Route path="/trackcopy/:trackId" element={<TrackPageCopy />} />
-              <Route path="/track/:trackId" element={<TrackPagejjm />} />
+              <Route path="/track/:trackId" element={<TrackPage />} />
+             
               {/* <Route path="/master" element={<MasterPage />} />
               <Route path="/commit" element={<CommitPage />} />
               <Route path="/pr" element={<PR_Page />} /> 
