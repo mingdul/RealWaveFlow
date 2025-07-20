@@ -424,9 +424,6 @@ const StageHis: React.FC<StageHisProps> = ({
                       <div className="space-y-4">
                         <div className="flex items-center justify-between">
                           <div className="flex items-center space-x-3">
-                            <div className={`p-3 rounded-2xl ${statusConfig.bgColor} shadow-lg`}>
-                              {/* 버전 아이콘 제거됨 */}
-                            </div>
                             <div>
                               <h3 className="text-2xl font-bold text-white">
                                 Version {stage.version}
