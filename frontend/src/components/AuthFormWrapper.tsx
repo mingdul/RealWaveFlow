@@ -40,25 +40,15 @@ const AuthFormWrapper: React.FC<AuthFormWrapperProps> = ({
             {children}
 
             {/* Divider */}
-            {/* {showSocialButtons && (
-              <div className="my-6 sm:my-8 text-center">
-                <span className="text-sm text-[#BFBFBF]">or continue with</span>
+            {showSocialButtons && (
+              <div className='my-6 text-center sm:my-8'>
+                <span className='text-sm text-[#BFBFBF]'>or continue with</span>
               </div>
-            )} */}
+            )}
 
             {/* Social Login Buttons */}
-            {/* {showSocialButtons && socialButtonsComponent && (
-              <div className="mb-4 sm:mb-6">
-                {socialButtonsComponent}
-              </div>
-            )} */}
-            {showSocialButtons && (
-              <div className='my-6 flex flex-wrap items-center justify-center gap-4 sm:my-8'>
-                <span className='whitespace-nowrap text-sm text-[#BFBFBF]'>
-                  or continue with
-                </span>
-                <div className='flex gap-3'>{socialButtonsComponent}</div>
-              </div>
+            {showSocialButtons && socialButtonsComponent && (
+              <div className='mb-4 sm:mb-6'>{socialButtonsComponent}</div>
             )}
 
             {/* Link to other auth page */}

@@ -479,7 +479,7 @@ const StemPlayer: React.FC<StemPlayerProps> = ({ stems, className = '', stageId,
                 className="group relative p-2.5 rounded-lg transition-all duration-200 transform hover:scale-105 bg-gradient-to-br from-gray-600 to-gray-700 hover:from-gray-500 hover:to-gray-600 text-gray-300 hover:text-white shadow-sm hover:shadow-md"
                 title="가이드 다운로드"
               >
-                <Download size={20} className="drop-shadow-sm" />
+                <Download size={20} className="drop-shadow-sm" />Download Guide
                 <div className="absolute inset-0 rounded-lg bg-white opacity-0 group-hover:opacity-10 transition-opacity duration-200"></div>
               </button>
             )}
@@ -550,9 +550,9 @@ const StemPlayer: React.FC<StemPlayerProps> = ({ stems, className = '', stageId,
             {guideLoading ? (
               <div className="border-2 border-white border-t-transparent rounded-full animate-spin" />
             ) : isPlaying ? (
-              <Pause size={30} className="drop-shadow-sm" />
+              <Pause size={20}/>
             ) : (
-              <Play size={20} className="ml-0.5 drop-shadow-sm" />
+              <Play size={20} />
             )}
             <div className="absolute inset-0 rounded-full bg-white opacity-0 group-hover:opacity-10 transition-opacity duration-200"></div>
           </button>
@@ -561,7 +561,7 @@ const StemPlayer: React.FC<StemPlayerProps> = ({ stems, className = '', stageId,
             onClick={handleMasterStop}
             className="group relative flex items-center justify-center w-12 h-12 bg-gradient-to-br from-slate-600 to-slate-700 hover:from-slate-500 hover:to-slate-600 rounded-full shadow-md hover:shadow-lg transition-all duration-200 transform hover:scale-105"
           >
-            <Square size={20} className="text-white drop-shadow-sm" />
+            <Square size={20} />
             <div className="absolute inset-0 rounded-full bg-white opacity-0 group-hover:opacity-10 transition-opacity duration-200"></div>
           </button>
           
@@ -617,7 +617,7 @@ const StemPlayer: React.FC<StemPlayerProps> = ({ stems, className = '', stageId,
                 disabled={Object.values(selectedStems).every(selected => !selected)}
                 className="inline-flex items-center justify-center font-medium transition-all duration-200 focus:outline-none focus:ring-2 focus:ring-offset-2 disabled:opacity-50 disabled:cursor-not-allowed bg-[#893AFF] hover:bg-[#7934E2] text-white focus:ring-[#7934E2] px-3 py-2 text-sm rounded-lg"
               >
-                Download Stems
+                Download
               </button>
             )}
           </div>
@@ -670,7 +670,7 @@ const StemPlayer: React.FC<StemPlayerProps> = ({ stems, className = '', stageId,
       <div className="mt-6 pt-6 border-t border-[#595959] flex justify-end">
         <button 
         onClick = {() => onShowStage?.(stageId || '')}
-        className="inline-flex items-center justify-center font-medium transition-all duration-200 focus:outline-none focus:ring-2 focus:ring-offset-2 disabled:opacity-50 disabled:cursor-not-allowed bg-[#595959] text-[#D9D9D9] hover:bg-[#BFBFBF] hover:text-[#0D0D0D] focus:ring-[#BFBFBF] px-3 py-2 text-sm rounded-lg bg-blue-600 hover:bg-blue-700">
+        className="inline-flex items-center justify-center font-medium transition-all duration-200 focus:outline-none focus:ring-2 focus:ring-offset-2 disabled:opacity-50 disabled:cursor-not-allowed bg-[#595959] text-[#D9D9D9] hover:bg-[#BFBFBF] hover:text-[#0D0D0D] focus:ring-[#BFBFBF] px-3 py-2 text-sm rounded-lg bg-[#5B27AA] hover:bg-[#BD91FF]">
           History
         </button>
       </div>
