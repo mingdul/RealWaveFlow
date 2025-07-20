@@ -12,9 +12,11 @@ import { ProfileImageCompleteDto } from './dto/profile-image-complete.dto';
 import { AuthGuard } from '@nestjs/passport';
 import { S3Client, GetObjectCommand } from '@aws-sdk/client-s3';
 import { getSignedUrl } from '@aws-sdk/s3-request-presigner';
+import { SkipTrackAccess } from '../auth/decorators/skip-track-access.decorator';
 
 @ApiTags('users')
 @Controller('users')
+@SkipTrackAccess()
 export class UsersController {
   constructor(
     private readonly usersService: UsersService,

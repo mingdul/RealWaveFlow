@@ -4,10 +4,12 @@ import { CreateTrackDto } from './dto/createtrackdto';
 import { UpdateTrackDto } from './dto/updatetrackdto';
 import { TrackService } from './track.service';
 import { AuthGuard } from '@nestjs/passport';
+import { SkipTrackAccess } from 'src/auth/decorators/skip-track-access.decorator';
 
 @ApiTags('Track')
 @Controller('tracks')
 @UseGuards(AuthGuard('jwt'))
+@SkipTrackAccess()
 export class TrackController {
     constructor(private readonly trackService : TrackService){}
 

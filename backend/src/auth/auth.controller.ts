@@ -5,9 +5,11 @@ import { Response, Request } from 'express';
 import { AuthService } from './auth.service';
 import { JwtService } from '@nestjs/jwt';
 import { UsersService } from '../users/users.service';
+import { SkipTrackAccess } from './decorators/skip-track-access.decorator';
 
 @ApiTags('auth')
 @Controller('auth')
+@SkipTrackAccess()
 export class AuthController {
   constructor(
     private readonly authService: AuthService,
