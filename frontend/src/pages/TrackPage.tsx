@@ -62,6 +62,7 @@ type StemChangeType = 'new' | 'modified' | 'unchanged';
 
 interface StemWithChanges extends StemStreamingInfo {
   changeType?: StemChangeType;
+  previousFileName?: string; // Modify 상태일 때 이전 파일명
 }
 
 // 버전 타임라인 컴포넌트
@@ -95,6 +96,12 @@ const VersionTimeline: React.FC<{
 
       console.log('[DEBUG] Current version stems:', currentVersionStems);
       console.log('[DEBUG] Previous version stems:', previousVersionStems);
+
+      // version-stem이 없으면 빈 배열 반환
+      if (!currentVersionStems || currentVersionStems.length === 0) {
+        console.log('[DEBUG] No version-stems found for version:', currentVersion);
+        return [];
+      }
 
       return currentVersionStems.map((currentItem: any) => {
         const currentStem = currentItem.stem;
@@ -136,6 +143,7 @@ const VersionTimeline: React.FC<{
           } else if (previousStemInCategory.stem.id !== currentStem.id) {
             // 스템 ID가 다르면 수정된 것
             convertedStem.changeType = 'modified';
+            convertedStem.previousFileName = previousStemInCategory.stem.file_name; // 이전 파일명 저장
           } else {
             // 같은 스템이면 변경되지 않은 것
             convertedStem.changeType = 'unchanged';
@@ -341,7 +349,6 @@ const VersionTimeline: React.FC<{
                                       badge: 'bg-gradient-to-r from-green-500 to-green-600 text-white shadow-lg',
                                       icon: '✨',
                                       label: 'NEW',
-                                      indexBg: 'bg-green-500',
                                       glow: 'shadow-green-500/25'
                                     };
                                   case 'modified':
@@ -351,7 +358,6 @@ const VersionTimeline: React.FC<{
                                       badge: 'bg-gradient-to-r from-yellow-500 to-orange-500 text-white shadow-lg',
                                       icon: '🔄',
                                       label: 'MODIFIED',
-                                      indexBg: 'bg-yellow-500',
                                       glow: 'shadow-yellow-500/25'
                                     };
                                   case 'unchanged':
@@ -362,28 +368,12 @@ const VersionTimeline: React.FC<{
                                       badge: 'bg-gray-500 text-white',
                                       icon: '📄',
                                       label: 'UNCHANGED',
-                                      indexBg: 'bg-gray-500',
                                       glow: ''
                                     };
                                 }
                               };
 
                               const changeStyle = getChangeTypeStyle(stem.changeType);
-                              
-                              // 카테고리별 인덱스 계산 (category 순서 기반)
-                              const getStemIndex = () => {
-                                const allStems = versionStems[stage.version] || [];
-                                const categories = [...new Set(allStems.map(s => s.category))].sort();
-                                const categoryIndex = categories.indexOf(stem.category);
-                                
-                                // 같은 카테고리 내에서의 순서도 고려
-                                const sameCategory = allStems.filter(s => s.category === stem.category);
-                                const positionInCategory = sameCategory.findIndex(s => s.id === stem.id);
-                                
-                                return categoryIndex + 1 + (positionInCategory * 0.1); // 소수점으로 같은 카테고리 내 순서 구분
-                              };
-
-                              const stemDisplayIndex = Math.floor(getStemIndex());
 
                               return (
                                 <div
@@ -391,20 +381,23 @@ const VersionTimeline: React.FC<{
                                   className={`rounded-xl border ${changeStyle.border} ${changeStyle.bg} p-4 transition-all duration-300 hover:scale-[1.02] ${changeStyle.glow} shadow-xl`}
                                 >
                                   <div className='flex items-start gap-4'>
-                                    {/* 인덱스 번호 (크게 표시) */}
-                                    <div className={`flex-shrink-0 w-12 h-12 ${changeStyle.indexBg} rounded-xl flex items-center justify-center shadow-lg`}>
-                                      <span className='text-white font-bold text-xl'>
-                                        {stemDisplayIndex}
-                                      </span>
-                                    </div>
-                                    
                                     {/* 스템 정보 */}
                                     <div className='flex-1 min-w-0'>
                                       {/* 파일명과 라벨 */}
                                       <div className='flex items-center gap-3 mb-2'>
-                                        <h4 className='text-base font-semibold text-white truncate flex-1'>
-                                          {stem.fileName}
-                                        </h4>
+                                        <div className='flex-1'>
+                                          <h4 className='text-base font-semibold text-white truncate'>
+                                            {stem.fileName}
+                                          </h4>
+                                          {/* Modify 상태일 때 이전 파일명 표시 */}
+                                          {stem.changeType === 'modified' && stem.previousFileName && (
+                                            <p className='text-sm text-gray-500 mt-1'>
+                                              <span className='opacity-60'>{stem.previousFileName}</span>
+                                              <span className='mx-2'>→</span>
+                                              <span className='text-yellow-400'>{stem.fileName}</span>
+                                            </p>
+                                          )}
+                                        </div>
                                         {stem.changeType && (
                                           <span className={`inline-flex items-center gap-2 px-3 py-1.5 rounded-full text-sm font-bold tracking-wide ${changeStyle.badge} transform hover:scale-105 transition-transform`}>
                                             <span className='text-lg'>{changeStyle.icon}</span>
@@ -445,8 +438,8 @@ const VersionTimeline: React.FC<{
                       ) : (
                         <p className='text-sm italic text-gray-400'>
                           {versionStems[stage.version] && versionStems[stage.version].length > 0 
-                            ? 'No new or modified stems in this version' 
-                            : 'No stems available for this version'
+                            ? 'No new or modified version-stems in this version' 
+                            : 'No version-stems available for this version'
                           }
                         </p>
                       )}
