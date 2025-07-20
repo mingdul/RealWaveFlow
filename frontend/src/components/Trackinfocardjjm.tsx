@@ -87,7 +87,7 @@ const Trackinfocardjjm: React.FC<TrackinfocardjjmProps> = ({
 
       <div className='relative z-10 flex flex-col gap-6 lg:flex-row justify-center'>
         {/* Left side content */}
-        <div className='w-full md:w-2/3 space-y-4'>
+        <div className='w-full md:w-2/3 space-y-4 pl-6'>
           {/* Header label */}
           {/* Main title */}
           <div className='space-y-5'>
@@ -110,11 +110,6 @@ const Trackinfocardjjm: React.FC<TrackinfocardjjmProps> = ({
             </p>
 
             <Collaborators track={track} />
-          </div>
-          <div className='flex items-center gap-4 pt-2'>
-            <p className='text-sm text-white/70'>
-              {new Date(track.created_date).toLocaleDateString('en-US')}
-            </p>
           </div>
 
           <div className='flex flex-col gap-3 pt-6 sm:flex-row sm:items-center'>
@@ -149,6 +144,11 @@ const Trackinfocardjjm: React.FC<TrackinfocardjjmProps> = ({
             >
               <span className='font-semibold'>View All Stems</span>
             </Button>
+          </div>
+          <div className='flex items-center gap-4 pt-2'>
+            <p className='text-sm text-white/70'>
+              {new Date(track.created_date).toLocaleDateString('en-US')}
+            </p>
           </div>
           {/* Track details tags */}
           <div className='flex flex-wrap gap-3 pt-2'>
