@@ -67,10 +67,11 @@ interface StemWithChanges extends StemStreamingInfo {
 // 버전 타임라인 컴포넌트
 const VersionTimeline: React.FC<{
   stages: Stage[];
-  selectedVersion: number;
+  selectedVersion: number | null;
   onVersionSelect: (version: number) => void;
   trackId: string;
-}> = ({ stages, selectedVersion, onVersionSelect, trackId }) => {
+  navigate: (path: string) => void;
+}> = ({ stages, selectedVersion, onVersionSelect, trackId, navigate }) => {
   const [expandedVersion, setExpandedVersion] = useState<number | null>(null);
   const [versionStems, setVersionStems] = useState<{
     [key: number]: StemWithChanges[];
@@ -164,15 +165,16 @@ const VersionTimeline: React.FC<{
     }
   };
 
-  // 초기 로딩 시 selectedVersion에 해당하는 버전을 자동 확장
+  // VersionTimeline은 초기에 아무것도 선택되지 않음 (자동 확장 제거)
+  // selectedVersion이 변경될 때만 확장
   useEffect(() => {
-    if (selectedVersion && stages.length > 0 && !expandedVersion) {
+    if (selectedVersion !== null && stages.length > 0) {
       const targetStage = stages.find(
         (stage) => stage.version === selectedVersion
       );
       if (targetStage) {
         console.log(
-          '[DEBUG][VersionTimeline] Auto-expanding version based on selectedVersion:',
+          '[DEBUG][VersionTimeline] Expanding version based on selection:',
           selectedVersion
         );
         setExpandedVersion(selectedVersion);
@@ -183,7 +185,7 @@ const VersionTimeline: React.FC<{
         }
       }
     }
-  }, [selectedVersion, stages, expandedVersion, versionStems]);
+  }, [selectedVersion, stages, versionStems]);
 
   const loadVersionStems = async (version: number) => {
     setLoadingVersions((prev) => ({ ...prev, [version]: true }));
@@ -231,7 +233,7 @@ const VersionTimeline: React.FC<{
               {/* 타임라인 노드 */}
               <div
                 className={`relative z-10 h-8 w-8 cursor-pointer rounded-full border-4 transition-all duration-200 ${
-                  selectedVersion === stage.version
+                  selectedVersion !== null && selectedVersion === stage.version
                     ? 'border-amber-300 bg-amber-400 shadow-lg shadow-amber-400/50'
                     : stage.status === 'active'
                       ? 'border-green-300 bg-green-400 shadow-lg shadow-green-400/50'
@@ -249,14 +251,14 @@ const VersionTimeline: React.FC<{
               <div className='ml-6 flex-1'>
                 <div
                   className={`cursor-pointer rounded-lg border border-white/20 bg-white/10 p-4 backdrop-blur-lg transition-all duration-200 ${
-                    selectedVersion === stage.version
+                    selectedVersion !== null && selectedVersion === stage.version
                       ? 'ring-2 ring-amber-400'
                       : 'hover:bg-white/15'
                   }`}
                   onClick={() => toggleExpanded(stage.version)}
                 >
                   <div className='flex items-center justify-between'>
-                    <div>
+                    <div className='flex-1'>
                       <h4 className='text-lg font-semibold text-white'>
                         Version {stage.version}
                         {stage.status === 'active' && (
@@ -278,7 +280,20 @@ const VersionTimeline: React.FC<{
                         )}
                       </p>
                     </div>
-                    <div className='flex items-center space-x-2'>
+                    <div className='flex items-center space-x-3'>
+                      {/* Stage 페이지로 이동하는 파랑색 버튼 */}
+                      <button
+                        onClick={(e) => {
+                          e.stopPropagation();
+                          navigate(`/stage/${stage.id}`);
+                        }}
+                        className='inline-flex items-center gap-2 rounded-lg bg-gradient-to-r from-blue-500 to-blue-600 px-3 py-1.5 text-sm font-medium text-white shadow-lg transition-all duration-200 hover:from-blue-600 hover:to-blue-700 hover:scale-105 hover:shadow-blue-500/25'
+                      >
+                        <svg className='h-4 w-4' fill='none' stroke='currentColor' viewBox='0 0 24 24'>
+                          <path strokeLinecap='round' strokeLinejoin='round' strokeWidth={2} d='M10 6H6a2 2 0 00-2 2v10a2 2 0 002 2h10a2 2 0 002-2v-4M14 4h6m0 0v6m0-6L10 14' />
+                        </svg>
+                        History
+                      </button>
                       <svg
                         className={`h-5 w-5 text-gray-400 transition-transform duration-200 ${
                           expandedVersion === stage.version ? 'rotate-180' : ''
@@ -312,7 +327,7 @@ const VersionTimeline: React.FC<{
                         </div>
                       ) : versionStems[stage.version] &&
                         versionStems[stage.version].filter(stem => stem.changeType !== 'unchanged').length > 0 ? (
-                        <div className='space-y-2'>
+                        <div className='space-y-3'>
                           {versionStems[stage.version]
                             .filter(stem => stem.changeType !== 'unchanged') // unchanged 스템 제외
                             .map((stem, stemIndex) => {
@@ -321,19 +336,23 @@ const VersionTimeline: React.FC<{
                                 switch (changeType) {
                                   case 'new':
                                     return {
-                                      border: 'border-green-500/50',
-                                      bg: 'bg-green-500/10',
-                                      badge: 'bg-green-500 text-white',
+                                      border: 'border-green-400 border-2',
+                                      bg: 'bg-gradient-to-r from-green-500/20 to-green-600/10',
+                                      badge: 'bg-gradient-to-r from-green-500 to-green-600 text-white shadow-lg',
                                       icon: '✨',
-                                      label: 'NEW'
+                                      label: 'NEW',
+                                      indexBg: 'bg-green-500',
+                                      glow: 'shadow-green-500/25'
                                     };
                                   case 'modified':
                                     return {
-                                      border: 'border-yellow-500/50',
-                                      bg: 'bg-yellow-500/10',
-                                      badge: 'bg-yellow-500 text-white',
+                                      border: 'border-yellow-400 border-2',
+                                      bg: 'bg-gradient-to-r from-yellow-500/20 to-orange-500/10',
+                                      badge: 'bg-gradient-to-r from-yellow-500 to-orange-500 text-white shadow-lg',
                                       icon: '🔄',
-                                      label: 'MODIFIED'
+                                      label: 'MODIFIED',
+                                      indexBg: 'bg-yellow-500',
+                                      glow: 'shadow-yellow-500/25'
                                     };
                                   case 'unchanged':
                                   default:
@@ -342,43 +361,80 @@ const VersionTimeline: React.FC<{
                                       bg: 'bg-white/5',
                                       badge: 'bg-gray-500 text-white',
                                       icon: '📄',
-                                      label: 'UNCHANGED'
+                                      label: 'UNCHANGED',
+                                      indexBg: 'bg-gray-500',
+                                      glow: ''
                                     };
                                 }
                               };
 
                               const changeStyle = getChangeTypeStyle(stem.changeType);
+                              
+                              // 카테고리별 인덱스 계산 (category 순서 기반)
+                              const getStemIndex = () => {
+                                const allStems = versionStems[stage.version] || [];
+                                const categories = [...new Set(allStems.map(s => s.category))].sort();
+                                const categoryIndex = categories.indexOf(stem.category);
+                                
+                                // 같은 카테고리 내에서의 순서도 고려
+                                const sameCategory = allStems.filter(s => s.category === stem.category);
+                                const positionInCategory = sameCategory.findIndex(s => s.id === stem.id);
+                                
+                                return categoryIndex + 1 + (positionInCategory * 0.1); // 소수점으로 같은 카테고리 내 순서 구분
+                              };
+
+                              const stemDisplayIndex = Math.floor(getStemIndex());
 
                               return (
                                 <div
                                   key={stemIndex}
-                                  className={`rounded-md border ${changeStyle.border} ${changeStyle.bg} p-3 transition-all duration-200`}
+                                  className={`rounded-xl border ${changeStyle.border} ${changeStyle.bg} p-4 transition-all duration-300 hover:scale-[1.02] ${changeStyle.glow} shadow-xl`}
                                 >
-                                  <div className='flex items-center justify-between'>
-                                    <div className='flex-1'>
-                                      <div className='flex items-center gap-2 mb-1'>
-                                        <p className='text-sm font-medium text-white'>
+                                  <div className='flex items-start gap-4'>
+                                    {/* 인덱스 번호 (크게 표시) */}
+                                    <div className={`flex-shrink-0 w-12 h-12 ${changeStyle.indexBg} rounded-xl flex items-center justify-center shadow-lg`}>
+                                      <span className='text-white font-bold text-xl'>
+                                        {stemDisplayIndex}
+                                      </span>
+                                    </div>
+                                    
+                                    {/* 스템 정보 */}
+                                    <div className='flex-1 min-w-0'>
+                                      {/* 파일명과 라벨 */}
+                                      <div className='flex items-center gap-3 mb-2'>
+                                        <h4 className='text-base font-semibold text-white truncate flex-1'>
                                           {stem.fileName}
-                                        </p>
+                                        </h4>
                                         {stem.changeType && (
-                                          <span className={`inline-flex items-center gap-1 px-2 py-0.5 rounded-full text-xs font-medium ${changeStyle.badge}`}>
-                                            <span>{changeStyle.icon}</span>
+                                          <span className={`inline-flex items-center gap-2 px-3 py-1.5 rounded-full text-sm font-bold tracking-wide ${changeStyle.badge} transform hover:scale-105 transition-transform`}>
+                                            <span className='text-lg'>{changeStyle.icon}</span>
                                             {changeStyle.label}
                                           </span>
                                         )}
                                       </div>
-                                      <p className='text-xs text-gray-400'>
-                                        {stem.category}
-                                      </p>
-                                      {stem.metadata?.duration && (
-                                        <p className='text-xs text-gray-400'>
-                                          Duration:{' '}
-                                          {Math.round(stem.metadata.duration)}s
-                                        </p>
-                                      )}
-                                      <p className='text-xs text-gray-500 mt-1'>
-                                        By: {stem.uploadedBy?.username || 'Unknown'}
-                                      </p>
+                                      
+                                      {/* 카테고리 */}
+                                      <div className='flex items-center gap-2 mb-1'>
+                                        <span className='text-xs font-medium text-gray-300 bg-white/10 px-2 py-1 rounded-md'>
+                                          🎵 {stem.category}
+                                        </span>
+                                      </div>
+                                      
+                                      {/* 업로더 정보 */}
+                                      <div className='flex items-center gap-2 text-xs text-gray-400'>
+                                        <span className='flex items-center gap-1'>
+                                          <span>👤</span>
+                                          <span className='font-medium text-gray-300'>
+                                            {stem.uploadedBy?.username || 'Unknown'}
+                                          </span>
+                                        </span>
+                                        {stem.metadata?.duration && (
+                                          <span className='flex items-center gap-1 ml-3'>
+                                            <span>⏱️</span>
+                                            <span>{Math.round(stem.metadata.duration)}s</span>
+                                          </span>
+                                        )}
+                                      </div>
                                     </div>
                                   </div>
                                 </div>
@@ -419,7 +475,8 @@ const TrackPage: React.FC<TrackPagejjmProps> = () => {
   const [stemsLoading, setStemsLoading] = useState(false);
   const [isOpenStageModalOpen, setIsOpenStageModalOpen] = useState(false);
   const [isStemListModalOpen, setIsStemListModalOpen] = useState(false);
-  const [selectedStageVersion, setSelectedStageVersion] = useState<number>(1);
+  const [selectedStageVersion, setSelectedStageVersion] = useState<number>(1); // StageHistory용
+  const [selectedVersionTimeline, setSelectedVersionTimeline] = useState<number | null>(null); // VersionTimeline용 (독립적)
   const [error, setError] = useState<string | null>(null);
 
   // 트랙 데이터와 스테이지 목록 로드
@@ -572,7 +629,7 @@ const TrackPage: React.FC<TrackPagejjmProps> = () => {
     }
   }, [stages, trackId]);
 
-  // 스테이지별 version-stem만 로드 (stageId 기반)
+  // 스테이지별 version-stem만 로드 (stageId 기반) - StageHistory용
   const loadStemsByVersion = async (version: number) => {
     if (!trackId) return;
 
@@ -654,6 +711,12 @@ const TrackPage: React.FC<TrackPagejjmProps> = () => {
     } finally {
       setStemsLoading(false);
     }
+  };
+
+  // VersionTimeline용 독립적인 버전 선택 함수
+  const handleVersionTimelineSelect = (version: number) => {
+    setSelectedVersionTimeline(version);
+    console.log('[DEBUG][TrackPage] VersionTimeline selected version:', version);
   };
 
   // Event handlers
@@ -830,9 +893,10 @@ const TrackPage: React.FC<TrackPagejjmProps> = () => {
               <div className='transform transition-all duration-300'>
                 <VersionTimeline
                   stages={stages}
-                  selectedVersion={selectedStageVersion}
-                  onVersionSelect={loadStemsByVersion}
+                  selectedVersion={selectedVersionTimeline}
+                  onVersionSelect={handleVersionTimelineSelect}
                   trackId={trackId || ''}
+                  navigate={navigate}
                 />
               </div>
             )}
