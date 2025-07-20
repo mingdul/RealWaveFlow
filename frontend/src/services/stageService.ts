@@ -11,9 +11,12 @@ export const createStage = async (stageData: CreateStageDto) => {
 export const getTrackStages = async (trackId: string) => {
   try {
     const response = await apiClient.get(`/stage/track/${trackId}`);
+    console.log('[DEBUG] getTrackStages response:', response.data);
     if(!response.data.success){
+      console.log('[DEBUG] getTrackStages failed:', response.data.message);
       throw new Error(response.data.message);
     }
+    console.log('[DEBUG] getTrackStages data:', response.data.data);
     return response.data.data;
   } catch (error) {
     console.error('Failed to get track stages:', error);
@@ -70,14 +73,24 @@ export const hasStages = async (trackId: string) => {
   }
 };
 
-// 최신 스테이지 조회 (status: 'active'인 스테이지)
+// 최신 스테이지 조회
 export const getLatestStage = async (trackId: string) => {
     try {
       const stages = await getTrackStages(trackId);
+      console.log('[DEBUG] getLatestStage stages:', stages);
       if (stages && stages.length > 0) {
-        // status가 'active'인 스테이지 반환
-        return stages.find((stage: Stage) => stage.status === 'active') || null;
+        console.log('[DEBUG] Found stages, length:', stages.length);
+        // status가 'active'인 스테이지를 우선적으로 찾습니다.
+        const activeStage = stages.find((stage: Stage) => stage.status === 'active');
+        console.log('[DEBUG] Active stage:', activeStage);
+        if (activeStage) {
+          return activeStage;
+        }
+        // active 스테이지가 없으면 가장 최신 스테이지(배열의 첫 번째 항목)를 반환합니다.
+        console.log('[DEBUG] No active stage, returning first stage:', stages[0]);
+        return stages[0]; 
       }
+      console.log('[DEBUG] No stages found or empty array');
       return null;
     } catch (error) {
       console.error('Failed to get latest stage:', error);
