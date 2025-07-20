@@ -1,5 +1,5 @@
+import api from '../lib/api';
 import apiClient from '../lib/api';
-
 
 export interface ReviewerWithStatus {
   id: string;
@@ -15,6 +15,22 @@ export interface ReviewerWithStatus {
     id: string;
   };
 }
+
+export interface UpstreamReviewsResponse {
+  success: boolean;
+  message: string;
+  data: ReviewerWithStatus[];
+}
+
+export const approveDropReviewer = async (stageId: string, upstreamId: string) => {
+  const res = await api.put(`/upstream-review/approve-drop-reviewer/${stageId}/${upstreamId}/`);
+  return res.data;
+};
+
+export const rejectDropReviewer = async (stageId: string, upstreamId: string) => {
+  const res = await api.put(`/upstream-review/reject-drop-reviewer/${stageId}/${upstreamId}/`);
+  return res.data;
+};
 
 export interface UpstreamReviewsResponse {
   success: boolean;
