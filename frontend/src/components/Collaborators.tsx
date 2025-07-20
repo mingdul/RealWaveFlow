@@ -238,6 +238,16 @@ const Collaborators: React.FC<CollaboratorsProps> = ({ track }) => {
     setRoleSuccess('');
   };
 
+  // 콜라버 추가 버튼 핸들러
+  const handleAddCollaboratorClick = async () => {
+    const isOwner = await checkOwnerPermission();
+    if (!isOwner) {
+      alert('권한이 없습니다. 트랙 소유자만 협업자를 추가할 수 있습니다.');
+      return;
+    }
+    setShowInviteModal(true);
+  };
+
   // 역할 수정 함수
   const handleRoleUpdate = async () => {
     if (!selectedCollaborator || !newRole.trim()) {
@@ -407,7 +417,7 @@ const Collaborators: React.FC<CollaboratorsProps> = ({ track }) => {
               </div>
             ))}
             
-            <Button onClick={() => setShowInviteModal(true)}>
+            <Button onClick={handleAddCollaboratorClick}>
               <Plus size={20} />
             </Button>
           </>
@@ -470,7 +480,7 @@ const Collaborators: React.FC<CollaboratorsProps> = ({ track }) => {
               </div>
             </div>
 
-            <Button onClick={() => setShowInviteModal(true)}>
+            <Button onClick={handleAddCollaboratorClick}>
               <Plus size={20} />
             </Button>
           </>

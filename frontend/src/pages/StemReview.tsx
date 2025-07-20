@@ -814,15 +814,29 @@ const StemSetReview = () => {
       // 현재 사용자의 프로필 이미지 presigned URL 가져오기
       let userAvatarUrl = null;
       try {
-        const currentUserResponse = await fetch('/api/users/me/profile-image', {
+        // 백엔드 API 호출로 현재 사용자 정보와 presigned URL 가져오기
+        const currentUserResponse = await fetch('/api/users/me', {
           credentials: 'include'
         });
         
         if (currentUserResponse.ok) {
-          const profileData = await currentUserResponse.json();
-          if (profileData.success && profileData.data.imageUrl) {
-            userAvatarUrl = profileData.data.imageUrl;
-            console.log('✅ [handleAddComment] Got current user presigned URL:', userAvatarUrl);
+          const userData = await currentUserResponse.json();
+          if (userData.success && userData.data && userData.data.image_url) {
+            userAvatarUrl = userData.data.image_url;
+            console.log('✅ [handleAddComment] Got current user presigned URL from /users/me:', userAvatarUrl);
+          }
+        } else {
+          // 폴백: profile-image 엔드포인트 시도
+          const profileImageResponse = await fetch('/api/users/me/profile-image', {
+            credentials: 'include'
+          });
+          
+          if (profileImageResponse.ok) {
+            const profileData = await profileImageResponse.json();
+            if (profileData.success && profileData.data && profileData.data.imageUrl) {
+              userAvatarUrl = profileData.data.imageUrl;
+              console.log('✅ [handleAddComment] Got current user presigned URL from profile-image:', userAvatarUrl);
+            }
           }
         }
       } catch (profileError) {

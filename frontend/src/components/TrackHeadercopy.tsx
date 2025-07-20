@@ -1,10 +1,12 @@
-import React, { useEffect, useState } from 'react';
-import { ChevronLeft, Settings } from 'lucide-react';
+import React, { useEffect, useState, useRef } from 'react';
+import { ChevronLeft, Settings, User, LogOut } from 'lucide-react';
 import { Button } from './';
 import Logo from './Logo';
 import NotificationBell from './NotificationBell';
 import ProfileSettingsModal from './ProfileSettingsModal';
 import { useNotifications } from '../contexts/NotificationContext';
+import { useAuth } from '../contexts/AuthContext';
+import { useNavigate } from 'react-router-dom';
 
 
 interface TrackHeaderCopyProps {
@@ -15,17 +17,48 @@ const TrackHeaderCopy: React.FC<TrackHeaderCopyProps> = ({
   onBack,
 }) => {
   const { notifications, unreadCount } = useNotifications();
+  const { logout } = useAuth();
+  const navigate = useNavigate();
 
-  // 🔥 NEW: Profile Settings 모달 상태
+  // 🔥 NEW: Settings 드롭다운 상태
+  const [isSettingsDropdownOpen, setIsSettingsDropdownOpen] = useState(false);
   const [isProfileModalOpen, setIsProfileModalOpen] = useState(false);
+  const settingsDropdownRef = useRef<HTMLDivElement>(null);
   
   // 🔥 NEW: 강제 리렌더링을 위한 상태
   const [forceRefreshKey, setForceRefreshKey] = useState(0);
   const [lastNotificationTime, setLastNotificationTime] = useState<string>('');
 
-  // 🔥 Settings 버튼 클릭 핸들러
+  // 🔥 NEW: Settings 드롭다운 외부 클릭 감지
+  useEffect(() => {
+    const handleClickOutside = (event: MouseEvent) => {
+      if (settingsDropdownRef.current && !settingsDropdownRef.current.contains(event.target as Node)) {
+        setIsSettingsDropdownOpen(false);
+      }
+    };
+
+    document.addEventListener('mousedown', handleClickOutside);
+    return () => document.removeEventListener('mousedown', handleClickOutside);
+  }, []);
+
+  // 🔥 NEW: Settings 메뉴 핸들러들
   const handleSettingsClick = () => {
+    setIsSettingsDropdownOpen(!isSettingsDropdownOpen);
+  };
+
+  const handleProfileClick = () => {
     setIsProfileModalOpen(true);
+    setIsSettingsDropdownOpen(false);
+  };
+
+  const handleLogoutClick = async () => {
+    try {
+      await logout();
+      navigate('/login');
+    } catch (error) {
+      console.error('Logout failed:', error);
+    }
+    setIsSettingsDropdownOpen(false);
   };
 
 
@@ -104,22 +137,47 @@ const TrackHeaderCopy: React.FC<TrackHeaderCopyProps> = ({
 
           <div className="flex items-center gap-4">
             {/* 🔥 NotificationBell에 실시간 상태 표시 */}
-              <NotificationBell />
-              {/* 개발 환경에서만 보이는 상태 표시 */}
-              {import.meta.env.DEV && (
-                <div className="absolute -bottom-8 right-0 text-xs text-gray-400 whitespace-nowrap">
-                  {notifications.length}/{unreadCount} (Refresh: {forceRefreshKey})
-                  {lastNotificationTime && (
-                    <div className="text-xs text-green-400">
-                      Last: {new Date(lastNotificationTime).toLocaleTimeString()}
-                    </div>
-                  )}
+            <NotificationBell />
+            {/* 개발 환경에서만 보이는 상태 표시 */}
+            {import.meta.env.DEV && (
+              <div className="absolute -bottom-8 right-0 text-xs text-gray-400 whitespace-nowrap">
+                {notifications.length}/{unreadCount} (Refresh: {forceRefreshKey})
+                {lastNotificationTime && (
+                  <div className="text-xs text-green-400">
+                    Last: {new Date(lastNotificationTime).toLocaleTimeString()}
+                  </div>
+                )}
+              </div>
+            )}
+
+            {/* 🔥 NEW: Settings 드롭다운 메뉴 */}
+            <div className="relative" ref={settingsDropdownRef}>
+              <Button size="sm" className="p-2" onClick={handleSettingsClick}>
+                <Settings className='text-[#893AFF]' size={20} />
+              </Button>
+              
+              {/* Settings 드롭다운 메뉴 */}
+              {isSettingsDropdownOpen && (
+                <div className="absolute right-0 mt-2 w-48 bg-white rounded-lg shadow-lg ring-1 ring-black ring-opacity-5 z-50">
+                  <div className="py-1">
+                    <button
+                      onClick={handleProfileClick}
+                      className="flex items-center gap-3 w-full px-4 py-2 text-sm text-gray-700 hover:bg-gray-100 transition-colors"
+                    >
+                      <User size={16} />
+                      프로필 설정
+                    </button>
+                    <button
+                      onClick={handleLogoutClick}
+                      className="flex items-center gap-3 w-full px-4 py-2 text-sm text-gray-700 hover:bg-gray-100 transition-colors"
+                    >
+                      <LogOut size={16} />
+                      로그아웃
+                    </button>
+                  </div>
                 </div>
               )}
-
-            <Button size="sm" className="p-2 " onClick={handleSettingsClick}>
-              <Settings className='text-[#893AFF]' size={20} />
-            </Button>
+            </div>
           </div>
         </div>
       </div>
