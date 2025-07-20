@@ -44,7 +44,6 @@ const Collaborators: React.FC<CollaboratorsProps> = ({ track }) => {
   const [roleLoading, setRoleLoading] = useState(false);
   const [roleError, setRoleError] = useState('');
   const [roleSuccess, setRoleSuccess] = useState('');
-  const [setIsOwnerVerified] = useState(false);
 
   // API에서 트랙 사용자 정보 가져오기
   useEffect(() => {
@@ -234,7 +233,6 @@ const Collaborators: React.FC<CollaboratorsProps> = ({ track }) => {
     
     setSelectedCollaborator(collaborator);
     setNewRole(collaborator.role || '');
-    setIsOwnerVerified(true);
     setShowRoleModal(true);
     setRoleError('');
     setRoleSuccess('');
@@ -297,7 +295,6 @@ const Collaborators: React.FC<CollaboratorsProps> = ({ track }) => {
     setNewRole('');
     setRoleError('');
     setRoleSuccess('');
-    setIsOwnerVerified(false);
   };
 
   if (loading) {
