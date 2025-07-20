@@ -326,7 +326,7 @@ const StagePage: React.FC = () => {
         </div>
 
         {/* Title Overlay - 항상 표시 */}
-        <div className="absolute top-[85px] left-0 w-full text-center z-20">
+        <div className="absolute top-[82px] left-0 w-full text-center z-20">
           <div>
             <h3 className="text-xl font-bold text-black drop-shadow-lg px-4">
               {upstream.title && typeof upstream.title === 'string' && upstream.title.trim() ? upstream.title : `STEM SET #${upstream.title}`}
@@ -473,7 +473,7 @@ const StagePage: React.FC = () => {
             </div>
             
             {/* Reviewers Section */}
-            <div className="flex-shrink-0 w-[400px]">
+            <div className="flex-shrink-0 w-[1100px]">
               <h2 className="text-3xl font-bold text-white mb-6">Reviewers</h2>
               {reviewersLoading ? (
                 <div className="flex items-center justify-center py-8">
@@ -481,7 +481,7 @@ const StagePage: React.FC = () => {
                   <span className="ml-3 text-white text-sm">Loading reviewers...</span>
                 </div>
               ) : reviewers.length > 0 ? (
-                <div className="flex flex-wrap gap-4">
+                <div className="flex gap-4">
                   {reviewers.map((reviewer) => (
                     <ReviewerCard key={reviewer.id} reviewer={reviewer} />
                   ))}
