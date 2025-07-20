@@ -44,16 +44,6 @@ const StemListModal: React.FC<StemListModalProps> = ({
             <h2 className="text-xl sm:text-2xl font-bold text-[#D9D9D9] mb-2">
               Version {versionNumber}
             </h2>
-            <h3 className="text-[#BFBFBF] text-sm">
-              upstreams message
-            </h3>
-            <p>
-              
-            </p>
-            
-            <p className="text-[#BFBFBF] text-sm">
-              Stem Collection
-            </p>
           </div>
           <Button
             size="sm"
@@ -68,7 +58,8 @@ const StemListModal: React.FC<StemListModalProps> = ({
         <div className="space-y-4 md:space-y-6">
           {loading ? (
             <div className="flex justify-center items-center py-12">
-              <div className="animate-spin rounded-full h-12 w-12 border-b-2 border-purple-600"></div>
+              {/* 뭐묘 */}
+              <div className="animate-spin rounded-full h-12 w-12 border-b-2 border-white"></div>
             </div>
           ) : stems.length === 0 ? (
             <div className="text-center py-12">

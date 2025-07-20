@@ -476,7 +476,7 @@ const StemPlayer: React.FC<StemPlayerProps> = ({ stems, className = '', stageId,
             {stageId && (
               <button
                 onClick={handleGuideDownload}
-                className="group relative p-2.5 rounded-lg transition-all duration-200 transform hover:scale-105 bg-[#893AFF] hover:from-#893AFF hover:to-blue-600 text-white shadow-sm hover:shadow-md"
+                className="group relative p-2.5 rounded-lg transition-all duration-200 transform hover:scale-105 bg-gradient-to-br from-gray-600 to-gray-700 hover:from-gray-500 hover:to-gray-600 text-gray-300 hover:text-white shadow-sm hover:shadow-md"
                 title="가이드 다운로드"
               >
                 <Download size={20} className="drop-shadow-sm" />
@@ -548,9 +548,9 @@ const StemPlayer: React.FC<StemPlayerProps> = ({ stems, className = '', stageId,
             className="group relative flex items-center justify-center w-14 h-14 bg-[#893AFF] hover:bg-purple-700 disabled:bg-gray-600 rounded-full shadow-lg hover:shadow-xl transition-all duration-200 transform hover:scale-105 disabled:hover:scale-100 disabled:cursor-not-allowed"
           >
             {guideLoading ? (
-              <div className="w-6 h-6 border-2 border-white border-t-transparent rounded-full animate-spin" />
+              <div className="border-2 border-white border-t-transparent rounded-full animate-spin" />
             ) : isPlaying ? (
-              <Pause size={20} className="drop-shadow-sm" />
+              <Pause size={30} className="drop-shadow-sm" />
             ) : (
               <Play size={20} className="ml-0.5 drop-shadow-sm" />
             )}
