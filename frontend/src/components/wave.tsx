@@ -80,8 +80,8 @@ const Wave = memo(({
 
     const wavesurfer = WaveSurfer.create({
       container: waveRef.current,
-      waveColor: waveColor || '#666',
-      progressColor: '#00ccff',
+      waveColor: waveColor || '#8b5cf6',
+      progressColor: '#6b7280',
       height: 260,
       normalize: true,
       plugins: [

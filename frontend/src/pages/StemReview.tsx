@@ -1660,17 +1660,6 @@ const StemSetReview = () => {
 
                 {/* Stem Files Content */}
                 <div className='flex-1 flex flex-col px-6 py-4'>
-                  {/* Status Section */}
-                  <div className='mb-4 p-3 bg-gray-800/30 rounded-lg border-l-4 border-blue-400'>
-                    <div className='flex items-center gap-2 mb-1'>
-                      <div className='w-2 h-2 bg-blue-400 rounded-full'></div>
-                      <span className='text-sm font-medium text-white'>로딩 상태</span>
-                    </div>
-                    <p className='text-xs text-gray-400'>
-                      {stemsLoading ? '스템 파일을 불러오는 중...' : `${upstreamStems.length}개의 스템 발견`}
-                    </p>
-                  </div>
-
                   {/* Divider */}
                   <div className='border-b border-gray-600 mb-4'></div>
 
@@ -2048,39 +2037,6 @@ const StemSetReview = () => {
           {/* Main Content Area - 반응형 레이아웃 */}
           <div className={`transition-all duration-300 ease-in-out px-4 sm:px-6 lg:px-8 py-6 sm:py-8 space-y-6 ${(activePanel as string) !== 'none' ? 'mr-80' : ''
             }`}>
-            {/* Review Action Bar */}
-            <div className="bg-gray-900/60 backdrop-blur-sm border border-gray-700 rounded-xl p-4 shadow-xl">
-              <div className="flex items-center justify-between">
-                <div className="flex items-center space-x-4">
-                  <div className="flex items-center space-x-2">
-                    <div className="w-3 h-3 bg-orange-400 rounded-full animate-pulse"></div>
-                    <span className="text-white font-medium">리뷰 대기 중</span>
-                  </div>
-                  {selectedUpstream && (
-                    <div className="text-sm text-gray-300">
-                      <span className="text-blue-400">검토 대상:</span> {selectedUpstream.title}
-                    </div>
-                  )}
-                </div>
-
-                <div className="flex items-center space-x-3">
-                  <button
-                    onClick={handleApprove}
-                    className="px-6 py-2 bg-gradient-to-r from-green-600 to-green-700 hover:from-green-700 hover:to-green-800 text-white rounded-lg font-medium transition-all duration-200 shadow-lg hover:shadow-green-500/25 flex items-center space-x-2"
-                  >
-                    <span>✓</span>
-                    <span>승인</span>
-                  </button>
-                  <button
-                    onClick={handleReject}
-                    className="px-6 py-2 bg-gradient-to-r from-red-600 to-red-700 hover:from-red-700 hover:to-red-800 text-white rounded-lg font-medium transition-all duration-200 shadow-lg hover:shadow-red-500/25 flex items-center space-x-2"
-                  >
-                    <span>✗</span>
-                    <span>거절</span>
-                  </button>
-                </div>
-              </div>
-            </div>
 
             {/* Waveform Section */}
             <div className="space-y-6">
@@ -2257,9 +2213,10 @@ const StemSetReview = () => {
             </div>
           </div>
 
-          {/* Control Bar - 반응형 */}
-          <div className={`bottom-0 left-0 z-50 w-full transition-all duration-300 ease-in-out bg-white/5 backdrop-blur-lg rounded-2xl p-4 border border-white/10 shadow-xl ${(activePanel as string) !== 'none' ? 'mr-80' : ''}`}>
-            <div className="flex items-center justify-between">
+          {/* Fixed Bottom Audio Player */}
+          <div className="fixed bottom-0 left-0 right-0 z-50 bg-gray-900/95 backdrop-blur-lg border-t border-gray-700 p-4">
+            <div className="flex items-center justify-between max-w-screen-xl mx-auto">
+              {/* Left Side - Playback Controls */}
               <div className="flex items-center space-x-4">
                 {/* Playback Controls */}
                 <div className="flex items-center space-x-3">
@@ -2300,14 +2257,23 @@ const StemSetReview = () => {
                 </div>
               </div>
 
-            </div>
-          </div>
-          {/* Keyboard Shortcuts Info */}
-          <div className='bg-gray-800/50 border-t border-gray-700 px-6 py-2'>
-            <div className='flex items-center justify-center text-xs text-gray-400'>
-              <span className='mr-4'>␣ Space: 재생/일시정지</span>
-              <span className='mr-4'>←/→: 5초 이동</span>
-              <span>↑/↓: 볼륨 조절</span>
+              {/* Right Side - Review Actions */}
+              <div className="flex items-center space-x-3">
+                <button
+                  onClick={handleApprove}
+                  className="px-6 py-2 bg-gradient-to-r from-green-600 to-green-700 hover:from-green-700 hover:to-green-800 text-white rounded-lg font-medium transition-all duration-200 shadow-lg hover:shadow-green-500/25 flex items-center space-x-2"
+                >
+                  <span>✓</span>
+                  <span>승인</span>
+                </button>
+                <button
+                  onClick={handleReject}
+                  className="px-6 py-2 bg-gradient-to-r from-red-600 to-red-700 hover:from-red-700 hover:to-red-800 text-white rounded-lg font-medium transition-all duration-200 shadow-lg hover:shadow-red-500/25 flex items-center space-x-2"
+                >
+                  <span>✗</span>
+                  <span>거절</span>
+                </button>
+              </div>
             </div>
           </div>
 
