@@ -45,32 +45,32 @@ const qItems: QItem[] = [
 const aItems: AItem[] = [
   {
     answer:
-      'Absolutely. Like code, music goes through countless revisions and improvements. WavefloW helps you keep track of changes in each stem and track, and lets you roll back to any previous version whenever needed.',
+      'Absolutely. Like code, music goes through countless revisions and improvements. WAVEFLOW helps you keep track of changes in each stem and track, and lets you roll back to any previous version whenever needed.',
     avatarUrl: './person/IMG_6287.jpg',
   },
   {
     answer:
-      'With WavefloW, you can easily compare two versions visually using waveform overlays. It\'s quick and intuitive.',
+      'With WAVEFLOW, you can easily compare two versions visually using waveform overlays. It\'s quick and intuitive.',
     avatarUrl: './person/1750813233213.jpg',
   },
   {
     answer:
-      'WavefloW fills the gaps left by traditional DAWs. The days of sending project files back and forth are over—it’s time for real version control, purpose-built for music.',
+      'WAVEFLOW fills the gaps left by traditional DAWs. The days of sending project files back and forth are over—it’s time for real version control, purpose-built for music.',
     avatarUrl: './person/1750813233213.jpg',
   },
   {
     answer:
-      'WavefloW enables seamless collaboration between artists, producers, and engineers—even when working simultaneously. Every change is tracked, and reverting to any point is just a click away.',
+      'WAVEFLOW enables seamless collaboration between artists, producers, and engineers—even when working simultaneously. Every change is tracked, and reverting to any point is just a click away.',
     avatarUrl: './person/1750813233213.jpg',
   },
   {
     answer:
-      'No need to exchange files anymore. With WavefloW, all stems and tracks are shared in real time. Each version includes comments and edits from collaborators, so everyone stays on the same page.',
+      'No need to exchange files anymore. With WAVEFLOW, all stems and tracks are shared in real time. Each version includes comments and edits from collaborators, so everyone stays on the same page.',
     avatarUrl: './person/1750813233213.jpg',
   },
   {
     answer:
-      'Yes—WavefloW supports real-time feedback. You can leave timestamped comments on specific sections of a track and collaborate with your team instantly. Your discussions stay organized and actionable.',
+      'Yes—WAVEFLOW supports real-time feedback. You can leave timestamped comments on specific sections of a track and collaborate with your team instantly. Your discussions stay organized and actionable.',
     avatarUrl: './person/1750813233213.jpg',
   },
 ];
@@ -186,7 +186,7 @@ const LandingPage2: React.FC = () => {
       <header className='sticky top-0 z-50 flex w-full items-center justify-between border-b border-slate-800/50 bg-slate-950/80 px-6 py-4 backdrop-blur-xl'>
         <div className='flex items-center space-x-3'>
           <div className='bg-gradient-to-r from-white to-slate-300 bg-clip-text text-2xl font-bold text-transparent'>
-            WavefloW
+          WAVEFLOW
           </div>
         </div>
         <div className='flex w-full justify-end gap-3 px-6 pt-4'>
@@ -289,7 +289,7 @@ const LandingPage2: React.FC = () => {
                 A New Era in Music Production
               </h2>
               <p className='mx-auto max-w-3xl text-xl text-slate-400'>
-                WavefloW is a platform that tracks every change throughout your music production process and enables seamless collaboration with your team.
+              WAVEFLOW is a platform that tracks every change throughout your music production process and enables seamless collaboration with your team.
               </p>
             </div>
 
@@ -336,7 +336,7 @@ const LandingPage2: React.FC = () => {
                       src={qItems[0].avatarUrl}
                       className='h-12 w-12 rounded-2xl border-2 border-slate-700 shadow-lg transition-colors group-hover:border-violet-500'
                     />
-                    <div className='flex-1 rounded-3xl border border-slate-700/50 bg-gradient-to-r from-slate-800/80 to-slate-900/80 p-6 backdrop-blur-sm transition-all group-hover:border-violet-500/50'>
+                    <div className='flex-1 rounded-3xl border-2 border-slate-700/50 bg-gradient-to-r from-slate-800/80 to-slate-900/80 p-6 backdrop-blur-sm transition-all group-hover:border-violet-500/50'>
                       <p className='text-lg font-medium text-slate-100'>
                         {qItems[0].question}
                       </p>
@@ -352,7 +352,7 @@ const LandingPage2: React.FC = () => {
                   className='group flex-1'
                 >
                   <div className='flex items-start justify-end gap-4'>
-                    <div className='flex-1 rounded-3xl border border-violet-500/50 bg-gradient-to-r from-violet-900/50 to-purple-900/50 p-6 backdrop-blur-sm transition-all group-hover:border-violet-400'>
+                    <div className='flex-1 rounded-3xl border-2 border-violet-500/50 bg-gradient-to-r from-violet-900/50 to-purple-900/50 p-6 backdrop-blur-sm transition-all group-hover:border-violet-400'>
                       <p className='whitespace-pre-line text-base leading-relaxed text-violet-100'>
                         {aItems[0].answer}
                       </p>
@@ -375,7 +375,7 @@ const LandingPage2: React.FC = () => {
                       src={qItems[1].avatarUrl}
                       className='h-12 w-12 rounded-2xl border-2 border-slate-700 shadow-lg transition-colors group-hover:border-violet-500'
                     />
-                    <div className='flex-1 rounded-3xl border border-slate-700/50 bg-gradient-to-r from-slate-800/80 to-slate-900/80 p-6 backdrop-blur-sm transition-all group-hover:border-violet-500/50'>
+                    <div className='flex-1 rounded-3xl border-2 border-slate-700/50 bg-gradient-to-r from-slate-800/80 to-slate-900/80 p-6 backdrop-blur-sm transition-all group-hover:border-violet-500/50'>
                       <p className='text-lg font-medium text-slate-100'>
                         {qItems[1].question}
                       </p>
@@ -391,7 +391,7 @@ const LandingPage2: React.FC = () => {
                   className='group flex-1'
                 >
                   <div className='flex items-start justify-end gap-4'>
-                    <div className='flex-1 rounded-3xl border border-violet-500/50 bg-gradient-to-r from-violet-900/50 to-purple-900/50 p-6 backdrop-blur-sm transition-all group-hover:border-violet-400'>
+                    <div className='flex-1 rounded-3xl border-2 border-violet-500/50 bg-gradient-to-r from-violet-900/50 to-purple-900/50 p-6 backdrop-blur-sm transition-all group-hover:border-violet-400'>
                       <p className='whitespace-pre-line text-base leading-relaxed text-violet-100'>
                         {aItems[1].answer}
                       </p>
@@ -416,7 +416,7 @@ const LandingPage2: React.FC = () => {
               initial={{ opacity: 0, scale: 0.9 }}
               whileInView={{ opacity: 1, scale: 1 }}
               transition={{ duration: 0.8 }}
-              className='relative rounded-3xl border border-violet-500/30 bg-gradient-to-r p-12 backdrop-blur-sm'
+              className='relative rounded-3xl border-2 border-violet-500/30 bg-gradient-to-r p-12 backdrop-blur-sm'
             >
               <div className='absolute inset-0 rounded-3xl bg-gradient-to-r' />
               <h2 className='relative z-10 mb-4 text-3xl font-bold text-white md:text-4xl'>
@@ -455,7 +455,7 @@ const LandingPage2: React.FC = () => {
                           src={qItem.avatarUrl}
                           className='h-12 w-12 rounded-2xl border-2 border-slate-700 shadow-lg transition-colors group-hover:border-emerald-500'
                         />
-                        <div className='flex-1 rounded-3xl border border-slate-700/50 bg-gradient-to-r from-slate-800/80 to-slate-900/80 p-6 backdrop-blur-sm transition-all group-hover:border-emerald-500/50'>
+                        <div className='flex-1 rounded-3xl border-2 border-slate-700/50 bg-gradient-to-r from-slate-800/80 to-slate-900/80 p-6 backdrop-blur-sm transition-all group-hover:border-emerald-500/50'>
                           <p className='text-lg font-medium text-slate-100'>
                             {qItem.question}
                           </p>
@@ -471,7 +471,7 @@ const LandingPage2: React.FC = () => {
                       className='group flex-1'
                     >
                       <div className='flex items-start justify-end gap-4'>
-                        <div className='flex-1 rounded-3xl border border-emerald-500/50 bg-gradient-to-r from-emerald-900/50 to-cyan-900/50 p-6 backdrop-blur-sm transition-all group-hover:border-emerald-400'>
+                        <div className='flex-1 rounded-3xl border-2 border-emerald-500/50 bg-gradient-to-r from-emerald-900/50 to-cyan-900/50 p-6 backdrop-blur-sm transition-all group-hover:border-emerald-400'>
                           <p className='whitespace-pre-line text-base leading-relaxed text-emerald-100'>
                             {aItems[index + 3].answer}
                           </p>
@@ -498,7 +498,7 @@ const LandingPage2: React.FC = () => {
               initial={{ opacity: 0, scale: 0.9 }}
               whileInView={{ opacity: 1, scale: 1 }}
               transition={{ duration: 0.8 }}
-              className='relative rounded-3xl border border-emerald-500/30 bg-gradient-to-r from-emerald-900/30 to-cyan-900/30 p-12 backdrop-blur-sm'
+              className='relative rounded-3xl border-2 border-emerald-500/30 bg-gradient-to-r from-emerald-900/30 to-cyan-900/30 p-12 backdrop-blur-sm'
             >
               <div className='absolute inset-0 rounded-3xl bg-gradient-to-r from-emerald-500/5 to-cyan-500/5' />
               <h2 className='relative z-10 mb-4 text-3xl font-bold text-white md:text-4xl'>
@@ -522,7 +522,7 @@ const LandingPage2: React.FC = () => {
               initial={{ opacity: 0, y: 30 }}
               whileInView={{ opacity: 1, y: 0 }}
               transition={{ duration: 0.8 }}
-              className='relative rounded-3xl border border-violet-500/20 bg-gradient-to-r from-violet-900/20 to-purple-900/20 p-16 backdrop-blur-sm'
+              className='relative rounded-3xl border-2 border-violet-500/20 bg-gradient-to-r from-violet-900/20 to-purple-900/20 p-16 backdrop-blur-sm'
             >
               <div className='absolute inset-0 rounded-3xl bg-gradient-to-r from-violet-500/5 to-purple-500/5' />
               <div className='relative z-10'>
@@ -530,7 +530,7 @@ const LandingPage2: React.FC = () => {
                   Ready to Start Creating?
                 </h2>
                 <p className='mx-auto mb-10 max-w-2xl text-xl text-slate-300'>
-                  Thousands of musicians and producers are already collaborating with WavefloW.
+                Experience a new work experience with WAVEFLOW.
                   Start your journey today.
                 </p>
 
@@ -562,64 +562,15 @@ const LandingPage2: React.FC = () => {
                   <Play className='h-4 w-4 text-white' />
                 </div>
                 <div className='bg-gradient-to-r from-white to-slate-300 bg-clip-text text-2xl font-bold text-transparent'>
-                  WavefloW
+                WAVEFLOW
                 </div>
               </div>
               <p className='mb-6 max-w-md text-slate-400'>
                 A new paradigm in music production.
                 Create better music with version control and real-time collaboration.
               </p>
-
-              <div className='flex space-x-4'>
-                <motion.button
-                  whileHover={{ scale: 1.1 }}
-                  whileTap={{ scale: 0.9 }}
-                  className='flex h-10 w-10 items-center justify-center rounded-full bg-slate-800 transition-colors hover:bg-slate-700'
-                >
-                  <div className='h-5 w-5 rounded-full bg-gradient-to-r from-violet-400 to-purple-600' />
-                </motion.button>
-                <motion.button
-                  whileHover={{ scale: 1.1 }}
-                  whileTap={{ scale: 0.9 }}
-                  className='flex h-10 w-10 items-center justify-center rounded-full bg-slate-800 transition-colors hover:bg-slate-700'
-                >
-                  <div className='h-5 w-5 rounded-full bg-gradient-to-r from-violet-400 to-purple-600' />
-                </motion.button>
-                <motion.button
-                  whileHover={{ scale: 1.1 }}
-                  whileTap={{ scale: 0.9 }}
-                  className='flex h-10 w-10 items-center justify-center rounded-full bg-slate-800 transition-colors hover:bg-slate-700'
-                >
-                  <div className='h-5 w-5 rounded-full bg-gradient-to-r from-violet-400 to-purple-600' />
-                </motion.button>
-              </div>
             </div>
 
-            <div>
-              <h4 className='mb-4 font-semibold text-white'>Product</h4>
-              <ul className='space-y-2 text-slate-400'>
-                <li>
-                  <a href='#' className='transition-colors hover:text-white'>
-                    Features
-                  </a>
-                </li>
-                <li>
-                  <a href='#' className='transition-colors hover:text-white'>
-                    Pricing
-                  </a>
-                </li>
-                <li>
-                  <a href='#' className='transition-colors hover:text-white'>
-                    API
-                  </a>
-                </li>
-                <li>
-                  <a href='#' className='transition-colors hover:text-white'>
-                    Integrations
-                  </a>
-                </li>
-              </ul>
-            </div>
 
             <div>
               <h4 className='mb-4 font-semibold text-white'>Company</h4>
@@ -635,8 +586,8 @@ const LandingPage2: React.FC = () => {
                   </a>
                 </li>
                 <li>
-                  <a href='#' className='transition-colors hover:text-white'>
-                    Careers
+                  <a href='https://github.com/Team-Honey-Badgers/RealWaveFlow' className='transition-colors hover:text-white'>
+                    Git
                   </a>
                 </li>
                 <li>
@@ -650,7 +601,7 @@ const LandingPage2: React.FC = () => {
 
           <div className='flex flex-col items-center justify-between border-t border-slate-800/50 pt-8 md:flex-row'>
             <p className='text-sm text-slate-500'>
-              © {new Date().getFullYear()} WavefloW. All rights reserved.
+              © {new Date().getFullYear()} WAVEFLOW. All rights reserved.
             </p>
             <div className='mt-4 flex space-x-6 md:mt-0'>
               <a
