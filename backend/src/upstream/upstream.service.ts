@@ -438,5 +438,31 @@ export class UpstreamService {
             this.logger.error(`Failed to send upstream created notification: ${error.message}`);
         }
     }
+
+    async getUpstreamTrackInfo(upstream_id: string) {
+        const upstream = await this.upstreamRepository.findOne({
+            where: { id: upstream_id },
+            relations: ['stage', 'stage.track'],
+        });
+        
+        if (!upstream) {
+            throw new NotFoundException('Upstream not found');
+        }
+        
+        if (!upstream.stage?.track) {
+            throw new NotFoundException('Track not found for this upstream');
+        }
+        
+        return {
+            success: true,
+            message: 'Track info fetched successfully',
+            data: {
+                upstreamId: upstream.id,
+                stageId: upstream.stage.id,
+                trackId: upstream.stage.track.id,
+                trackTitle: upstream.stage.track.title
+            },
+        };
+    }
     
 }

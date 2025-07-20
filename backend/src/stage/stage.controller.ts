@@ -2,9 +2,11 @@ import { Body, Controller, Delete, Get, Param, Post } from '@nestjs/common';
 import { ApiTags, ApiOperation, ApiResponse, ApiParam, ApiBody } from '@nestjs/swagger';
 import { StageService } from './stage.service';
 import { CreateStageDto } from './dto/createStage.dto';
+import { SkipTrackAccess } from '../auth/decorators/skip-track-access.decorator';
 
 @ApiTags('stage')
 @Controller('stage')
+@SkipTrackAccess()
 export class StageController {
   constructor(private readonly stageService: StageService) {}
 
@@ -46,6 +48,15 @@ export class StageController {
     return this.stageService.getStageByTrackIdAndVersion(track_id, version);
   }
 
+
+  @Get(':stage_id/track-info')
+  @ApiOperation({ summary: '스테이지의 트랙 정보 조회', description: '스테이지 ID로 해당 트랙 정보를 조회합니다.' })
+  @ApiParam({ name: 'stage_id', description: '스테이지 ID' })
+  @ApiResponse({ status: 200, description: '트랙 정보 조회 성공' })
+  @ApiResponse({ status: 404, description: '스테이지를 찾을 수 없음' })
+  async getStageTrackInfo(@Param('stage_id') stage_id: string) {
+    return this.stageService.getStageTrackInfo(stage_id);
+  }
 
   @Delete('/back-to-previous-stage/:track_id/:version')
   @ApiOperation({ summary: '이전 스테이지로 롤백', description: '특정 트랙의 이전 스테이지로 롤백합니다.' })

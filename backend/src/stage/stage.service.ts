@@ -117,6 +117,31 @@ export class StageService {
         };
     }
 
+    async getStageTrackInfo(stage_id: string) {
+        const stage = await this.stageRepository.findOne({
+            where: { id: stage_id },
+            relations: ['track'],
+        });
+        
+        if (!stage) {
+            throw new NotFoundException('Stage not found');
+        }
+        
+        if (!stage.track) {
+            throw new NotFoundException('Track not found for this stage');
+        }
+        
+        return {
+            success: true,
+            message: 'Track info fetched successfully',
+            data: {
+                stageId: stage.id,
+                trackId: stage.track.id,
+                trackTitle: stage.track.title
+            },
+        };
+    }
+
     async updateGuidePath(stageId: string, guidePath: string): Promise<Stage> {
         const stage = await this.stageRepository.findOne({
             where: { id: stageId }

@@ -3,9 +3,11 @@ import { ApiTags, ApiOperation, ApiResponse, ApiBody } from '@nestjs/swagger';
 import { UpstreamService } from './upstream.service';
 import { CreateUpstreamDto } from './dto/createUpstream.dto';
 import { StemSetCreateDto } from './dto/stemSetCreate.dto';
+import { SkipTrackAccess } from '../auth/decorators/skip-track-access.decorator';
 
 @ApiTags('upstream')
 @Controller('upstream')
+@SkipTrackAccess()
 export class UpstreamController {
   constructor(private readonly upstreamService: UpstreamService) {}
 
@@ -40,5 +42,13 @@ export class UpstreamController {
   @ApiResponse({ status: 404, description: '업스트림 없음' })
   async getUpstreamByUpstreamId(@Param('upstream_id') upstream_id: string) {
     return this.upstreamService.getUpstreamByUpstreamId(upstream_id);
+  }
+
+  @Get(':upstream_id/track-info')
+  @ApiOperation({ summary: '업스트림의 트랙 정보 조회', description: '업스트림 ID로 해당 트랙 정보를 조회합니다.' })
+  @ApiResponse({ status: 200, description: '트랙 정보 조회 성공' })
+  @ApiResponse({ status: 404, description: '업스트림을 찾을 수 없음' })
+  async getUpstreamTrackInfo(@Param('upstream_id') upstream_id: string) {
+    return this.upstreamService.getUpstreamTrackInfo(upstream_id);
   }
 }
