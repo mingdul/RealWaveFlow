@@ -19,6 +19,7 @@ import { createStageReviewer } from '../services/stageReviewerService';
 import { StemStreamingInfo } from '../services/streamingService';
 import trackService from '../services/trackService';
 import versionStemService from '../services/versionstemService';
+import streamingService from '../services/streamingService';
 
 interface TrackPagejjmProps {}
 
@@ -476,6 +477,77 @@ const TrackPage: React.FC<TrackPagejjmProps> = () => {
   const [selectedVersionTimeline, setSelectedVersionTimeline] = useState<number | null>(null); // VersionTimeline용 (독립적)
   const [error, setError] = useState<string | null>(null);
 
+  // 전역 오디오 관리 상태
+  const [currentAudio, setCurrentAudio] = useState<HTMLAudioElement | null>(null);
+  const [currentPlayingId, setCurrentPlayingId] = useState<string | null>(null);
+  const [currentPlayingType, setCurrentPlayingType] = useState<'track' | 'stage' | null>(null);
+
+  // 전역 오디오 관리 함수들
+  const stopCurrentAudio = () => {
+    if (currentAudio) {
+      currentAudio.pause();
+      currentAudio.currentTime = 0;
+      console.log('[DEBUG][TrackPage] Stopped current audio:', currentPlayingId);
+    }
+    setCurrentAudio(null);
+    setCurrentPlayingId(null);
+    setCurrentPlayingType(null);
+  };
+
+  const playAudio = async (audioUrl: string, audioId: string, audioType: 'track' | 'stage') => {
+    console.log('[DEBUG][TrackPage] playAudio called:', { audioId, audioType, currentPlayingId });
+    
+    // 동일한 오디오를 다시 클릭한 경우 토글 (중지)
+    if (currentPlayingId === audioId && currentPlayingType === audioType) {
+      console.log('[DEBUG][TrackPage] Same audio clicked, stopping...');
+      stopCurrentAudio();
+      return false; // 재생 중지됨을 알림
+    }
+
+    // 이전 오디오 중지
+    stopCurrentAudio();
+
+    try {
+      // 새 오디오 생성 및 재생
+      const audio = new Audio(audioUrl);
+      
+      audio.onplay = () => {
+        console.log('[DEBUG][TrackPage] Audio started playing:', audioId);
+      };
+      
+      audio.onended = () => {
+        console.log('[DEBUG][TrackPage] Audio playback ended:', audioId);
+        setCurrentAudio(null);
+        setCurrentPlayingId(null);
+        setCurrentPlayingType(null);
+      };
+      
+      audio.onerror = (error) => {
+        console.error('[ERROR][TrackPage] Audio playback error:', error);
+        setCurrentAudio(null);
+        setCurrentPlayingId(null);
+        setCurrentPlayingType(null);
+      };
+
+      // 상태 업데이트
+      setCurrentAudio(audio);
+      setCurrentPlayingId(audioId);
+      setCurrentPlayingType(audioType);
+
+      // 재생 시작
+      await audio.play();
+      console.log('[DEBUG][TrackPage] Successfully started new audio:', audioId);
+      return true; // 재생 시작됨을 알림
+      
+    } catch (error) {
+      console.error('[ERROR][TrackPage] Failed to play audio:', error);
+      setCurrentAudio(null);
+      setCurrentPlayingId(null);
+      setCurrentPlayingType(null);
+      return false;
+    }
+  };
+
   // 트랙 데이터와 스테이지 목록 로드
   useEffect(() => {
     const loadTrackData = async () => {
@@ -723,9 +795,51 @@ const TrackPage: React.FC<TrackPagejjmProps> = () => {
     navigate(`/stage/${stageId}`);
   };
 
-  const handlePlay = () => {
+  const handlePlay = async () => {
     console.log('[DEBUG][TrackPage] Playing track:', track?.id);
-    // TODO: 트랙 재생 로직 구현
+    
+    if (!trackId) {
+      console.error('[ERROR][TrackPage] No trackId available for playback');
+      return;
+    }
+
+    try {
+      // lastApprovedStageId 가져오기
+      const lastApprovedStage = getLastApprovedStage();
+      let stageId = lastApprovedStage?.id;
+      
+      // lastApprovedStageId가 없으면 최신 스테이지 사용
+      if (!stageId) {
+        console.log('[DEBUG][TrackPage] No approved stage found, fetching latest stage...');
+        const { getLatestStage } = await import('../services/stageService');
+        const latestStage = await getLatestStage(trackId);
+        if (latestStage) {
+          stageId = latestStage.id;
+          console.log('[DEBUG][TrackPage] Using latest stage:', stageId);
+        } else {
+          console.warn('[WARN][TrackPage] No stages found for this track');
+          return;
+        }
+      }
+
+      if (!stageId) {
+        console.warn('[WARN][TrackPage] No stage ID available for playback');
+        return;
+      }
+
+      // presigned URL 요청
+      const response = await streamingService.getGuidePresignedUrlByStageId(stageId);
+      console.log('[DEBUG][TrackPage] Track guide API response:', response);
+
+      if (response.success && response.data) {
+        // 전역 오디오 관리 시스템 사용
+        await playAudio(response.data.presignedUrl, `track-${trackId}`, 'track');
+      } else {
+        console.error('[ERROR][TrackPage] Failed to fetch track guide:', response.message);
+      }
+    } catch (error) {
+      console.error('[ERROR][TrackPage] Error playing track guide:', error);
+    }
   };
 
   const handleShowAllStems = async () => {
@@ -742,9 +856,24 @@ const TrackPage: React.FC<TrackPagejjmProps> = () => {
   };
 
   // Stage 전용 함수들
-  const handleStagePlay = (stageId: string) => {
+  const handleStagePlay = async (stageId: string) => {
     console.log('[DEBUG][TrackPage] Playing stage audio:', stageId);
-    // TODO: 스테이지별 가이드 재생 로직 구현
+    
+    try {
+      // 스테이지 가이드 재생을 위한 presigned URL 요청
+      const response = await streamingService.getGuidePresignedUrlByStageId(stageId);
+      
+      console.log('[DEBUG][TrackPage] Stage guide API response:', response);
+      
+      if (response.success && response.data) {
+        // 전역 오디오 관리 시스템 사용
+        await playAudio(response.data.presignedUrl, `stage-${stageId}`, 'stage');
+      } else {
+        console.error('[ERROR][TrackPage] Failed to fetch stage guide:', response.message);
+      }
+    } catch (error) {
+      console.error('[ERROR][TrackPage] Error playing stage guide:', error);
+    }
   };
 
   const handleStageShowAllStems = async (stageId: string) => {

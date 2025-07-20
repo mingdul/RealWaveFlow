@@ -27,6 +27,7 @@ interface StageHisProps {
   selectedVersion?: number; // 외부에서 선택된 버전을 받기 위한 prop
   onPlay?: (stageId: string) => void;
   onShowAllStems?: (stageId: string) => void;
+  currentPlayingId?: string | null; // 현재 재생 중인 스테이지 ID
 }
 
 const StageHis: React.FC<StageHisProps> = ({ 
@@ -37,11 +38,11 @@ const StageHis: React.FC<StageHisProps> = ({
   isActiveStage = false,
   selectedVersion,
   onPlay,
-  onShowAllStems
+  onShowAllStems,
+  currentPlayingId
 }) => {
   const navigate = useNavigate();
   const [selectedStage, setSelectedStage] = useState<Stage | null>(null);
-  const [playingStage, setPlayingStage] = useState<string | null>(null);
   const [canScrollLeft, setCanScrollLeft] = useState(false);
   const [canScrollRight, setCanScrollRight] = useState(false);
   const [userHasManuallySelected, setUserHasManuallySelected] = useState(false); // 사용자 수동 선택 추적
@@ -209,8 +210,8 @@ const StageHis: React.FC<StageHisProps> = ({
     console.log('[DEBUG][StageHis] Play button clicked for stage:', stageId);
     console.log('[DEBUG][StageHis] onPlay prop available:', !!onPlay);
     console.log('[DEBUG][StageHis] selectedStage:', selectedStage);
+    console.log('[DEBUG][StageHis] currentPlayingId:', currentPlayingId);
     
-    setPlayingStage(playingStage === stageId ? null : stageId);
     if (onPlay) {
       console.log('[DEBUG][StageHis] Calling onPlay with stageId:', stageId);
       onPlay(stageId);
@@ -433,13 +434,13 @@ const StageHis: React.FC<StageHisProps> = ({
                                   : 'bg-gray-500/10 text-gray-500 cursor-not-allowed'
                               }`}
                             >
-                              {playingStage === stage.id ? (
+                              {currentPlayingId === stage.id ? (
                                 <Pause className="w-4 h-4" />
                               ) : (
                                 <Play className="w-4 h-4" />
                               )}
                               <span className="text-sm font-medium">
-                                {playingStage === stage.id ? 'Pause' : 'Play'}
+                                {currentPlayingId === stage.id ? 'Pause' : 'Play'}
                               </span>
                             </Button>
                             
