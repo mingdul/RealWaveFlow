@@ -129,4 +129,46 @@ export class TrackCollaboratorController {
     async getTrackUsers(@Param('trackId') trackId: string) {
         return this.trackCollaboratorService.findTrackUsersById(trackId);
     }
+
+    @Put('track/:trackId/user/:userId/role')
+    @ApiOperation({ 
+        summary: '트랙 참여자 역할 설정', 
+        description: '트랙에서 특정 사용자의 역할을 설정합니다. 트랙 소유자만 가능합니다.' 
+    })
+    @ApiParam({ name: 'trackId', description: '트랙 ID' })
+    @ApiParam({ name: 'userId', description: '사용자 ID' })
+    @ApiBody({ 
+        schema: {
+            type: 'object',
+            properties: {
+                role: {
+                    type: 'string',
+                    maxLength: 15,
+                    example: 'Producer'
+                }
+            },
+            required: ['role']
+        }
+    })
+    @ApiResponse({ status: 200, description: '역할 설정 성공' })
+    @ApiResponse({ status: 403, description: '권한 없음 (소유자가 아님)' })
+    @ApiResponse({ status: 404, description: '사용자를 찾을 수 없음' })
+    async updateUserRole(
+        @Param('trackId') trackId: string,
+        @Param('userId') userId: string,
+        @Body() body: { role: string },
+        @Request() req
+    ) {
+        return this.trackCollaboratorService.updateUserRole(trackId, userId, body.role, req.user.id);
+    }
+
+    @Post('migrate-owners')
+    @ApiOperation({ 
+        summary: '데이터 마이그레이션', 
+        description: '기존 트랙 소유자들을 TrackCollaborator 테이블에 추가합니다.' 
+    })
+    @ApiResponse({ status: 200, description: '마이그레이션 완료' })
+    async migrateOwners() {
+        return this.trackCollaboratorService.migrateOwnersToCollaborators();
+    }
 }

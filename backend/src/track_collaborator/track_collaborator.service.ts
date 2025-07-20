@@ -45,6 +45,82 @@ export class TrackCollaboratorService {
         return { message: 'Collaborator added successfully', collaborator };
     }
 
+    // 기존 데이터 마이그레이션: 모든 트랙 owner를 TrackCollaborator에 추가
+    async migrateOwnersToCollaborators() {
+        const tracks = await this.trackRepository.find({
+            relations: ['owner_id'],
+        });
+
+        const migratedCount = 0;
+        
+        for (const track of tracks) {
+            // 이미 owner가 collaborator로 등록되어 있는지 확인
+            const existingOwnerCollaborator = await this.trackCollaboratorRepository.findOne({
+                where: { 
+                    track_id: { id: track.id }, 
+                    user_id: { id: track.owner_id.id },
+                    is_owner: true
+                },
+            });
+
+            if (!existingOwnerCollaborator) {
+                const ownerCollaborator = this.trackCollaboratorRepository.create({
+                    track_id: { id: track.id },
+                    user_id: { id: track.owner_id.id },
+                    status: 'accepted',
+                    is_owner: true,
+                });
+
+                await this.trackCollaboratorRepository.save(ownerCollaborator);
+            }
+        }
+
+        return { message: `Migration completed. ${tracks.length} tracks processed.` };
+    }
+
+    // 역할 설정 (owner만 가능)
+    async updateUserRole(trackId: string, userId: string, role: string, requestUserId: string) {
+        // 요청자가 트랙 owner인지 확인
+        const requestUserCollaborator = await this.trackCollaboratorRepository.findOne({
+            where: { 
+                track_id: { id: trackId }, 
+                user_id: { id: requestUserId },
+                is_owner: true
+            },
+        });
+
+        if (!requestUserCollaborator) {
+            throw new ConflictException('Only track owner can update roles');
+        }
+
+        // 대상 유저 찾기
+        const targetCollaborator = await this.trackCollaboratorRepository.findOne({
+            where: { 
+                track_id: { id: trackId }, 
+                user_id: { id: userId }
+            },
+            relations: ['user_id'],
+        });
+
+        if (!targetCollaborator) {
+            throw new NotFoundException('User is not a collaborator of this track');
+        }
+
+        // 역할 업데이트
+        targetCollaborator.role = role;
+        await this.trackCollaboratorRepository.save(targetCollaborator);
+
+        return { 
+            success: true, 
+            message: 'Role updated successfully', 
+            data: {
+                userId: targetCollaborator.user_id.id,
+                username: targetCollaborator.user_id.username,
+                role: targetCollaborator.role
+            }
+        };
+    }
+
 
     async findCollaboratorsByTrack(trackId: string) {
         const collaborators = await this.trackCollaboratorRepository.find({
@@ -147,18 +223,8 @@ export class TrackCollaboratorService {
     }
 
     async findTrackUsersById(trackId: string) {
-        // 트랙 정보와 owner 조회
-        const track = await this.trackRepository.findOne({
-            where: { id: trackId },
-            relations: ['owner_id'],
-        });
-
-        if (!track) {
-            throw new NotFoundException('트랙을 찾을 수 없습니다.');
-        }
-
-        // collaborators 조회 (accepted 상태만)
-        const collaborators = await this.trackCollaboratorRepository.find({
+        // 모든 트랙 참여자 조회 (owner + collaborators, accepted 상태만)
+        const allCollaborators = await this.trackCollaboratorRepository.find({
             where: { 
                 track_id: { id: trackId },
                 status: 'accepted'
@@ -166,18 +232,37 @@ export class TrackCollaboratorService {
             relations: ['user_id'],
         });
 
-        // Owner 이미지 presigned URL 생성
-        const ownerImageUrl = await this.generatePresignedUrl(track.owner_id.image_url);
+        if (allCollaborators.length === 0) {
+            throw new NotFoundException('트랙을 찾을 수 없습니다.');
+        }
 
-        // Collaborators 이미지 presigned URLs 생성
+        // Owner와 일반 collaborators 분리
+        const ownerCollab = allCollaborators.find(collab => collab.is_owner);
+        const regularCollaborators = allCollaborators.filter(collab => !collab.is_owner);
+
+        // Owner 데이터 생성
+        let ownerData = null;
+        if (ownerCollab) {
+            const ownerImageUrl = await this.generatePresignedUrl(ownerCollab.user_id.image_url);
+            ownerData = {
+                id: ownerCollab.user_id.id,
+                email: ownerCollab.user_id.email,
+                username: ownerCollab.user_id.username,
+                image_url: ownerImageUrl,
+                role: ownerCollab.role,
+            };
+        }
+
+        // Collaborators 데이터 생성
         const collaboratorsWithPresignedUrls = await Promise.all(
-            collaborators.map(async (collab) => {
+            regularCollaborators.map(async (collab) => {
                 const collaboratorImageUrl = await this.generatePresignedUrl(collab.user_id.image_url);
                 return {
                     id: collab.user_id.id,
                     email: collab.user_id.email,
                     username: collab.user_id.username,
                     image_url: collaboratorImageUrl,
+                    role: collab.role,
                 };
             })
         );
@@ -185,12 +270,7 @@ export class TrackCollaboratorService {
         return {
             success: true,
             data: {
-                owner: {
-                    id: track.owner_id.id,
-                    email: track.owner_id.email,
-                    username: track.owner_id.username,
-                    image_url: ownerImageUrl,
-                },
+                owner: ownerData,
                 collaborators: {
                     collaborator: collaboratorsWithPresignedUrls
                 }

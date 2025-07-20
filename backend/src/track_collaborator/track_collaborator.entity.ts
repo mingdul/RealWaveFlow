@@ -23,4 +23,10 @@ export class TrackCollaborator {
 
   @Column({ default: 'accepted' }) // 상태: pending, accepted 등
   status: string;
+
+  @Column({ type: 'varchar', length: 15, nullable: true })
+  role?: string;
+
+  @Column({ type: 'boolean', default: false })
+  is_owner: boolean;
 }
