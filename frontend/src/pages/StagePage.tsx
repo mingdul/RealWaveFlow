@@ -6,7 +6,8 @@ import UploadModal from '../components/UploadModal';
 import trackService from '../services/trackService';
 import { getStageDetail } from '../services/stageService';
 import { getStageUpstreams } from '../services/upstreamService';
-import { Track, Stage, Upstream } from '../types/api';
+import { getStageReviewers } from '../services/stageReviewerService';
+import { Track, Stage, Upstream, StageReviewer } from '../types/api';
 import tapeActive from '../assets/activeTape.png';
 import tapeApproved from '../assets/approveTape.png';
 import tapeRejected from '../assets/rejectedTape.png';
@@ -25,6 +26,8 @@ const StagePage: React.FC = () => {
   const [loading, setLoading] = useState(true);
   const [isUploadModalOpen, setUploadModalOpen] = useState(false);
   const [track, setTrack] = useState<Track | null>(null);
+  const [reviewers, setReviewers] = useState<StageReviewer[]>([]);
+  const [reviewersLoading, setReviewersLoading] = useState(false);
 
   // 트랙 정보 가져오기
   useEffect(() => {
@@ -83,10 +86,16 @@ const StagePage: React.FC = () => {
         const upstreamsResponse = await getStageUpstreams(stageId);
         setUpstreams(upstreamsResponse || []);
 
+        // 리뷰어 목록 가져오기
+        setReviewersLoading(true);
+        const reviewersResponse = await getStageReviewers(stageId);
+        setReviewers(reviewersResponse || []);
+
       } catch (error) {
         console.error("Error fetching stage data:", error);
       } finally {
         setLoading(false);
+        setReviewersLoading(false);
       }
     };
 
@@ -130,6 +139,46 @@ const StagePage: React.FC = () => {
       console.error('❌ Error navigating to review page:', error);
       showError('리뷰 페이지로 이동 중 오류가 발생했습니다.');
     }
+  };
+
+  // Reviewer 컴포넌트
+  const ReviewerCard: React.FC<{ reviewer: StageReviewer }> = ({ reviewer }) => {
+    return (
+      <div className="relative group">
+        <div className="w-[200px] h-[140px] rounded-lg overflow-hidden relative">
+          {reviewer.user.image_url ? (
+            <img
+              src={reviewer.user.image_url}
+              alt={reviewer.user.username}
+              className="w-full h-full object-cover"
+              style={{
+                objectPosition: 'center',
+                objectFit: 'cover'
+              }}
+            />
+          ) : (
+            <div className="w-full h-full bg-gradient-to-br from-purple-400 to-purple-600 flex items-center justify-center">
+              <span className="text-2xl font-bold text-white">
+                {reviewer.user.username?.charAt(0)?.toUpperCase() || 'U'}
+              </span>
+            </div>
+          )}
+          
+          {/* 검은색 반투명 그라데이션 오버레이 */}
+          <div className="absolute bottom-0 left-0 right-0 h-12 bg-gradient-to-t from-black/80 via-black/40 to-transparent"></div>
+          
+          {/* Role 텍스트 */}
+          <div className="absolute bottom-2 left-2 right-2">
+            <p className="text-white text-sm font-medium truncate">
+              {reviewer.user.username}
+            </p>
+            <p className="text-gray-300 text-xs">
+              {reviewer.role || 'Collaborator'}
+            </p>
+          </div>
+        </div>
+      </div>
+    );
   };
 
   interface StemSetCardProps {
@@ -351,12 +400,13 @@ const StagePage: React.FC = () => {
               </h1>
               <div className="space-y-4">
                 <p className="text-2xl text-gray-300 font-semibold">
-                  Currently creating version (
-                  <span style={{ color: '#8528d8', fontWeight: 'bold' }}>V{stage.version}</span>
-                  )
+                  Currently creating version 
+                  <span style={{ color: '#8528d8', fontWeight: 'bold' }}>{stage.version}</span>
                 </p>
                 <p className="text-lg text-gray-400">
+                  creating started at
                   {stage.created_at ? new Date(stage.created_at).toLocaleString('ko-KR', {
+                    year: 'numeric',
                     month: '2-digit',
                     day: '2-digit',
                     hour: '2-digit',
@@ -370,6 +420,30 @@ const StagePage: React.FC = () => {
                   </p>
                 )}
               </div>
+            </div>
+            
+            {/* Reviewers Section */}
+            <div className="flex-shrink-0 w-80">
+              <h2 className="text-3xl font-bold text-white mb-6">Reviewers</h2>
+              {reviewersLoading ? (
+                <div className="flex items-center justify-center py-8">
+                  <div className="w-8 h-8 border-4 border-purple-500/30 border-t-purple-500 rounded-full animate-spin"></div>
+                  <span className="ml-3 text-white text-sm">Loading reviewers...</span>
+                </div>
+              ) : reviewers.length > 0 ? (
+                <div className="space-y-4">
+                  {reviewers.map((reviewer) => (
+                    <ReviewerCard key={reviewer.id} reviewer={reviewer} />
+                  ))}
+                </div>
+              ) : (
+                <div className="text-center py-8">
+                  <div className="w-16 h-16 bg-gradient-to-br from-gray-700 to-gray-800 rounded-full flex items-center justify-center mb-4">
+                    <Music className="w-8 h-8 text-gray-400" />
+                  </div>
+                  <p className="text-gray-400 text-sm">No reviewers assigned</p>
+                </div>
+              )}
             </div>
           </div>
           {/* 디버깅 정보 */}

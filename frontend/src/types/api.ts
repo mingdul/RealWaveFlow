@@ -489,8 +489,19 @@ export interface CreateStageReviewerDto {
 
 export interface StageReviewer {
   id: string;
-  stage: Stage;
-  user: User;
+  stage: {
+    id: string;
+    track: {
+      id: string;
+    };
+  };
+  user: {
+    id: string;
+    username: string;
+    email: string;
+    image_url?: string;
+  };
+  role?: string;
   upstream_reviews?: any[];
 }
 
