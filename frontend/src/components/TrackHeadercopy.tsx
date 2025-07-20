@@ -18,7 +18,7 @@ interface TrackHeaderCopyProps {
 
 const TrackHeaderCopy: React.FC<TrackHeaderCopyProps> = ({
   onBack,
-  onSettingsClick,
+  // onSettingsClick,
 }) => {
   const { notifications, unreadCount } = useNotifications();
   const { logout } = useAuth();
