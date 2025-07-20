@@ -6,10 +6,18 @@ import { Repository } from 'typeorm';
 import { CreateUpstreamCommentDto } from './dto/createUpstreamComment.dto';
 import { UpdateUpstreamCommentDto } from './dto/updateUpstreamComment.dto';
 import { NotificationGateway } from '../notification/notification.gateway';
+import { S3Client, GetObjectCommand } from '@aws-sdk/client-s3';
+import { getSignedUrl } from '@aws-sdk/s3-request-presigner';
 
 @Injectable()
 export class UpstreamCommentService {
     private readonly logger = new Logger(UpstreamCommentService.name);
+
+    private readonly s3 = new S3Client({
+        region: process.env.AWS_REGION,
+    });
+
+    private readonly bucketName = process.env.AWS_S3_BUCKET_NAME || 'waveflow-bucket';
 
     constructor(
         @InjectRepository(UpstreamComment)
@@ -57,11 +65,62 @@ export class UpstreamCommentService {
                 upstreamComments: [],
             };
         }
+
+        // 각 댓글의 사용자 프로필 이미지 presigned URL 생성
+        const commentsWithPresignedUrls = await Promise.all(
+            upstreamComments.map(async (comment) => {
+                if (comment.user && comment.user.image_url) {
+                    const presignedImageUrl = await this.generatePresignedUrl(comment.user.image_url);
+                    return {
+                        ...comment,
+                        user: {
+                            ...comment.user,
+                            image_url: presignedImageUrl,
+                        },
+                    };
+                }
+                return comment;
+            })
+        );
+
         return {
             success: true,
             message: 'Upstream comments fetched successfully',
-            upstreamComments,
+            upstreamComments: commentsWithPresignedUrls,
         };
+    }
+
+    private async generatePresignedUrl(imageKey: string): Promise<string | null> {
+        if (!imageKey) {
+            return null;
+        }
+
+        try {
+            // S3 URL인지 확인하고 키 추출
+            let key = imageKey;
+            if (imageKey.startsWith('https://')) {
+                const urlParts = imageKey.split('/');
+                const bucketIndex = urlParts.findIndex(part => part.includes('.s3.'));
+                if (bucketIndex !== -1) {
+                    key = urlParts.slice(bucketIndex + 1).join('/');
+                }
+            }
+
+            const command = new GetObjectCommand({
+                Bucket: this.bucketName,
+                Key: key,
+            });
+
+            const presignedUrl = await getSignedUrl(this.s3, command, {
+                expiresIn: 3600 // 1시간
+            });
+
+            console.log('🖼️ [UpstreamCommentService] Generated presigned URL for key:', key);
+            return presignedUrl;
+        } catch (error) {
+            console.error('🖼️ [UpstreamCommentService] Error generating presigned URL for key:', imageKey, error);
+            return null;
+        }
     }
 
 

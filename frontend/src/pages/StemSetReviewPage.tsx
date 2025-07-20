@@ -66,7 +66,7 @@ interface CommentGroup {
   comments: Comment[];
 }
 
-// 아바타 컴포넌트
+// 아바타 컴포넌트 (TrackPage 방식 참고)
 const Avatar: React.FC<{ 
   user: { username: string; avatarUrl?: string }; 
   size?: number;
@@ -74,6 +74,18 @@ const Avatar: React.FC<{
 }> = ({ user, size = 24, className = "" }) => {
   const [imageError, setImageError] = useState(false);
   
+  console.log('🖼️ [Avatar] Rendering for user:', user.username, 'with avatarUrl:', user.avatarUrl);
+  
+  const handleImageError = () => {
+    console.log('❌ [Avatar] Image load failed for user:', user.username, 'URL:', user.avatarUrl);
+    setImageError(true);
+  };
+  
+  const handleImageLoad = () => {
+    console.log('✅ [Avatar] Image loaded successfully for user:', user.username);
+  };
+  
+  // 백엔드에서 presigned URL로 이미 변환된 이미지 URL 사용
   if (user.avatarUrl && !imageError) {
     return (
       <img
@@ -81,12 +93,14 @@ const Avatar: React.FC<{
         alt={user.username}
         className={`rounded-full object-cover ${className}`}
         style={{ width: size, height: size }}
-        onError={() => setImageError(true)}
+        onError={handleImageError}
+        onLoad={handleImageLoad}
       />
     );
   }
   
   // 기본 아바타 (이니셜)
+  console.log('🔤 [Avatar] Using default avatar for user:', user.username);
   return (
     <div 
       className={`rounded-full bg-gradient-to-br from-blue-500 to-purple-500 flex items-center justify-center text-white font-bold ${className}`}
@@ -978,7 +992,10 @@ const StemSetReviewPage = () => {
       const response = await createUpstreamComment(commentData);
       const createdComment = response.upstream_comment || response;
 
-              const newComment: Comment = {
+              console.log('👤 [handleAddComment] Current user data:', user);
+        console.log('🖼️ [handleAddComment] User image_url:', (user as any).image_url);
+
+        const newComment: Comment = {
           id: createdComment.id,
           time: timeString,
           comment: newCommentText.trim(),
@@ -987,9 +1004,11 @@ const StemSetReviewPage = () => {
           user: {
             id: user.id,
             username: user.username,
-            avatarUrl: (user as any).image_url, // 백엔드의 image_url 필드를 avatarUrl로 매핑
+            avatarUrl: (user as any).image_url, // 현재 사용자의 image_url 사용 (presigned URL 변환 필요할 수 있음)
           },
         };
+
+        console.log('✅ [handleAddComment] New comment created with user:', newComment.user);
 
       setComments((prev) => [...prev, newComment]);
       setNewCommentText('');
@@ -1190,27 +1209,37 @@ const StemSetReviewPage = () => {
       console.log('📦 [loadComments] Comments data:', commentsData);
 
       if (commentsData && Array.isArray(commentsData)) {
-        const formattedComments = commentsData.map((comment: any) => {
+                const formattedComments = commentsData.map((comment: any) => {
           console.log('📝 [loadComments] Processing comment:', comment);
+          console.log('👤 [loadComments] Comment user data:', comment.user);
+          
+          if (comment.user) {
+            console.log('🖼️ [loadComments] User image_url from backend (presigned):', comment.user.image_url);
+            console.log('🖼️ [loadComments] Type:', typeof comment.user.image_url);
+            console.log('🖼️ [loadComments] Is presigned URL?:', comment.user.image_url?.includes('amazonaws.com'));
+          }
 
           // time 문자열을 파싱하여 숫자로 변환 (MM:SS 형식)
           const [minutes, seconds] = comment.time.split(':').map(Number);
           const timeNumber = minutes * 60 + seconds;
 
-          return {
+          const formattedComment = {
             id: comment.id,
             time: comment.time,
             comment: comment.comment,
             timeNumber: timeNumber,
             timeString: comment.time,
-                        user: comment.user
+            user: comment.user
               ? {
                 id: comment.user.id,
                 username: comment.user.username,
-                avatarUrl: (comment.user as any).image_url, // 백엔드의 image_url 필드를 avatarUrl로 매핑
+                avatarUrl: comment.user.image_url, // 백엔드에서 이미 presigned URL로 변환됨
               }
               : undefined,
           };
+
+          console.log('✅ [loadComments] Formatted comment user with presigned URL:', formattedComment.user);
+          return formattedComment;
         });
 
         console.log('✅ [loadComments] Formatted comments:', formattedComments);
