@@ -1,7 +1,6 @@
 import { useEffect, useRef, useState, memo, useCallback } from 'react';
 import WaveSurfer from 'wavesurfer.js';
 import TimelinePlugin from 'wavesurfer.js/dist/plugins/timeline';
-import MinimapPlugin from 'wavesurfer.js/dist/plugins/minimap';
 
 export interface WaveProps {
   audioUrl: string;
@@ -37,7 +36,6 @@ const Wave = memo(({
 
   const waveRef = useRef<HTMLDivElement>(null);
   const timelineRef = useRef<HTMLDivElement>(null);
-  const minimapRef = useRef<HTMLDivElement>(null);
   const wavesurferRef = useRef<WaveSurfer | null>(null);
   const [isReady, setIsReady] = useState(false);
   const [isDestroyed, setIsDestroyed] = useState(false);
@@ -67,11 +65,10 @@ const Wave = memo(({
     console.log(`🔧 [${id}] DOM refs status:`, {
       waveRef: !!waveRef.current,
       timelineRef: !!timelineRef.current,
-      minimapRef: !!minimapRef.current,
       initializationRef: initializationRef.current
     });
     
-    if (!waveRef.current || !timelineRef.current || !minimapRef.current || initializationRef.current) {
+    if (!waveRef.current || !timelineRef.current || initializationRef.current) {
       console.log(`🔧 [${id}] Skipping WaveSurfer creation - missing refs or already initialized`);
       return;
     }
@@ -94,12 +91,6 @@ const Wave = memo(({
             fontSize: '12px',
             color: '#9ca3af'
           }
-        }),
-        MinimapPlugin.create({
-          container: minimapRef.current,
-          waveColor: '#555',
-          progressColor: '#36f7d3',
-          height: 60,
         }),
       ],
     });
@@ -335,9 +326,6 @@ const Wave = memo(({
       )}
 
       {/* DOM refs - 항상 렌더링되어야 함 */}
-      <div className="relative border border-gray-700 rounded overflow-hidden">
-        <div id="wave-minimap" ref={minimapRef} className="h-12 sm:h-14 md:h-16" />
-      </div>
       <div className="relative border border-gray-700 rounded overflow-hidden">
         <div id="wave-timeline" ref={timelineRef} className="h-8 sm:h-9 md:h-10" />
         <div id="wave-presentation" ref={waveRef} className="h-48 sm:h-56 md:h-64 lg:h-72" />

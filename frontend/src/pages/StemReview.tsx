@@ -22,6 +22,7 @@ import {
   deleteUpstreamComment,
   updateUpstreamComment,
 } from '../services/upstreamCommentService';
+import userService from '../services/userService';
 import {
   Play,
   Pause,
@@ -51,6 +52,7 @@ interface Comment {
   user?: {
     id: string;
     username: string;
+    image_url?: string | null;
   };
 }
 
@@ -58,6 +60,39 @@ const StemSetReview = () => {
   const { user } = useAuth();
   const { showError, showSuccess, showWarning } = useToast();
   const navigate = useNavigate();
+
+  // CSS 애니메이션 스타일 추가
+  useEffect(() => {
+    const style = document.createElement('style');
+    style.textContent = `
+      @keyframes fadeInUp {
+        from {
+          opacity: 0;
+          transform: translate3d(0, 20px, 0);
+        }
+        to {
+          opacity: 1;
+          transform: translate3d(0, 0, 0);
+        }
+      }
+      
+      @keyframes scaleIn {
+        from {
+          opacity: 0;
+          transform: scale(0.3);
+        }
+        to {
+          opacity: 1;
+          transform: scale(1);
+        }
+      }
+    `;
+    document.head.appendChild(style);
+    
+    return () => {
+      document.head.removeChild(style);
+    };
+  }, []);
 
   // const wavesurferRef = useRef<any>(null);
   const [volume, setVolume] = useState(1);
@@ -69,7 +104,7 @@ const StemSetReview = () => {
   const [activePanel, setActivePanel] = useState<any>('none');
   const [floatingComments, setFloatingComments] = useState<any[]>([]); // 떠다니는 댓글
   const waveformContainerRef = useRef<HTMLDivElement>(null);
-  const [commentPosition, setCommentPosition] = useState({ x: 0, time: 0 });
+  const [commentPosition, setCommentPosition] = useState({ x: 0, y: 280, time: 0 });
   const [newCommentText, setNewCommentText] = useState('');
 
   // 새로운 호버 기반 댓글 시스템
@@ -566,7 +601,28 @@ const StemSetReview = () => {
     event.stopPropagation(); // 파형 클릭 이벤트와 겹치지 않도록
     if (!hoveredPosition) return;
 
-    setCommentPosition({ x: hoveredPosition.x, time: hoveredPosition.time });
+    // 버튼의 실제 위치 계산
+    const buttonRect = (event.target as HTMLElement).getBoundingClientRect();
+    const containerRect = waveformContainerRef.current?.getBoundingClientRect();
+    
+    if (containerRect) {
+      const relativeY = buttonRect.top - containerRect.top;
+      // 화면 위쪽 경계 처리 - 최소 100px는 확보
+      const adjustedY = Math.max(relativeY, 100);
+      
+      setCommentPosition({ 
+        x: hoveredPosition.x, 
+        y: adjustedY,
+        time: hoveredPosition.time 
+      });
+    } else {
+      setCommentPosition({ 
+        x: hoveredPosition.x, 
+        y: 280, // fallback
+        time: hoveredPosition.time 
+      });
+    }
+    
     setIsInlineCommentOpen(true);
     setHoveredPosition(null);
   }, [hoveredPosition]);
@@ -747,25 +803,45 @@ const StemSetReview = () => {
       const commentsData = response.upstreamComments || response.data || [];
 
       if (commentsData && Array.isArray(commentsData)) {
-        const formattedComments = commentsData.map((comment: any) => {
-          // time 문자열을 파싱하여 숫자로 변환 (MM:SS 형식)
-          const [minutes, seconds] = comment.time.split(':').map(Number);
-          const timeNumber = minutes * 60 + seconds;
+        const formattedComments = await Promise.all(
+          commentsData.map(async (comment: any) => {
+            // time 문자열을 파싱하여 숫자로 변환 (MM:SS 형식)
+            const [minutes, seconds] = comment.time.split(':').map(Number);
+            const timeNumber = minutes * 60 + seconds;
 
-          return {
-            id: comment.id,
-            time: comment.time,
-            comment: comment.comment,
-            timeNumber: timeNumber,
-            timeString: comment.time,
-            user: comment.user
-              ? {
-                id: comment.user.id,
-                username: comment.user.username,
+            let userWithImage = comment.user ? {
+              id: comment.user.id,
+              username: comment.user.username,
+              image_url: null as string | null
+            } : undefined;
+
+            // 유저 이미지 가져오기
+            if (comment.user?.id) {
+              try {
+                const userProfile = await userService.getUserProfile(comment.user.id);
+                if (userProfile) {
+                  userWithImage = {
+                    id: userProfile.id,
+                    username: userProfile.username,
+                    image_url: userProfile.image_url
+                  };
+                }
+              } catch (imageError) {
+                console.warn(`Failed to fetch user image for ${comment.user.id}:`, imageError);
+                // 이미지 로드 실패해도 기본 정보는 유지
               }
-              : undefined,
-          };
-        });
+            }
+
+            return {
+              id: comment.id,
+              time: comment.time,
+              comment: comment.comment,
+              timeNumber: timeNumber,
+              timeString: comment.time,
+              user: userWithImage,
+            };
+          })
+        );
 
         setComments(formattedComments);
       } else {
@@ -777,7 +853,7 @@ const StemSetReview = () => {
     } finally {
       setCommentsLoading(false);
     }
-  }, []);
+  }, [showError]);
 
   useEffect(() => {
     if (selectedUpstream?.id) {
@@ -933,6 +1009,9 @@ const StemSetReview = () => {
         // 선택된 upstream 설정
         setSelectedUpstream(upstream);
         setShowExtraWaveform(true);
+        
+        // Extra 파형 생성 시 solo를 main으로 설정하여 extra는 볼륨 0으로 시작
+        setSoloTrack('main');
 
         // 캐시 키 생성
         const stemId = stemData.stem.id;
@@ -1907,44 +1986,74 @@ const StemSetReview = () => {
                             return (
                               <div
                                 key={comment.id}
-                                className='absolute z-30'
+                                className='absolute z-30 group'
                                 style={{
                                   left: `${position}%`,
-                                  top: '20px',
+                                  top: '10px',
                                   transform: 'translateX(-50%)',
                                   animationDelay: `${comment.delay || 0}ms`,
                                 }}
                               >
-                                {/* 개선된 댓글 버블 */}
-                                <div className='relative'>
-                                  {/* 메인 버블 */}
-                                  <div className='bg-gradient-to-br from-blue-500 to-blue-600 text-white px-4 py-3 rounded-2xl shadow-2xl max-w-xs relative comment-bubble border border-blue-400/30'>
-                                    {/* 글리터 효과 */}
-                                    <div className='absolute inset-0 bg-gradient-to-r from-transparent via-white/10 to-transparent rounded-2xl'></div>
-
-                                    <div className='relative z-10'>
-                                      <div className='flex items-center gap-2 mb-2'>
-                                        <div className='w-7 h-7 bg-blue-400 rounded-full flex items-center justify-center text-xs font-bold shadow-lg'>
-                                          {comment.user?.username?.charAt(0).toUpperCase() || 'U'}
-                                        </div>
-                                        <div className='flex-1'>
-                                          <div className='text-xs font-semibold opacity-95'>
-                                            {comment.user?.username || 'Anonymous'}
-                                          </div>
-                                          <div className='text-xs opacity-80 font-mono'>
-                                            {Math.floor(comment.timeNumber / 60)}:{String(Math.floor(comment.timeNumber % 60)).padStart(2, '0')}
-                                          </div>
-                                        </div>
+                                {/* 유저 이미지 중심의 댓글 */}
+                                <div className='relative flex flex-col items-center animate-bounce'
+                                     style={{ 
+                                       animation: 'fadeInUp 0.5s ease-out forwards',
+                                       animationDelay: `${comment.delay || 0}ms`
+                                     }}>
+                                  {/* 유저 프로필 이미지 */}
+                                  <div className='relative h-10 w-10 rounded-full overflow-hidden border-2 border-white shadow-lg transform transition-transform duration-300 hover:scale-110'>
+                                    {comment.user?.image_url ? (
+                                      <img
+                                        src={comment.user.image_url}
+                                        alt={comment.user.username}
+                                        className='h-full w-full object-cover'
+                                        onError={(e) => {
+                                          const target = e.target as HTMLImageElement;
+                                          target.style.display = 'none';
+                                          const fallbackDiv = target.nextElementSibling as HTMLElement;
+                                          if (fallbackDiv) {
+                                            fallbackDiv.style.display = 'flex';
+                                          }
+                                        }}
+                                      />
+                                    ) : (
+                                      <div className='flex h-full w-full items-center justify-center bg-gradient-to-br from-blue-400 to-blue-600'>
+                                        <span className='text-sm font-semibold text-white'>
+                                          {comment.user?.username?.charAt(0)?.toUpperCase() || 'U'}
+                                        </span>
                                       </div>
-                                      <div className='text-sm font-medium leading-relaxed'>{comment.comment}</div>
+                                    )}
+                                    
+                                    {/* Fallback div */}
+                                    <div
+                                      className='absolute inset-0 flex items-center justify-center bg-gradient-to-br from-blue-400 to-blue-600'
+                                      style={{ display: 'none' }}
+                                    >
+                                      <span className='text-sm font-semibold text-white'>
+                                        {comment.user?.username?.charAt(0)?.toUpperCase() || 'U'}
+                                      </span>
                                     </div>
-
-                                    {/* 아래쪽 화살표 - 더 부드러운 디자인 */}
-                                    <div className='absolute top-full left-8 w-3 h-3 bg-blue-600 transform rotate-45 border-r border-b border-blue-400/30'></div>
                                   </div>
-
-                                  {/* 연결선 - 더 세련된 스타일 */}
-                                  <div className='absolute top-full left-8 w-px h-6 bg-gradient-to-b from-blue-500 to-transparent'></div>
+                                  
+                                  {/* 연결선 - 애니메이션 개선 */}
+                                  <div className='w-px h-4 bg-gradient-to-b from-blue-400 to-transparent animate-pulse'></div>
+                                  
+                                  {/* 말풍선 - 자동으로 표시되며 부드러운 애니메이션 */}
+                                  <div className='bg-gray-900 text-white text-xs rounded-lg py-2 px-3 shadow-xl border border-gray-700 max-w-xs pointer-events-none'
+                                       style={{
+                                         animation: 'scaleIn 0.3s ease-out forwards',
+                                         animationDelay: `${(comment.delay || 0) + 200}ms`,
+                                         transform: 'scale(0)',
+                                         opacity: 0
+                                       }}>
+                                    <div className='font-semibold mb-1'>{comment.user?.username || 'Anonymous'}</div>
+                                    <div className='text-blue-400 text-xs mb-1'>
+                                      {Math.floor(comment.timeNumber / 60)}:{String(Math.floor(comment.timeNumber % 60)).padStart(2, '0')}
+                                    </div>
+                                    <div className='text-sm leading-relaxed'>{comment.comment}</div>
+                                    {/* 화살표 */}
+                                    <div className='absolute bottom-full left-1/2 transform -translate-x-1/2 w-0 h-0 border-l-4 border-r-4 border-b-4 border-transparent border-b-gray-900'></div>
+                                  </div>
                                 </div>
                               </div>
                             );
@@ -2040,20 +2149,6 @@ const StemSetReview = () => {
                 </div>
               </div>
 
-              <div className="flex items-center space-x-3">
-                {/* Speed Control */}
-                <button className="px-3 py-1 rounded-lg bg-white/10 hover:bg-white/20 text-white text-sm transition-all duration-200">
-                  1x
-                </button>
-
-                {/* Zoom Controls */}
-                <button className="p-2 rounded-lg bg-white/10 hover:bg-white/20 text-white/70 hover:text-white transition-all duration-200">
-                  <ZoomIn size={18} />
-                </button>
-                <button className="p-2 rounded-lg bg-white/10 hover:bg-white/20 text-white/70 hover:text-white transition-all duration-200">
-                  <ZoomOut size={18} />
-                </button>
-              </div>
             </div>
           </div>
           {/* Keyboard Shortcuts Info */}
@@ -2087,16 +2182,17 @@ const StemSetReview = () => {
           {/* 인라인 댓글 창 */}
           {isInlineCommentOpen && selectedUpstream && (
             <div
-              className='absolute z-50 animate-slide-in-right'
+              className='absolute z-50'
               style={{
                 left: `${commentPosition.x}px`,
-                top: '280px',
+                top: `${commentPosition.y - 80}px`, // 버튼 위쪽에 80px 간격으로 표시
                 transform: 'translateX(-50%)',
+                animation: 'scaleIn 0.3s ease-out forwards'
               }}
             >
               <div className='bg-gray-900/95 backdrop-blur-sm border border-gray-600 rounded-lg shadow-2xl p-4 min-w-80 max-w-sm'>
-                {/* 상단 화살표 */}
-                <div className='absolute -top-2 left-1/2 transform -translate-x-1/2 w-4 h-4 bg-gray-900 border-t border-l border-gray-600 rotate-45'></div>
+                {/* 하단 화살표 - 버튼을 향하도록 */}
+                <div className='absolute -bottom-2 left-1/2 transform -translate-x-1/2 w-4 h-4 bg-gray-900 border-b border-r border-gray-600 rotate-45'></div>
 
                 {/* 헤더 */}
                 <div className='flex items-center justify-between mb-3'>
