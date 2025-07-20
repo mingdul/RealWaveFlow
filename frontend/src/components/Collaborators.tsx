@@ -45,7 +45,7 @@ const Collaborators: React.FC<CollaboratorsProps> = ({ track }) => {
   const [roleError, setRoleError] = useState('');
   const [roleSuccess, setRoleSuccess] = useState('');
 
-  // API에서 트랙 사용자 정보 가져오기
+    // API에서 트랙 사용자 정보 가져오기
   useEffect(() => {
     const fetchTrackUsers = async () => {
       try {
@@ -53,7 +53,7 @@ const Collaborators: React.FC<CollaboratorsProps> = ({ track }) => {
         const response = await apiClient.get(`/track-collaborator/track-users/${track.id}`, {
           withCredentials: true
         });
-
+        
         if (response.data.success) {
           setTrackUsers(response.data.data);
         }
@@ -68,6 +68,11 @@ const Collaborators: React.FC<CollaboratorsProps> = ({ track }) => {
       fetchTrackUsers();
     }
   }, [track.id]);
+
+  // 🔧 DEBUG: 모달 상태 변화 감지
+  useEffect(() => {
+    console.log('🔧 [Collaborators] showInviteModal state changed:', showInviteModal);
+  }, [showInviteModal]);
 
   // 목업 데이터 - fallback용
   const mockImages = [
@@ -239,13 +244,33 @@ const Collaborators: React.FC<CollaboratorsProps> = ({ track }) => {
   };
 
   // 콜라버 추가 버튼 핸들러
-  const handleAddCollaboratorClick = async () => {
-    const isOwner = await checkOwnerPermission();
-    if (!isOwner) {
-      alert('권한이 없습니다. 트랙 소유자만 협업자를 추가할 수 있습니다.');
-      return;
+  const handleAddCollaboratorClick = async (event?: React.MouseEvent) => {
+    console.log('🔧 [Collaborators] Add collaborator button clicked');
+    
+    // 이벤트 버블링 방지
+    if (event) {
+      event.preventDefault();
+      event.stopPropagation();
     }
-    setShowInviteModal(true);
+
+    try {
+      console.log('🔧 [Collaborators] Checking owner permission...');
+      const isOwner = await checkOwnerPermission();
+      console.log('🔧 [Collaborators] Is owner:', isOwner);
+      
+      if (!isOwner) {
+        console.warn('🔧 [Collaborators] User is not owner, showing alert');
+        alert('권한이 없습니다. 트랙 소유자만 협업자를 추가할 수 있습니다.');
+        return;
+      }
+      
+      console.log('🔧 [Collaborators] Setting invite modal to true');
+      setShowInviteModal(true);
+      console.log('🔧 [Collaborators] Invite modal state should be updated');
+    } catch (error) {
+      console.error('🔧 [Collaborators] Error in handleAddCollaboratorClick:', error);
+      alert('권한 확인 중 오류가 발생했습니다. 다시 시도해주세요.');
+    }
   };
 
   // 역할 수정 함수
@@ -417,7 +442,10 @@ const Collaborators: React.FC<CollaboratorsProps> = ({ track }) => {
               </div>
             ))}
 
-            <Button onClick={handleAddCollaboratorClick}>
+            <Button 
+              onClick={(e) => handleAddCollaboratorClick(e)}
+              className="z-10 relative"
+            >
               <Plus size={20} />
             </Button>
           </>
@@ -480,7 +508,10 @@ const Collaborators: React.FC<CollaboratorsProps> = ({ track }) => {
               </div>
             </div>
             <div className='z-30 relative'>
-              <Button onClick={handleAddCollaboratorClick}>
+              <Button 
+                onClick={(e) => handleAddCollaboratorClick(e)}
+                className="z-10 relative"
+              >
                 <Plus size={20} />
               </Button>
             </div>

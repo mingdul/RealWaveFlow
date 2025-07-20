@@ -57,6 +57,13 @@ const ErrorState: React.FC<{ message: string }> = ({ message }) => (
   </div>
 );
 
+// 스템 변경 타입 정의
+type StemChangeType = 'new' | 'modified' | 'unchanged';
+
+interface StemWithChanges extends StemStreamingInfo {
+  changeType?: StemChangeType;
+}
+
 // 버전 타임라인 컴포넌트
 const VersionTimeline: React.FC<{
   stages: Stage[];
@@ -66,13 +73,81 @@ const VersionTimeline: React.FC<{
 }> = ({ stages, selectedVersion, onVersionSelect, trackId }) => {
   const [expandedVersion, setExpandedVersion] = useState<number | null>(null);
   const [versionStems, setVersionStems] = useState<{
-    [key: number]: StemStreamingInfo[];
+    [key: number]: StemWithChanges[];
   }>({});
   const [loadingVersions, setLoadingVersions] = useState<{
     [key: number]: boolean;
   }>({});
 
   const sortedStages = [...stages].sort((a, b) => b.version - a.version);
+
+  // 스템 변경 타입 확인 함수 - getLatestStemsPerCategoryByTrack API 사용
+  const determineChangeType = async (currentVersion: number): Promise<StemWithChanges[]> => {
+    try {
+      // 현재 버전과 이전 버전의 카테고리별 최신 스템 비교
+      const [currentVersionStems, previousVersionStems] = await Promise.all([
+        versionStemService.getLatestStemsPerCategoryByTrack(trackId!, currentVersion),
+        currentVersion > 1 
+          ? versionStemService.getLatestStemsPerCategoryByTrack(trackId!, currentVersion - 1)
+          : Promise.resolve([])
+      ]);
+
+      console.log('[DEBUG] Current version stems:', currentVersionStems);
+      console.log('[DEBUG] Previous version stems:', previousVersionStems);
+
+      return currentVersionStems.map((currentItem: any) => {
+        const currentStem = currentItem.stem;
+        const category = currentItem.category;
+
+        // 변환된 스템 객체 생성
+        const convertedStem: StemWithChanges = {
+          id: currentStem.id,
+          fileName: currentStem.file_name,
+          category: category,
+          tag: currentStem.key || '',
+          key: currentStem.key || '',
+          description: currentStem.description || '',
+          presignedUrl: '',
+          metadata: {
+            duration: 0,
+            fileSize: 0,
+          },
+          uploadedBy: {
+            id: currentStem.user?.id || '',
+            username: currentStem.user?.username || 'Unknown',
+          },
+          uploadedAt: currentStem.uploaded_at,
+        };
+
+        // 변경 타입 결정
+        if (currentVersion === 1) {
+          // 첫 번째 버전이면 모든 스템이 새로운 것
+          convertedStem.changeType = 'new';
+        } else {
+          // 이전 버전에서 같은 카테고리의 스템 찾기
+          const previousStemInCategory = previousVersionStems.find((prevItem: any) => 
+            prevItem.category === category
+          );
+
+          if (!previousStemInCategory) {
+            // 이전 버전에 해당 카테고리가 없었으면 새로운 것
+            convertedStem.changeType = 'new';
+          } else if (previousStemInCategory.stem.id !== currentStem.id) {
+            // 스템 ID가 다르면 수정된 것
+            convertedStem.changeType = 'modified';
+          } else {
+            // 같은 스템이면 변경되지 않은 것
+            convertedStem.changeType = 'unchanged';
+          }
+        }
+
+        return convertedStem;
+      });
+    } catch (error) {
+      console.error('[ERROR] Failed to determine change types:', error);
+      return [];
+    }
+  };
 
   const toggleExpanded = async (version: number) => {
     if (expandedVersion === version) {
@@ -118,66 +193,17 @@ const VersionTimeline: React.FC<{
         `[DEBUG][VersionTimeline] Loading version-stems for version: ${version}`
       );
 
-      // 해당 버전의 스테이지 정보 조회
-      const stageInfo = await getStageByTrackIdAndVersion(trackId, version);
+      // 새로운 API를 사용하여 변경 타입과 함께 스템 데이터 로드
+      const stemsWithChanges = await determineChangeType(version);
 
-      if (!stageInfo || !stageInfo.id) {
-        console.error(
-          `[ERROR][VersionTimeline] No stage found for version: ${version}`
-        );
-        setVersionStems((prev) => ({ ...prev, [version]: [] }));
-        return;
-      }
+      setVersionStems((prev) => ({
+        ...prev,
+        [version]: stemsWithChanges,
+      }));
 
       console.log(
-        `[DEBUG][VersionTimeline] Found stage info for version ${version}:`,
-        stageInfo
+        `[DEBUG][VersionTimeline] Successfully loaded ${stemsWithChanges.length} version-stems for version: ${version}`
       );
-
-      // 백엔드의 getVersionStemByStageId 함수로 해당 스테이지의 version-stem만 조회
-      const versionStemsData = await versionStemService.getVersionStemByStageId(
-        stageInfo.id
-      );
-
-      if (versionStemsData && Array.isArray(versionStemsData)) {
-        const convertedStems: StemStreamingInfo[] = versionStemsData.map(
-          (stem: any) => ({
-            id: stem.id,
-            fileName: stem.file_name,
-            category: stem.category?.name || 'Unknown',
-            tag: stem.key || '',
-            key: stem.key || '',
-            description: stem.description || '',
-            presignedUrl: '', // 실제 재생 시 로딩
-            metadata: {
-              duration: 0, // 실제 재생 시 로딩
-              fileSize: 0,
-            },
-            uploadedBy: {
-              id: stem.user?.id || '',
-              username: stem.user?.username || 'Unknown',
-            },
-            uploadedAt: stem.uploaded_at,
-          })
-        );
-
-        setVersionStems((prev) => ({
-          ...prev,
-          [version]: convertedStems,
-        }));
-
-        console.log(
-          `[DEBUG][VersionTimeline] Successfully loaded ${convertedStems.length} version-stems for stage ID: ${stageInfo.id}`
-        );
-      } else {
-        console.warn(
-          `[WARN][VersionTimeline] No version-stems found for stage ID: ${stageInfo.id}`
-        );
-        setVersionStems((prev) => ({
-          ...prev,
-          [version]: [],
-        }));
-      }
     } catch (error) {
       console.error(
         `[ERROR][VersionTimeline] Failed to load version-stems for version ${version}:`,
@@ -285,42 +311,87 @@ const VersionTimeline: React.FC<{
                           </span>
                         </div>
                       ) : versionStems[stage.version] &&
-                        versionStems[stage.version].length > 0 ? (
+                        versionStems[stage.version].filter(stem => stem.changeType !== 'unchanged').length > 0 ? (
                         <div className='space-y-2'>
-                          {versionStems[stage.version].map(
-                            (stem, stemIndex) => (
-                              <div
-                                key={stemIndex}
-                                className='rounded-md border border-white/10 bg-white/5 p-3'
-                              >
-                                <div className='flex items-center justify-between'>
-                                  <div>
-                                    <p className='text-sm font-medium text-white'>
-                                      {stem.fileName}
-                                    </p>
-                                    <p className='text-xs text-gray-400'>
-                                      {stem.category}
-                                    </p>
-                                    {stem.metadata?.duration && (
+                          {versionStems[stage.version]
+                            .filter(stem => stem.changeType !== 'unchanged') // unchanged 스템 제외
+                            .map((stem, stemIndex) => {
+                              // 변경 타입에 따른 스타일 정의
+                              const getChangeTypeStyle = (changeType?: StemChangeType) => {
+                                switch (changeType) {
+                                  case 'new':
+                                    return {
+                                      border: 'border-green-500/50',
+                                      bg: 'bg-green-500/10',
+                                      badge: 'bg-green-500 text-white',
+                                      icon: '✨',
+                                      label: 'NEW'
+                                    };
+                                  case 'modified':
+                                    return {
+                                      border: 'border-yellow-500/50',
+                                      bg: 'bg-yellow-500/10',
+                                      badge: 'bg-yellow-500 text-white',
+                                      icon: '🔄',
+                                      label: 'MODIFIED'
+                                    };
+                                  case 'unchanged':
+                                  default:
+                                    return {
+                                      border: 'border-white/10',
+                                      bg: 'bg-white/5',
+                                      badge: 'bg-gray-500 text-white',
+                                      icon: '📄',
+                                      label: 'UNCHANGED'
+                                    };
+                                }
+                              };
+
+                              const changeStyle = getChangeTypeStyle(stem.changeType);
+
+                              return (
+                                <div
+                                  key={stemIndex}
+                                  className={`rounded-md border ${changeStyle.border} ${changeStyle.bg} p-3 transition-all duration-200`}
+                                >
+                                  <div className='flex items-center justify-between'>
+                                    <div className='flex-1'>
+                                      <div className='flex items-center gap-2 mb-1'>
+                                        <p className='text-sm font-medium text-white'>
+                                          {stem.fileName}
+                                        </p>
+                                        {stem.changeType && (
+                                          <span className={`inline-flex items-center gap-1 px-2 py-0.5 rounded-full text-xs font-medium ${changeStyle.badge}`}>
+                                            <span>{changeStyle.icon}</span>
+                                            {changeStyle.label}
+                                          </span>
+                                        )}
+                                      </div>
                                       <p className='text-xs text-gray-400'>
-                                        Duration:{' '}
-                                        {Math.round(stem.metadata.duration)}s
+                                        {stem.category}
                                       </p>
-                                    )}
-                                  </div>
-                                  <div className='flex items-center space-x-2'>
-                                    <button className='rounded bg-amber-600 px-2 py-1 text-xs text-white transition-colors hover:bg-amber-700'>
-                                      Play
-                                    </button>
+                                      {stem.metadata?.duration && (
+                                        <p className='text-xs text-gray-400'>
+                                          Duration:{' '}
+                                          {Math.round(stem.metadata.duration)}s
+                                        </p>
+                                      )}
+                                      <p className='text-xs text-gray-500 mt-1'>
+                                        By: {stem.uploadedBy?.username || 'Unknown'}
+                                      </p>
+                                    </div>
                                   </div>
                                 </div>
-                              </div>
-                            )
+                              );
+                            }
                           )}
                         </div>
                       ) : (
                         <p className='text-sm italic text-gray-400'>
-                          No stems available for this version
+                          {versionStems[stage.version] && versionStems[stage.version].length > 0 
+                            ? 'No new or modified stems in this version' 
+                            : 'No stems available for this version'
+                          }
                         </p>
                       )}
                     </div>

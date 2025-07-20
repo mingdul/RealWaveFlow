@@ -50,6 +50,16 @@ const StageHis: React.FC<StageHisProps> = ({
     );
   };
 
+  // Ctrl + 스크롤 제어 함수
+  const handleWheel = (e: React.WheelEvent) => {
+    // Ctrl 키가 눌려있지 않으면 스크롤 막기
+    if (!e.ctrlKey) {
+      e.preventDefault();
+      return;
+    }
+    // Ctrl 키가 눌려있으면 기본 스크롤 동작 허용
+  };
+
   useEffect(() => {
     const scrollEl = scrollRef.current;
     if (!scrollEl) return;
@@ -222,7 +232,10 @@ const StageHis: React.FC<StageHisProps> = ({
       <div className="flex items-center justify-between pt-4">
         <div className="flex flex-col space-y-2">
           <h2 className="text-2xl font-bold text-white">Stage History</h2>
-          <p className="text-gray-400 text-sm">Track your creative journey</p>
+          <div className="space-y-1">
+            <p className="text-gray-400 text-sm">Track your creative journey</p>
+            <p className="text-gray-500 text-xs">💡 Hold Ctrl + scroll to navigate horizontally</p>
+          </div>
         </div>
         
         {!disableStageOpening && !isActiveStage && (
@@ -262,7 +275,11 @@ const StageHis: React.FC<StageHisProps> = ({
         )}
   
         {/* 카드 그리드 레이아웃 */}
-        <div className="overflow-x-auto scrollbar-hide py-4 px-10" ref={scrollRef}>
+        <div 
+          className="overflow-x-auto scrollbar-hide py-4 px-10" 
+          ref={scrollRef}
+          onWheel={handleWheel}
+        >
           <div className="flex gap-x-16 pb-4 min-w-max">
             {sortedStages.map((stage) => {
               const statusConfig = getStatusConfig(stage.status);
