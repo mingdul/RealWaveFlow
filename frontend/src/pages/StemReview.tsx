@@ -2292,13 +2292,13 @@ const StemSetReview = () => {
                 onClick={memoizedStopPlayback}
                 className="p-3 rounded-lg bg-white/10 hover:bg-white/20 text-white transition-all duration-200"
               >
-                <Square size={50} />
+                <Square size={28} strokeWidth={2.5} />
               </button>
               <button
                 onClick={memoizedTogglePlay}
                 className="p-3 rounded-lg bg-gradient-to-r from-purple-600 to-purple-700 hover:from-purple-700 hover:to-purple-800 text-white transition-all duration-200 shadow-lg hover:shadow-purple-500/25"
               >
-                {isPlaying ? <Pause size={20} /> : <Play size={20} />}
+                {isPlaying ? <Pause size={28} strokeWidth={2.5} /> : <Play size={28} strokeWidth={2.5} />}
               </button>
             </div>
 
