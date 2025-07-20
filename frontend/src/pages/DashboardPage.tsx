@@ -376,10 +376,13 @@ const DashboardPage = () => {
   }
 
   return (
-    <div
-      className='relative min-h-screen bg-cover bg-center'
-      style={{ backgroundImage: "url('/background.jpg')" }}
-    >
+    <div className="min-h-screen bg-gradient-to-br from-gray-900 via-black to-gray-900">
+      {/* Background Effects */}
+      <div className="fixed inset-0 overflow-hidden pointer-events-none">
+        <div className="absolute -top-40 -right-40 w-80 h-80 bg-purple-500 rounded-full mix-blend-multiply filter blur-xl opacity-20 animate-blob"></div>
+        <div className="absolute -bottom-40 -left-40 w-80 h-80 bg-blue-500 rounded-full mix-blend-multiply filter blur-xl opacity-20 animate-blob animation-delay-2000"></div>
+        <div className="absolute top-40 left-40 w-80 h-80 bg-pink-500 rounded-full mix-blend-multiply filter blur-xl opacity-20 animate-blob animation-delay-4000"></div>
+      </div>
       {/* 어두운 오버레이 */}
       <div className='absolute inset-0 h-screen bg-black bg-opacity-80 flex flex-col'>
 
@@ -396,57 +399,6 @@ const DashboardPage = () => {
           <Logo />
 
           <div className='flex items-center space-x-4'>
-            {/* 소켓 연결 상태 표시 */}
-            {/* <div className="flex items-center space-x-3">
-            <div className="flex items-center space-x-2">
-              {isConnected ? (
-                <div className="flex items-center space-x-1 text-green-400">
-                  <Wifi className="h-4 w-4" />
-                  <span className="text-xs">Connected in real-time</span>
-                </div>
-              ) : (
-                <div className="flex items-center space-x-1 text-red-400">
-                  <WifiOff className="h-4 w-4" />
-                  <span className="text-xs">Disconnected</span>
-                </div>
-              )}
-              {onlineUsers > 0 && (
-                <span className="text-xs text-gray-400">
-                  Online: {onlineUsers}
-                </span>
-              )}
-            </div>
-            
-           
-            {isConnected && (
-              <div className="flex items-center space-x-2">
-                <button
-                  onClick={ping}
-                  className="bg-blue-600 hover:bg-blue-700 text-white px-2 py-1 rounded text-xs"
-                >
-                  Ping Test
-                </button>
-                <input
-                  type="text"
-                  value={testMessage}
-                  onChange={(e) => setTestMessage(e.target.value)}
-                  placeholder="Test message"
-                  className="bg-gray-700 text-white px-2 py-1 rounded text-xs w-32"
-                />
-                <button
-                  onClick={() => {
-                    if (testMessage.trim()) {
-                      sendMessage(testMessage);
-                      setTestMessage('');
-                    }
-                  }}
-                  className="bg-green-600 hover:bg-green-700 text-white px-2 py-1 rounded text-xs"
-                >
-                  Send
-                </button>
-              </div>
-            )}
-          </div> */}
 
             {/* 알람 기능 */}
             <NotificationBell />
@@ -460,7 +412,7 @@ const DashboardPage = () => {
         <main className='mx-auto w-full max-w-7xl flex-1 overflow-y-auto p-6 scrollbar-hide'>
           {/* Greeting */}
           <div className='mb-12 mt-8'>
-            <h1 className='group mb-2 cursor-pointer bg-gradient-to-r from-[#FF4E4E] to-[#2159C6] bg-clip-text text-5xl font-bold text-transparent transition-all duration-500 hover:from-[#FF6B6B] hover:to-[#4ECDC4] hover:drop-shadow-[0_0_20px_rgba(255,78,78,0.5)]'>
+            <h1 className='group mb-2 cursor-pointer bg-gradient-to-r from-[#893BFF] to-[#E4D3FF] bg-clip-text text-5xl font-bold text-transparent transition-all duration-500 '>
               Hello,{user.username}!
             </h1>
             <p className='cursor-pointer text-lg text-gray-400 transition-all duration-500 hover:text-gray-300 hover:drop-shadow-[0_0_10px_rgba(255,255,255,0.3)]'>
