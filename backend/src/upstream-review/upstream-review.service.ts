@@ -14,8 +14,12 @@ import { TrackCollaborator } from 'src/track_collaborator/track_collaborator.ent
 import { Track } from 'src/track/track.entity';
 import { NotificationGateway } from 'src/notification/notification.gateway';
 import { DataSource } from 'typeorm';
+import { S3Client, GetObjectCommand } from '@aws-sdk/client-s3';
+import { getSignedUrl } from '@aws-sdk/s3-request-presigner';
 @Injectable()
 export class UpstreamReviewService {
+    private readonly s3: S3Client;
+    private readonly bucketName: string;
 
     constructor(
         @InjectRepository(UpstreamReview)
@@ -36,7 +40,34 @@ export class UpstreamReviewService {
         private trackRepository: Repository<Track>,
         private notificationGateway: NotificationGateway,
         private dataSource: DataSource,
-    ) {}
+    ) {
+        this.s3 = new S3Client({
+            region: process.env.AWS_REGION,
+        });
+        this.bucketName = process.env.AWS_S3_BUCKET_NAME || 'waveflow-bucket';
+    }
+
+    private async generatePresignedUrl(imageKey: string): Promise<string | null> {
+        if (!imageKey) {
+            return null;
+        }
+
+        try {
+            const command = new GetObjectCommand({
+                Bucket: this.bucketName,
+                Key: imageKey,
+            });
+
+            const presignedUrl = await getSignedUrl(this.s3, command, {
+                expiresIn: 3600 // 1시간
+            });
+
+            return presignedUrl;
+        } catch (error) {
+            console.error('Error generating presigned URL for key:', imageKey, error);
+            return null;
+        }
+    }
 
     async createUpstreamReview(createUpstreamReviewDto: CreateUpstreamReviewDto) {
         const { upstream_id, stage_id } = createUpstreamReviewDto;
@@ -74,6 +105,58 @@ export class UpstreamReviewService {
             success: true,
             message: upstreamReviews.length > 0 ? 'Upstream reviews fetched successfully' : 'No upstream reviews found',   
             data: upstreamReviews,
+        };
+    }
+
+    async getUpstreamReviewsWithReviewers(upstream_id: string) {
+        const upstreamReviews = await this.upstreamReviewRepository.find({
+            where: { upstream: { id: upstream_id } },
+            relations: ['upstream', 'stage_reviewer', 'stage_reviewer.user', 'stage_reviewer.stage', 'stage_reviewer.stage.track'],
+        });
+
+        if (upstreamReviews.length === 0) {
+            return {
+                success: true,
+                message: 'No upstream reviews found',
+                data: [],
+            };
+        }
+
+        // 각 리뷰에 대해 리뷰어 정보와 presigned URL 추가
+        const reviewsWithDetails = await Promise.all(
+            upstreamReviews.map(async (review) => {
+                // Track collaborator 정보 조회 (역할 정보를 위해)
+                const trackCollaborator = await this.trackCollaboratorRepository.findOne({
+                    where: {
+                        user_id: { id: review.stage_reviewer.user.id },
+                        track_id: { id: review.stage_reviewer.stage.track.id }
+                    }
+                });
+
+                // Presigned URL 생성
+                const imageUrl = await this.generatePresignedUrl(review.stage_reviewer.user.image_url);
+
+                return {
+                    id: review.id,
+                    status: review.status,
+                    reviewer: {
+                        id: review.stage_reviewer.user.id,
+                        username: review.stage_reviewer.user.username,
+                        email: review.stage_reviewer.user.email,
+                        image_url: imageUrl,
+                        role: trackCollaborator?.role || 'Collaborator',
+                    },
+                    upstream: {
+                        id: review.upstream.id
+                    }
+                };
+            })
+        );
+
+        return {
+            success: true,
+            message: 'Upstream reviews with reviewers fetched successfully',
+            data: reviewsWithDetails,
         };
     }
 

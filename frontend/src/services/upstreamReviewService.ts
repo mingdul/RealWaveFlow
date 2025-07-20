@@ -1,5 +1,27 @@
 import apiClient from '../lib/api';
 
+
+export interface ReviewerWithStatus {
+  id: string;
+  status: 'pending' | 'approved' | 'rejected';
+  reviewer: {
+    id: string;
+    username: string;
+    email: string;
+    image_url: string | null;
+    role: string;
+  };
+  upstream: {
+    id: string;
+  };
+}
+
+export interface UpstreamReviewsResponse {
+  success: boolean;
+  message: string;
+  data: ReviewerWithStatus[];
+}
+
 // 업스트림 리뷰 조회
 export const getUpstreamReviews = async (upstreamId: string) => {
   try {
@@ -17,3 +39,4 @@ export const getUpstreamReviews = async (upstreamId: string) => {
 export default {
   getUpstreamReviews,
 };
+

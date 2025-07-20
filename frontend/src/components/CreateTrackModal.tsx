@@ -160,7 +160,7 @@ const CreateTrackModal: React.FC<CreateTrackModalProps> = ({ isOpen, onClose, on
           <StepProgress currentStep={1} steps={steps} />
           
           <div className="max-h-[calc(90vh-200px)] overflow-y-auto">
-            <div className="grid grid-cols-1 lg:grid-cols-2 gap-8">
+            <div className="grid grid-cols-1 lg:grid-cols-2 gap-8 px-10">
               {/* Left Column - Track Info */}
               <div className="space-y-6">
                 <div>
