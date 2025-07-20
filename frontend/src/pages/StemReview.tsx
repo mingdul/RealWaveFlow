@@ -1,6 +1,7 @@
 import { useEffect, useRef, useState, useCallback } from 'react';
 import WaveSurfer from 'wavesurfer.js';
 import Wave from '../components/wave';
+import ReviewerStatus from '../components/ReviewerStatus';
 import {
   getUpstreamStems,
   getUpstreamByUpstreamId,
@@ -1930,9 +1931,15 @@ const StemSetReview = () => {
                     <div className='text-xs text-gray-300 mb-2'>
                       {selectedUpstream.description}
                     </div>
-                    <div className='flex items-center gap-2 text-xs'>
+                    <div className='flex items-center gap-2 text-xs mb-3'>
                       <span className='text-blue-400'>작성자:</span>
                       <span className='text-white font-medium'>{selectedUpstream.user?.username}</span>
+                    </div>
+                    
+                    {/* Reviewer Status */}
+                    <div className='border-t border-gray-600 pt-3'>
+                      <div className='text-xs text-gray-400 mb-2'>리뷰어 상태</div>
+                      <ReviewerStatus upstreamId={selectedUpstream.id} />
                     </div>
                   </div>
                 )}

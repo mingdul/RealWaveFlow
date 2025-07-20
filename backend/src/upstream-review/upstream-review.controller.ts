@@ -1,4 +1,4 @@
-import { Body, Controller, Param, Post, Put, Req } from '@nestjs/common';
+import { Body, Controller, Get, Param, Post, Put, Req } from '@nestjs/common';
 import { ApiTags, ApiOperation, ApiResponse, ApiBody } from '@nestjs/swagger';
 import { UpstreamReviewService } from './upstream-review.service';
 import { CreateUpstreamReviewDto } from './dto/createUpstreamReview.dto'; 
@@ -18,6 +18,14 @@ export class UpstreamReviewController {
   @ApiResponse({ status: 400, description: '입력값 유효성 검사 실패' })
   async createUpstreamReview(@Body() createUpstreamReviewDto: CreateUpstreamReviewDto) {
     return this.upstreamReviewService.createUpstreamReview(createUpstreamReviewDto);
+  }
+
+  @Get('/:upstream_id')
+  @ApiOperation({ summary: '업스트림 리뷰 조회', description: '특정 업스트림의 모든 리뷰 상태를 조회합니다.' })
+  @ApiResponse({ status: 200, description: '업스트림 리뷰 조회 성공' })
+  @ApiResponse({ status: 404, description: '업스트림 리뷰를 찾을 수 없음' })
+  async getUpstreamReviews(@Param('upstream_id') upstream_id: string) {
+    return this.upstreamReviewService.getUpstreamReviewsWithReviewers(upstream_id);
   }
 
 
