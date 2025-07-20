@@ -62,18 +62,20 @@ const SettingsDropdown = () => {
 
       {/* Dropdown */}
       {isDropdownOpen && (
-        <div className="absolute right-0 mt-2 w-48 rounded-lg bg-white shadow-lg ring-1 ring-black ring-opacity-5 z-50">
+        <div
+          className="absolute right-0 mt-2 w-52 origin-top-right rounded-xl bg-[#1F2325]/90 backdrop-blur-md shadow-xl ring-1 ring-black/10 animate-fade-in-up z-50"
+        >
           <div className="py-1">
             <button
               onClick={handleProfileClick}
-              className="flex w-full items-center gap-3 px-4 py-2 text-sm text-gray-700 transition-colors hover:bg-gray-100"
+              className="flex w-full items-center gap-3 px-4 py-2 text-sm text-gray-200 transition-colors hover:bg-[#2A2E31] hover:text-white"
             >
               <User size={16} />
               프로필 설정
             </button>
             <button
               onClick={handleLogoutClick}
-              className="flex w-full items-center gap-3 px-4 py-2 text-sm text-gray-700 transition-colors hover:bg-gray-100"
+              className="flex w-full items-center gap-3 px-4 py-2 text-sm text-gray-200 transition-colors hover:bg-[#2A2E31] hover:text-white"
             >
               <LogOut size={16} />
               로그아웃

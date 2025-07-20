@@ -16,28 +16,28 @@ interface AItem {
 
 const qItems: QItem[] = [
   {
-    question: '음악 작업에도 버전 관리가 필요할까요?',
+    question: 'Is version control really necessary for music production?',
     avatarUrl: './person/IMG_2052.jpg',
   },
   {
-    question: '버전 간 차이를 어떻게 확인할 수 있나요?',
+    question: 'How can I compare the differences between versions?',
     avatarUrl: './person/IMG_6287.png',
   },
   {
-    question: '기존 DAW에서는 이런 기능이 없던데요?',
+    question: 'My current DAW doesn’t seem to have anything like this?',
     avatarUrl: './person/IMG_6287.png',
   },
   {
-    question: '음악 작업, 혼자서도 잘 하는데 협업 도구가 왜 필요하죠?',
+    question: 'I usually work alone—why would I need a collaboration tool?',
     avatarUrl: './person/IMG_6287.png',
   },
   {
     question:
-      '팀원들과 파일을 주고받는 게 너무 번거로운데, 해결 방법이 있나요?',
+      'Sharing files back and forth with my team is a hassle. Any solution?',
     avatarUrl: './person/IMG_6287.png',
   },
   {
-    question: '실시간으로 팀원들과 의견을 나눌 수 있나요?',
+    question: 'Is it possible to exchange feedback with team members in real time?',
     avatarUrl: './person/IMG_6287.png',
   },
 ];
@@ -45,32 +45,32 @@ const qItems: QItem[] = [
 const aItems: AItem[] = [
   {
     answer:
-      '물론입니다. 음악도 코드처럼 반복적으로 수정하고 발전시켜 나가는 작업이에요.WavefloW는 각 스템(stem)과 트랙의 변경 내역을 체계적으로 기록하고, 필요할 때 언제든지 이전 버전으로 돌아갈 수 있도록 도와줍니다.',
+      'Absolutely. Like code, music goes through countless revisions and improvements. WavefloW helps you keep track of changes in each stem and track, and lets you roll back to any previous version whenever needed.',
     avatarUrl: './person/IMG_6287.jpg',
   },
   {
     answer:
-      'WavefloW에서는 시각적인 파형 비교를 기반으로 두 버전의 차이를 쉽게 확인할 수 있어요.',
+      'With WavefloW, you can easily compare two versions visually using waveform overlays. It\'s quick and intuitive.',
     avatarUrl: './person/1750813233213.jpg',
   },
   {
     answer:
-      'WavefloW는 기존 DAW의 한계를 보완하는 음악 전용 버전 관리 플랫폼이에요.\n작업물을 파일로만 주고받는 시대는 끝났습니다.',
+      'WavefloW fills the gaps left by traditional DAWs. The days of sending project files back and forth are over—it’s time for real version control, purpose-built for music.',
     avatarUrl: './person/1750813233213.jpg',
   },
   {
     answer:
-      'WavefloW는 여러 아티스트, 프로듀서, 엔지니어가 동시에 작업하더라도\n버전 충돌 없이 안정적으로 협업할 수 있는 환경을 제공합니다.\n누가 언제 어떤 부분을 수정했는지 모두 기록되고, 필요한 시점으로 되돌리는 것도 간단합니다.',
+      'WavefloW enables seamless collaboration between artists, producers, and engineers—even when working simultaneously. Every change is tracked, and reverting to any point is just a click away.',
     avatarUrl: './person/1750813233213.jpg',
   },
   {
     answer:
-      'WavefloW에서는 파일 주고받기가 필요 없습니다.\n모든 트랙과 스템은 실시간으로 공유되며,\n버전마다 다른 멤버의 의견이나 수정 사항도 손쉽게 확인할 수 있어요.',
+      'No need to exchange files anymore. With WavefloW, all stems and tracks are shared in real time. Each version includes comments and edits from collaborators, so everyone stays on the same page.',
     avatarUrl: './person/1750813233213.jpg',
   },
   {
     answer:
-      '가능합니다.\nWavefloW에서는 트랙의 특정 구간에 시간 코드 기반 코멘트를 남기고,\n동료들과 바로 피드백을 주고받을 수 있어요.\n피드백을 잃지 않고 기록으로 남기면서도, 빠르게 반영할 수 있습니다.',
+      'Yes—WavefloW supports real-time feedback. You can leave timestamped comments on specific sections of a track and collaborate with your team instantly. Your discussions stay organized and actionable.',
     avatarUrl: './person/1750813233213.jpg',
   },
 ];
@@ -270,7 +270,7 @@ const LandingPage2: React.FC = () => {
                 className='group flex items-center gap-3 rounded-full bg-gradient-to-r px-8 py-4 text-lg font-semibold text-white shadow-xl shadow-violet-500/25 transition-all hover:shadow-2xl hover:shadow-violet-500/40'
                 onClick={() => navigate('/signup')}
               >
-                무료로 시작하기
+                Start for free
                 <ArrowRight className='h-5 w-5 transition-transform group-hover:translate-x-1' />
               </motion.button>
             </motion.div>
@@ -286,30 +286,30 @@ const LandingPage2: React.FC = () => {
           <div className='mx-auto max-w-7xl'>
             <div className='mb-20 text-center'>
               <h2 className='mb-6 bg-gradient-to-r from-white to-slate-300 bg-clip-text text-4xl font-bold text-transparent md:text-5xl'>
-                음악 작업의 혁신
+                A New Era in Music Production
               </h2>
               <p className='mx-auto max-w-3xl text-xl text-slate-400'>
-                WavefloW는 음악 제작 과정에서 발생하는 모든 변경사항을 추적하고,
-                팀원들과의 협업을 원활하게 만들어주는 플랫폼입니다.
+                WavefloW is a platform that tracks every change throughout your music production process and enables seamless collaboration with your team.
               </p>
             </div>
 
             <div className='grid grid-cols-1 gap-8 md:grid-cols-3'>
               <FeatureCard
                 icon={Clock}
-                title='스마트 버전 관리'
-                description='모든 트랙과 스템의 변경 내역을 자동으로 기록하고, 언제든지 이전 버전으로 되돌릴 수 있습니다.'
+                title='Smart Version Control'
+                description='Automatically records all changes to your tracks and stems, and lets you revert to any previous version anytime.'
               />
               <FeatureCard
                 icon={Users}
-                title='실시간 협업'
-                description='팀원들과 실시간으로 피드백을 주고받으며, 버전 충돌 없이 안정적으로 작업할 수 있습니다.'
+                title='Real-Time Collaboration'
+                description='Exchange feedback with your team in real time and work together smoothly without version conflicts.'
               />
               <FeatureCard
                 icon={Zap}
-                title='시각적 비교'
-                description='파형 기반의 시각적 비교를 통해 두 버전 간의 차이를 직관적으로 확인할 수 있습니다.'
+                title='Visual Comparison'
+                description='Intuitively compare versions with waveform-based visual differences for quick and clear insight.'
               />
+
             </div>
           </div>
         </section>
@@ -420,10 +420,11 @@ const LandingPage2: React.FC = () => {
             >
               <div className='absolute inset-0 rounded-3xl bg-gradient-to-r' />
               <h2 className='relative z-10 mb-4 text-3xl font-bold text-white md:text-4xl'>
-                이제는, 팀원들과 함께
+                Collaborate with your team
                 <br className='hidden md:block' />
-                실시간으로 트랙을 관리하세요.
+                and manage tracks in real time.
               </h2>
+
               <div className='absolute -right-6 -top-6 h-24 w-24 rounded-full bg-gradient-to-br from-violet-500/20 to-purple-600/20 blur-xl' />
               <div className='absolute -bottom-6 -left-6 h-32 w-32 rounded-full bg-gradient-to-br from-purple-500/20 to-pink-600/20 blur-xl' />
             </motion.div>
@@ -501,10 +502,11 @@ const LandingPage2: React.FC = () => {
             >
               <div className='absolute inset-0 rounded-3xl bg-gradient-to-r from-emerald-500/5 to-cyan-500/5' />
               <h2 className='relative z-10 mb-4 text-3xl font-bold text-white md:text-4xl'>
-                이제는 "최신 파일 뭐야?"
+                You’ll never have to ask,
                 <br className='hidden md:block' />
-                묻지 않아도 됩니다
+                “Is this the latest version?” again.
               </h2>
+
               <div className='absolute -right-6 -top-6 h-24 w-24 rounded-full bg-gradient-to-br from-emerald-500/20 to-cyan-600/20 blur-xl' />
               <div className='absolute -bottom-6 -left-6 h-32 w-32 rounded-full bg-gradient-to-br from-cyan-500/20 to-blue-600/20 blur-xl' />
             </motion.div>
@@ -528,16 +530,17 @@ const LandingPage2: React.FC = () => {
                   Ready to Start Creating?
                 </h2>
                 <p className='mx-auto mb-10 max-w-2xl text-xl text-slate-300'>
-                  수천 명의 뮤지션과 프로듀서들이 WavefloW와 함께 협업하고
-                  있습니다. 지금 바로 시작해보세요.
+                  Thousands of musicians and producers are already collaborating with WavefloW.
+                  Start your journey today.
                 </p>
+
                 <Link to='/signup'>
                   <motion.button
                     whileHover={{ scale: 1.05 }}
                     whileTap={{ scale: 0.95 }}
                     className='hover:shadow-3xl inline-flex items-center gap-3 rounded-full bg-gradient-to-r from-violet-500 to-purple-600 px-10 py-4 text-lg font-semibold text-white shadow-2xl shadow-violet-500/25 transition-all hover:shadow-violet-500/40'
                   >
-                    무료 체험 시작
+                    Start for free
                     <ArrowRight className='h-5 w-5 transition-transform group-hover:translate-x-1' />
                   </motion.button>
                 </Link>
@@ -563,9 +566,10 @@ const LandingPage2: React.FC = () => {
                 </div>
               </div>
               <p className='mb-6 max-w-md text-slate-400'>
-                음악 제작의 새로운 패러다임. 버전 관리와 실시간 협업을 통해 더
-                나은 음악을 만들어보세요.
+                A new paradigm in music production.
+                Create better music with version control and real-time collaboration.
               </p>
+
               <div className='flex space-x-4'>
                 <motion.button
                   whileHover={{ scale: 1.1 }}
