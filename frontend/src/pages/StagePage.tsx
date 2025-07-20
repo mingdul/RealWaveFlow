@@ -481,7 +481,7 @@ const StagePage: React.FC = () => {
                   <span className="ml-3 text-white text-sm">Loading reviewers...</span>
                 </div>
               ) : reviewers.length > 0 ? (
-                <div className="flex gap-4">
+                <div className="flex gap-4 justify-start">
                   {reviewers.map((reviewer) => (
                     <ReviewerCard key={reviewer.id} reviewer={reviewer} />
                   ))}
