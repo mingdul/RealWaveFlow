@@ -14,6 +14,7 @@ interface TrackUser {
   email: string;
   username: string;
   image_url: string | null;
+  role?: string;
 }
 
 interface TrackUsersData {
@@ -35,6 +36,15 @@ const Collaborators: React.FC<CollaboratorsProps> = ({ track }) => {
   const [inviteSuccess, setInviteSuccess] = useState('');
   const [emailList, setEmailList] = useState<string[]>([]);
   const [currentInput, setCurrentInput] = useState('');
+
+  // 역할 편집 관련 state
+  const [showRoleModal, setShowRoleModal] = useState(false);
+  const [selectedCollaborator, setSelectedCollaborator] = useState<TrackUser | null>(null);
+  const [newRole, setNewRole] = useState('');
+  const [roleLoading, setRoleLoading] = useState(false);
+  const [roleError, setRoleError] = useState('');
+  const [roleSuccess, setRoleSuccess] = useState('');
+  const [isOwnerVerified, setIsOwnerVerified] = useState(false);
 
   // API에서 트랙 사용자 정보 가져오기
   useEffect(() => {
@@ -201,6 +211,95 @@ const Collaborators: React.FC<CollaboratorsProps> = ({ track }) => {
     setInviteSuccess('');
   };
 
+  // Owner 권한 확인 함수
+  const checkOwnerPermission = async () => {
+    try {
+      const response = await apiClient.get(`/track-collaborator/is-owner/${track.id}`, {
+        withCredentials: true
+      });
+      return response.data.isOwner;
+    } catch (error) {
+      console.error('Failed to check owner permission:', error);
+      return false;
+    }
+  };
+
+  // 협업자 클릭 핸들러
+  const handleCollaboratorClick = async (collaborator: TrackUser) => {
+    const isOwner = await checkOwnerPermission();
+    if (!isOwner) {
+      alert('권한이 없습니다. 트랙 소유자만 역할을 수정할 수 있습니다.');
+      return;
+    }
+    
+    setSelectedCollaborator(collaborator);
+    setNewRole(collaborator.role || '');
+    setIsOwnerVerified(true);
+    setShowRoleModal(true);
+    setRoleError('');
+    setRoleSuccess('');
+  };
+
+  // 역할 수정 함수
+  const handleRoleUpdate = async () => {
+    if (!selectedCollaborator || !newRole.trim()) {
+      setRoleError('역할을 입력해주세요.');
+      return;
+    }
+
+    if (newRole.trim() === selectedCollaborator.role) {
+      setShowRoleModal(false);
+      return;
+    }
+
+    setRoleLoading(true);
+    setRoleError('');
+    setRoleSuccess('');
+
+    try {
+      const response = await apiClient.put('/track-collaborator/set-role', {
+        userId: selectedCollaborator.id,
+        trackId: track.id,
+        role: newRole.trim()
+      }, {
+        withCredentials: true
+      });
+
+      if (response.data.success) {
+        setRoleSuccess('역할이 성공적으로 수정되었습니다.');
+        
+        // 트랙 사용자 정보 새로고침
+        const trackResponse = await apiClient.get(`/track-collaborator/track-users/${track.id}`, {
+          withCredentials: true
+        });
+        
+        if (trackResponse.data.success) {
+          setTrackUsers(trackResponse.data.data);
+        }
+
+        setTimeout(() => {
+          setShowRoleModal(false);
+          setRoleSuccess('');
+        }, 2000);
+      }
+    } catch (error: any) {
+      console.error('Failed to update role:', error);
+      setRoleError(error.response?.data?.message || '역할 수정에 실패했습니다.');
+    } finally {
+      setRoleLoading(false);
+    }
+  };
+
+  // 역할 편집 모달 닫기 함수
+  const handleCloseRoleModal = () => {
+    setShowRoleModal(false);
+    setSelectedCollaborator(null);
+    setNewRole('');
+    setRoleError('');
+    setRoleSuccess('');
+    setIsOwnerVerified(false);
+  };
+
   if (loading) {
     return (
       <div className='flex items-center space-x-4'>
@@ -255,17 +354,19 @@ const Collaborators: React.FC<CollaboratorsProps> = ({ track }) => {
             {trackUsers.collaborators.collaborator.map((collaborator) => (
               <div
                 key={collaborator.id}
-                className='relative h-12 w-12 overflow-hidden rounded-full'
+                className='relative h-12 w-12 overflow-hidden rounded-full cursor-pointer transform transition-all duration-200 hover:scale-110 hover:ring-2 hover:ring-purple-400'
+                onClick={() => handleCollaboratorClick(collaborator)}
+                title={`${collaborator.username} (${collaborator.role || 'collaborator'})`}
               >
                 {collaborator.image_url ? (
                   <img
                     src={collaborator.image_url}
                     alt={collaborator.username}
-                    className='h-full w-full object-cover'
+                    className='h-full w-full object-cover transition-opacity duration-200 hover:opacity-80'
                     onError={(e) => handleImageError(e, collaborator.username)}
                   />
                 ) : (
-                  <div className='flex h-full w-full items-center justify-center bg-gradient-to-br from-purple-400 to-purple-600'>
+                  <div className='flex h-full w-full items-center justify-center bg-gradient-to-br from-purple-400 to-purple-600 transition-all duration-200 hover:from-purple-500 hover:to-purple-700'>
                     <span className='text-sm font-semibold text-white'>
                       {collaborator.username?.charAt(0)?.toUpperCase() || 'C'}
                     </span>
@@ -274,7 +375,7 @@ const Collaborators: React.FC<CollaboratorsProps> = ({ track }) => {
                 
                 {/* Fallback div */}
                 <div
-                  className='absolute inset-0 flex items-center justify-center bg-gradient-to-br from-purple-400 to-purple-600'
+                  className='absolute inset-0 flex items-center justify-center bg-gradient-to-br from-purple-400 to-purple-600 transition-all duration-200 hover:from-purple-500 hover:to-purple-700'
                   style={{ display: 'none' }}
                 >
                   <span className='text-sm font-semibold text-white'>
@@ -413,6 +514,102 @@ const Collaborators: React.FC<CollaboratorsProps> = ({ track }) => {
                 size='md'
                 onClick={handleCloseInviteModal}
                 disabled={inviteLoading}
+                className='flex-1'
+              >
+                취소
+              </Button>
+            </div>
+          </div>
+        </div>
+      )}
+
+      {/* Role Edit Modal */}
+      {showRoleModal && selectedCollaborator && (
+        <div className='fixed inset-0 z-50 flex items-center justify-center bg-black bg-opacity-50 p-4'>
+          <div className='mx-4 w-full max-w-sm rounded-lg bg-gray-800 p-4 sm:max-w-md md:p-6'>
+            <div className='mb-4 flex items-center justify-between'>
+              <h3 className='text-lg font-semibold text-white sm:text-xl'>
+                역할 수정
+              </h3>
+              <button
+                onClick={handleCloseRoleModal}
+                className='p-1 text-gray-400 hover:text-white'
+                disabled={roleLoading}
+              >
+                <X size={20} />
+              </button>
+            </div>
+
+            <div className='mb-4'>
+              <div className='mb-4 flex items-center space-x-3'>
+                <div className='relative h-10 w-10 overflow-hidden rounded-full'>
+                  {selectedCollaborator.image_url ? (
+                    <img
+                      src={selectedCollaborator.image_url}
+                      alt={selectedCollaborator.username}
+                      className='h-full w-full object-cover'
+                    />
+                  ) : (
+                    <div className='flex h-full w-full items-center justify-center bg-gradient-to-br from-purple-400 to-purple-600'>
+                      <span className='text-sm font-semibold text-white'>
+                        {selectedCollaborator.username?.charAt(0)?.toUpperCase() || 'C'}
+                      </span>
+                    </div>
+                  )}
+                </div>
+                <div>
+                  <p className='text-white font-medium'>{selectedCollaborator.username}</p>
+                  <p className='text-gray-400 text-sm'>{selectedCollaborator.email}</p>
+                </div>
+              </div>
+
+              <label className='mb-2 block text-sm font-medium text-gray-300'>
+                역할
+              </label>
+              <input
+                type='text'
+                value={newRole}
+                onChange={(e) => setNewRole(e.target.value)}
+                placeholder={selectedCollaborator.role || 'collaborator'}
+                className='w-full rounded-md border border-gray-600 bg-gray-700 px-3 py-2 text-white placeholder-gray-400 focus:border-purple-500 focus:outline-none focus:ring-2 focus:ring-purple-500'
+                disabled={roleLoading}
+              />
+              <p className='mt-1 text-xs text-gray-400'>
+                현재 역할: {selectedCollaborator.role || 'collaborator'}
+              </p>
+            </div>
+
+            {roleError && (
+              <div className='mb-4 rounded-md border border-red-700 bg-red-900 p-3'>
+                <p className='text-sm text-red-300'>{roleError}</p>
+              </div>
+            )}
+
+            {roleSuccess && (
+              <div className='mb-4 rounded-md border border-green-700 bg-green-900 p-3'>
+                <p className='text-sm text-green-300'>{roleSuccess}</p>
+              </div>
+            )}
+
+            <div className='flex gap-3'>
+              <Button
+                variant='primary'
+                size='md'
+                onClick={handleRoleUpdate}
+                disabled={roleLoading || !newRole.trim()}
+                className='flex-1 bg-purple-600 hover:bg-purple-700'
+              >
+                {roleLoading ? (
+                  <div className='h-4 w-4 animate-spin rounded-full border-2 border-white border-t-transparent' />
+                ) : (
+                  '역할 수정'
+                )}
+              </Button>
+              <Button
+                variant='outline'
+                size='md'
+                onClick={handleCloseRoleModal}
+                disabled={roleLoading}
                 className='flex-1'
               >
                 취소

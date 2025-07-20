@@ -1,9 +1,10 @@
-import { Injectable, NotFoundException, ConflictException } from '@nestjs/common';
+import { Injectable, NotFoundException, ConflictException, ForbiddenException } from '@nestjs/common';
 import { InjectRepository } from '@nestjs/typeorm';
 import { Repository } from 'typeorm';
 import { TrackCollaborator } from './track_collaborator.entity';
 import { CreateTrackCollaboratorDto } from './dto/create-track-collaborator.dto';
 import { UpdateTrackCollaboratorDto } from './dto/update-track-collaborator.dto';
+import { SetRoleDto } from './dto/set-role.dto';
 import { Track } from '../track/track.entity';
 import { S3Client, GetObjectCommand } from '@aws-sdk/client-s3';
 import { getSignedUrl } from '@aws-sdk/s3-request-presigner';
@@ -179,6 +180,7 @@ export class TrackCollaboratorService {
                     email: collab.user_id.email,
                     username: collab.user_id.username,
                     image_url: collaboratorImageUrl,
+                    role: collab.role,
                 };
             })
         );
@@ -196,6 +198,66 @@ export class TrackCollaboratorService {
                     collaborator: collaboratorsWithPresignedUrls
                 }
             }
+        };
+    }
+
+    async setRole(setRoleDto: SetRoleDto, currentUserId: string) {
+        const { userId, trackId, role } = setRoleDto;
+
+        // 트랙 정보와 owner 조회
+        const track = await this.trackRepository.findOne({
+            where: { id: trackId },
+            relations: ['owner_id'],
+        });
+
+        if (!track) {
+            throw new NotFoundException('트랙을 찾을 수 없습니다.');
+        }
+
+        // 현재 사용자가 트랙의 owner인지 확인
+        if (track.owner_id.id !== currentUserId) {
+            throw new ForbiddenException('접근 권한이 없습니다.');
+        }
+
+        // 해당 유저의 협업자 관계 조회
+        const collaborator = await this.trackCollaboratorRepository.findOne({
+            where: { 
+                user_id: { id: userId },
+                track_id: { id: trackId }
+            },
+            relations: ['user_id', 'track_id'],
+        });
+
+        if (!collaborator) {
+            throw new NotFoundException('협업자를 찾을 수 없습니다.');
+        }
+
+        // role 업데이트
+        collaborator.role = role;
+        await this.trackCollaboratorRepository.save(collaborator);
+
+        return {
+            success: true,
+            message: 'Role updated successfully',
+            collaborator
+        };
+    }
+
+    async isOwner(trackId: string, currentUserId: string) {
+        const track = await this.trackRepository.findOne({
+            where: { id: trackId },
+            relations: ['owner_id'],
+        });
+
+        if (!track) {
+            throw new NotFoundException('트랙을 찾을 수 없습니다.');
+        }
+
+        const isOwner = track.owner_id.id === currentUserId;
+
+        return {
+            success: true,
+            isOwner
         };
     }
 }

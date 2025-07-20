@@ -4,6 +4,7 @@ import { ApiTags, ApiOperation, ApiResponse, ApiParam, ApiBody } from '@nestjs/s
 import { TrackCollaboratorService } from './track_collaborator.service';
 import { CreateTrackCollaboratorDto } from './dto/create-track-collaborator.dto';
 import { UpdateTrackCollaboratorDto } from './dto/update-track-collaborator.dto';
+import { SetRoleDto } from './dto/set-role.dto';
 
 @ApiTags('Track Collaborator')
 @Controller('track-collaborator')
@@ -19,6 +20,25 @@ export class TrackCollaboratorController {
     @ApiResponse({ status: 409, description: '이미 존재하는 협업자 관계' })
     async createCollaborator(@Body(ValidationPipe) createTrackCollaboratorDto: CreateTrackCollaboratorDto) {
         return this.trackCollaboratorService.createCollaborator(createTrackCollaboratorDto);
+    }
+
+    @Put('set-role')
+    @ApiOperation({ summary: '협업자 역할 수정', description: '트랙 소유자가 협업자의 역할을 수정합니다.' })
+    @ApiBody({ type: SetRoleDto })
+    @ApiResponse({ status: 200, description: '역할 수정 성공' })
+    @ApiResponse({ status: 403, description: '접근 권한이 없음' })
+    @ApiResponse({ status: 404, description: '트랙 또는 협업자를 찾을 수 없음' })
+    async setRole(@Body(ValidationPipe) setRoleDto: SetRoleDto, @Request() req) {
+        return this.trackCollaboratorService.setRole(setRoleDto, req.user.id);
+    }
+
+    @Get('is-owner/:trackId')
+    @ApiOperation({ summary: '트랙 소유자 확인', description: '현재 사용자가 해당 트랙의 소유자인지 확인합니다.' })
+    @ApiParam({ name: 'trackId', description: '트랙 ID' })
+    @ApiResponse({ status: 200, description: '소유자 확인 성공' })
+    @ApiResponse({ status: 404, description: '트랙을 찾을 수 없음' })
+    async isOwner(@Param('trackId') trackId: string, @Request() req) {
+        return this.trackCollaboratorService.isOwner(trackId, req.user.id);
     }
 
 
@@ -58,6 +78,7 @@ export class TrackCollaboratorController {
     ) {
         return this.trackCollaboratorService.updateCollaborator(id, updateTrackCollaboratorDto);
     }
+    
 
     @Put(':id/accept')
     @ApiOperation({ summary: '협업 수락', description: '협업 요청을 수락합니다.' })

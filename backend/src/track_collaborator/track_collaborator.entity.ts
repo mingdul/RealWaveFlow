@@ -23,4 +23,7 @@ export class TrackCollaborator {
 
   @Column({ default: 'accepted' }) // 상태: pending, accepted 등
   status: string;
+
+  @Column({ default : 'Collaborator'})
+  role : string;
 }
