@@ -70,12 +70,9 @@ export class UpstreamReviewService {
             relations: ['upstream', 'stage_reviewer'],
         });
 
-        if (upstreamReviews.length === 0) {
-            throw new NotFoundException('No upstream reviews found');
-        }
         return {
             success: true,
-            message: 'Upstream reviews fetched successfully',   
+            message: upstreamReviews.length > 0 ? 'Upstream reviews fetched successfully' : 'No upstream reviews found',   
             data: upstreamReviews,
         };
     }

@@ -1,12 +1,13 @@
 import React, { useState, useEffect } from 'react';
 import { useParams } from 'react-router-dom';
-import { Upload, Music, Clock, Award, Eye, CheckCircle, XCircle } from 'lucide-react';
+import { Upload, Music, Clock, Award, Eye, CheckCircle, XCircle, Check } from 'lucide-react';
 // import Logo from '../components/Logo';
 import UploadModal from '../components/UploadModal';
 import trackService from '../services/trackService';
 import { getStageDetail } from '../services/stageService';
 import { getStageUpstreams } from '../services/upstreamService';
 import { getStageReviewers } from '../services/stageReviewerService';
+import { getUpstreamReviews } from '../services/upstreamReviewService';
 import { Track, Stage, Upstream, StageReviewer } from '../types/api';
 import tapeActive from '../assets/activeTape.png';
 import tapeApproved from '../assets/approveTape.png';
@@ -28,6 +29,7 @@ const StagePage: React.FC = () => {
   const [track, setTrack] = useState<Track | null>(null);
   const [reviewers, setReviewers] = useState<StageReviewer[]>([]);
   const [reviewersLoading, setReviewersLoading] = useState(false);
+  const [upstreamReviews, setUpstreamReviews] = useState<{[key: string]: any[]}>({});
 
   // 트랙 정보 가져오기
   useEffect(() => {
@@ -86,6 +88,13 @@ const StagePage: React.FC = () => {
         const upstreamsResponse = await getStageUpstreams(stageId);
         setUpstreams(upstreamsResponse || []);
 
+        // 각 upstream의 review 데이터 가져오기
+        if (upstreamsResponse && upstreamsResponse.length > 0) {
+          for (const upstream of upstreamsResponse) {
+            await fetchUpstreamReviews(upstream.id);
+          }
+        }
+
         // 리뷰어 목록 가져오기
         setReviewersLoading(true);
         const reviewersResponse = await getStageReviewers(stageId);
@@ -139,6 +148,27 @@ const StagePage: React.FC = () => {
       console.error('❌ Error navigating to review page:', error);
       showError('리뷰 페이지로 이동 중 오류가 발생했습니다.');
     }
+  };
+
+  // Upstream review 데이터 가져오기
+  const fetchUpstreamReviews = async (upstreamId: string) => {
+    try {
+      const reviews = await getUpstreamReviews(upstreamId);
+      setUpstreamReviews(prev => ({
+        ...prev,
+        [upstreamId]: reviews
+      }));
+    } catch (error) {
+      console.error('Failed to fetch upstream reviews:', error);
+    }
+  };
+
+  // Approve 정보 계산
+  const getApproveInfo = (upstreamId: string) => {
+    const reviews = upstreamReviews[upstreamId] || [];
+    const totalReviewers = reviews.length;
+    const approvedCount = reviews.filter(review => review.status === 'approved').length;
+    return { totalReviewers, approvedCount };
   };
 
   // Reviewer 컴포넌트
@@ -273,6 +303,19 @@ const StagePage: React.FC = () => {
           </div>
         </div>
 
+        {/* Approve Info */}
+        <div className="absolute bottom-4 left-4 z-30">
+          <div className="flex items-center gap-2 px-3 py-1.5 rounded-full bg-black/40 backdrop-blur-sm">
+            <Check className="w-3 h-3 text-white" />
+            <span className="text-white text-sm font-medium">
+              {(() => {
+                const { totalReviewers, approvedCount } = getApproveInfo(upstream.id);
+                return `${approvedCount}/${totalReviewers}`;
+              })()}
+            </span>
+          </div>
+        </div>
+
         {/* Tape Image */}
         <div className="absolute inset-0 flex items-center justify-center z-10" style={{ pointerEvents: 'none' }}>
           <img
@@ -283,7 +326,7 @@ const StagePage: React.FC = () => {
         </div>
 
         {/* Title Overlay - 항상 표시 */}
-        <div className="absolute top-[70px] left-0 w-full text-center z-20">
+        <div className="absolute top-[85px] left-0 w-full text-center z-20">
           <div>
             <h3 className="text-xl font-bold text-black drop-shadow-lg px-4">
               {upstream.title && typeof upstream.title === 'string' && upstream.title.trim() ? upstream.title : `STEM SET #${upstream.title}`}
@@ -378,7 +421,7 @@ const StagePage: React.FC = () => {
         }}
       />
 
-      <main className='relative px-8 pb-8 pt-6'>
+      <main className='relative px-8 pb-8 pt-6 max-w-[1280px] mx-auto'>
         {/* Stage Header */}
         <div className='mb-12'>
           <div className="flex items-start gap-8 mb-8">
@@ -394,31 +437,7 @@ const StagePage: React.FC = () => {
                 <Music className="w-16 h-16 text-white" />
               )}
             </div>
-            {/* Reviewers Section */}
-            <div className="flex-shrink-0 w-[1080px]">
-              <h2 className="text-3xl font-bold text-white mb-6">Reviewers</h2>
-              {reviewersLoading ? (
-                <div className="flex items-center justify-center py-8">
-                  <div className="w-8 h-8 border-4 border-purple-500/30 border-t-purple-500 rounded-full animate-spin"></div>
-                  <span className="ml-3 text-white text-sm">Loading reviewers...</span>
-                </div>
-              ) : reviewers.length > 0 ? (
-                <div className="flex flex-wrap gap-4">
-                  {reviewers.map((reviewer) => (
-                    <ReviewerCard key={reviewer.id} reviewer={reviewer} />
-                  ))}
-                </div>
-              ) : (
-                <div className="text-center py-8">
-                  <div className="w-16 h-16 bg-gradient-to-br from-gray-700 to-gray-800 rounded-full flex items-center justify-center mb-4">
-                    <Music className="w-8 h-8 text-gray-400" />
-                  </div>
-                  <p className="text-gray-400 text-sm">No reviewers assigned</p>
-                </div>
-              )}
-            </div>
-            
-            <div className="flex-1 max-w-2xl">
+            <div className="flex-1 max-w-[830px]">
               <h1 className='text-6xl font-bold text-white mb-6'>
                 {track?.title || 'Unknown Track'}
               </h1>
@@ -444,6 +463,37 @@ const StagePage: React.FC = () => {
                   </p>
                 )}
               </div>
+            </div>
+          </div>
+          
+          {/* Reviewers Section - 두 번째 행 */}
+          <div className="flex items-start gap-8">
+            <div className="flex-1 max-w-[830px]">
+              {/* 빈 공간 - 첫 번째 행과 동일한 높이 유지 */}
+            </div>
+            
+            {/* Reviewers Section */}
+            <div className="flex-shrink-0 w-[400px]">
+              <h2 className="text-3xl font-bold text-white mb-6">Reviewers</h2>
+              {reviewersLoading ? (
+                <div className="flex items-center justify-center py-8">
+                  <div className="w-8 h-8 border-4 border-purple-500/30 border-t-purple-500 rounded-full animate-spin"></div>
+                  <span className="ml-3 text-white text-sm">Loading reviewers...</span>
+                </div>
+              ) : reviewers.length > 0 ? (
+                <div className="flex flex-wrap gap-4">
+                  {reviewers.map((reviewer) => (
+                    <ReviewerCard key={reviewer.id} reviewer={reviewer} />
+                  ))}
+                </div>
+              ) : (
+                <div className="text-center py-8">
+                  <div className="w-16 h-16 bg-gradient-to-br from-gray-700 to-gray-800 rounded-full flex items-center justify-center mb-4">
+                    <Music className="w-8 h-8 text-gray-400" />
+                  </div>
+                  <p className="text-gray-400 text-sm">No reviewers assigned</p>
+                </div>
+              )}
             </div>
           </div>
           {/* 디버깅 정보 */}
