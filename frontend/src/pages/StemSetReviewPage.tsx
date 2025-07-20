@@ -995,6 +995,24 @@ const StemSetReviewPage = () => {
               console.log('👤 [handleAddComment] Current user data:', user);
         console.log('🖼️ [handleAddComment] User image_url:', (user as any).image_url);
 
+        // 현재 사용자의 프로필 이미지 presigned URL 가져오기
+        let userAvatarUrl = null;
+        try {
+          const currentUserResponse = await fetch('/api/users/me/profile-image', {
+            credentials: 'include'
+          });
+          
+          if (currentUserResponse.ok) {
+            const profileData = await currentUserResponse.json();
+            if (profileData.success && profileData.data.imageUrl) {
+              userAvatarUrl = profileData.data.imageUrl;
+              console.log('✅ [handleAddComment] Got current user presigned URL:', userAvatarUrl);
+            }
+          }
+        } catch (profileError) {
+          console.warn('⚠️ [handleAddComment] Failed to get current user profile image:', profileError);
+        }
+
         const newComment: Comment = {
           id: createdComment.id,
           time: timeString,
@@ -1004,11 +1022,11 @@ const StemSetReviewPage = () => {
           user: {
             id: user.id,
             username: user.username,
-            avatarUrl: (user as any).image_url, // 현재 사용자의 image_url 사용 (presigned URL 변환 필요할 수 있음)
+            avatarUrl: userAvatarUrl, // presigned URL 사용
           },
         };
 
-        console.log('✅ [handleAddComment] New comment created with user:', newComment.user);
+        console.log('✅ [handleAddComment] New comment created with presigned avatar URL:', newComment.user);
 
       setComments((prev) => [...prev, newComment]);
       setNewCommentText('');

@@ -3,27 +3,30 @@ import { ChevronLeft, Settings } from 'lucide-react';
 import { Button } from './';
 import Logo from './Logo';
 import NotificationBell from './NotificationBell';
+import ProfileSettingsModal from './ProfileSettingsModal';
 import { useNotifications } from '../contexts/NotificationContext';
-import { Track } from '../types/api';
 
 
 interface TrackHeaderCopyProps {
   onBack?: () => void;
-  onSettingsClick?: () => void;
-  track?: Track;
 }
 
 const TrackHeaderCopy: React.FC<TrackHeaderCopyProps> = ({
   onBack,
-  onSettingsClick,
-
 }) => {
   const { notifications, unreadCount } = useNotifications();
 
+  // 🔥 NEW: Profile Settings 모달 상태
+  const [isProfileModalOpen, setIsProfileModalOpen] = useState(false);
   
   // 🔥 NEW: 강제 리렌더링을 위한 상태
   const [forceRefreshKey, setForceRefreshKey] = useState(0);
   const [lastNotificationTime, setLastNotificationTime] = useState<string>('');
+
+  // 🔥 Settings 버튼 클릭 핸들러
+  const handleSettingsClick = () => {
+    setIsProfileModalOpen(true);
+  };
 
 
 
@@ -85,41 +88,48 @@ const TrackHeaderCopy: React.FC<TrackHeaderCopyProps> = ({
   }, [notifications]);
 
   return (
-    <div 
-      className="bg-black"
-      key={`track-header-${forceRefreshKey}`} // 🔥 NEW: 강제 리렌더링을 위한 key
-    >
-      {/* 상단 네비게이션 바 */}
-      <div className="px-6 py-6 flex items-center justify-between">
-        <div className="flex items-center gap-4">
-          <Button size="sm" className="p-2 " onClick={onBack}>
-            <ChevronLeft className='text-[#893AFF]' size={20} />
-          </Button>
-          <Logo />
-        </div>
+    <>
+      <div 
+        className="bg-black"
+        key={`track-header-${forceRefreshKey}`} // 🔥 NEW: 강제 리렌더링을 위한 key
+      >
+        {/* 상단 네비게이션 바 */}
+        <div className="px-6 py-6 flex items-center justify-between">
+          <div className="flex items-center gap-4">
+            <Button size="sm" className="p-2 " onClick={onBack}>
+              <ChevronLeft className='text-[#893AFF]' size={20} />
+            </Button>
+            <Logo />
+          </div>
 
-        <div className="flex items-center gap-4">
-          {/* 🔥 NotificationBell에 실시간 상태 표시 */}
-            <NotificationBell />
-            {/* 개발 환경에서만 보이는 상태 표시 */}
-            {import.meta.env.DEV && (
-              <div className="absolute -bottom-8 right-0 text-xs text-gray-400 whitespace-nowrap">
-                {notifications.length}/{unreadCount} (Refresh: {forceRefreshKey})
-                {lastNotificationTime && (
-                  <div className="text-xs text-green-400">
-                    Last: {new Date(lastNotificationTime).toLocaleTimeString()}
-                  </div>
-                )}
-              </div>
-            )}
+          <div className="flex items-center gap-4">
+            {/* 🔥 NotificationBell에 실시간 상태 표시 */}
+              <NotificationBell />
+              {/* 개발 환경에서만 보이는 상태 표시 */}
+              {import.meta.env.DEV && (
+                <div className="absolute -bottom-8 right-0 text-xs text-gray-400 whitespace-nowrap">
+                  {notifications.length}/{unreadCount} (Refresh: {forceRefreshKey})
+                  {lastNotificationTime && (
+                    <div className="text-xs text-green-400">
+                      Last: {new Date(lastNotificationTime).toLocaleTimeString()}
+                    </div>
+                  )}
+                </div>
+              )}
 
-          <Button size="sm" className="p-2 " onClick={onSettingsClick}>
-            <Settings className='text-[#893AFF]' size={20} />
-          </Button>
+            <Button size="sm" className="p-2 " onClick={handleSettingsClick}>
+              <Settings className='text-[#893AFF]' size={20} />
+            </Button>
+          </div>
         </div>
       </div>
 
-    </div>
+      {/* 🔥 NEW: ProfileSettingsModal */}
+      <ProfileSettingsModal
+        isOpen={isProfileModalOpen}
+        onClose={() => setIsProfileModalOpen(false)}
+      />
+    </>
   );
 };
 
