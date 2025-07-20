@@ -86,7 +86,7 @@ const AuthFormWrapper: React.FC<AuthFormWrapperProps> = ({
           {/* Background Image */}
           <div className="absolute inset-0 flex items-center justify-center">
             <img 
-              src="../assets/hand-1850120_1280.jpg" 
+              src="../DJ.jpg" 
               alt="Background" 
               className="w-full h-full object-cover"
             />

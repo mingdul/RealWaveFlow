@@ -139,7 +139,7 @@ const CreateTrackModal: React.FC<CreateTrackModalProps> = ({ isOpen, onClose, on
       isOpen={isOpen}
       onClose={onClose}
       animationType="scale"
-      className="bg-gray-800 rounded-xl w-full max-w-sm sm:max-w-2xl md:max-w-3xl lg:max-w-4xl max-h-[90vh] flex flex-col shadow-2xl"
+      className="bg-gray-800 rounded-xl w-full max-w-lg sm:max-w-3xl md:max-w-5xl lg:max-w-6xl max-h-[90vh] flex flex-col shadow-2xl mx-8"
     >
         {/* Header */}
         <div className="flex items-center justify-between p-4 sm:p-6 border-b border-gray-700">
@@ -303,28 +303,6 @@ const CreateTrackModal: React.FC<CreateTrackModalProps> = ({ isOpen, onClose, on
                     </div>
                   )}
                 </div>
-                
-                {/* Preview Card */}
-                {/* <div className="bg-gray-700 rounded-lg p-4">
-                  <h4 className="text-white text-sm font-medium mb-2">Preview</h4>
-                  <div className="bg-gray-600 rounded-lg p-3 flex items-center space-x-3">
-                    <div className="w-12 h-12 bg-gray-500 rounded-lg flex items-center justify-center overflow-hidden">
-                      {coverImagePreview ? (
-                        <img src={coverImagePreview} alt="Preview" className="w-full h-full object-cover" />
-                      ) : (
-                        <Image size={20} className="text-gray-400" />
-                      )}
-                    </div>
-                    <div className="flex-1 min-w-0">
-                      <p className="text-white text-sm font-medium truncate">
-                        {formData.name || 'Track Name'}
-                      </p>
-                      <p className="text-gray-400 text-xs truncate">
-                        {formData.genre || 'Genre'} {formData.bpm && `• ${formData.bpm} BPM`}
-                      </p>
-                    </div>
-                  </div>
-                </div> */}
               </div>
             </div>
           </div>

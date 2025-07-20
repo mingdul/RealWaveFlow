@@ -186,34 +186,52 @@ const FileSelectionAndUploadStep: React.FC<{
         Choose audio files, set their metadata, and upload them to the project.
       </p>
 
-      {/* File Selection Area */}
-      <div className='mb-6'>
-        <input
-          type='file'
-          id='modal-file-input'
-          multiple
-          accept='.wav,.mp3,.aiff,.flac,.m4a,.ogg'
-          onChange={handleFileSelection}
-          className='hidden'
-        />
-        <label
-          htmlFor='modal-file-input'
-          className='block w-full cursor-pointer rounded-lg border-2 border-dashed border-gray-600 p-6 transition-all duration-200 hover:border-purple-500 hover:bg-purple-900/10'
-        >
-          <div className='text-center'>
-            <Plus size={28} className='mx-auto mb-3 text-purple-400' />
-            <h3 className='mb-2 text-lg font-semibold text-white'>
-              Select Audio Files
-            </h3>
-            <p className='text-sm text-gray-400'>
-              Choose multiple files to upload at once
-            </p>
-            <p className='mt-2 text-xs text-gray-500'>
-              Supports: WAV, MP3, AIFF, FLAC, M4A, OGG
-            </p>
-          </div>
-        </label>
-      </div>
+      {/* File Selection Area or Upload Complete */}
+      {completedFiles.length > 0 && selectedFiles.length === 0 && !isUploading ? (
+        // Upload Complete Section
+        <div className='mb-6 rounded-lg border border-green-500/30 bg-green-900/20 py-8 text-center'>
+          <Check size={48} className='mx-auto mb-4 text-green-400' />
+          <h3 className='mb-2 text-xl font-semibold text-white'>
+            Upload Complete!
+          </h3>
+          <p className='mb-4 text-gray-300'>
+            Successfully uploaded {completedFiles.length} file
+            {completedFiles.length > 1 ? 's' : ''}.
+          </p>
+          <p className='text-sm text-gray-400'>
+            You can now complete the project setup or add more files.
+          </p>
+        </div>
+      ) : (
+        // File Selection Area
+        <div className='mb-6'>
+          <input
+            type='file'
+            id='modal-file-input'
+            multiple
+            accept='.wav,.mp3,.aiff,.flac,.m4a,.ogg'
+            onChange={handleFileSelection}
+            className='hidden'
+          />
+          <label
+            htmlFor='modal-file-input'
+            className='block w-full cursor-pointer rounded-lg border-2 border-dashed border-gray-600 p-6 transition-all duration-200 hover:border-purple-500 hover:bg-purple-900/10'
+          >
+            <div className='text-center'>
+              <Plus size={28} className='mx-auto mb-3 text-purple-400' />
+              <h3 className='mb-2 text-lg font-semibold text-white'>
+                Select Audio Files
+              </h3>
+              <p className='text-sm text-gray-400'>
+                Choose multiple files to upload at once
+              </p>
+              <p className='mt-2 text-xs text-gray-500'>
+                Supports: WAV, MP3, AIFF, FLAC, M4A, OGG
+              </p>
+            </div>
+          </label>
+        </div>
+      )}
 
       {/* Upload Progress */}
       {isUploading && (
@@ -417,26 +435,7 @@ const FileSelectionAndUploadStep: React.FC<{
             </p>
           )}
         </div>
-      )}
-
-      {/* Upload Complete */}
-      {completedFiles.length > 0 &&
-        selectedFiles.length === 0 &&
-        !isUploading && (
-          <div className='mt-6 rounded-lg border border-green-500/30 bg-green-900/20 py-8 text-center'>
-            <Check size={48} className='mx-auto mb-4 text-green-400' />
-            <h3 className='mb-2 text-xl font-semibold text-white'>
-              Upload Complete!
-            </h3>
-            <p className='mb-4 text-gray-300'>
-              Successfully uploaded {completedFiles.length} file
-              {completedFiles.length > 1 ? 's' : ''}.
-            </p>
-            <p className='text-sm text-gray-400'>
-              You can now complete the project setup or add more files.
-            </p>
-          </div>
-        )}
+              )}
     </div>
   );
 };
@@ -734,7 +733,7 @@ const InitProjectModal: React.FC<InitProjectModalProps> = ({
       onClose={onClose}
       closeOnBackdropClick={false}
       animationType="scale"
-      className='flex max-h-[90vh] w-full max-w-6xl flex-col rounded-xl bg-gray-800 shadow-2xl'
+      className='flex max-h-[90vh] w-full max-w-6xl flex-col rounded-xl bg-gray-800 shadow-2xl mx-8'
     >
         <div className='flex h-full flex-col overflow-y-auto'>
           {/* Header */}

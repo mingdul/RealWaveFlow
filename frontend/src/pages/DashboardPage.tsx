@@ -383,8 +383,7 @@ const DashboardPage = () => {
         <div className="absolute -bottom-40 -left-40 w-80 h-80 bg-blue-500 rounded-full mix-blend-multiply filter blur-xl opacity-20 animate-blob animation-delay-2000"></div>
         <div className="absolute top-40 left-40 w-80 h-80 bg-pink-500 rounded-full mix-blend-multiply filter blur-xl opacity-20 animate-blob animation-delay-4000"></div>
       </div>
-      {/* 어두운 오버레이 */}
-      <div className='absolute inset-0 h-screen bg-black bg-opacity-80 flex flex-col'>
+
 
         {/* Header */}
         <header className='flex flex-shrink-0 items-center justify-between border-b border-gray-800 p-6'>
@@ -499,7 +498,6 @@ const DashboardPage = () => {
           onCancel={() => setDeleteConfirmation({ isOpen: false, trackId: null })}
         />
       </div>
-    </div>
   );
 };
 
