@@ -2200,7 +2200,7 @@ const StemSetReview = () => {
                       onReady={handleReady}
                       audioUrl={extraAudio}
                       peaks={extraPeaks}
-                      waveColor='#60a5fa'
+                      waveColor='#1f45fc'
                       id='extra'
                       isPlaying={isPlaying}
                       currentTime={currentTime}
