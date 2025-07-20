@@ -894,7 +894,7 @@ const TrackPage: React.FC<TrackPagejjmProps> = () => {
   const isActiveStage = !!getActiveStage();
 
   return (
-    <div className='relative min-h-screen overflow-hidden bg-black'>
+    <div className='relative max-w-[1280px] mx-auto min-h-screen overflow-hidden bg-black'>
       {/* 어두운 오버레이 */}
       <div className='absolute inset-0 bg-gradient-to-br from-black/50 via-transparent to-black/30'></div>
       <div className='absolute inset-0 bg-gradient-to-t from-black/70 via-transparent to-transparent'></div>
