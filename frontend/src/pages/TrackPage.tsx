@@ -478,6 +478,11 @@ const TrackPage: React.FC<TrackPagejjmProps> = () => {
   const [selectedVersionTimeline, setSelectedVersionTimeline] = useState<number | null>(null); // VersionTimeline용 (독립적)
   const [error, setError] = useState<string | null>(null);
 
+  // StemListModal 전용 상태 (Stage별 stems 관리)
+  const [modalStems, setModalStems] = useState<StemStreamingInfo[]>([]);
+  const [modalStageId, setModalStageId] = useState<string | null>(null);
+  const [modalVersionNumber, setModalVersionNumber] = useState<string>('');
+
   // 전역 오디오 관리 상태
   const [currentAudio, setCurrentAudio] = useState<HTMLAudioElement | null>(null);
   const [currentPlayingId, setCurrentPlayingId] = useState<string | null>(null);
@@ -843,17 +848,100 @@ const TrackPage: React.FC<TrackPagejjmProps> = () => {
     }
   };
 
+  // Stage별 stems 로딩 로직 (모달 열지 않음)
+  const loadStageStems = async (stageId: string): Promise<boolean> => {
+    const stage = stages.find(s => s.id === stageId);
+    if (!stage) {
+      console.error('[ERROR][TrackPage] Stage not found:', stageId);
+      return false;
+    }
+
+    console.log('[DEBUG][TrackPage] Loading stems for stage - Version:', stage.version, 'Status:', stage.status);
+
+    // Active 스테이지는 version-stem이 없으므로 차단
+    if (stage.status === 'active') {
+      console.warn('[WARN][TrackPage] Active stage has no version-stems');
+      alert('Active stage는 아직 version-stem이 없습니다. 승인 후 확인 가능합니다.');
+      return false;
+    }
+
+    try {
+      setStemsLoading(true);
+      
+      // 해당 스테이지의 version-stem만 조회
+      const versionStems = await versionStemService.getVersionStemByStageId(stageId);
+      
+      if (versionStems && Array.isArray(versionStems)) {
+        // 버전 스템 데이터를 StemStreamingInfo 형태로 변환
+        const convertedStems: StemStreamingInfo[] = versionStems.map(
+          (stem: any) => ({
+            id: stem.id,
+            fileName: stem.file_name,
+            category: stem.category?.name || stem.category?.instrument || 'Unknown',
+            tag: stem.key || '',
+            key: stem.key || '',
+            description: stem.description || '',
+            presignedUrl: '',
+            metadata: { duration: 0, fileSize: 0 },
+            uploadedBy: {
+              id: stem.user?.id || '',
+              username: stem.user?.username || 'Unknown',
+            },
+            uploadedAt: stem.uploaded_at,
+          })
+        );
+
+        console.log('[DEBUG][TrackPage] 🎯 Successfully loaded', convertedStems.length, 'stage-specific stems');
+        
+        // Modal 전용 상태 설정
+        setModalStems(convertedStems);
+        setModalStageId(stageId);
+        setModalVersionNumber(stage.version.toString());
+        return true;
+      } else {
+        console.warn('[WARN][TrackPage] No version-stems found for stageId:', stageId);
+        setModalStems([]);
+        setModalStageId(stageId);
+        setModalVersionNumber(stage.version.toString());
+        return true;
+      }
+    } catch (error) {
+      console.error('[ERROR][TrackPage] Error loading stage-specific stems:', error);
+      return false;
+    } finally {
+      setStemsLoading(false);
+    }
+  };
+
   const handleShowAllStems = async () => {
+    console.log('[DEBUG][TrackPage] === TrackInfo Show All Stems ===');
+    
     const lastApprovedStage = getLastApprovedStage();
     
     if (lastApprovedStage) {
       console.log('[DEBUG][TrackPage] Loading stems for last approved stage:', lastApprovedStage);
-      await loadStemsByVersion(lastApprovedStage.version);
+      const success = await loadStageStems(lastApprovedStage.id);
+      if (success) {
+        setIsStemListModalOpen(true);
+      }
     } else {
       console.warn('[DEBUG][TrackPage] No approved stage found, using current stems');
+      // 승인된 스테이지가 없으면 현재 stems 사용
+      setModalStems(stems);
+      setModalStageId(null);
+      setModalVersionNumber(selectedStageVersion.toString());
+      setIsStemListModalOpen(true);
     }
+  };
+
+  const handleStageShowAllStems = async (stageId: string) => {
+    console.log('[DEBUG][TrackPage] === StageHis Show All Stems ===');
+    console.log('[DEBUG][TrackPage] Target stageId:', stageId);
     
-    setIsStemListModalOpen(true);
+    const success = await loadStageStems(stageId);
+    if (success) {
+      setIsStemListModalOpen(true);
+    }
   };
 
   // Stage 전용 함수들
@@ -877,16 +965,7 @@ const TrackPage: React.FC<TrackPagejjmProps> = () => {
     }
   };
 
-  const handleStageShowAllStems = async (stageId: string) => {
-    console.log('[DEBUG][TrackPage] Show all stems for stage:', stageId);
-    
-    // 해당 스테이지의 버전으로 스템 로드
-    const stage = stages.find(s => s.id === stageId);
-    if (stage) {
-      await loadStemsByVersion(stage.version);
-      setIsStemListModalOpen(true);
-    }
-  };
+
 
   const handleRollBack = async () => {
     if (!trackId) return;
@@ -1087,16 +1166,16 @@ const TrackPage: React.FC<TrackPagejjmProps> = () => {
         trackId={trackId || ''}
       />
 
-      <StemListModal
-        isOpen={isStemListModalOpen}
-        onClose={() => setIsStemListModalOpen(false)}
-        stems={stems}
-        versionNumber={getLastApprovedStage()?.version.toString() || selectedStageVersion.toString()}
-        loading={stemsLoading}
-        onRollBack={handleRollBack}
-        onShowStage={handleShowStage}
-        stageId={getLastApprovedStage()?.id || getSelectedStage()?.id}
-      />
+              <StemListModal
+          isOpen={isStemListModalOpen}
+          onClose={() => setIsStemListModalOpen(false)}
+          stems={modalStems}
+          versionNumber={modalVersionNumber}
+          loading={stemsLoading}
+          onRollBack={handleRollBack}
+          onShowStage={handleShowStage}
+          stageId={modalStageId || getLastApprovedStage()?.id || getSelectedStage()?.id}
+        />
 
       {/* Custom CSS for animations */}
       <style>{`

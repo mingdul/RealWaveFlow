@@ -167,7 +167,7 @@ const TrackHeaderCopy: React.FC<TrackHeaderCopyProps> = ({
               onClick={handleStageHistoryClick}
               className="relative px-2 py-2 text-white bg-black border-none focus:outline-none"
             >
-              <span className="text-sm font-medium">Stage History</span>
+              <span className="text-sm font-medium">Version List</span>
               {activeNavButton === 'stage-history' && (
                 <div className="absolute bottom-0 left-0 right-0 h-0.5 bg-white"></div>
               )}

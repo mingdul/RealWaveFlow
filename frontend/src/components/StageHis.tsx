@@ -493,10 +493,13 @@ const StageHis: React.FC<StageHisProps> = ({
                             <Button
                               onClick={(e) => handleShowAllStemsClick(stage.id, e)}
                               variant="waveflowbtn2"
+                              disabled={stage.status === 'active'}
                               className={`flex items-center space-x-2 px-3 py-2 rounded-full transition-all duration-300 ${
-                                selectedStage && selectedStage.id === stage.id
-                                  ? 'bg-green-500/20 text-green-300 hover:text-white hover:bg-green-500/30'
-                                  : 'bg-green-500/10 text-green-200 hover:text-white hover:bg-green-500/20'
+                                stage.status === 'active'
+                                  ? 'bg-gray-500/10 text-gray-500 cursor-not-allowed opacity-50'
+                                  : selectedStage && selectedStage.id === stage.id
+                                    ? 'bg-green-500/20 text-green-300 hover:text-white hover:bg-green-500/30'
+                                    : 'bg-green-500/10 text-green-200 hover:text-white hover:bg-green-500/20'
                               }`}
                             >
                               <List className="w-4 h-4" />
