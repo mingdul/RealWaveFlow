@@ -2214,8 +2214,8 @@ const StemSetReview = () => {
           </div>
 
           {/* Fixed Bottom Audio Player */}
-          <div className="fixed bottom-0 left-0 right-0 z-50 bg-gray-900/95 backdrop-blur-lg border-t border-gray-700 p-4">
-            <div className="flex items-center justify-between max-w-screen-xl mx-auto">
+          <div className="fixed bottom-0 left-0 right-0 z-50 w-full transition-all duration-300 ease-in-out bg-white/5 backdrop-blur-lg rounded-t-2xl p-4 border-t border-white/10 shadow-xl">
+            <div className="flex items-center justify-between">
               {/* Left Side - Playback Controls */}
               <div className="flex items-center space-x-4">
                 {/* Playback Controls */}
