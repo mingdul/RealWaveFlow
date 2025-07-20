@@ -264,8 +264,8 @@ const StageHis: React.FC<StageHisProps> = ({
         )}
   
         {/* 카드 그리드 레이아웃 */}
-        <div className="overflow-x-auto scrollbar-hide py-4 px-4" ref={scrollRef}>
-          <div className="flex gap-15 pb-4 min-w-max">
+        <div className="overflow-x-auto scrollbar-hide py-4 px-10" ref={scrollRef}>
+          <div className="flex gap-x-15 pb-4 min-w-max">
             {sortedStages.map((stage) => {
               const statusConfig = getStatusConfig(stage.status);
               const isSelected = selectedStage?.id === stage.id;

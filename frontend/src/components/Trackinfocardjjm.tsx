@@ -81,7 +81,7 @@ const Trackinfocardjjm: React.FC<TrackinfocardjjmProps> = ({
   };
 
   return (
-    <div className='relative overflow-hidden rounded-3xl bg-black p-8 shadow-2xl transition-all duration-500'>
+    <div className='relative overflow-hidden rounded-3xl bg-black px-15 py-10 shadow-2xl transition-all duration-500'>
       {/* Background overlay pattern */}
       <div className='absolute inset-0 bg-gradient-to-r from-black/60 via-transparent to-black/40'></div>
 
@@ -111,7 +111,7 @@ const Trackinfocardjjm: React.FC<TrackinfocardjjmProps> = ({
 
             <Collaborators track={track} />
           </div>
-          <div className='flex flex-col gap-3 pt-6 sm:items-center'>
+          <div className='flex items-center gap-4 pt-2'>
             <p className='text-sm text-white/70'>
               {new Date(track.created_date).toLocaleDateString('en-US')}
             </p>
