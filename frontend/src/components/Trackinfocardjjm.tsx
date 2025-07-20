@@ -87,7 +87,7 @@ const Trackinfocardjjm: React.FC<TrackinfocardjjmProps> = ({
       <div className='absolute inset-0 bg-gradient-to-r from-black/60 via-transparent to-black/40'></div>
 
       <div className='relative z-10 flex flex-row gap-6 lg:flex-row justify-center'>
-       
+
         {/* Right side - Album cover */}
         <div className='w-full md:w-1/3 flex-shrink-0 lg:ml-8 flex justify-center'>
           <div className='group relative'>
@@ -114,84 +114,95 @@ const Trackinfocardjjm: React.FC<TrackinfocardjjmProps> = ({
             </div>
           </div>
         </div>
-        
-        {/* Left side content */}
-       <div className='w-full md:w-2/3 space-y-4 pl-10'>
-          {/* Header label */}
-          {/* Main title */}
-          <div className='space-y-5'>
-            <h1 className='text-2xl font-black uppercase tracking-tight text-white lg:text-6xl xl:text-7xl'>
-              {track.title}
-            </h1>
-            <p className='max-w-md text-sm leading-relaxed text-white/80 lg:text-xl'>
-              {track.description ||
-                'Enjoy vivid emotions with this stunning music album. Each track is a story.'}
-            </p>
+
+        <div className='w-full md:w-2/3 flex flex-row gap-8 pl-10'>
+          {/* Left side: title, date, tag, description, version */}
+          <div className='flex-1 space-y-4'>
+            {/* Header label */}
+            <div>
+              {/* Main title */}
+              <div>
+                <h1 className='text-2xl font-black uppercase tracking-tight text-white lg:text-6xl xl:text-7xl'>
+                  {track.title}
+                </h1>
+              </div>
+
+              {/* Created Date */}
+              <div className='flex items-center gap-4 pt-2'>
+                <p className='text-sm text-white/70'>
+                  {new Date(track.created_date).toLocaleDateString('en-US')}
+                </p>
+              </div>
+
+              {/* Track details tags */}
+              <div className='flex flex-wrap gap-3 pt-2'>
+                <span className='rounded-full bg-white/20 px-4 py-2 text-sm font-medium text-white backdrop-blur-sm'>
+                  {track.genre}
+                </span>
+                <span className='rounded-full bg-white/20 px-4 py-2 text-sm font-medium text-white backdrop-blur-sm'>
+                  {track.bpm} bpm
+                </span>
+                <span className='rounded-full bg-white/20 px-4 py-2 text-sm font-medium text-white backdrop-blur-sm'>
+                  {track.key_signature} key
+                </span>
+              </div>
+
+              {/* Description */}
+              <div>
+                <p className='max-w-md text-sm leading-relaxed text-white/80 lg:text-xl'>
+                  {track.description || 'Enjoy vivid emotions with this stunning music album. Each track is a story.'}
+                </p>
+              </div>
+
+              {/* Latest Version */}
+              <div className='flex flex-col gap-3 pt-6 sm:flex-row sm:items-center'>
+                <h2 className='text-lg font-semibold text-white/70 sm:min-w-fit sm:whitespace-nowrap'>
+                  Latest Version:
+                </h2>
+
+                <Button
+                  variant='primary'
+                  size='sm'
+                  className='flex items-center justify-center gap-2 rounded-full bg-white px-4 py-1.5 text-lg leading-none text-black shadow-xl transition-all duration-300 hover:scale-105 hover:bg-white/90 hover:shadow-2xl'
+                  onClick={handlePlayClick}
+                  disabled={stemsLoading || guideLoading}
+                >
+                  {stemsLoading || guideLoading ? (
+                    <div className='h-5 w-5 animate-spin rounded-full border-2 border-black border-t-transparent' />
+                  ) : isPlaying ? (
+                    <Pause size={20} />
+                  ) : (
+                    <Play size={20} />
+                  )}
+                  <span className='font-semibold'>
+                    {isPlaying ? 'PAUSE' : 'PLAY'}
+                  </span>
+                </Button>
+
+                <Button
+                  variant='waveflowbtn'
+                  size='sm'
+                  className='flex items-center justify-center gap-2 rounded-full border-2 border-white/30 bg-white/10 px-4 py-1.5 text-lg leading-none text-white backdrop-blur-sm transition-all duration-300 hover:scale-105 hover:bg-white/20'
+                  onClick={handleShowAllStems}
+                >
+                  <span className='font-semibold'>View All Stems</span>
+                </Button>
+              </div>
+            </div>
           </div>
 
-          {/* Owner and version info */}
-          <div className='flex items-center gap-4 pt-2'>
-            <p className='text-sm text-white/70'>
-              Members:
-            </p>
-
-            <Collaborators track={track} />
-          </div>
-
-          <div className='flex flex-col gap-3 pt-6 sm:flex-row sm:items-center'>
-            <h2 className='text-lg font-semibold text-white/70 sm:min-w-fit sm:whitespace-nowrap'>
-              Latest Version:
-            </h2>
-
-            <Button
-              variant='primary'
-              size='sm'
-              className='flex items-center justify-center gap-2 rounded-full bg-white px-4 py-1.5 text-lg leading-none text-black shadow-xl transition-all duration-300 hover:scale-105 hover:bg-white/90 hover:shadow-2xl'
-              onClick={handlePlayClick}
-              disabled={stemsLoading || guideLoading}
-            >
-              {stemsLoading || guideLoading ? (
-                <div className='h-5 w-5 animate-spin rounded-full border-2 border-black border-t-transparent' />
-              ) : isPlaying ? (
-                <Pause size={20} />
-              ) : (
-                <Play size={20} />
-              )}
-              <span className='font-semibold'>
-                {isPlaying ? 'PAUSE' : 'PLAY'}
-              </span>
-            </Button>
-
-            <Button
-              variant='waveflowbtn'
-              size='sm'
-              className='flex items-center justify-center gap-2 rounded-full border-2 border-white/30 bg-white/10 px-4 py-1.5 text-lg leading-none text-white backdrop-blur-sm transition-all duration-300 hover:scale-105 hover:bg-white/20'
-              onClick={handleShowAllStems}
-            >
-              <span className='font-semibold'>View All Stems</span>
-            </Button>
-          </div>
-          <div className='flex items-center gap-4 pt-2'>
-            <p className='text-sm text-white/70'>
-              {new Date(track.created_date).toLocaleDateString('en-US')}
-            </p>
-          </div>
-          {/* Track details tags */}
-          <div className='flex flex-wrap gap-3 pt-2'>
-            <span className='rounded-full bg-white/20 px-4 py-2 text-sm font-medium text-white backdrop-blur-sm'>
-              {track.genre}
-            </span>
-            <span className='rounded-full bg-white/20 px-4 py-2 text-sm font-medium text-white backdrop-blur-sm'>
-              {track.bpm} bpm
-            </span>
-            <span className='rounded-full bg-white/20 px-4 py-2 text-sm font-medium text-white backdrop-blur-sm'>
-              {track.key_signature} key
-            </span>
+          {/* Right side: members */}
+          <div className='flex-1'>
+            <div className='flex items-center gap-4 pt-2'>
+              <p className='text-sm text-white/70'>Members:</p>
+              <Collaborators track={track} />
+            </div>
           </div>
         </div>
 
+
       </div>
-       
+
 
 
       {/* Hidden Audio Element for Guide Playback */}
