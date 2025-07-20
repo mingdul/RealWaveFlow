@@ -85,7 +85,7 @@ const Trackinfocardjjm: React.FC<TrackinfocardjjmProps> = ({
       {/* Background overlay pattern */}
       <div className='absolute inset-0 bg-gradient-to-r from-black/60 via-transparent to-black/40'></div>
 
-      <div className='relative z-10 flex flex-col gap-6 lg:flex-row'>
+      <div className='relative z-10 flex flex-col gap-6 lg:flex-row justify-center'>
         {/* Left side content */}
         <div className='w-full md:w-2/3 space-y-4'>
           {/* Header label */}
