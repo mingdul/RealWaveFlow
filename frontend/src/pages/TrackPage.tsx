@@ -16,7 +16,7 @@ import {
   getStageByTrackIdAndVersion,
 } from '../services/stageService';
 import { createStageReviewer } from '../services/stageReviewerService';
-import { StemStreamingInfo } from '../services/streamingService';
+import streamingService, { StemStreamingInfo } from '../services/streamingService';
 import trackService from '../services/trackService';
 import versionStemService from '../services/versionstemService';
 
@@ -742,9 +742,40 @@ const TrackPage: React.FC<TrackPagejjmProps> = () => {
   };
 
   // Stage 전용 함수들
-  const handleStagePlay = (stageId: string) => {
+  const handleStagePlay = async (stageId: string) => {
     console.log('[DEBUG][TrackPage] Playing stage audio:', stageId);
-    // TODO: 스테이지별 가이드 재생 로직 구현
+    
+    try {
+      // 스테이지 가이드 재생을 위한 presigned URL 요청
+      const response = await streamingService.getGuidePresignedUrlByStageId(stageId);
+      
+      console.log('[DEBUG][TrackPage] Stage guide API response:', response);
+      
+      if (response.success && response.data) {
+        // 새 오디오 엘리먼트 생성하여 가이드 재생
+        const audio = new Audio(response.data.presignedUrl);
+        
+        audio.onplay = () => {
+          console.log('[DEBUG][TrackPage] Stage guide started playing');
+        };
+        
+        audio.onended = () => {
+          console.log('[DEBUG][TrackPage] Stage guide playback ended');
+        };
+        
+        audio.onerror = (error) => {
+          console.error('[ERROR][TrackPage] Stage guide playback error:', error);
+        };
+        
+        // 가이드 재생 시작
+        await audio.play();
+        
+      } else {
+        console.error('[ERROR][TrackPage] Failed to fetch stage guide:', response.message);
+      }
+    } catch (error) {
+      console.error('[ERROR][TrackPage] Error playing stage guide:', error);
+    }
   };
 
   const handleStageShowAllStems = async (stageId: string) => {

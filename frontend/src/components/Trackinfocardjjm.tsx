@@ -122,7 +122,7 @@ const Trackinfocardjjm: React.FC<TrackinfocardjjmProps> = ({
               <button
                 onClick={handlePlayClick}
                 className='rounded-full bg-white/20 p-6 backdrop-blur-sm transition-all duration-200 hover:scale-110 hover:bg-white/30 z-10 relative'
-                disabled={stemsLoading || guideLoading || !lastApprovedStageId}
+                disabled={stemsLoading || guideLoading}
               >
                 {stemsLoading || guideLoading ? (
                   <div className='h-10 w-10 animate-spin rounded-full border-2 border-white border-t-transparent' />
