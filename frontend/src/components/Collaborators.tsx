@@ -233,7 +233,6 @@ const Collaborators: React.FC<CollaboratorsProps> = ({ track }) => {
     
     setSelectedCollaborator(collaborator);
     setNewRole(collaborator.role || '');
-    setIsOwnerVerified(true);
     setShowRoleModal(true);
     setRoleError('');
     setRoleSuccess('');
@@ -296,7 +295,6 @@ const Collaborators: React.FC<CollaboratorsProps> = ({ track }) => {
     setNewRole('');
     setRoleError('');
     setRoleSuccess('');
-    setIsOwnerVerified(false);
   };
 
   if (loading) {
