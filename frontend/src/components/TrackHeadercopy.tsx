@@ -27,7 +27,7 @@ const TrackHeaderCopy: React.FC<TrackHeaderCopyProps> = ({
   // 🔥 NEW: Settings 드롭다운 상태
   const [isSettingsDropdownOpen, setIsSettingsDropdownOpen] = useState(false);
   const settingsDropdownRef = useRef<HTMLDivElement>(null);
-  
+
   // 🔥 NEW: 강제 리렌더링을 위한 상태
   const [forceRefreshKey, setForceRefreshKey] = useState(0);
   const [lastNotificationTime, setLastNotificationTime] = useState<string>('');
@@ -72,20 +72,20 @@ const TrackHeaderCopy: React.FC<TrackHeaderCopyProps> = ({
   useEffect(() => {
     const handleTrackHeaderRefresh = (event: CustomEvent) => {
       const { unreadCount: newUnreadCount, timestamp, source, notificationsCount } = event.detail;
-      
+
       console.log('🏠 [TrackHeader] 📢 Received refresh trigger event!');
       console.log('🏠 [TrackHeader] 📊 New unread count from event:', newUnreadCount);
       console.log('🏠 [TrackHeader] 📋 Notifications count from event:', notificationsCount);
       console.log('🏠 [TrackHeader] ⏰ Event timestamp:', timestamp);
       console.log('🏠 [TrackHeader] 📡 Event source:', source || 'unknown');
-      
+
       // 🔥 강제 리렌더링 트리거
       const newRefreshKey = forceRefreshKey + 1;
       setForceRefreshKey(newRefreshKey);
       setLastNotificationTime(timestamp);
-      
 
-      
+
+
       // 🔥 추가: TrackHeader 전체 DOM 업데이트 확인
       setTimeout(() => {
 
@@ -102,7 +102,7 @@ const TrackHeaderCopy: React.FC<TrackHeaderCopyProps> = ({
     // 커스텀 이벤트 리스너 등록 (두 개의 이벤트 모두 수신)
     window.addEventListener('notification-badge-update', handleTrackHeaderRefresh as EventListener);
     window.addEventListener('track-header-refresh', handleTrackHeaderSpecificRefresh as EventListener);
-    
+
     console.log('🏠 [TrackHeader] 👂 TrackHeader refresh event listeners registered');
     console.log('🏠 [TrackHeader] 🎯 Listening for: notification-badge-update, track-header-refresh');
 
@@ -124,7 +124,7 @@ const TrackHeaderCopy: React.FC<TrackHeaderCopyProps> = ({
   }, [notifications]);
 
   return (
-    <div 
+    <div
       className="bg-black"
       key={`track-header-${forceRefreshKey}`} // 🔥 NEW: 강제 리렌더링을 위한 key
     >
@@ -140,6 +140,7 @@ const TrackHeaderCopy: React.FC<TrackHeaderCopyProps> = ({
         <div className='flex items-center gap-4'>
           {/* Navigation Buttons */}
           <div className="flex items-center gap-2">
+            {/* 스테이지 히스토리 */}
             <Button
               variant="waveflowbtn"
               size="sm"
@@ -147,16 +148,18 @@ const TrackHeaderCopy: React.FC<TrackHeaderCopyProps> = ({
               onClick={() => {
                 const stageHistoryElement = document.querySelector('[data-section="stage-history"]');
                 if (stageHistoryElement) {
-                  stageHistoryElement.scrollIntoView({ 
-                    behavior: 'smooth', 
-                    block: 'start' 
+                  stageHistoryElement.scrollIntoView({
+                    behavior: 'smooth',
+                    block: 'start'
                   });
                 }
               }}
             >
               <span className="text-sm font-medium">Stage History</span>
             </Button>
-            
+
+
+            {/* 버전 히스토리 */}
             <Button
               variant="waveflowbtn"
               size="sm"
@@ -164,82 +167,64 @@ const TrackHeaderCopy: React.FC<TrackHeaderCopyProps> = ({
               onClick={() => {
                 const trackInfoElement = document.querySelector('[data-section="track-info"]');
                 if (trackInfoElement) {
-                  trackInfoElement.scrollIntoView({ 
-                    behavior: 'smooth', 
-                    block: 'start' 
+                  trackInfoElement.scrollIntoView({
+                    behavior: 'smooth',
+                    block: 'start'
                   });
                 }
               }}
             >
-              <span className="text-sm font-medium">Track Info</span>
+              <span className="text-sm font-medium">Version History</span>
             </Button>
           </div>
         </div>
 
-          <div className="flex items-center gap-4">
-            {/* 🔥 NotificationBell에 실시간 상태 표시 */}
-            <NotificationBell />
-            {/* 개발 환경에서만 보이는 상태 표시 */}
-            {import.meta.env.DEV && (
-              <div className="absolute -bottom-8 right-0 text-xs text-gray-400 whitespace-nowrap">
-                {notifications.length}/{unreadCount} (Refresh: {forceRefreshKey})
-                {lastNotificationTime && (
-                  <div className="text-xs text-green-400">
-                    Last: {new Date(lastNotificationTime).toLocaleTimeString()}
-                  </div>
-                )}
-              </div>
-            )}
         <div className="flex items-center gap-4">
           {/* 🔥 NotificationBell에 실시간 상태 표시 */}
-            <NotificationBell />
-            {/* 개발 환경에서만 보이는 상태 표시 */}
-            {import.meta.env.DEV && (
-              <div className="absolute -bottom-8 right-0 text-xs text-gray-400 whitespace-nowrap">
-                {notifications.length}/{unreadCount} (Refresh: {forceRefreshKey})
-                {lastNotificationTime && (
-                  <div className="text-xs text-green-400">
-                    Last: {new Date(lastNotificationTime).toLocaleTimeString()}
-                  </div>
-                )}
-              </div>
-            )}
-
-            {/* 🔥 NEW: Settings 드롭다운 메뉴 */}
-            <div className="relative" ref={settingsDropdownRef}>
-              <Button size="sm" className="p-2" onClick={handleSettingsClick}>
-                <Settings className='text-[#893AFF]' size={20} />
-              </Button>
-              
-              {/* Settings 드롭다운 메뉴 */}
-              {isSettingsDropdownOpen && (
-                <div className="absolute right-0 mt-2 w-48 bg-white rounded-lg shadow-lg ring-1 ring-black ring-opacity-5 z-50">
-                  <div className="py-1">
-                    <button
-                      onClick={handleProfileClick}
-                      className="flex items-center gap-3 w-full px-4 py-2 text-sm text-gray-700 hover:bg-gray-100 transition-colors"
-                    >
-                      <User size={16} />
-                      프로필 설정
-                    </button>
-                    <button
-                      onClick={handleLogoutClick}
-                      className="flex items-center gap-3 w-full px-4 py-2 text-sm text-gray-700 hover:bg-gray-100 transition-colors"
-                    >
-                      <LogOut size={16} />
-                      로그아웃
-                    </button>
-                  </div>
+          <NotificationBell />
+          {/* 개발 환경에서만 보이는 상태 표시 */}
+          {import.meta.env.DEV && (
+            <div className="absolute -bottom-8 right-0 text-xs text-gray-400 whitespace-nowrap">
+              {notifications.length}/{unreadCount} (Refresh: {forceRefreshKey})
+              {lastNotificationTime && (
+                <div className="text-xs text-green-400">
+                  Last: {new Date(lastNotificationTime).toLocaleTimeString()}
                 </div>
               )}
             </div>
+          )}
+
+          {/* 🔥 NEW: Settings 드롭다운 메뉴 */}
+          <div className="relative" ref={settingsDropdownRef}>
+            <Button size="sm" className="p-2" onClick={handleSettingsClick}>
+              <Settings className='text-[#893AFF]' size={20} />
+            </Button>
+
+            {/* Settings 드롭다운 메뉴 */}
+            {isSettingsDropdownOpen && (
+              <div className="absolute right-0 mt-2 w-48 bg-white rounded-lg shadow-lg ring-1 ring-black ring-opacity-5 z-50">
+                <div className="py-1">
+                  <button
+                    onClick={handleProfileClick}
+                    className="flex items-center gap-3 w-full px-4 py-2 text-sm text-gray-700 hover:bg-gray-100 transition-colors"
+                  >
+                    <User size={16} />
+                    프로필 설정
+                  </button>
+                  <button
+                    onClick={handleLogoutClick}
+                    className="flex items-center gap-3 w-full px-4 py-2 text-sm text-gray-700 hover:bg-gray-100 transition-colors"
+                  >
+                    <LogOut size={16} />
+                    로그아웃
+                  </button>
+                </div>
+              </div>
+            )}
           </div>
-          <Button size="sm" className="p-2 " onClick={onSettingsClick}>
-            <Settings className='text-[#BD91FF]' size={20} />
-          </Button>
+
         </div>
       </div>
-
     </div>
   );
 };

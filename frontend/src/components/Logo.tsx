@@ -29,10 +29,10 @@ const Logo: React.FC<LogoProps> = ({
     <Link to="/dashboard" className={`text-center ${className}`}>
       <div>
         <div className="mb-2 flex items-center justify-center">
-          <h1 className={`mr-3 font-bold text-{#BD91FF} ${sizeClasses[size]}`}>
+          <h1 className={`mr-3 font-bold text-white ${sizeClasses[size]}`}>
             WAVEFLOW
           </h1>
-          <div className="flex items-center text-[#BD91FF] space-x-1">
+          <div className="flex items-center space-x-1">
             {waveBars.map((bar) => (
               <div
                 key={bar.id}
