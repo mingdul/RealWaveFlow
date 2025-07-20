@@ -545,7 +545,7 @@ const StemPlayer: React.FC<StemPlayerProps> = ({ stems, className = '', stageId,
           <button
             onClick={handleMasterPlayPause}
             disabled={guideLoading}
-            className="group relative flex items-center justify-center w-14 h-14 bg-purple-600 hover:bg-purple-700 disabled:bg-gray-600 rounded-full shadow-lg hover:shadow-xl transition-all duration-200 transform hover:scale-105 disabled:hover:scale-100 disabled:cursor-not-allowed"
+            className="group relative flex items-center justify-center w-14 h-14 bg-{#893AFF} hover:bg-purple-700 disabled:bg-gray-600 rounded-full shadow-lg hover:shadow-xl transition-all duration-200 transform hover:scale-105 disabled:hover:scale-100 disabled:cursor-not-allowed"
           >
             {guideLoading ? (
               <div className="w-6 h-6 border-2 border-white border-t-transparent rounded-full animate-spin" />
@@ -561,7 +561,7 @@ const StemPlayer: React.FC<StemPlayerProps> = ({ stems, className = '', stageId,
             onClick={handleMasterStop}
             className="group relative flex items-center justify-center w-12 h-12 bg-gradient-to-br from-slate-600 to-slate-700 hover:from-slate-500 hover:to-slate-600 rounded-full shadow-md hover:shadow-lg transition-all duration-200 transform hover:scale-105"
           >
-            <Square size={18} className="text-white drop-shadow-sm" />
+            <Square size={24} className="text-white drop-shadow-sm" />
             <div className="absolute inset-0 rounded-full bg-white opacity-0 group-hover:opacity-10 transition-opacity duration-200"></div>
           </button>
           

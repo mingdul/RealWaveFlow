@@ -180,7 +180,7 @@ const FileSelectionAndUploadStep: React.FC<{
   return (
     <div className='max-h-[70vh] overflow-y-auto p-6 pb-[150px] pt-0'>
       <h3 className='mb-2 text-lg font-semibold text-white'>
-        Select and Upload Files
+        Select and Upload Stems
       </h3>
       <p className='mb-6 text-gray-400'>
         Choose stems, set their metadata, and upload them to the project.
@@ -199,7 +199,7 @@ const FileSelectionAndUploadStep: React.FC<{
             {completedFiles.length > 1 ? 's' : ''}.
           </p>
           <p className='text-sm text-gray-400'>
-            You can now complete the project setup or add more files.
+            You can now complete the project setup or add more stems.
           </p>
         </div>
       ) : (
@@ -223,7 +223,7 @@ const FileSelectionAndUploadStep: React.FC<{
                 Select Stems
               </h3>
               <p className='text-sm text-gray-400'>
-                Choose multiple files to upload at once
+                Choose multiple stems to upload at once
               </p>
               <p className='mt-2 text-xs text-gray-500'>
                 Supports: WAV, MP3, AIFF, FLAC, M4A, OGG
@@ -238,7 +238,7 @@ const FileSelectionAndUploadStep: React.FC<{
         <div className='mb-6 rounded-lg bg-gray-800 p-4'>
           <h3 className='text-lg font-semibold text-white'>
             Uploading {currentUploadIndex + 1} of {selectedFiles.length}{' '}
-            files...
+            stems...
           </h3>
           <div className='mt-2 h-2 w-full rounded-full bg-gray-600'>
             <div
@@ -259,7 +259,7 @@ const FileSelectionAndUploadStep: React.FC<{
       {files.length > 0 && (
         <div className='space-y-3'>
           <h3 className='mb-3 text-lg font-semibold text-white'>
-            Files ({files.length})
+            Stems ({files.length})
           </h3>
           {files.map((file) => {
             const idx = selectedFiles.findIndex((sf) => sf.id === file.id);
@@ -407,11 +407,11 @@ const FileSelectionAndUploadStep: React.FC<{
             className={`flex w-full items-center justify-center rounded-lg bg-purple-600 px-6 py-3 font-medium text-white transition-colors hover:bg-purple-700 ${!canStartUpload ? 'cursor-not-allowed opacity-50' : ''}`}
           >
             <Upload size={20} className='mr-2' />
-            Start Upload ({selectedFiles.length} files)
+            Start Upload ({selectedFiles.length} stems)
           </button>
           {!canStartUpload && (
             <p className='mt-2 text-center text-sm text-amber-400'>
-              Please set <b>tag</b> for all selected files before uploading.
+              Please set <b>tag</b> for all selected stems before uploading.
               (Key and BPM are optional)
             </p>
           )}
@@ -440,7 +440,7 @@ const InitProjectModal: React.FC<InitProjectModalProps> = ({
   const [completedStemCount, setCompletedStemCount] = useState(0);
   const { isConnected } = useSocket();
 
-  const steps = ['Create Track', 'Upload Files'];
+  const steps = ['Create Track', 'Upload Stems'];
 
   const handleStartUpload = React.useCallback(async () => {
     console.log('[DEBUG] InitProjectModal - Starting upload process');
@@ -566,7 +566,7 @@ const InitProjectModal: React.FC<InitProjectModalProps> = ({
     console.log(
       '[DEBUG] InitProjectModal - Upload & stem-job process completed'
     );
-    showSuccess('All files uploaded and processed!');
+    showSuccess('All Stems uploaded and processed!');
   }, [state.uploadedFiles, projectId, stageId, showError, showSuccess]);
 
   const handleComplete = async () => {
