@@ -1520,7 +1520,7 @@ const StemSetReview = () => {
   }
 
   return (
-    <div className="relative min-h-screen bg-gradient-to-br from-slate-900 via-purple-900 to-slate-900 overflow-hidden">
+    <div className="relative min-h-screen bg-gradient-to-br from-slate-900 via-purple-900 to-slate-900 overflow-hidden pb-24">
       {/* Abstract Background Pattern */}
       <div className="absolute inset-0 opacity-20">
         <svg className="w-full h-full" viewBox="0 0 1200 800" preserveAspectRatio="xMidYMid slice">
@@ -2213,88 +2213,6 @@ const StemSetReview = () => {
             </div>
           </div>
 
-          {/* Fixed Bottom Audio Player */}
-          <div className="fixed bottom-0 left-0 right-0 z-50 w-full transition-all duration-300 ease-in-out bg-white/5 backdrop-blur-lg rounded-t-2xl p-4 border-t border-white/10 shadow-xl">
-            <div className="flex items-center justify-between">
-              {/* Left Side - Playback Controls */}
-              <div className="flex items-center space-x-4">
-                {/* Playback Controls */}
-                <div className="flex items-center space-x-3">
-                  <button
-                    onClick={memoizedStopPlayback}
-                    className="p-3 rounded-lg bg-white/10 hover:bg-white/20 text-white transition-all duration-200"
-                  >
-                    <Square size={20} />
-                  </button>
-                  <button
-                    onClick={memoizedTogglePlay}
-                    className="p-3 rounded-lg bg-gradient-to-r from-purple-600 to-purple-700 hover:from-purple-700 hover:to-purple-800 text-white transition-all duration-200 shadow-lg hover:shadow-purple-500/25"
-                  >
-                    {isPlaying ? <Pause size={20} /> : <Play size={20} />}
-                  </button>
-                </div>
-
-                {/* Volume Control */}
-                <div className="flex items-center space-x-3">
-                  <Volume size={20} className="text-white/70" />
-                  <input
-                    type="range"
-                    min="0"
-                    max="1"
-                    step="0.01"
-                    value={volume}
-                    onChange={memoizedVolumeChange}
-                    className="w-24 accent-purple-500"
-                  />
-                </div>
-
-                {/* Time Display */}
-                <div className="text-white/80 font-mono">
-                  {Math.floor(currentTime / 60)}:
-                  {String(Math.floor(currentTime % 60)).padStart(2, '0')} /{' '}
-                  {Math.floor(duration / 60)}:
-                  {String(Math.floor(duration % 60)).padStart(2, '0')}
-                </div>
-              </div>
-
-              {/* Right Side - Review Actions */}
-              <div className="flex items-center space-x-3">
-                <button
-                  onClick={handleApprove}
-                  className="px-6 py-2 bg-gradient-to-r from-green-600 to-green-700 hover:from-green-700 hover:to-green-800 text-white rounded-lg font-medium transition-all duration-200 shadow-lg hover:shadow-green-500/25 flex items-center space-x-2"
-                >
-                  <span>✓</span>
-                  <span>승인</span>
-                </button>
-                <button
-                  onClick={handleReject}
-                  className="px-6 py-2 bg-gradient-to-r from-red-600 to-red-700 hover:from-red-700 hover:to-red-800 text-white rounded-lg font-medium transition-all duration-200 shadow-lg hover:shadow-red-500/25 flex items-center space-x-2"
-                >
-                  <span>✗</span>
-                  <span>거절</span>
-                </button>
-              </div>
-            </div>
-          </div>
-
-
-          {/* 새로운 댓글 시스템 안내 - 반응형 */}
-          <div className={`transition-all duration-300 ease-in-out px-4 sm:px-6 lg:px-8 py-4 ${(activePanel as string) !== 'none' ? 'mr-80' : ''
-            }`}>
-            <div className='text-center'>
-              <div className='inline-flex items-center gap-3 bg-gray-900/60 backdrop-blur-sm border border-gray-700 rounded-lg px-6 py-3'>
-                <MessageCircle size={20} className='text-blue-400' />
-                <div className='text-sm'>
-                  <div className='text-white font-medium'>인터랙티브 댓글 시스템</div>
-                  <div className='text-gray-400'>파형에 마우스를 올리면 💬 아이콘이 나타납니다. 재생 시 프로그레스바가 댓글을 지나가면 자동으로 표시됩니다.</div>
-                </div>
-              </div>
-            </div>
-          </div>
-
-
-
-
           {/* 댓글 작성 모달 */}
           {/* 인라인 댓글 창 */}
           {isInlineCommentOpen && selectedUpstream && (
@@ -2369,6 +2287,70 @@ const StemSetReview = () => {
               </div>
             </div>
           )}
+        </div>
+      </div>
+
+      {/* Fixed Bottom Audio Player - 브라우저 하단에 완전히 고정 */}
+      <div className="fixed bottom-0 left-0 right-0 z-50 w-full transition-all duration-300 ease-in-out bg-white/5 backdrop-blur-lg border-t border-white/10 shadow-xl">
+        <div className="flex items-center justify-between max-w-screen-xl mx-auto p-4">
+          {/* Left Side - Playback Controls */}
+          <div className="flex items-center space-x-4">
+            {/* Playback Controls */}
+            <div className="flex items-center space-x-3">
+              <button
+                onClick={memoizedStopPlayback}
+                className="p-3 rounded-lg bg-white/10 hover:bg-white/20 text-white transition-all duration-200"
+              >
+                <Square size={20} />
+              </button>
+              <button
+                onClick={memoizedTogglePlay}
+                className="p-3 rounded-lg bg-gradient-to-r from-purple-600 to-purple-700 hover:from-purple-700 hover:to-purple-800 text-white transition-all duration-200 shadow-lg hover:shadow-purple-500/25"
+              >
+                {isPlaying ? <Pause size={20} /> : <Play size={20} />}
+              </button>
+            </div>
+
+            {/* Volume Control */}
+            <div className="flex items-center space-x-3">
+              <Volume size={20} className="text-white/70" />
+              <input
+                type="range"
+                min="0"
+                max="1"
+                step="0.01"
+                value={volume}
+                onChange={memoizedVolumeChange}
+                className="w-24 accent-purple-500"
+              />
+            </div>
+
+            {/* Time Display */}
+            <div className="text-white/80 font-mono">
+              {Math.floor(currentTime / 60)}:
+              {String(Math.floor(currentTime % 60)).padStart(2, '0')} /{' '}
+              {Math.floor(duration / 60)}:
+              {String(Math.floor(duration % 60)).padStart(2, '0')}
+            </div>
+          </div>
+
+          {/* Right Side - Review Actions */}
+          <div className="flex items-center space-x-3">
+            <button
+              onClick={handleApprove}
+              className="px-6 py-2 bg-gradient-to-r from-green-600 to-green-700 hover:from-green-700 hover:to-green-800 text-white rounded-lg font-medium transition-all duration-200 shadow-lg hover:shadow-green-500/25 flex items-center space-x-2"
+            >
+              <span>✓</span>
+              <span>승인</span>
+            </button>
+            <button
+              onClick={handleReject}
+              className="px-6 py-2 bg-gradient-to-r from-red-600 to-red-700 hover:from-red-700 hover:to-red-800 text-white rounded-lg font-medium transition-all duration-200 shadow-lg hover:shadow-red-500/25 flex items-center space-x-2"
+            >
+              <span>✗</span>
+              <span>거절</span>
+            </button>
+          </div>
         </div>
       </div>
     </div>
