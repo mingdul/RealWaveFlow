@@ -118,11 +118,11 @@ const Trackinfocardjjm: React.FC<TrackinfocardjjmProps> = ({
               alt={track.title}
               className='relative h-72 w-72 rounded-2xl object-cover shadow-2xl transition-all duration-500 group-hover:scale-105 lg:h-80 lg:w-80 xl:h-96 xl:w-96'
             />
-            <div className='absolute inset-0 flex items-center justify-center rounded-2xl bg-black/40 opacity-0 transition-all duration-300 group-hover:opacity-100'>
+                          <div className='absolute inset-0 flex items-center justify-center rounded-2xl bg-black/40 opacity-0 transition-all duration-300 group-hover:opacity-100'>
               <button
                 onClick={handlePlayClick}
-                className='rounded-full bg-white/20 p-6 backdrop-blur-sm transition-all duration-200 hover:scale-110 hover:bg-white/30'
-                disabled={stemsLoading || guideLoading}
+                className='rounded-full bg-white/20 p-6 backdrop-blur-sm transition-all duration-200 hover:scale-110 hover:bg-white/30 z-10 relative'
+                disabled={stemsLoading || guideLoading || !lastApprovedStageId}
               >
                 {stemsLoading || guideLoading ? (
                   <div className='h-10 w-10 animate-spin rounded-full border-2 border-white border-t-transparent' />

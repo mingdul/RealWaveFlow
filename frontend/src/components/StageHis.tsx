@@ -13,6 +13,7 @@ import {
   Play,
   List
 } from 'lucide-react';
+import { useNavigate } from 'react-router-dom';
 // import { ArrowRight } from 'lucide-react';
 import { Stage } from '../types/api';
 import Button from './Button';
@@ -38,6 +39,7 @@ const StageHis: React.FC<StageHisProps> = ({
   onPlay,
   onShowAllStems
 }) => {
+  const navigate = useNavigate();
   const [selectedStage, setSelectedStage] = useState<Stage | null>(null);
   const [playingStage, setPlayingStage] = useState<string | null>(null);
   const [canScrollLeft, setCanScrollLeft] = useState(false);
@@ -184,6 +186,15 @@ const StageHis: React.FC<StageHisProps> = ({
 
   const handleStageClick = (stage: Stage) => {
     console.log('[DEBUG][StageHis] User manually selected stage:', stage.version);
+    
+    // Active 스테이지인 경우 Stage 페이지로 즉시 이동
+    if (stage.status === 'active') {
+      console.log('[DEBUG][StageHis] Navigating to active stage:', stage.id);
+      navigate(`/stage/${stage.id}`);
+      return;
+    }
+    
+    // Active가 아닌 경우 선택 상태만 변경
     setSelectedStage(stage);
     setUserHasManuallySelected(true); // 사용자가 직접 선택했음을 표시
     // TrackInfo와 분리: onStageSelect 호출 제거
@@ -292,7 +303,7 @@ const StageHis: React.FC<StageHisProps> = ({
               <Plus className="w-4 h-4" />
               <span>New Stage</span>
             </div>
-            <div className="absolute inset-0 bg-white/20 rounded-xl opacity-0 group-hover:opacity-100 transition-opacity duration-300" />
+            <div className="absolute inset-0 bg-white/20 rounded-xl opacity-0 group-hover:opacity-100 transition-opacity duration-300 pointer-events-none" />
           </button>
         )}
       </div>
@@ -366,7 +377,7 @@ const StageHis: React.FC<StageHisProps> = ({
                         <div className="flex items-center justify-between">
                           <div className="flex items-center space-x-3">
                             <div className={`p-3 rounded-2xl ${statusConfig.bgColor} shadow-lg`}>
-                              {statusConfig.icon}
+                              {/* 버전 아이콘 제거됨 */}
                             </div>
                             <div>
                               <h3 className="text-2xl font-bold text-white">
@@ -407,10 +418,11 @@ const StageHis: React.FC<StageHisProps> = ({
                           </div>
                         </div>
   
-                        {/* 액션 버튼 */}
-                        <div className="flex flex-col space-y-3 pt-3 border-t border-white/10">
-                          {/* 첫 번째 줄: Play와 Show All Stems 버튼 */}
-                          <div className="flex items-center space-x-3">
+                        {/* 액션 버튼 - Active 스테이지가 아닐 때만 표시 */}
+                        {stage.status !== 'active' && (
+                          <div className="flex flex-col space-y-3 pt-3 border-t border-white/10">
+                            {/* 첫 번째 줄: Play와 Show All Stems 버튼 */}
+                            <div className="flex items-center space-x-3">
                             <Button
                               onClick={(e) => handlePlayClick(stage.id, e)}
                               variant="waveflowbtn2"
@@ -470,15 +482,16 @@ const StageHis: React.FC<StageHisProps> = ({
                             </div>
                           </div>
                         </div>
+                        )}
                       </div>
                     </div>
   
                     {/* 호버 효과 오버레이 */}
-                    <div className="absolute inset-0 bg-gradient-to-r from-purple-500/10 to-pink-500/10 opacity-0 group-hover:opacity-100 transition-opacity duration-300 rounded-3xl" />
+                    <div className="absolute inset-0 bg-gradient-to-r from-purple-500/10 to-pink-500/10 opacity-0 group-hover:opacity-100 transition-opacity duration-300 rounded-3xl pointer-events-none" />
                     
                     {/* 선택된 상태 글로우 효과 */}
                     {isSelected && (
-                      <div className="absolute inset-0 bg-gradient-to-r from-blue-500/20 to-blue-600/20 rounded-3xl" />
+                      <div className="absolute inset-0 bg-gradient-to-r from-blue-500/20 to-blue-600/20 rounded-3xl pointer-events-none" />
                     )}
                   </div>
                 </div>
@@ -512,7 +525,7 @@ const StageHis: React.FC<StageHisProps> = ({
                   </div>
                   
                   {/* 호버 효과 */}
-                  <div className="absolute inset-0 bg-gradient-to-r from-purple-500/10 to-pink-500/10 opacity-0 group-hover:opacity-100 transition-opacity duration-300 rounded-3xl" />
+                  <div className="absolute inset-0 bg-gradient-to-r from-purple-500/10 to-pink-500/10 opacity-0 group-hover:opacity-100 transition-opacity duration-300 rounded-3xl pointer-events-none" />
                 </div>
               </div>
             )}
