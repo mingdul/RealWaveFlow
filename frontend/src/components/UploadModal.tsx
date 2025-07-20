@@ -276,14 +276,12 @@ const StemListPanel: React.FC<{
                           <span className="text-green-400 text-xs font-medium">✓ Uploaded</span>
                         )}
                       </div>
-                      {!file.isComplete && (
-                        <button
-                          onClick={() => onUpdateFile(file.id, { isMatched: false, matchedStemId: undefined })}
-                          className="p-1 text-red-400 hover:text-red-500 hover:bg-red-400/10 rounded transition-colors flex-shrink-0"
-                        >
-                          <X size={16} />
-                        </button>
-                      )}
+                      <button
+                        onClick={() => onUpdateFile(file.id, { isMatched: false, matchedStemId: undefined })}
+                        className="p-1 text-red-400 hover:text-red-500 hover:bg-red-400/10 rounded transition-colors flex-shrink-0"
+                      >
+                        <X size={16} />
+                      </button>
                     </div>
 
                     <div className="grid grid-cols-1 md:grid-cols-3 gap-3 text-sm">
@@ -1061,6 +1059,8 @@ const UploadModal: React.FC<UploadModalProps> = ({
       if (!confirmClose) return;
     }
     
+    // 상태 초기화 후 모달 닫기
+    dispatch({ type: 'RESET_UPLOAD' });
     onClose();
   };
 

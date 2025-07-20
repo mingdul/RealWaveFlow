@@ -326,7 +326,9 @@ const StagePage: React.FC = () => {
         </div>
 
         {/* Title Overlay - 항상 표시 */}
-        <div className="absolute top-[82px] left-0 w-full text-center z-20">
+        <div className="absolute top-[82px] left-0 w-full text-center z-20 transition-transform duration-700" style={{ 
+          transform: isHovered ? 'scale(1.1) rotate(2deg)' : 'scale(1) rotate(0deg)' 
+        }}>
           <div>
             <h3 className="text-xl font-bold text-black drop-shadow-lg px-4">
               {upstream.title && typeof upstream.title === 'string' && upstream.title.trim() ? upstream.title : `STEM SET #${upstream.title}`}
