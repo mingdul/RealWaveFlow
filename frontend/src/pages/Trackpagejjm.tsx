@@ -7,7 +7,6 @@ import {
   OpenStageModal,
   StemListModal,
   StageHis,
-  Collaborators,
 } from '../components';
 import { useAuth } from '../contexts/AuthContext';
 import {
@@ -744,10 +743,6 @@ const TrackPagejjm: React.FC<TrackPagejjmProps> = () => {
                 onRollBack={handleRollBack}
                 stageId={getSelectedStage()?.id}
               />
-            </div>
-
-            <div className='transform transition-all duration-300 hover:scale-[1.02]'>
-              <Collaborators track={track} />
             </div>
             {/* 스테이지 히스토리 */}
             <div className='mb-8 transform transition-all duration-300'>

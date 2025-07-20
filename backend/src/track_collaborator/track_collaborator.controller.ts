@@ -85,4 +85,49 @@ export class TrackCollaboratorController {
     async deleteCollaborator(@Param('id') id: string) {
         return this.trackCollaboratorService.deleteCollaborator(id);
     }
+
+    @Get('track-users/:trackId')
+    @ApiOperation({ 
+        summary: '트랙 소유자 및 협업자 조회', 
+        description: '특정 트랙의 소유자와 협업자들을 조회합니다. accepted 상태의 협업자만 반환됩니다.' 
+    })
+    @ApiParam({ name: 'trackId', description: '트랙 ID' })
+    @ApiResponse({ 
+        status: 200, 
+        description: '트랙 사용자 조회 성공',
+        schema: {
+            example: {
+                success: true,
+                data: {
+                    owner: {
+                        id: "user-id",
+                        email: "owner@example.com",
+                        username: "owner_username",
+                        image_url: "profile/image/url"
+                    },
+                    collaborators: {
+                        collaborator: [
+                            {
+                                id: "user-id-1",
+                                email: "collab1@example.com", 
+                                username: "collaborator1",
+                                image_url: "profile/image/url"
+                            },
+                            {
+                                id: "user-id-2",
+                                email: "collab2@example.com",
+                                username: "collaborator2", 
+                                image_url: "profile/image/url"
+                            }
+                        ]
+                    }
+                }
+            }
+        }
+    })
+    @ApiResponse({ status: 404, description: '트랙을 찾을 수 없음' })
+    async getTrackUsers(@Param('trackId') trackId: string) {
+        return this.trackCollaboratorService.findTrackUsersById(trackId);
+    }
+
 }

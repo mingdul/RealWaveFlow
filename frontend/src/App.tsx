@@ -51,10 +51,10 @@ const App = () => {
               <Route path="/stemreview/:upstreamId" element={<StemSetReviewPage />} />
               <Route path="*" element={<Notfound />} />
               <Route path="/review/:upstreamId" element={<StemReview />} />
-              <Route path="/track/:trackId" element={<TrackPage />} />
+              <Route path="/trackjjm/:trackId" element={<TrackPage />} />
               <Route path="/track3/:trackId" element={<TrackPage3 />} />
               <Route path="/trackcopy/:trackId" element={<TrackPageCopy />} />
-              <Route path="/trackjjm/:trackId" element={<TrackPagejjm />} />
+              <Route path="/track/:trackId" element={<TrackPagejjm />} />
               {/* <Route path="/master" element={<MasterPage />} />
               <Route path="/commit" element={<CommitPage />} />
               <Route path="/pr" element={<PR_Page />} /> 

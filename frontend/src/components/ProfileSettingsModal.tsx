@@ -3,6 +3,7 @@ import { X, Camera, User, Upload } from 'lucide-react';
 import { Button } from './';
 import { useAuth } from '../contexts/AuthContext';
 import { useToast } from '../contexts/ToastContext';
+import apiClient from '../lib/api';
 
 interface ProfileSettingsModalProps {
   isOpen: boolean;
@@ -17,9 +18,39 @@ const ProfileSettingsModal: React.FC<ProfileSettingsModalProps> = ({ isOpen, onC
   const [name, setName] = useState(user?.username || '');
   const [selectedImage, setSelectedImage] = useState<File | null>(null);
   const [previewUrl, setPreviewUrl] = useState<string>('');
+  const [currentProfileImageUrl, setCurrentProfileImageUrl] = useState<string | null>(null);
   const [isLoading, setIsLoading] = useState(false);
+  const [isLoadingProfileImage, setIsLoadingProfileImage] = useState(false);
   
   const fileInputRef = useRef<HTMLInputElement>(null);
+
+  // 현재 프로필 이미지 가져오기
+  const fetchCurrentProfileImage = async () => {
+    if (!user) return;
+    
+    setIsLoadingProfileImage(true);
+    try {
+      console.log('🖼️ [ProfileSettingsModal] Fetching current profile image...');
+      const response = await apiClient.get('/users/me/profile-image', {
+        withCredentials: true
+      });
+      
+      console.log('🖼️ [ProfileSettingsModal] Profile image response:', response.data);
+      
+      if (response.data.success && response.data.data.imageUrl) {
+        setCurrentProfileImageUrl(response.data.data.imageUrl);
+        console.log('🖼️ [ProfileSettingsModal] Profile image URL set:', response.data.data.imageUrl);
+      } else {
+        setCurrentProfileImageUrl(null);
+        console.log('🖼️ [ProfileSettingsModal] No profile image found');
+      }
+    } catch (error) {
+      console.error('🖼️ [ProfileSettingsModal] Failed to fetch profile image:', error);
+      setCurrentProfileImageUrl(null);
+    } finally {
+      setIsLoadingProfileImage(false);
+    }
+  };
 
   // 모달 열릴 때 초기화
   useEffect(() => {
@@ -27,6 +58,9 @@ const ProfileSettingsModal: React.FC<ProfileSettingsModalProps> = ({ isOpen, onC
       setName(user.username || '');
       setSelectedImage(null);
       setPreviewUrl('');
+      setCurrentProfileImageUrl(null);
+      // 현재 프로필 이미지 가져오기
+      fetchCurrentProfileImage();
     }
   }, [isOpen, user]);
 
@@ -114,9 +148,10 @@ const ProfileSettingsModal: React.FC<ProfileSettingsModalProps> = ({ isOpen, onC
 
   // 현재 프로필 이미지 URL 가져오기
   const getCurrentProfileImageUrl = () => {
+    // 새로 선택한 이미지의 미리보기가 우선
     if (previewUrl) return previewUrl;
-    if (user?.image_url) return user.image_url;
-    if (user?.profileImageUrl) return user.profileImageUrl; // 임시 호환성
+    // 서버에서 가져온 현재 프로필 이미지 URL
+    if (currentProfileImageUrl) return currentProfileImageUrl;
     return null;
   };
 
@@ -155,11 +190,17 @@ const ProfileSettingsModal: React.FC<ProfileSettingsModalProps> = ({ isOpen, onC
             <div className="flex justify-center">
               <div className="relative">
                 <div className="w-24 h-24 rounded-full overflow-hidden bg-gradient-to-br from-purple-500 to-blue-500 flex items-center justify-center">
-                  {getCurrentProfileImageUrl() ? (
+                  {isLoadingProfileImage ? (
+                    <div className="w-6 h-6 border-2 border-white border-t-transparent rounded-full animate-spin"></div>
+                  ) : getCurrentProfileImageUrl() ? (
                     <img
                       src={getCurrentProfileImageUrl()!}
                       alt="Profile"
                       className="w-full h-full object-cover"
+                      onError={(e) => {
+                        console.error('🖼️ [ProfileSettingsModal] Image load error:', e);
+                        setCurrentProfileImageUrl(null);
+                      }}
                     />
                   ) : (
                     <span className="text-white text-xl font-semibold">

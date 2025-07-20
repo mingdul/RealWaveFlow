@@ -30,7 +30,6 @@ export class TrackService {
 
         await this.trackRepository.save(track);
 
-
         console.log('[DEBUG] Track created successfully:', track);
         return { success: true, message: 'Track created successfully', data: track  };
     }

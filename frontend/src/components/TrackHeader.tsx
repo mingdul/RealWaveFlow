@@ -182,14 +182,7 @@ const TrackHeader: React.FC<TrackHeaderProps> = ({
         </Button>
         <Logo />
       </div>
-      <div className="flex space-x-4">
-        <nav
-          className="text-white text-sm"
-          onClick={() => navigate(`/dashboard`)}
-        >
-          Dashboard
-        </nav>
-      </div>
+      
       <div className="flex items-center gap-4">
         {/* 🔥 NotificationBell에 실시간 상태 표시 */}
         <div className="relative">

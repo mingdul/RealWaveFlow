@@ -9,14 +9,15 @@ interface StepProgressProps {
 const StepProgress: React.FC<StepProgressProps> = ({ currentStep, steps }) => {
   return (
     <div className="w-full mb-8 flex justify-center">
-      <div className="flex items-center justify-between max-w-2xl w-full">
+      {/* Center the steps instead of stretching them across the whole width */}
+      <div className="flex items-center justify-center max-w-2xl space-x-6">
         {steps.map((step, index) => {
           const stepNumber = index + 1;
           const isActive = stepNumber === currentStep;
           const isCompleted = stepNumber < currentStep;
           
           return (
-            <div key={index} className="flex items-center flex-1">
+            <div key={index} className="flex items-center">
               <div className="flex items-center">
                 {/* Step Circle */}
                 <div className={`
@@ -48,10 +49,12 @@ const StepProgress: React.FC<StepProgressProps> = ({ currentStep, steps }) => {
               
               {/* Connector Line */}
               {index < steps.length - 1 && (
-                <div className="flex-1 mx-4">
-                  <div className={`h-0.5 transition-all duration-300 ${
-                    stepNumber < currentStep ? 'bg-green-500' : 'bg-gray-600'
-                  }`} />
+                <div className="mx-4 w-10 md:w-20">
+                  <div
+                    className={`h-0.5 w-full transition-all duration-300 ${
+                      stepNumber < currentStep ? 'bg-green-500' : 'bg-gray-600'
+                    }`}
+                  />
                 </div>
               )}
             </div>

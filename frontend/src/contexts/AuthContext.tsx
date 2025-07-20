@@ -135,7 +135,7 @@ export const AuthProvider: React.FC<{ children: ReactNode }> = ({ children }) =>
       
       // 이름 변경 (username 필드 사용)
       if (profileData.name && profileData.name !== state.user.username) {
-        updateData.username = profileData.name; // ← 필드명 수정: name → username
+        updateData.username = profileData.name;
       }
       
       // 이미지 S3 path 설정 (URL이 아닌 S3 key)
@@ -147,16 +147,32 @@ export const AuthProvider: React.FC<{ children: ReactNode }> = ({ children }) =>
       // 단일 API 호출로 통합 처리
       if (Object.keys(updateData).length > 0) {
         console.log('🔄 [updateProfile] Updating profile via PUT /users/me:', updateData);
-        const response = await apiClient.put('/users/me', updateData, { withCredentials: true });
+        console.log('🔄 [updateProfile] Request headers:', { 'Content-Type': 'application/json' });
+        
+        const response = await apiClient.put('/users/me', {
+          image_url: imagePath,
+          username: profileData.name,
+        }, { 
+          withCredentials: true,
+          headers: {
+            'Content-Type': 'application/json'
+          }
+        });
         console.log('✅ [updateProfile] PUT /users/me response:', response.data);
       }
       
       // 업데이트된 사용자 정보 가져오기
+      console.log('🔄 [updateProfile] Fetching updated user info...');
       const updatedUser = await authService.getCurrentUserFromServer();
-      if (!updatedUser) throw new Error('업데이트된 사용자 정보를 가져올 수 없습니다.');
+      if (!updatedUser) {
+        throw new Error('업데이트된 사용자 정보를 가져올 수 없습니다.');
+      }
       
+      console.log('👤 [updateProfile] Updated user received:', updatedUser);
       dispatch({ type: 'AUTH_SUCCESS', payload: updatedUser });
+      
     } catch (err: any) {
+      console.error('❌ [updateProfile] Error:', err);
       dispatch({ type: 'AUTH_FAILURE', payload: err.message });
       throw err;
     }

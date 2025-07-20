@@ -1,14 +1,33 @@
-import React, { useState } from 'react';
-import { Plus, X } from 'lucide-react';
+import React, { useState, useEffect } from 'react';
+import { Plus, X, Crown } from 'lucide-react';
 import { Button } from './';
 import { Track } from '../types/api';
 import inviteService from '../services/inviteService';
+import apiClient from '../lib/api';
 
 interface CollaboratorsProps {
   track: Track;
 }
 
+interface TrackUser {
+  id: string;
+  email: string;
+  username: string;
+  image_url: string | null;
+}
+
+interface TrackUsersData {
+  owner: TrackUser;
+  collaborators: {
+    collaborator: TrackUser[];
+  };
+}
+
 const Collaborators: React.FC<CollaboratorsProps> = ({ track }) => {
+  // API 데이터 state
+  const [trackUsers, setTrackUsers] = useState<TrackUsersData | null>(null);
+  const [loading, setLoading] = useState(true);
+
   // 초대 관련 state
   const [showInviteModal, setShowInviteModal] = useState(false);
   const [inviteLoading, setInviteLoading] = useState(false);
@@ -16,6 +35,52 @@ const Collaborators: React.FC<CollaboratorsProps> = ({ track }) => {
   const [inviteSuccess, setInviteSuccess] = useState('');
   const [emailList, setEmailList] = useState<string[]>([]);
   const [currentInput, setCurrentInput] = useState('');
+
+  // API에서 트랙 사용자 정보 가져오기
+  useEffect(() => {
+    const fetchTrackUsers = async () => {
+      try {
+        setLoading(true);
+        const response = await apiClient.get(`/track-collaborator/track-users/${track.id}`, {
+          withCredentials: true
+        });
+        
+        if (response.data.success) {
+          setTrackUsers(response.data.data);
+        }
+      } catch (error) {
+        console.error('Failed to fetch track users:', error);
+      } finally {
+        setLoading(false);
+      }
+    };
+
+    if (track.id) {
+      fetchTrackUsers();
+    }
+  }, [track.id]);
+
+  // 목업 데이터 - fallback용
+  const mockImages = [
+    '/person/1750813233213.jpg',
+    '/person/IMG_2052.jpg',
+    '/person/IMG_6287.jpg',
+    '/person/IMG_6287.png',
+  ];
+
+  // 이미지 에러 핸들링을 위한 fallback
+  const handleImageError = (
+    e: React.SyntheticEvent<HTMLImageElement, Event>,
+    _username: string
+  ) => {
+    const target = e.target as HTMLImageElement;
+    // 이미지 로드 실패 시 기존 방식(첫 글자)으로 fallback
+    target.style.display = 'none';
+    const fallbackDiv = target.nextElementSibling as HTMLElement;
+    if (fallbackDiv) {
+      fallbackDiv.style.display = 'flex';
+    }
+  };
 
   // 이메일 유효성 검사 함수
   const validateEmail = (email: string) => {
@@ -99,7 +164,7 @@ const Collaborators: React.FC<CollaboratorsProps> = ({ track }) => {
 
     try {
       const result = await inviteService.sendTrackInvites(track.id, emailList);
-      
+
       if (result.success) {
         setInviteSuccess(
           `${result.sent_count}개의 초대가 성공적으로 발송되었습니다.`
@@ -136,59 +201,129 @@ const Collaborators: React.FC<CollaboratorsProps> = ({ track }) => {
     setInviteSuccess('');
   };
 
+  if (loading) {
+    return (
+      <div className='flex items-center space-x-4'>
+        {/* Loading skeleton */}
+        {[...Array(4)].map((_, i) => (
+          <div key={i} className='h-12 w-12 animate-pulse rounded-full bg-gray-600'></div>
+        ))}
+      </div>
+    );
+  }
+
   return (
     <>
       {/* Collaborators Card */}
-      <div className="bg-white/10 backdrop-blur-lg border border-white/20 rounded-lg p-6 shadow-md mb-6">
-        <h3 className="text-xl font-semibold text-white mb-4">Collaborators</h3>
-        <div className="space-y-3">
-          {/* 트랙 소유자 */}
-          <div className="flex items-center space-x-3">
-            <div className="w-8 h-8 bg-gradient-to-br from-blue-400 to-blue-600 rounded-full flex items-center justify-center">
-              <span className="text-white text-sm font-semibold">
-                {track.owner_id?.username?.charAt(0)?.toUpperCase() || 'U'}
-              </span>
-            </div>
-            <div>
-              <p className="text-base text-white">{track.owner_id?.username || 'Unknown User'}</p>
-              <p className="text-sm text-gray-400">Owner</p>
-            </div>
-          </div>
-          
-          {/* 콜라보레이터들 */}
-          {track.collaborators && track.collaborators.length > 0 ? (
-            track.collaborators.map((collaborator, _index) => (
-              <div key={collaborator.id} className="flex items-center space-x-3">
-                <div className="w-8 h-8 bg-gradient-to-br from-purple-400 to-purple-600 rounded-full flex items-center justify-center">
-                  <span className="text-white text-sm font-semibold">
-                    {collaborator.user_id?.username?.charAt(0)?.toUpperCase() || 'C'}
+      <div className='flex items-center space-x-4'>
+        {trackUsers ? (
+          <>
+            {/* 트랙 소유자 */}
+            <div className='relative h-12 w-12 overflow-hidden rounded-full border-2 border-yellow-400'>
+              {trackUsers.owner.image_url ? (
+                <img
+                  src={trackUsers.owner.image_url}
+                  alt={trackUsers.owner.username}
+                  className='h-full w-full object-cover'
+                  onError={(e) => handleImageError(e, trackUsers.owner.username)}
+                />
+              ) : (
+                <div className='flex h-full w-full items-center justify-center bg-gradient-to-br from-blue-400 to-blue-600'>
+                  <span className='text-sm font-semibold text-white'>
+                    {trackUsers.owner.username?.charAt(0)?.toUpperCase() || 'O'}
                   </span>
                 </div>
-                <div>
-                  <p className="text-base text-white">{collaborator.user_id?.username || 'Unknown Collaborator'}</p>
-                  <p className="text-sm text-gray-400">
-                    {collaborator.role} • {collaborator.status}
-                  </p>
+              )}
+              
+              {/* Owner Crown */}
+              <div className='absolute -top-1 -right-1 h-5 w-5 rounded-full bg-yellow-400 flex items-center justify-center'>
+                <Crown size={12} className='text-yellow-800' />
+              </div>
+              
+              {/* Fallback div */}
+              <div
+                className='absolute inset-0 flex items-center justify-center bg-gradient-to-br from-blue-400 to-blue-600'
+                style={{ display: 'none' }}
+              >
+                <span className='text-sm font-semibold text-white'>
+                  {trackUsers.owner.username?.charAt(0)?.toUpperCase() || 'O'}
+                </span>
+              </div>
+            </div>
+
+            {/* 콜라보레이터들 */}
+            {trackUsers.collaborators.collaborator.map((collaborator) => (
+              <div
+                key={collaborator.id}
+                className='relative h-12 w-12 overflow-hidden rounded-full'
+              >
+                {collaborator.image_url ? (
+                  <img
+                    src={collaborator.image_url}
+                    alt={collaborator.username}
+                    className='h-full w-full object-cover'
+                    onError={(e) => handleImageError(e, collaborator.username)}
+                  />
+                ) : (
+                  <div className='flex h-full w-full items-center justify-center bg-gradient-to-br from-purple-400 to-purple-600'>
+                    <span className='text-sm font-semibold text-white'>
+                      {collaborator.username?.charAt(0)?.toUpperCase() || 'C'}
+                    </span>
+                  </div>
+                )}
+                
+                {/* Fallback div */}
+                <div
+                  className='absolute inset-0 flex items-center justify-center bg-gradient-to-br from-purple-400 to-purple-600'
+                  style={{ display: 'none' }}
+                >
+                  <span className='text-sm font-semibold text-white'>
+                    {collaborator.username?.charAt(0)?.toUpperCase() || 'C'}
+                  </span>
                 </div>
               </div>
-            ))
-          ) : (
-            <p className="text-sm text-gray-400 italic">No collaborators yet</p>
-          )}
-        </div>
-        <div className='flex justify-center mt-4'>
-          <Button
-            variant='outline'
-            size='lg'
-            className='flex w-full items-center gap-2 rounded-full border-amber-400 text-amber-400 hover:bg-amber-400 hover:text-black sm:w-auto'
-            onClick={() => setShowInviteModal(true)}
-          >
-            <Plus size={20} />
-            Invite Collaborators
-          </Button>
-        </div>
-      </div>
+            ))}
+            
+            <Button onClick={() => setShowInviteModal(true)}>
+              <Plus size={20} />
+            </Button>
+          </>
+        ) : (
+          // 목업 데이터로 샘플 collaborators 표시 (API 실패 시)
+          <>
+            <div className='relative h-12 w-12 overflow-hidden rounded-full border-2 border-yellow-400'>
+              <img
+                src={mockImages[0]}
+                alt='Owner'
+                className='h-full w-full object-cover'
+              />
+              <div className='absolute -top-1 -right-1 h-5 w-5 rounded-full bg-yellow-400 flex items-center justify-center'>
+                <Crown size={12} className='text-yellow-800' />
+              </div>
+            </div>
 
+            <div className='h-12 w-12 overflow-hidden rounded-full'>
+              <img
+                src={mockImages[1]}
+                alt='Sample Collaborator'
+                className='h-full w-full object-cover'
+              />
+            </div>
+
+            <div className='h-12 w-12 overflow-hidden rounded-full'>
+              <img
+                src={mockImages[2]}
+                alt='Sample Collaborator'
+                className='h-full w-full object-cover'
+              />
+            </div>
+
+            <Button onClick={() => setShowInviteModal(true)}>
+              <Plus size={20} />
+            </Button>
+          </>
+        )}
+      </div>
       {/* Invite Modal */}
       {showInviteModal && (
         <div className='fixed inset-0 z-50 flex items-center justify-center bg-black bg-opacity-50 p-4'>
@@ -290,4 +425,4 @@ const Collaborators: React.FC<CollaboratorsProps> = ({ track }) => {
   );
 };
 
-export default Collaborators; 
+export default Collaborators;
