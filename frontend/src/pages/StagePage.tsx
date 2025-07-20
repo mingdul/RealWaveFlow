@@ -445,11 +445,10 @@ const StagePage: React.FC = () => {
               </h1>
               <div className="space-y-4">
                 <p className="text-2xl text-gray-300 font-semibold">
-                  Currently creating version 
+                  Currently creating version{' '}
                   <span style={{ color: '#8528d8', fontWeight: 'bold' }}>{stage.version}</span>
                 </p>
                 <p className="text-lg text-gray-400">
-                  creating started at
                   {stage.created_at ? new Date(stage.created_at).toLocaleString('ko-KR', {
                     year: 'numeric',
                     month: '2-digit',
