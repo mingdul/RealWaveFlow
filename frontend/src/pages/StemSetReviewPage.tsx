@@ -55,8 +55,130 @@ interface Comment {
   user?: {
     id: string;
     username: string;
+    avatarUrl?: string; // 아바타 URL 추가
   };
 }
+
+// 댓글 그룹 인터페이스 추가
+interface CommentGroup {
+  timeNumber: number;
+  position: number;
+  comments: Comment[];
+}
+
+// 아바타 컴포넌트
+const Avatar: React.FC<{ 
+  user: { username: string; avatarUrl?: string }; 
+  size?: number;
+  className?: string;
+}> = ({ user, size = 24, className = "" }) => {
+  const [imageError, setImageError] = useState(false);
+  
+  if (user.avatarUrl && !imageError) {
+    return (
+      <img
+        src={user.avatarUrl}
+        alt={user.username}
+        className={`rounded-full object-cover ${className}`}
+        style={{ width: size, height: size }}
+        onError={() => setImageError(true)}
+      />
+    );
+  }
+  
+  // 기본 아바타 (이니셜)
+  return (
+    <div 
+      className={`rounded-full bg-gradient-to-br from-blue-500 to-purple-500 flex items-center justify-center text-white font-bold ${className}`}
+      style={{ width: size, height: size, fontSize: size * 0.4 }}
+    >
+      {user.username.charAt(0).toUpperCase()}
+    </div>
+  );
+};
+
+// 댓글 마커 컴포넌트 (아바타 기반)
+const CommentMarker: React.FC<{
+  commentGroup: CommentGroup;
+  onClick: (timeNumber: number) => void;
+}> = ({ commentGroup, onClick }) => {
+  const [isHovered, setIsHovered] = useState(false);
+  const { comments, position, timeNumber } = commentGroup;
+  const hasMultiple = comments.length > 1;
+  
+  // 메인 댓글 (첫 번째 댓글)
+  const mainComment = comments[0];
+  
+  return (
+    <div
+      className="absolute z-20 cursor-pointer transform -translate-x-1/2"
+      style={{ left: `${position}%`, top: '50%', transform: 'translate(-50%, -50%)' }}
+      onClick={() => onClick(timeNumber)}
+      onMouseEnter={() => setIsHovered(true)}
+      onMouseLeave={() => setIsHovered(false)}
+      title={hasMultiple 
+        ? `${comments.length}개의 댓글 (${mainComment.user?.username} 외)`
+        : `${mainComment.user?.username}: ${mainComment.comment}`
+      }
+    >
+      <div className="relative">
+        {/* 메인 아바타 */}
+        <div className={`relative transition-all duration-200 ${isHovered ? 'scale-125' : ''}`}>
+          <Avatar 
+            user={mainComment.user || { username: 'Anonymous' }} 
+            size={24}
+            className="border-2 border-white shadow-lg"
+          />
+          
+          {/* 다중 댓글 표시 */}
+          {hasMultiple && (
+            <>
+              {/* 배경 아바타들 (겹침 효과) */}
+              {comments.slice(1, 3).map((comment, index) => (
+                <div
+                  key={comment.id}
+                  className="absolute top-0 left-0"
+                  style={{
+                    transform: `translate(${(index + 1) * 3}px, ${(index + 1) * 3}px)`,
+                    zIndex: -(index + 1)
+                  }}
+                >
+                  <Avatar 
+                    user={comment.user || { username: 'Anonymous' }} 
+                    size={24}
+                    className="border-2 border-white shadow-md opacity-80"
+                  />
+                </div>
+              ))}
+              
+              {/* 댓글 수 배지 */}
+              <div className="absolute -top-2 -right-2 bg-red-500 text-white text-xs rounded-full w-5 h-5 flex items-center justify-center font-bold shadow-lg">
+                {comments.length}
+              </div>
+            </>
+          )}
+        </div>
+        
+        {/* 호버시 툴팁 */}
+        {isHovered && hasMultiple && (
+          <div className="absolute bottom-full left-1/2 transform -translate-x-1/2 mb-2 bg-black/90 text-white p-2 rounded-lg shadow-xl min-w-48 z-50">
+            <div className="text-xs font-semibold mb-1">{comments.length}개의 댓글</div>
+            {comments.slice(0, 3).map((comment) => (
+              <div key={comment.id} className="text-xs opacity-90 mb-1 last:mb-0">
+                <span className="font-medium">{comment.user?.username}:</span> {comment.comment.slice(0, 30)}{comment.comment.length > 30 ? '...' : ''}
+              </div>
+            ))}
+            {comments.length > 3 && (
+              <div className="text-xs opacity-70">그 외 {comments.length - 3}개...</div>
+            )}
+            {/* 화살표 */}
+            <div className="absolute top-full left-1/2 transform -translate-x-1/2 w-2 h-2 bg-black/90 rotate-45"></div>
+          </div>
+        )}
+      </div>
+    </div>
+  );
+};
 
 const StemSetReviewPage = () => {
   console.log('🎬 [StemSetReviewPage] Component initializing...');
@@ -127,7 +249,39 @@ const StemSetReviewPage = () => {
   const wavesurferRefs = useRef<{ [id: string]: WaveSurfer }>({});
   const [readyStates, setReadyStates] = useState<{ [id: string]: boolean }>({});
 
-  const isSeeking = useRef(false); // 무한 루프 방지용 플래그
+  const isSeeking = useRef(false);
+
+  // 댓글 그룹화 함수 (동시간대 댓글들을 그룹으로 묶음)
+  const groupCommentsByTime = useCallback((comments: Comment[], threshold: number = 2): CommentGroup[] => {
+    if (!comments.length || duration === 0) return [];
+
+    const sortedComments = [...comments].sort((a, b) => a.timeNumber - b.timeNumber);
+    const groups: CommentGroup[] = [];
+    
+    for (const comment of sortedComments) {
+      const position = (comment.timeNumber / duration) * 100;
+      
+      // 기존 그룹 중 시간 차이가 threshold 초 이하인 그룹 찾기
+      const existingGroup = groups.find(group => 
+        Math.abs(group.timeNumber - comment.timeNumber) <= threshold
+      );
+      
+      if (existingGroup) {
+        existingGroup.comments.push(comment);
+        // 그룹의 평균 시간으로 업데이트
+        existingGroup.timeNumber = existingGroup.comments.reduce((sum, c) => sum + c.timeNumber, 0) / existingGroup.comments.length;
+        existingGroup.position = (existingGroup.timeNumber / duration) * 100;
+      } else {
+        groups.push({
+          timeNumber: comment.timeNumber,
+          position,
+          comments: [comment]
+        });
+      }
+    }
+    
+    return groups;
+  }, [duration]); // 무한 루프 방지용 플래그
   const debugRef = useRef({ lastLog: 0, lastState: '' }); // 렌더링 로그 최적화용
   const { upstreamId } = useParams<{
     upstreamId: string;
@@ -824,17 +978,18 @@ const StemSetReviewPage = () => {
       const response = await createUpstreamComment(commentData);
       const createdComment = response.upstream_comment || response;
 
-      const newComment: Comment = {
-        id: createdComment.id,
-        time: timeString,
-        comment: newCommentText.trim(),
-        timeNumber: commentPosition.time,
-        timeString: timeString,
-        user: {
-          id: user.id,
-          username: user.username,
-        },
-      };
+              const newComment: Comment = {
+          id: createdComment.id,
+          time: timeString,
+          comment: newCommentText.trim(),
+          timeNumber: commentPosition.time,
+          timeString: timeString,
+          user: {
+            id: user.id,
+            username: user.username,
+            avatarUrl: (user as any).image_url, // 백엔드의 image_url 필드를 avatarUrl로 매핑
+          },
+        };
 
       setComments((prev) => [...prev, newComment]);
       setNewCommentText('');
@@ -1048,11 +1203,12 @@ const StemSetReviewPage = () => {
             comment: comment.comment,
             timeNumber: timeNumber,
             timeString: comment.time,
-            user: comment.user
+                        user: comment.user
               ? {
-                  id: comment.user.id,
-                  username: comment.user.username,
-                }
+                id: comment.user.id,
+                username: comment.user.username,
+                avatarUrl: (comment.user as any).image_url, // 백엔드의 image_url 필드를 avatarUrl로 매핑
+              }
               : undefined,
           };
         });
@@ -2096,38 +2252,53 @@ const StemSetReviewPage = () => {
                   </div>
                 ) : (
                   <div className='space-y-3 overflow-y-auto pr-2' style={{ maxHeight: 'calc(100vh - 280px)' }}>
-                    {comments.map((comment) => (
-                      <div
-                        key={comment.id}
-                        className='rounded-lg bg-gray-800/50 border border-gray-700 p-3 hover:bg-gray-800/70 transition-all duration-200'
-                      >
-                    <div className='flex items-center justify-between'>
-                      <div
-                        className='flex flex-1 cursor-pointer items-center space-x-2'
-                        onClick={() => seekToTime(comment.timeNumber)}
-                      >
-                        <span className='font-mono text-blue-400'>
-                          {comment.timeString}
-                        </span>
-                        <span>🗨️</span>
-                      </div>
-                      {user && comment.user?.id === user.id && (
-                        <div className='flex items-center space-x-1'>
-                          <button
-                            onClick={() => handleEditComment(comment)}
-                            className='p-1 text-gray-400 hover:text-white'
-                          >
-                            <Edit2 size={12} />
-                          </button>
-                          <button
-                            onClick={() => handleDeleteComment(comment.id)}
-                            className='p-1 text-gray-400 hover:text-red-400'
-                          >
-                            <Trash2 size={12} />
-                          </button>
-                        </div>
-                      )}
-                        </div>
+                                          {comments.map((comment) => (
+                        <div
+                          key={comment.id}
+                          className='rounded-lg bg-gray-800/50 border border-gray-700 p-3 hover:bg-gray-800/70 transition-all duration-200'
+                        >
+                          <div className='flex items-start space-x-3'>
+                            {/* 아바타 */}
+                            <div className='flex-shrink-0'>
+                              <Avatar 
+                                user={comment.user || { username: 'Anonymous' }} 
+                                size={32}
+                                className="mt-1"
+                              />
+                            </div>
+                            
+                            {/* 댓글 내용 */}
+                            <div className='flex-1 min-w-0'>
+                              <div className='flex items-center justify-between'>
+                                <div
+                                  className='flex cursor-pointer items-center space-x-2'
+                                  onClick={() => seekToTime(comment.timeNumber)}
+                                >
+                                  <span className='text-sm font-medium text-white'>
+                                    {comment.user?.username || 'Anonymous'}
+                                  </span>
+                                  <span className='font-mono text-xs text-blue-400'>
+                                    {comment.timeString}
+                                  </span>
+                                </div>
+                                
+                                {user && comment.user?.id === user.id && (
+                                  <div className='flex items-center space-x-1'>
+                                    <button
+                                      onClick={() => handleEditComment(comment)}
+                                      className='p-1 text-gray-400 hover:text-white'
+                                    >
+                                      <Edit2 size={12} />
+                                    </button>
+                                    <button
+                                      onClick={() => handleDeleteComment(comment.id)}
+                                      className='p-1 text-gray-400 hover:text-red-400'
+                                    >
+                                      <Trash2 size={12} />
+                                    </button>
+                                  </div>
+                                )}
+                              </div>
                         {editingComment === comment.id ? (
                           <div className='mt-3'>
                             <input
@@ -2147,15 +2318,11 @@ const StemSetReviewPage = () => {
                         ) : (
                           <div className='mt-2 text-gray-300'>
                             {comment.comment}
-                            {comment.user && (
-                              <div className='mt-2 text-xs text-gray-400 flex items-center gap-1'>
-                                <span>작성자:</span>
-                                <span className='font-medium'>{comment.user.username}</span>
-                              </div>
-                            )}
                           </div>
                         )}
-                      </div>
+                              </div>
+                            </div>
+                          </div>
                     ))}
                   </div>
                 )}
@@ -2165,7 +2332,7 @@ const StemSetReviewPage = () => {
         )}
 
         {/* Main Content Area - 새로운 레이아웃 */}
-        <main className={`transition-all duration-300 ${activePanel !== 'none' ? 'mr-80' : ''} px-6`}>
+        <main className={`transition-all duration-300 ${(activePanel as string) !== 'none' ? 'mr-80' : ''} px-6`}>
           {/* Waveform Cards */}
           <div className='space-y-6'>
             {/* Guide Waveform Card */}
@@ -2245,49 +2412,16 @@ const StemSetReviewPage = () => {
                       <div className='relative'>
                         <Wave {...mainWaveProps} />
                         
-                        {/* 댓글 마커들 */}
-                        {selectedUpstream && comments.map((comment) => {
-                          const position = duration > 0 ? (comment.timeNumber / duration) * 100 : 0;
-                          return (
-                            <div
-                              key={comment.id}
-                              className='absolute top-1/2 transform -translate-y-1/2 cursor-pointer z-20'
-                              style={{ left: `${position}%` }}
-                              onClick={() => seekToTime(comment.timeNumber)}
-                              title={`${comment.user?.username}: ${comment.comment}`}
-                            >
-                              <div className='w-3 h-3 rounded-full bg-blue-500 border-2 border-white shadow-lg hover:scale-125 transition-transform'>
-                                <div className='w-full h-full rounded-full bg-gradient-to-br from-blue-400 to-blue-600'></div>
-                              </div>
-                            </div>
-                          );
-                        })}
+                        {/* 아바타 기반 댓글 마커들 */}
+                        {selectedUpstream && groupCommentsByTime(comments).map((commentGroup) => (
+                          <CommentMarker
+                            key={`group-${commentGroup.comments[0].id}`}
+                            commentGroup={commentGroup}
+                            onClick={seekToTime}
+                          />
+                        ))}
                         
-                        {/* 기존 댓글 마커들 */}
-                        {comments.map((comment) => {
-                          const position = duration > 0 ? (comment.timeNumber / duration) * 100 : 0;
-                          return (
-                            <div
-                              key={`marker-${comment.id}`}
-                              className='absolute z-20 cursor-pointer'
-                              style={{
-                                left: `${position}%`,
-                                top: '10px',
-                                transform: 'translateX(-50%)',
-                              }}
-                              onClick={() => {
-                                if (wavesurferRefs.current['main']) {
-                                  wavesurferRefs.current['main'].seekTo(comment.timeNumber / duration);
-                                }
-                              }}
-                              title={`${comment.user?.username}: ${comment.comment}`}
-                            >
-                              <div className='w-3 h-3 bg-blue-500 rounded-full border-2 border-white shadow-lg hover:scale-125 transition-transform'>
-                                <div className='w-full h-full bg-blue-400 rounded-full animate-pulse'></div>
-                              </div>
-                            </div>
-                          );
-                        })}
+
                         
                         {/* 호버 시 나타나는 댓글 추가 아이콘 */}
                         {hoveredPosition && !isInlineCommentOpen && (
@@ -2458,7 +2592,7 @@ const StemSetReviewPage = () => {
         </main>
 
         {/* Enhanced Control Bar */}
-        <div className={`transition-all duration-300 ${activePanel !== 'none' ? 'mr-80' : ''} px-6`}>
+        <div className={`transition-all duration-300 ${(activePanel as string) !== 'none' ? 'mr-80' : ''} px-6`}>
           <div className='rounded-xl bg-gray-900/80 backdrop-blur-sm border border-gray-700 shadow-2xl overflow-hidden'>
             <div className='flex items-center justify-between px-6 py-4'>
               {/* Left Controls */}
@@ -2552,7 +2686,7 @@ const StemSetReviewPage = () => {
         </div>
 
         {/* 새로운 댓글 시스템 안내 */}
-        <div className={`transition-all duration-300 ${activePanel !== 'none' ? 'mr-80' : ''} px-6 py-4`}>
+        <div className={`transition-all duration-300 ${(activePanel as string) !== 'none' ? 'mr-80' : ''} px-6 py-4`}>
           <div className='text-center'>
             <div className='inline-flex items-center gap-3 bg-gray-900/60 backdrop-blur-sm border border-gray-700 rounded-lg px-6 py-3'>
               <MessageCircle size={20} className='text-blue-400' />
