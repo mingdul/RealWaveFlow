@@ -668,7 +668,18 @@ const TrackPage: React.FC<TrackPagejjmProps> = () => {
     // TODO: 트랙 재생 로직 구현
   };
 
-  const handleShowAllStems = () => setIsStemListModalOpen(true);
+  const handleShowAllStems = async () => {
+    const lastApprovedStage = getLastApprovedStage();
+    
+    if (lastApprovedStage) {
+      console.log('[DEBUG][TrackPage] Loading stems for last approved stage:', lastApprovedStage);
+      await loadStemsByVersion(lastApprovedStage.version);
+    } else {
+      console.warn('[DEBUG][TrackPage] No approved stage found, using current stems');
+    }
+    
+    setIsStemListModalOpen(true);
+  };
 
   const handleRollBack = async () => {
     if (!trackId) return;
@@ -768,6 +779,25 @@ const TrackPage: React.FC<TrackPagejjmProps> = () => {
     return stages.find((stage) => stage.version === selectedStageVersion);
   };
 
+  const getLastApprovedStage = () => {
+    // APPROVED 또는 approve 상태의 스테이지들 필터링
+    const approvedStages = stages.filter(
+      (stage) => stage.status === 'APPROVED' || stage.status === 'approve'
+    );
+
+    if (approvedStages.length > 0) {
+      // APPROVED/approve 상태 중 가장 높은 버전 선택
+      const lastApprovedStage = approvedStages.reduce((prev, current) =>
+        current.version > prev.version ? current : prev
+      );
+      console.log('[DEBUG][TrackPage] Last approved stage:', lastApprovedStage);
+      return lastApprovedStage;
+    }
+
+    console.log('[DEBUG][TrackPage] No approved stages found');
+    return null;
+  };
+
   const isVersion1 = () => {
     const activeStage = getActiveStage();
     const isV1 = activeStage?.version === 1;
@@ -811,6 +841,7 @@ const TrackPage: React.FC<TrackPagejjmProps> = () => {
                 onShowAllStems={handleShowAllStems}
                 onRollBack={handleRollBack}
                 stageId={getSelectedStage()?.id}
+                lastApprovedStageId={getLastApprovedStage()?.id}
               />
             </div>
             {/* 스테이지 히스토리 */}
@@ -851,11 +882,11 @@ const TrackPage: React.FC<TrackPagejjmProps> = () => {
           isOpen={isStemListModalOpen}
           onClose={() => setIsStemListModalOpen(false)}
           stems={stems}
-          versionNumber={selectedStageVersion.toString()}
+          versionNumber={getLastApprovedStage()?.version.toString() || selectedStageVersion.toString()}
           loading={stemsLoading}
           onRollBack={handleRollBack}
           onShowStage={handleShowStage}
-          stageId={getSelectedStage()?.id}
+          stageId={getLastApprovedStage()?.id || getSelectedStage()?.id}
         />
       </div>
     </div>

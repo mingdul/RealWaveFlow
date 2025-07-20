@@ -18,6 +18,7 @@ interface TrackinfocardjjmProps {
   versionNumber?: string;
   stageId?: string;
   guideUrl?: string;
+  lastApprovedStageId?: string;
 }
 
 const Trackinfocardjjm: React.FC<TrackinfocardjjmProps> = ({
