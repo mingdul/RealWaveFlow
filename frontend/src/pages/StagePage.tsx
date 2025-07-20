@@ -145,7 +145,7 @@ const StagePage: React.FC = () => {
   const ReviewerCard: React.FC<{ reviewer: StageReviewer }> = ({ reviewer }) => {
     return (
       <div className="relative group">
-        <div className="w-[200px] h-[140px] rounded-lg overflow-hidden relative">
+        <div className="w-[160px] h-[120px] rounded-lg overflow-hidden relative">
           {reviewer.user.image_url ? (
             <img
               src={reviewer.user.image_url}
@@ -158,18 +158,18 @@ const StagePage: React.FC = () => {
             />
           ) : (
             <div className="w-full h-full bg-gradient-to-br from-purple-400 to-purple-600 flex items-center justify-center">
-              <span className="text-2xl font-bold text-white">
+              <span className="text-xl font-bold text-white">
                 {reviewer.user.username?.charAt(0)?.toUpperCase() || 'U'}
               </span>
             </div>
           )}
           
           {/* 검은색 반투명 그라데이션 오버레이 */}
-          <div className="absolute bottom-0 left-0 right-0 h-12 bg-gradient-to-t from-black/80 via-black/40 to-transparent"></div>
+          <div className="absolute bottom-0 left-0 right-0 h-10 bg-gradient-to-t from-black/80 via-black/40 to-transparent"></div>
           
           {/* Role 텍스트 */}
           <div className="absolute bottom-2 left-2 right-2">
-            <p className="text-white text-sm font-medium truncate">
+            <p className="text-white text-xs font-medium truncate">
               {reviewer.user.username}
             </p>
             <p className="text-gray-300 text-xs">
@@ -394,7 +394,7 @@ const StagePage: React.FC = () => {
                 <Music className="w-16 h-16 text-white" />
               )}
             </div>
-            <div className="flex-1">
+            <div className="flex-1 max-w-2xl">
               <h1 className='text-6xl font-bold text-white mb-6'>
                 {track?.title || 'Unknown Track'}
               </h1>
@@ -423,7 +423,7 @@ const StagePage: React.FC = () => {
             </div>
             
             {/* Reviewers Section */}
-            <div className="flex-shrink-0 w-80">
+            <div className="flex-shrink-0 w-96">
               <h2 className="text-3xl font-bold text-white mb-6">Reviewers</h2>
               {reviewersLoading ? (
                 <div className="flex items-center justify-center py-8">
@@ -431,7 +431,7 @@ const StagePage: React.FC = () => {
                   <span className="ml-3 text-white text-sm">Loading reviewers...</span>
                 </div>
               ) : reviewers.length > 0 ? (
-                <div className="space-y-4">
+                <div className="flex flex-wrap gap-4">
                   {reviewers.map((reviewer) => (
                     <ReviewerCard key={reviewer.id} reviewer={reviewer} />
                   ))}
