@@ -1,4 +1,6 @@
 import { BadRequestException, Injectable, Logger, NotFoundException  } from '@nestjs/common';
+import { S3Client, GetObjectCommand } from '@aws-sdk/client-s3';
+import { getSignedUrl } from '@aws-sdk/s3-request-presigner';
 import { Upstream } from './upstream.entity';
 import { InjectRepository } from '@nestjs/typeorm';
 import { Repository } from 'typeorm';
@@ -20,6 +22,8 @@ import { NotificationGateway } from '../notification/notification.gateway';
 @Injectable()
 export class UpstreamService {
     private readonly logger = new Logger(UpstreamService.name);
+    private readonly s3: S3Client;
+    private readonly bucketName: string;
 
     constructor(
         @InjectRepository(Upstream)
@@ -40,7 +44,34 @@ export class UpstreamService {
         private readonly upstreamReviewService: UpstreamReviewService,
         private readonly notificationGateway: NotificationGateway,
 
-    ) {}
+    ) {
+        this.s3 = new S3Client({
+            region: process.env.AWS_REGION,
+        });
+        this.bucketName = process.env.AWS_S3_BUCKET_NAME || 'waveflow-bucket';
+    }
+
+    private async generatePresignedUrl(imageKey: string): Promise<string | null> {
+        if (!imageKey) {
+            return null;
+        }
+
+        try {
+            const command = new GetObjectCommand({
+                Bucket: this.bucketName,
+                Key: imageKey,
+            });
+
+            const presignedUrl = await getSignedUrl(this.s3, command, {
+                expiresIn: 3600 // 1시간
+            });
+
+            return presignedUrl;
+        } catch (error) {
+            console.error('Error generating presigned URL for key:', imageKey, error);
+            return null;
+        }
+    }
 
         /** 외부에서 호출할 단일 엔드포인트 */
           async createUpstreamWithStems(dto: StemSetCreateDto) { 
@@ -378,10 +409,25 @@ export class UpstreamService {
             throw new NotFoundException(`Upstream not found: ${upstream_id}`);
         }
 
+        // 사용자 이미지 presigned URL 생성
+        let userImageUrl = null;
+        if (upstream.user?.image_url) {
+            userImageUrl = await this.generatePresignedUrl(upstream.user.image_url);
+        }
+
+        // 사용자 정보에 presigned URL 추가
+        const upstreamWithPresignedUrl = {
+            ...upstream,
+            user: upstream.user ? {
+                ...upstream.user,
+                image_url: userImageUrl
+            } : null
+        };
+
         return {
             success: true,
             message: 'Upstream fetched successfully',
-            upstream: upstream,
+            upstream: upstreamWithPresignedUrl,
             stems: upstream.stems
         };
     }

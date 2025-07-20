@@ -1,6 +1,5 @@
-import React, { useState, useEffect } from 'react';
+import React from 'react';
 import ReviewerStatus from './ReviewerStatus';
-import userService from '../services/userService';
 
 interface UpstreamInfoProps {
   upstream: {
@@ -15,34 +14,6 @@ interface UpstreamInfoProps {
 }
 
 const UpstreamInfo: React.FC<UpstreamInfoProps> = ({ upstream }) => {
-  const [userProfile, setUserProfile] = useState<{
-    id: string;
-    username: string;
-    image_url?: string | null;
-  } | null>(null);
-  const [loading, setLoading] = useState(true);
-
-  useEffect(() => {
-    const fetchUserProfile = async () => {
-      if (!upstream.user?.id) {
-        setLoading(false);
-        return;
-      }
-
-      try {
-        const profile = await userService.getUserProfile(upstream.user.id);
-        setUserProfile(profile);
-      } catch (error) {
-        console.error('Failed to fetch user profile:', error);
-        setUserProfile(upstream.user);
-      } finally {
-        setLoading(false);
-      }
-    };
-
-    fetchUserProfile();
-  }, [upstream.user?.id]);
-
   // 이미지 에러 핸들링을 위한 fallback
   const handleImageError = (
     e: React.SyntheticEvent<HTMLImageElement, Event>
@@ -55,15 +26,13 @@ const UpstreamInfo: React.FC<UpstreamInfoProps> = ({ upstream }) => {
     }
   };
 
-  const displayUser = userProfile || upstream.user;
-
   return (
     <div className='mb-8 rounded-xl bg-gradient-to-br from-gray-800/80 to-gray-900/80 border border-gray-600/50 p-6 backdrop-blur-sm shadow-xl'>
       {/* Description Section */}
       <div className='mb-6'>
         <h3 className='text-lg font-semibold text-white mb-3 flex items-center gap-2'>
           <span className='w-1 h-6 bg-gradient-to-b from-blue-400 to-purple-500 rounded-full'></span>
-          업스트림 설명
+          Upstream Infomation
         </h3>
         <div className='bg-gray-900/40 rounded-lg p-4 border border-gray-700/50'>
           <p className='text-gray-200 text-base leading-relaxed whitespace-pre-wrap'>
@@ -80,19 +49,17 @@ const UpstreamInfo: React.FC<UpstreamInfoProps> = ({ upstream }) => {
           <div className='relative'>
             <div className='h-14 w-14 rounded-full overflow-hidden border-2 border-blue-400 shadow-lg'>
               <div className='h-full w-full rounded-full overflow-hidden bg-gray-800'>
-                {loading ? (
-                  <div className='h-full w-full animate-pulse bg-gray-600'></div>
-                ) : displayUser?.image_url ? (
+                {upstream.user?.image_url ? (
                   <img
-                    src={displayUser.image_url}
-                    alt={displayUser.username}
+                    src={upstream.user.image_url}
+                    alt={upstream.user.username}
                     className='h-full w-full object-cover transition-transform duration-200 hover:scale-110'
                     onError={handleImageError}
                   />
                 ) : (
                   <div className='flex h-full w-full items-center justify-center bg-gradient-to-br from-blue-500 to-purple-600'>
                     <span className='text-lg font-bold text-white'>
-                      {displayUser?.username?.charAt(0)?.toUpperCase() || 'U'}
+                      {upstream.user?.username?.charAt(0)?.toUpperCase() || 'U'}
                     </span>
                   </div>
                 )}
@@ -103,7 +70,7 @@ const UpstreamInfo: React.FC<UpstreamInfoProps> = ({ upstream }) => {
                   style={{ display: 'none' }}
                 >
                   <span className='text-lg font-bold text-white'>
-                    {displayUser?.username?.charAt(0)?.toUpperCase() || 'U'}
+                    {upstream.user?.username?.charAt(0)?.toUpperCase() || 'U'}
                   </span>
                 </div>
               </div>
@@ -118,11 +85,7 @@ const UpstreamInfo: React.FC<UpstreamInfoProps> = ({ upstream }) => {
           {/* Creator Details */}
           <div className='flex-1'>
             <div className='text-lg font-semibold text-white mb-1'>
-              {loading ? (
-                <div className='h-5 w-24 animate-pulse bg-gray-600 rounded'></div>
-              ) : (
-                displayUser?.username || 'Unknown User'
-              )}
+              {upstream.user?.username || 'Unknown User'}
             </div>
             <div className='text-sm text-blue-400 font-medium'>업스트림 작성자</div>
           </div>

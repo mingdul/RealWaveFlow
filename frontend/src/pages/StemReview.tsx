@@ -1643,16 +1643,16 @@ const StemSetReview = () => {
                     <div>
                       <h2 className='text-xl font-bold text-white mb-1 flex items-center gap-2'>
                         <Volume2 size={20} className='text-blue-400' />
-                        스템 파일 목록
+                        Stem Set
                       </h2>
                       <p className='text-sm text-gray-400'>
-                        사용 가능한 오디오 파일들
+                        Available audio files
                       </p>
                     </div>
                     <button
                       onClick={() => setActivePanel('none')}
                       className='rounded-lg p-2 text-gray-400 hover:bg-gray-700 hover:text-white transition-all duration-200'
-                      title='닫기'
+                      title='Close'
                     >
                       <X size={20} />
                     </button>
@@ -1667,14 +1667,14 @@ const StemSetReview = () => {
                   {/* Content Area */}
                   <div className='flex-1 overflow-hidden'>
                     <h3 className='mb-3 text-sm font-medium text-gray-300 uppercase tracking-wide'>
-                      스템 파일 목록
+                      Stem Set List
                     </h3>
 
                     {stemsLoading ? (
                       <div className='flex flex-col items-center justify-center py-12'>
                         <div className='h-8 w-8 animate-spin rounded-full border-2 border-blue-400 border-t-transparent mb-3'></div>
-                        <span className='text-white font-medium text-sm'>스템 로딩 중...</span>
-                        <span className='text-xs text-gray-400 mt-1'>잠시만 기다려주세요</span>
+                        <span className='text-white font-medium text-sm'>Stem Loading...</span>
+                        <span className='text-xs text-gray-400 mt-1'>Please wait a moment</span>
                       </div>
                     ) : (
                       <div className='space-y-2 overflow-y-auto pr-2' style={{ maxHeight: 'calc(100vh - 320px)' }}>
@@ -1882,7 +1882,7 @@ const StemSetReview = () => {
                           } catch (error: any) {
                             return (
                               <div className='py-8 text-center text-red-400'>
-                                <div>렌더링 중 오류가 발생했습니다.</div>
+                                <div>Rendering error occurred.</div>
                                 <div className='text-xs mt-2'>{error?.message || 'Unknown error'}</div>
                               </div>
                             );
@@ -1906,16 +1906,16 @@ const StemSetReview = () => {
                     <div>
                       <h2 className='text-xl font-bold text-white mb-1 flex items-center gap-2'>
                         <MessageCircle size={20} className='text-blue-400' />
-                        댓글
+                        Comments
                       </h2>
                       <p className='text-sm text-gray-400'>
-                        타임스탬프 기반 댓글들
+                        Timestamp-based comments
                       </p>
                     </div>
                     <button
                       onClick={() => setActivePanel('none')}
                       className='rounded-lg p-2 text-gray-400 hover:bg-gray-700 hover:text-white transition-all duration-200'
-                      title='닫기'
+                      title='Close'
                     >
                       <X size={20} />
                     </button>
@@ -1926,7 +1926,7 @@ const StemSetReview = () => {
                 {!selectedUpstream && (
                   <div className='mb-6 rounded-lg bg-gray-800/30 border border-gray-700 p-4 text-center'>
                     <div className='text-sm text-gray-300'>
-                      오디오 파일을 선택하여 리뷰를 확인하세요
+                      Select an audio file to view the review
                     </div>
                   </div>
                 )}
@@ -1936,7 +1936,7 @@ const StemSetReview = () => {
                   {commentsLoading ? (
                     <div className='flex flex-col items-center justify-center py-12'>
                       <div className='h-8 w-8 animate-spin rounded-full border-3 border-blue-400 border-t-transparent mb-3'></div>
-                      <span className='text-white font-medium'>댓글 로딩 중...</span>
+                      <span className='text-white font-medium'>Comments loading...</span>
                     </div>
                   ) : (
                     <div className='space-y-3 overflow-y-auto pr-2' style={{ maxHeight: 'calc(100vh - 280px)' }}>
@@ -2034,7 +2034,7 @@ const StemSetReview = () => {
               {/* Guide Waveform */}
               <div className="bg-white/5 backdrop-blur-lg rounded-2xl p-6 border border-white/10 shadow-2xl transform transition-all duration-300">
                 <div className="mb-4">
-                  <h3 className="text-lg font-semibold text-white mb-2">가이드 트랙</h3>
+                  <h3 className="text-lg font-semibold text-white mb-2">Guide Track</h3>
                   <div className="h-1 bg-gradient-to-r from-red-500 to-red-300 rounded-full"></div>
                 </div>
 
@@ -2227,7 +2227,7 @@ const StemSetReview = () => {
                       💬
                     </div>
                     <div>
-                      <span className='text-white text-sm font-medium'>댓글 추가</span>
+                      <span className='text-white text-sm font-medium'>Add Comment</span>
                       <div className='text-xs text-gray-400'>
                         {Math.floor(commentPosition.time / 60)}:{String(Math.floor(commentPosition.time % 60)).padStart(2, '0')}
                       </div>
@@ -2245,7 +2245,7 @@ const StemSetReview = () => {
                 <textarea
                   value={newCommentText}
                   onChange={(e) => setNewCommentText(e.target.value)}
-                  placeholder='댓글을 입력하세요...'
+                  placeholder='Enter your comment...'
                   className='w-full bg-gray-800 border border-gray-600 rounded-md px-3 py-2 text-white placeholder-gray-400 resize-none focus:border-blue-500 focus:outline-none text-sm'
                   rows={3}
                   autoFocus
@@ -2265,14 +2265,14 @@ const StemSetReview = () => {
                     onClick={handleCloseInlineComment}
                     className='px-3 py-1.5 text-xs bg-gray-700 hover:bg-gray-600 text-gray-300 rounded-md transition-colors'
                   >
-                    취소
+                    Cancel
                   </button>
                   <button
                     onClick={handleAddComment}
                     disabled={!newCommentText.trim()}
                     className='px-3 py-1.5 text-xs bg-blue-600 hover:bg-blue-700 disabled:bg-gray-600 disabled:cursor-not-allowed text-white rounded-md transition-colors'
                   >
-                    작성 (Ctrl+Enter)
+                    Write (Ctrl+Enter)
                   </button>
                 </div>
               </div>
@@ -2332,14 +2332,14 @@ const StemSetReview = () => {
               className="px-6 py-2 bg-gradient-to-r from-green-600 to-green-700 hover:from-green-700 hover:to-green-800 text-white rounded-lg font-medium transition-all duration-200 shadow-lg hover:shadow-green-500/25 flex items-center space-x-2"
             >
               <span>✓</span>
-              <span>승인</span>
+              <span>Approve</span>
             </button>
             <button
               onClick={handleReject}
               className="px-6 py-2 bg-gradient-to-r from-red-600 to-red-700 hover:from-red-700 hover:to-red-800 text-white rounded-lg font-medium transition-all duration-200 shadow-lg hover:shadow-red-500/25 flex items-center space-x-2"
             >
               <span>✗</span>
-              <span>거절</span>
+              <span>Reject</span>
             </button>
           </div>
         </div>
