@@ -201,7 +201,7 @@ const VersionTimeline: React.FC<{
 
         <div className='space-y-6'>
           {sortedStages.map((stage, _index) => (
-            <div key={stage.id} className='relative flex items-start'>
+            <div key={stage.id} className='relative flex items-end'>
               {/* 타임라인 노드 */}
               <div
                 className={`relative z-10 h-8 w-8 cursor-pointer rounded-full border-4 transition-all duration-200 ${

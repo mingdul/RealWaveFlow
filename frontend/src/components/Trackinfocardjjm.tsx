@@ -87,7 +87,7 @@ const Trackinfocardjjm: React.FC<TrackinfocardjjmProps> = ({
 
       <div className='relative z-10 flex flex-col gap-6 lg:flex-row justify-center'>
         {/* Left side content */}
-        <div className='w-full md:w-2/3 space-y-4 pl-6'>
+        <div className='w-full md:w-2/3 space-y-4 pl-10'>
           {/* Header label */}
           {/* Main title */}
           <div className='space-y-5'>
