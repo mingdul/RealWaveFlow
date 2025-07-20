@@ -226,8 +226,7 @@ export class TrackCollaboratorService {
         // 모든 트랙 참여자 조회 (owner + collaborators, accepted 상태만)
         const allCollaborators = await this.trackCollaboratorRepository.find({
             where: { 
-                track_id: { id: trackId },
-                status: 'accepted'
+                track_id: { id: trackId }
             },
             relations: ['user_id'],
         });
