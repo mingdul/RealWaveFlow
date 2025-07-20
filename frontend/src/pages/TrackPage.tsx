@@ -335,7 +335,7 @@ const VersionTimeline: React.FC<{
   );
 };
 
-const TrackPagejjm: React.FC<TrackPagejjmProps> = () => {
+const TrackPage: React.FC<TrackPagejjmProps> = () => {
   const { trackId } = useParams<{ trackId: string }>();
   const navigate = useNavigate();
   const { user } = useAuth();
@@ -793,4 +793,4 @@ const TrackPagejjm: React.FC<TrackPagejjmProps> = () => {
   );
 };
 
-export default TrackPagejjm;
+export default TrackPage;

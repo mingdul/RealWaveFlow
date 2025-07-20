@@ -13,7 +13,7 @@ import DashboardPage from './pages/DashboardPage.tsx';
 import Notfound from './pages/Notfound';
 import StagePage from './pages/StagePage';
 import PublicRoute from './components/PublicRoute.tsx';
-import TrackPage from './pages/Trackpage.tsx';
+import TrackPage from './pages/TrackPage.tsx';
 // import StemSetReviewPage from './pages/StemSetReviewPage.tsx';
 import InvitePage from './pages/InvitePage.tsx';
 import StemReview from './pages/StemReview.tsx';
