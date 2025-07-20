@@ -5,6 +5,7 @@ import { Track } from '../types/api';
 import streamingService, {
   StemStreamingInfo,
 } from '../services/streamingService';
+import { getLatestStage } from '../services/stageService';
 import PresignedImage from './PresignedImage';
 import Collaborators from './Collaborators';
 
@@ -35,27 +36,44 @@ const Trackinfocardjjm: React.FC<TrackinfocardjjmProps> = ({
   const guideAudioRef = useRef<HTMLAudioElement>(null);
 
   const handlePlayClick = async () => {
-    if (!isPlaying && lastApprovedStageId) {
+    if (!isPlaying) {
       try {
         setGuideLoading(true);
-        const response =
-          await streamingService.getGuidePresignedUrlByStageId(lastApprovedStageId);
+        let stageId = lastApprovedStageId;
+        
+        // lastApprovedStageId가 없으면 최신 stage를 가져와서 사용
+        if (!stageId) {
+          console.log('No approved stage found, fetching latest stage...');
+          const latestStage = await getLatestStage(track.id);
+          if (latestStage) {
+            stageId = latestStage.id;
+            console.log('Using latest stage:', stageId);
+          } else {
+            console.warn('No stages found for this track');
+            return;
+          }
+        }
 
-        console.log('Guide API response for last approved stage:', response);
+        if (!stageId) {
+          console.warn('No stage ID available for playback');
+          return;
+        }
+
+        const response = await streamingService.getGuidePresignedUrlByStageId(stageId);
+
+        console.log('Guide API response:', response);
 
         if (response.success && response.data) {
           setGuideUrl(response.data.presignedUrl);
           setIsPlaying(true);
         } else {
-          console.error('Failed to fetch guide for last approved stage:', response.message);
+          console.error('Failed to fetch guide:', response.message);
         }
       } catch (error) {
-        console.error('Error fetching guide for last approved stage:', error);
+        console.error('Error fetching guide:', error);
       } finally {
         setGuideLoading(false);
       }
-    } else if (!isPlaying && !lastApprovedStageId) {
-      console.warn('No approved stage available for playback');
     } else {
       // 정지
       if (guideAudioRef.current) {
@@ -104,7 +122,7 @@ const Trackinfocardjjm: React.FC<TrackinfocardjjmProps> = ({
               <button
                 onClick={handlePlayClick}
                 className='rounded-full bg-white/20 p-6 backdrop-blur-sm transition-all duration-200 hover:scale-110 hover:bg-white/30'
-                disabled={stemsLoading || guideLoading || !lastApprovedStageId}
+                disabled={stemsLoading || guideLoading}
               >
                 {stemsLoading || guideLoading ? (
                   <div className='h-10 w-10 animate-spin rounded-full border-2 border-white border-t-transparent' />
@@ -169,7 +187,7 @@ const Trackinfocardjjm: React.FC<TrackinfocardjjmProps> = ({
                     size='sm'
                     className='flex items-center justify-center gap-2 rounded-full bg-white px-4 py-1.5 text-lg leading-none text-black shadow-xl transition-all duration-300 hover:scale-105 hover:bg-white/90 hover:shadow-2xl'
                     onClick={handlePlayClick}
-                    disabled={stemsLoading || guideLoading || !lastApprovedStageId}
+                    disabled={stemsLoading || guideLoading}
                   >
                     {stemsLoading || guideLoading ? (
                       <div className='h-5 w-5 animate-spin rounded-full border-2 border-black border-t-transparent' />
