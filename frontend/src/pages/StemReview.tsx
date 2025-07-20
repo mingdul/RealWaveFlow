@@ -27,8 +27,6 @@ import {
   Play,
   Pause,
   Volume,
-  ZoomIn,
-  ZoomOut,
   Trash2,
   Edit2,
   Square,
@@ -823,7 +821,7 @@ const StemSetReview = () => {
                   userWithImage = {
                     id: userProfile.id,
                     username: userProfile.username,
-                    image_url: userProfile.image_url
+                    image_url: userProfile.image_url || null
                   };
                 }
               } catch (imageError) {
