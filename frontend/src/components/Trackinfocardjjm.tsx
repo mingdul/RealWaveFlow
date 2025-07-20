@@ -23,7 +23,7 @@ interface TrackinfocardjjmProps {
 const Trackinfocardjjm: React.FC<TrackinfocardjjmProps> = ({
   track,
   onShowAllStems,
-  versionNumber,
+  // versionNumber,
   stemsLoading = false,
   stageId,
 }) => {
