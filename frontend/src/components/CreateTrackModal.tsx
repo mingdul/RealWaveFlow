@@ -156,7 +156,7 @@ const CreateTrackModal: React.FC<CreateTrackModalProps> = ({ isOpen, onClose, on
         </div>
 
         {/* Content */}
-        <div className="flex-1 overflow-y-auto p-4 sm:p-6 space-y-4 sm:space-y-6">
+        <div className="flex-1 overflow-y-auto scrollbar-hide p-4 sm:p-6 space-y-4 sm:space-y-6">
           <StepProgress currentStep={1} steps={steps} />
           
           <div className="max-h-[calc(90vh-200px)] overflow-y-auto">
@@ -258,7 +258,7 @@ const CreateTrackModal: React.FC<CreateTrackModalProps> = ({ isOpen, onClose, on
                       />
                       <label
                         htmlFor="cover-image-input"
-                        className={`block w-full h-48 border-2 border-dashed border-gray-600 rounded-lg cursor-pointer hover:border-purple-500 hover:bg-purple-900/10 transition-all duration-200 ${isSubmitting ? 'opacity-50 cursor-not-allowed' : ''}`}
+                        className={`block w-full aspect-square border-2 border-dashed border-gray-600 rounded-lg cursor-pointer hover:border-purple-500 hover:bg-purple-900/10 transition-all duration-200 ${isSubmitting ? 'opacity-50 cursor-not-allowed' : ''}`}
                       >
                         <div className="flex flex-col items-center justify-center h-full">
                           <Upload size={32} className="text-gray-400 mb-3" />
