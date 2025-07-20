@@ -85,7 +85,7 @@ const Trackinfocardjjm: React.FC<TrackinfocardjjmProps> = ({
       {/* Background overlay pattern */}
       <div className='absolute inset-0 bg-gradient-to-r from-black/60 via-transparent to-black/40'></div>
 
-      <div className='relative z-10 flex flex-col gap-6 lg:flex-row justify-center'>
+      <div className='relative z-10 flex flex-row gap-6 lg:flex-row justify-center'>
        
         {/* Right side - Album cover */}
         <div className='w-full md:w-1/3 flex-shrink-0 lg:ml-8 flex justify-center'>
@@ -113,8 +113,8 @@ const Trackinfocardjjm: React.FC<TrackinfocardjjmProps> = ({
             </div>
           </div>
         </div>
-      </div>
-       {/* Left side content */}
+        
+        {/* Left side content */}
        <div className='w-full md:w-2/3 space-y-4 pl-10'>
           {/* Header label */}
           {/* Main title */}
@@ -131,10 +131,7 @@ const Trackinfocardjjm: React.FC<TrackinfocardjjmProps> = ({
           {/* Owner and version info */}
           <div className='flex items-center gap-4 pt-2'>
             <p className='text-sm text-white/70'>
-              Owner:{' '}
-              <span className='font-semibold text-white'>
-                {track.owner_id.username}
-              </span>
+              Members:
             </p>
 
             <Collaborators track={track} />
@@ -142,7 +139,7 @@ const Trackinfocardjjm: React.FC<TrackinfocardjjmProps> = ({
 
           <div className='flex flex-col gap-3 pt-6 sm:flex-row sm:items-center'>
             <h2 className='text-lg font-semibold text-white/70 sm:min-w-fit sm:whitespace-nowrap'>
-              Version: <span className='text-white'>{versionNumber}</span>
+              Latest Version:
             </h2>
 
             <Button
@@ -191,6 +188,9 @@ const Trackinfocardjjm: React.FC<TrackinfocardjjmProps> = ({
             </span>
           </div>
         </div>
+
+      </div>
+       
 
 
       {/* Hidden Audio Element for Guide Playback */}

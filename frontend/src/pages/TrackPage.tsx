@@ -801,7 +801,7 @@ const TrackPage: React.FC<TrackPagejjmProps> = () => {
 
           <div className='px-4 py-6 sm:px-6 sm:py-8 lg:px-8'>
             {/* 메인 컨텐츠 Grid 레이아웃 */}
-            <div className='transform transition-all duration-300 hover:scale-[1.02]'>
+            <div className='transform transition-all duration-300'>
               <Trackinfocardjjm
                 track={track}
                 stems={stems}
