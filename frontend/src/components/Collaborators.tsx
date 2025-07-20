@@ -315,35 +315,47 @@ const Collaborators: React.FC<CollaboratorsProps> = ({ track }) => {
         {trackUsers ? (
           <>
             {/* 트랙 소유자 */}
-            <div className='relative h-12 w-12 overflow-hidden rounded-full border-2 border-yellow-400'>
-              {trackUsers.owner.image_url ? (
-                <img
-                  src={trackUsers.owner.image_url}
-                  alt={trackUsers.owner.username}
-                  className='h-full w-full object-cover'
-                  onError={(e) => handleImageError(e, trackUsers.owner.username)}
-                />
-              ) : (
-                <div className='flex h-full w-full items-center justify-center bg-gradient-to-br from-blue-400 to-blue-600'>
+            <div className='relative group'>
+              <div className='h-12 w-12 rounded-full border-2 border-yellow-400 overflow-hidden relative'>
+                {trackUsers.owner.image_url ? (
+                  <img
+                    src={trackUsers.owner.image_url}
+                    alt={trackUsers.owner.username}
+                    className='h-full w-full object-cover'
+                    onError={(e) => handleImageError(e, trackUsers.owner.username)}
+                  />
+                ) : (
+                  <div className='flex h-full w-full items-center justify-center bg-gradient-to-br from-blue-400 to-blue-600'>
+                    <span className='text-sm font-semibold text-white'>
+                      {trackUsers.owner.username?.charAt(0)?.toUpperCase() || 'O'}
+                    </span>
+                  </div>
+                )}
+                
+                {/* Fallback div */}
+                <div
+                  className='absolute inset-0 flex items-center justify-center bg-gradient-to-br from-blue-400 to-blue-600'
+                  style={{ display: 'none' }}
+                >
                   <span className='text-sm font-semibold text-white'>
                     {trackUsers.owner.username?.charAt(0)?.toUpperCase() || 'O'}
                   </span>
                 </div>
-              )}
-              
-              {/* Owner Crown */}
-              <div className='absolute -top-1 -right-1 h-5 w-5 rounded-full bg-yellow-400 flex items-center justify-center'>
-                <Crown size={12} className='text-yellow-800' />
               </div>
               
-              {/* Fallback div */}
-              <div
-                className='absolute inset-0 flex items-center justify-center bg-gradient-to-br from-blue-400 to-blue-600'
-                style={{ display: 'none' }}
-              >
-                <span className='text-sm font-semibold text-white'>
-                  {trackUsers.owner.username?.charAt(0)?.toUpperCase() || 'O'}
-                </span>
+              {/* Owner Crown - 크라운을 프로필 밖으로 이동 */}
+              <div className='absolute -top-2 -right-2 h-6 w-6 rounded-full bg-yellow-400 flex items-center justify-center shadow-lg border-2 border-white z-10'>
+                <Crown size={14} className='text-yellow-800' />
+              </div>
+              
+              {/* Owner Tooltip */}
+              <div className='absolute bottom-full mb-2 left-1/2 transform -translate-x-1/2 opacity-0 group-hover:opacity-100 transition-opacity duration-200 pointer-events-none z-20'>
+                <div className='bg-gray-900 text-white text-xs rounded-lg py-2 px-3 whitespace-nowrap shadow-xl border border-gray-700'>
+                  <div className='font-semibold'>{trackUsers.owner.username}</div>
+                  <div className='text-yellow-400 text-xs'>Owner</div>
+                  {/* 화살표 */}
+                  <div className='absolute top-full left-1/2 transform -translate-x-1/2 w-0 h-0 border-l-4 border-r-4 border-t-4 border-transparent border-t-gray-900'></div>
+                </div>
               </div>
             </div>
 
@@ -351,33 +363,46 @@ const Collaborators: React.FC<CollaboratorsProps> = ({ track }) => {
             {trackUsers.collaborators.collaborator.map((collaborator) => (
               <div
                 key={collaborator.id}
-                className='relative h-12 w-12 overflow-hidden rounded-full cursor-pointer transform transition-all duration-200 hover:scale-110 hover:ring-2 hover:ring-purple-400'
-                onClick={() => handleCollaboratorClick(collaborator)}
-                title={`${collaborator.username} (${collaborator.role || 'collaborator'})`}
+                className='relative group'
               >
-                {collaborator.image_url ? (
-                  <img
-                    src={collaborator.image_url}
-                    alt={collaborator.username}
-                    className='h-full w-full object-cover transition-opacity duration-200 hover:opacity-80'
-                    onError={(e) => handleImageError(e, collaborator.username)}
-                  />
-                ) : (
-                  <div className='flex h-full w-full items-center justify-center bg-gradient-to-br from-purple-400 to-purple-600 transition-all duration-200 hover:from-purple-500 hover:to-purple-700'>
+                <div
+                  className='h-12 w-12 rounded-full cursor-pointer transform transition-all duration-200 hover:scale-110 hover:ring-2 hover:ring-purple-400 overflow-hidden'
+                  onClick={() => handleCollaboratorClick(collaborator)}
+                >
+                  {collaborator.image_url ? (
+                    <img
+                      src={collaborator.image_url}
+                      alt={collaborator.username}
+                      className='h-full w-full object-cover transition-opacity duration-200 hover:opacity-80'
+                      onError={(e) => handleImageError(e, collaborator.username)}
+                    />
+                  ) : (
+                    <div className='flex h-full w-full items-center justify-center bg-gradient-to-br from-purple-400 to-purple-600 transition-all duration-200 hover:from-purple-500 hover:to-purple-700'>
+                      <span className='text-sm font-semibold text-white'>
+                        {collaborator.username?.charAt(0)?.toUpperCase() || 'C'}
+                      </span>
+                    </div>
+                  )}
+                  
+                  {/* Fallback div */}
+                  <div
+                    className='absolute inset-0 flex items-center justify-center bg-gradient-to-br from-purple-400 to-purple-600 transition-all duration-200 hover:from-purple-500 hover:to-purple-700'
+                    style={{ display: 'none' }}
+                  >
                     <span className='text-sm font-semibold text-white'>
                       {collaborator.username?.charAt(0)?.toUpperCase() || 'C'}
                     </span>
                   </div>
-                )}
+                </div>
                 
-                {/* Fallback div */}
-                <div
-                  className='absolute inset-0 flex items-center justify-center bg-gradient-to-br from-purple-400 to-purple-600 transition-all duration-200 hover:from-purple-500 hover:to-purple-700'
-                  style={{ display: 'none' }}
-                >
-                  <span className='text-sm font-semibold text-white'>
-                    {collaborator.username?.charAt(0)?.toUpperCase() || 'C'}
-                  </span>
+                {/* Collaborator Tooltip */}
+                <div className='absolute bottom-full mb-2 left-1/2 transform -translate-x-1/2 opacity-0 group-hover:opacity-100 transition-opacity duration-200 pointer-events-none z-20'>
+                  <div className='bg-gray-900 text-white text-xs rounded-lg py-2 px-3 whitespace-nowrap shadow-xl border border-gray-700'>
+                    <div className='font-semibold'>{collaborator.username}</div>
+                    <div className='text-purple-400 text-xs'>{collaborator.role || 'collaborator'}</div>
+                    {/* 화살표 */}
+                    <div className='absolute top-full left-1/2 transform -translate-x-1/2 w-0 h-0 border-l-4 border-r-4 border-t-4 border-transparent border-t-gray-900'></div>
+                  </div>
                 </div>
               </div>
             ))}
@@ -389,31 +414,60 @@ const Collaborators: React.FC<CollaboratorsProps> = ({ track }) => {
         ) : (
           // 목업 데이터로 샘플 collaborators 표시 (API 실패 시)
           <>
-            <div className='relative h-12 w-12 overflow-hidden rounded-full border-2 border-yellow-400'>
-              <img
-                src={mockImages[0]}
-                alt='Owner'
-                className='h-full w-full object-cover'
-              />
-              <div className='absolute -top-1 -right-1 h-5 w-5 rounded-full bg-yellow-400 flex items-center justify-center'>
-                <Crown size={12} className='text-yellow-800' />
+            <div className='relative group'>
+              <div className='h-12 w-12 rounded-full border-2 border-yellow-400 overflow-hidden relative'>
+                <img
+                  src={mockImages[0]}
+                  alt='Owner'
+                  className='h-full w-full object-cover'
+                />
+              </div>
+              {/* Mock Owner Crown */}
+              <div className='absolute -top-2 -right-2 h-6 w-6 rounded-full bg-yellow-400 flex items-center justify-center shadow-lg border-2 border-white z-10'>
+                <Crown size={14} className='text-yellow-800' />
+              </div>
+              {/* Mock Owner Tooltip */}
+              <div className='absolute bottom-full mb-2 left-1/2 transform -translate-x-1/2 opacity-0 group-hover:opacity-100 transition-opacity duration-200 pointer-events-none z-20'>
+                <div className='bg-gray-900 text-white text-xs rounded-lg py-2 px-3 whitespace-nowrap shadow-xl border border-gray-700'>
+                  <div className='font-semibold'>Sample Owner</div>
+                  <div className='text-yellow-400 text-xs'>Owner</div>
+                  <div className='absolute top-full left-1/2 transform -translate-x-1/2 w-0 h-0 border-l-4 border-r-4 border-t-4 border-transparent border-t-gray-900'></div>
+                </div>
               </div>
             </div>
 
-            <div className='h-12 w-12 overflow-hidden rounded-full'>
-              <img
-                src={mockImages[1]}
-                alt='Sample Collaborator'
-                className='h-full w-full object-cover'
-              />
+            <div className='relative group'>
+              <div className='h-12 w-12 overflow-hidden rounded-full'>
+                <img
+                  src={mockImages[1]}
+                  alt='Sample Collaborator'
+                  className='h-full w-full object-cover'
+                />
+              </div>
+              <div className='absolute bottom-full mb-2 left-1/2 transform -translate-x-1/2 opacity-0 group-hover:opacity-100 transition-opacity duration-200 pointer-events-none z-20'>
+                <div className='bg-gray-900 text-white text-xs rounded-lg py-2 px-3 whitespace-nowrap shadow-xl border border-gray-700'>
+                  <div className='font-semibold'>Sample User 1</div>
+                  <div className='text-purple-400 text-xs'>collaborator</div>
+                  <div className='absolute top-full left-1/2 transform -translate-x-1/2 w-0 h-0 border-l-4 border-r-4 border-t-4 border-transparent border-t-gray-900'></div>
+                </div>
+              </div>
             </div>
 
-            <div className='h-12 w-12 overflow-hidden rounded-full'>
-              <img
-                src={mockImages[2]}
-                alt='Sample Collaborator'
-                className='h-full w-full object-cover'
-              />
+            <div className='relative group'>
+              <div className='h-12 w-12 overflow-hidden rounded-full'>
+                <img
+                  src={mockImages[2]}
+                  alt='Sample Collaborator'
+                  className='h-full w-full object-cover'
+                />
+              </div>
+              <div className='absolute bottom-full mb-2 left-1/2 transform -translate-x-1/2 opacity-0 group-hover:opacity-100 transition-opacity duration-200 pointer-events-none z-20'>
+                <div className='bg-gray-900 text-white text-xs rounded-lg py-2 px-3 whitespace-nowrap shadow-xl border border-gray-700'>
+                  <div className='font-semibold'>Sample User 2</div>
+                  <div className='text-purple-400 text-xs'>collaborator</div>
+                  <div className='absolute top-full left-1/2 transform -translate-x-1/2 w-0 h-0 border-l-4 border-r-4 border-t-4 border-transparent border-t-gray-900'></div>
+                </div>
+              </div>
             </div>
 
             <Button onClick={() => setShowInviteModal(true)}>
