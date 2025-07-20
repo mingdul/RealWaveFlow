@@ -30,7 +30,7 @@ interface StageHisProps {
 
 const StageHis: React.FC<StageHisProps> = ({ 
   stages, 
-  onStageSelect, 
+  onStageSelect: _, // TrackInfo와 분리되어 사용하지 않음
   onOpenStageClick,
   disableStageOpening = false,
   isActiveStage = false,
@@ -183,10 +183,8 @@ const StageHis: React.FC<StageHisProps> = ({
 
   const handleStageClick = (stage: Stage) => {
     setSelectedStage(stage);
-    if (onStageSelect) {
-      onStageSelect(stage);
-    }
-    // 카드 클릭 시에는 선택만 하고 재생 등은 하지 않음
+    // TrackInfo와 분리: onStageSelect 호출 제거
+    // 카드 클릭 시에는 StageHis 내부 상태만 변경
   };
 
   // Play 버튼 클릭 핸들러
@@ -212,7 +210,18 @@ const StageHis: React.FC<StageHisProps> = ({
     }
   };
 
-  // 외부에서 전달받은 selectedVersion에 따라 스테이지 자동 선택
+  // 초기 렌더링 시 마지막(최신) 스테이지 자동 선택
+  useEffect(() => {
+    if (stages.length > 0 && !selectedStage) {
+      // 버전 순으로 정렬하여 마지막(최신) 스테이지 선택
+      const sortedStagesByVersion = [...stages].sort((a, b) => b.version - a.version);
+      const latestStage = sortedStagesByVersion[0];
+      setSelectedStage(latestStage);
+      console.log('[DEBUG][StageHis] Auto-selected latest stage:', latestStage);
+    }
+  }, [stages, selectedStage]);
+
+  // 외부에서 전달받은 selectedVersion에 따라 스테이지 선택 (선택적)
   useEffect(() => {
     if (selectedVersion && stages.length > 0) {
       const targetStage = stages.find(stage => stage.version === selectedVersion);
@@ -256,11 +265,7 @@ const StageHis: React.FC<StageHisProps> = ({
       {/* 헤더 */}
       <div className="flex items-center justify-between pt-4">
         <div className="flex flex-col space-y-2">
-          <h2 className="text-2xl font-bold text-white">Stage History</h2>
-          <div className="space-y-1">
-            <p className="text-gray-400 text-sm">Track your creative journey</p>
-            <p className="text-gray-500 text-xs">💡 Hold Ctrl + scroll to navigate horizontally</p>
-          </div>
+          <h2 className="text-2xl font-bold text-white">Version List</h2>
         </div>
         
         {!disableStageOpening && !isActiveStage && (
@@ -318,7 +323,7 @@ const StageHis: React.FC<StageHisProps> = ({
                     className={`
                       group relative overflow-hidden rounded-3xl transition-all duration-300 cursor-pointer flex-shrink-0 w-80 h-96
                       ${isSelected 
-                        ? 'shadow-2xl shadow-purple-500/30 scale-105 ring-2 ring-purple-400/50'
+                        ? 'shadow-2xl shadow-blue-500/30 scale-105 ring-2 ring-blue-400/50'
                         : 'shadow-lg hover:shadow-xl hover:shadow-black/30'
                       }
                       ${stage.status === 'active' 
@@ -334,8 +339,10 @@ const StageHis: React.FC<StageHisProps> = ({
                         : 'linear-gradient(135deg, rgba(31, 41, 55, 0.9) 0%, rgba(17, 24, 39, 0.9) 100%)'
                     }}
                   >
-                    {/* 상태 표시 인디케이터 */}
-                    <div className={`absolute top-4 right-4 w-3 h-3 rounded-full ${statusConfig.dotColor} shadow-lg`} />
+                    {/* 상태 표시 인디케이터 - 선택된 카드는 파란색으로 하이라이트 */}
+                    <div className={`absolute top-4 right-4 w-3 h-3 rounded-full ${
+                      isSelected ? 'bg-blue-600' : statusConfig.dotColor
+                    } shadow-lg`} />
                     
                     {/* 카드 내용 */}
                     <div className="p-6 h-full flex flex-col justify-between">
@@ -357,7 +364,7 @@ const StageHis: React.FC<StageHisProps> = ({
                           </div>
                           
                           {isSelected && (
-                            <div className="p-2 rounded-full bg-purple-500 shadow-lg">
+                            <div className="p-2 rounded-full bg-blue-600 shadow-lg">
                               <Star className="w-4 h-4 text-white fill-current" />
                             </div>
                           )}
@@ -392,7 +399,12 @@ const StageHis: React.FC<StageHisProps> = ({
                             <Button
                               onClick={(e) => handlePlayClick(stage.id, e)}
                               variant="waveflowbtn2"
-                              className="flex items-center space-x-2 px-3 py-2 rounded-full bg-purple-500/20 text-purple-300 hover:text-white hover:bg-purple-500/30 transition-all duration-300"
+                              disabled={!selectedStage || selectedStage.id !== stage.id}
+                              className={`flex items-center space-x-2 px-3 py-2 rounded-full transition-all duration-300 ${
+                                selectedStage && selectedStage.id === stage.id
+                                  ? 'bg-purple-500/20 text-purple-300 hover:text-white hover:bg-purple-500/30'
+                                  : 'bg-gray-500/10 text-gray-500 cursor-not-allowed'
+                              }`}
                             >
                               {playingStage === stage.id ? (
                                 <Pause className="w-4 h-4" />
@@ -407,7 +419,12 @@ const StageHis: React.FC<StageHisProps> = ({
                             <Button
                               onClick={(e) => handleShowAllStemsClick(stage.id, e)}
                               variant="waveflowbtn2"
-                              className="flex items-center space-x-2 px-3 py-2 rounded-full bg-green-500/20 text-green-300 hover:text-white hover:bg-green-500/30 transition-all duration-300"
+                              disabled={!selectedStage || selectedStage.id !== stage.id}
+                              className={`flex items-center space-x-2 px-3 py-2 rounded-full transition-all duration-300 ${
+                                selectedStage && selectedStage.id === stage.id
+                                  ? 'bg-green-500/20 text-green-300 hover:text-white hover:bg-green-500/30'
+                                  : 'bg-gray-500/10 text-gray-500 cursor-not-allowed'
+                              }`}
                             >
                               <List className="w-4 h-4" />
                               <span className="text-sm font-medium">Stems</span>
@@ -446,7 +463,7 @@ const StageHis: React.FC<StageHisProps> = ({
                     
                     {/* 선택된 상태 글로우 효과 */}
                     {isSelected && (
-                      <div className="absolute inset-0 bg-gradient-to-r from-purple-500/20 to-pink-500/20 rounded-3xl" />
+                      <div className="absolute inset-0 bg-gradient-to-r from-blue-500/20 to-blue-600/20 rounded-3xl" />
                     )}
                   </div>
                 </div>

@@ -291,19 +291,21 @@ const VersionTimeline: React.FC<{
                       </p>
                     </div>
                     <div className='flex items-center space-x-3'>
-                      {/* Stage 페이지로 이동하는 파랑색 버튼 */}
-                      <button
-                        onClick={(e) => {
-                          e.stopPropagation();
-                          navigate(`/stage/${stage.id}`);
-                        }}
-                        className='inline-flex items-center gap-2 rounded-lg bg-gradient-to-r from-blue-500 to-blue-600 px-3 py-1.5 text-sm font-medium text-white shadow-lg transition-all duration-200 hover:from-blue-600 hover:to-blue-700 hover:scale-105 hover:shadow-blue-500/25'
-                      >
-                        <svg className='h-4 w-4' fill='none' stroke='currentColor' viewBox='0 0 24 24'>
-                          <path strokeLinecap='round' strokeLinejoin='round' strokeWidth={2} d='M10 6H6a2 2 0 00-2 2v10a2 2 0 002 2h10a2 2 0 002-2v-4M14 4h6m0 0v6m0-6L10 14' />
-                        </svg>
-                        History
-                      </button>
+                      {/* Stage 페이지로 이동하는 파랑색 버튼 - active 상태가 아닐 때만 표시 */}
+                      {stage.status !== 'active' && (
+                        <button
+                          onClick={(e) => {
+                            e.stopPropagation();
+                            navigate(`/stage/${stage.id}`);
+                          }}
+                          className='inline-flex items-center gap-2 rounded-lg bg-gradient-to-r from-blue-500 to-blue-600 px-3 py-1.5 text-sm font-medium text-white shadow-lg transition-all duration-200 hover:from-blue-600 hover:to-blue-700 hover:scale-105 hover:shadow-blue-500/25'
+                        >
+                          <svg className='h-4 w-4' fill='none' stroke='currentColor' viewBox='0 0 24 24'>
+                            <path strokeLinecap='round' strokeLinejoin='round' strokeWidth={2} d='M10 6H6a2 2 0 00-2 2v10a2 2 0 002 2h10a2 2 0 002-2v-4M14 4h6m0 0v6m0-6L10 14' />
+                          </svg>
+                          History
+                        </button>
+                      )}
                       <svg
                         className={`h-5 w-5 text-gray-400 transition-transform duration-200 ${
                           expandedVersion === stage.version ? 'rotate-180' : ''
@@ -915,8 +917,7 @@ const TrackPage: React.FC<TrackPagejjmProps> = () => {
                 versionNumber={selectedStageVersion.toString()}
                 onShowAllStems={handleShowAllStems}
                 onRollBack={handleRollBack}
-                stageId={getSelectedStage()?.id}
-                lastApprovedStageId={getLastApprovedStage()?.id}
+                stageId={getLastApprovedStage()?.id}
               />
             </div>
             {/* 스테이지 히스토리 */}
