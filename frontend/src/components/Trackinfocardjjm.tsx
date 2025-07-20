@@ -81,10 +81,10 @@ const Trackinfocardjjm: React.FC<TrackinfocardjjmProps> = ({
   };
 
   return (
-    <div className='relative overflow-hidden rounded-3xl bg-black p-8 shadow-2xl transition-all duration-500 '>
+    <div className='relative overflow-hidden rounded-3xl bg-black p-8 shadow-2xl transition-all duration-500'>
       {/* Background overlay pattern */}
       <div className='absolute inset-0 bg-gradient-to-r from-black/60 via-transparent to-black/40'></div>
-      
+
       <div className='relative z-10 flex flex-col gap-6 lg:flex-row'>
         {/* Left side content */}
         <div className='flex-1 space-y-4'>
@@ -95,25 +95,28 @@ const Trackinfocardjjm: React.FC<TrackinfocardjjmProps> = ({
               {track.title}
             </h1>
             <p className='max-w-md text-sm leading-relaxed text-white/80 lg:text-xl'>
-              {track.description || 'Enjoy vivid emotions with this stunning music album. Each track is a story.'}
+              {track.description ||
+                'Enjoy vivid emotions with this stunning music album. Each track is a story.'}
             </p>
           </div>
 
-
           {/* Owner and version info */}
-          <div className='space-y-2 pt-2'>
+          <div className='flex items-center gap-4 pt-2'>
             <p className='text-sm text-white/70'>
-              Owner: <span className='font-semibold text-white'>{track.owner_id.username}</span>
+              Owner:{' '}
+              <span className='font-semibold text-white'>
+                {track.owner_id.username}
+              </span>
             </p>
 
             <p className='text-sm text-white/70'>
               {new Date(track.created_date).toLocaleDateString('en-US')}
             </p>
-            <Collaborators track={track}/>
+            <Collaborators track={track} />
           </div>
 
           {/* Action buttons */}
-          <div className='flex flex-col gap-3 pt-6 sm:flex-row'>
+          {/* <div className='flex flex-col gap-3 pt-6 sm:flex-row'>
 
             <h2 className='text-lg text-white/70'>
               Version: <span className='font-semibold text-white'>{versionNumber}</span>
@@ -146,8 +149,41 @@ const Trackinfocardjjm: React.FC<TrackinfocardjjmProps> = ({
             >
               <span className='font-semibold'>View All Stems</span>
             </Button>
+          </div> */}
+          <div className='flex flex-col gap-3 pt-6 sm:flex-row sm:items-center'>
+            <h2 className='text-lg font-semibold text-white/70 sm:min-w-fit sm:whitespace-nowrap'>
+              Version: <span className='text-white'>{versionNumber}</span>
+            </h2>
+
+            <Button
+              variant='primary'
+              size='sm'
+              className='flex items-center justify-center gap-2 rounded-full bg-white px-4 py-1.5 text-lg leading-none text-black shadow-xl transition-all duration-300 hover:scale-105 hover:bg-white/90 hover:shadow-2xl'
+              onClick={handlePlayClick}
+              disabled={stemsLoading || guideLoading}
+            >
+              {stemsLoading || guideLoading ? (
+                <div className='h-5 w-5 animate-spin rounded-full border-2 border-black border-t-transparent' />
+              ) : isPlaying ? (
+                <Pause size={20} />
+              ) : (
+                <Play size={20} />
+              )}
+              <span className='font-semibold'>
+                {isPlaying ? 'PAUSE' : 'PLAY'}
+              </span>
+            </Button>
+
+            <Button
+              variant='waveflowbtn'
+              size='sm'
+              className='flex items-center justify-center gap-2 rounded-full border-2 border-white/30 bg-white/10 px-4 py-1.5 text-lg leading-none text-white backdrop-blur-sm transition-all duration-300 hover:scale-105 hover:bg-white/20'
+              onClick={handleShowAllStems}
+            >
+              <span className='font-semibold'>View All Stems</span>
+            </Button>
           </div>
-           {/* Track details tags */}
+          {/* Track details tags */}
           <div className='flex flex-wrap gap-3 pt-2'>
             <span className='rounded-full bg-white/20 px-4 py-2 text-sm font-medium text-white backdrop-blur-sm'>
               {track.genre}
