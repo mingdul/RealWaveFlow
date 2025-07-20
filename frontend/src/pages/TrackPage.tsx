@@ -197,7 +197,7 @@ const VersionTimeline: React.FC<{
       <h3 className='mb-6 text-xl font-semibold text-white'>Version History</h3>
       <div className='relative'>
         {/* 타임라인 세로선 */}
-        <div className='absolute bottom-0 left-4 top-0 w-0.5 bg-gradient-to-b from-amber-400 via-orange-500 to-amber-600'></div>
+        <div className='absolute bottom-0 left-4 top-0 w-0.5 bg-gradient-to-b from-[#893AFF] via-[#B974FF] to-[#F1E9FF]'></div>
 
         <div className='space-y-6'>
           {sortedStages.map((stage, _index) => (

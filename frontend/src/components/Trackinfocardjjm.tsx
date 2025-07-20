@@ -81,7 +81,7 @@ const Trackinfocardjjm: React.FC<TrackinfocardjjmProps> = ({
   };
 
   return (
-    <div className='relative overflow-hidden rounded-3xl bg-black px-15 py-10 shadow-2xl transition-all duration-500'>
+    <div className='relative overflow-hidden rounded-3xl bg-black px-15 py-10 shadow-2xl'>
       {/* Background overlay pattern */}
       <div className='absolute inset-0 bg-gradient-to-r from-black/60 via-transparent to-black/40'></div>
 
@@ -165,7 +165,7 @@ const Trackinfocardjjm: React.FC<TrackinfocardjjmProps> = ({
         </div>
 
         {/* Right side - Album cover */}
-        <div className='w-full md:w-1/3 flex-shrink-0 lg:ml-8'>
+        <div className='w-full md:w-1/3 flex-shrink-0 lg:ml-8 flex justify-center'>
           <div className='group relative'>
             <PresignedImage
               trackId={track.id}

@@ -159,7 +159,7 @@ const NotificationBell: React.FC = () => {
         className="p-2 bg-black text-white"
       >
         <span className="sr-only">View notifications</span>
-        <BellRing className="h-6 w-6" />
+        <BellRing className="h-6 w-6 text-[#893AFF]" />
 
         {/* 읽지 않은 알림 개수 배지 - 실시간 업데이트 */}
         {currentUnreadCount > 0 && (

@@ -92,8 +92,8 @@ const TrackHeaderCopy: React.FC<TrackHeaderCopyProps> = ({
       {/* 상단 네비게이션 바 */}
       <div className="px-6 py-6 flex items-center justify-between">
         <div className="flex items-center gap-4">
-          <Button size="sm" className="p-2 bg-transparent hover:bg-gray-800 text-white border border-gray-700" onClick={onBack}>
-            <ChevronLeft size={20} />
+          <Button size="sm" className="p-2 " onClick={onBack}>
+            <ChevronLeft className='text-[#893AFF]' size={20} />
           </Button>
           <Logo />
         </div>
@@ -113,8 +113,8 @@ const TrackHeaderCopy: React.FC<TrackHeaderCopyProps> = ({
               </div>
             )}
 
-          <Button size="sm" className="p-2 bg-transparent hover:bg-gray-800 text-white border border-gray-700" onClick={onSettingsClick}>
-            <Settings size={20} />
+          <Button size="sm" className="p-2 " onClick={onSettingsClick}>
+            <Settings className='text-[#893AFF]' size={20} />
           </Button>
         </div>
       </div>

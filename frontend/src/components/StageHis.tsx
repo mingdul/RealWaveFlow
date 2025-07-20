@@ -219,12 +219,10 @@ const StageHis: React.FC<StageHisProps> = ({
   return (
     <div className="space-y-6">
       {/* 헤더 */}
-      <div className="flex items-center justify-between">
-        <div className="flex items-center space-x-3">
-          <div className="flex items-center space-x-2">
-            <h2 className="text-2xl font-bold text-white">Stage History</h2>
-            <p className="text-gray-400 text-sm">Track your creative journey</p>
-          </div>
+      <div className="flex items-center justify-between pt-4">
+        <div className="flex flex-col space-y-2">
+          <h2 className="text-2xl font-bold text-white">Stage History</h2>
+          <p className="text-gray-400 text-sm">Track your creative journey</p>
         </div>
         
         {!disableStageOpening && !isActiveStage && (
@@ -265,7 +263,7 @@ const StageHis: React.FC<StageHisProps> = ({
   
         {/* 카드 그리드 레이아웃 */}
         <div className="overflow-x-auto scrollbar-hide py-4 px-10" ref={scrollRef}>
-          <div className="flex gap-x-24 pb-4 min-w-max">
+          <div className="flex gap-x-16 pb-4 min-w-max">
             {sortedStages.map((stage) => {
               const statusConfig = getStatusConfig(stage.status);
               const isSelected = selectedStage?.id === stage.id;
