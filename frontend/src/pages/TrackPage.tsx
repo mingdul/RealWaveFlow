@@ -392,14 +392,14 @@ const VersionTimeline: React.FC<{
                                       <div className='flex items-center gap-3 mb-2'>
                                         <div className='flex-1'>
                                           <h4 className='text-base font-semibold text-white truncate'>
-                                            {stem.fileName}
+                                            {decodeURIComponent(stem.fileName)}
                                           </h4>
                                           {/* Modify 상태일 때 이전 파일명 표시 */}
                                           {stem.changeType === 'modified' && stem.previousFileName && (
                                             <p className='text-sm text-gray-500 mt-1'>
-                                              <span className='opacity-60'>{stem.previousFileName}</span>
+                                              <span className='opacity-60'>{decodeURIComponent(stem.previousFileName)}</span>
                                               <span className='mx-2'>→</span>
-                                              <span className='text-yellow-400'>{stem.fileName}</span>
+                                              <span className='text-yellow-400'>{decodeURIComponent(stem.fileName)}</span>
                                             </p>
                                           )}
                                         </div>
