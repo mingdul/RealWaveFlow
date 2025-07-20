@@ -91,6 +91,20 @@ export class TrackController {
         return this.trackService.getTrackCollaborators(id);
     }
 
+    @Get(':id/check-access')
+    @ApiOperation({ summary: '트랙 접근 권한 확인', description: '현재 사용자가 해당 트랙의 멤버인지 확인합니다.' })
+    @ApiParam({ name: 'id', description: '트랙 ID' })
+    @ApiResponse({ status: 200, description: '접근 권한 확인 성공' })
+    @ApiResponse({ status: 403, description: '접근 권한 없음' })
+    async checkTrackAccess(@Param('id') id: string, @Request() req) {
+        const hasAccess = await this.trackService.isUserInTrack(req.user.id, id);
+        return {
+            success: true,
+            hasAccess,
+            trackId: id
+        };
+    }
+
     @Delete(':id')
     @ApiOperation({ summary: '트랙 삭제', description: '트랙을 삭제합니다.' })
     @ApiParam({ name: 'id', description: '트랙 ID' })
