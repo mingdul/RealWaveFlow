@@ -766,27 +766,36 @@ const StemSetReview = () => {
     event.stopPropagation(); // 파형 클릭 이벤트와 겹치지 않도록
     if (!hoveredPosition) return;
 
-    // 버튼의 실제 위치 계산
+    // 버튼의 절대 위치 계산 (뷰포트 기준)
     const buttonRect = (event.target as HTMLElement).getBoundingClientRect();
-    const containerRect = waveformContainerRef.current?.getBoundingClientRect();
     
-    if (containerRect) {
-      const relativeY = buttonRect.top - containerRect.top;
-      // 화면 위쪽 경계 처리 - 최소 100px는 확보
-      const adjustedY = Math.max(relativeY, 100);
-      
-      setCommentPosition({ 
-        x: hoveredPosition.x, 
-        y: adjustedY,
-        time: hoveredPosition.time 
-      });
-    } else {
-      setCommentPosition({ 
-        x: hoveredPosition.x, 
-        y: 280, // fallback
-        time: hoveredPosition.time 
-      });
+    // 화면 경계 확인 및 조정
+    const modalWidth = 320; // min-w-80 = 320px
+    const modalHeight = 200; // 대략적인 모달 높이
+    
+    let x = buttonRect.left + buttonRect.width / 2;
+    let y = buttonRect.top;
+    
+    // 오른쪽 경계 처리
+    if (x + modalWidth / 2 > window.innerWidth) {
+      x = window.innerWidth - modalWidth / 2 - 20;
     }
+    
+    // 왼쪽 경계 처리  
+    if (x - modalWidth / 2 < 20) {
+      x = modalWidth / 2 + 20;
+    }
+    
+    // 위쪽 경계 처리
+    if (y - modalHeight - 80 < 20) {
+      y = buttonRect.bottom + 20; // 버튼 아래쪽에 표시
+    }
+    
+    setCommentPosition({ 
+      x: x,
+      y: y,
+      time: hoveredPosition.time 
+    });
     
     setIsInlineCommentOpen(true);
     setHoveredPosition(null);
@@ -2208,7 +2217,7 @@ const StemSetReview = () => {
           {/* 인라인 댓글 창 */}
           {isInlineCommentOpen && selectedUpstream && (
             <div
-              className='absolute z-50'
+              className='fixed z-50'
               style={{
                 left: `${commentPosition.x}px`,
                 top: `${commentPosition.y - 80}px`, // 버튼 위쪽에 80px 간격으로 표시
@@ -2289,22 +2298,22 @@ const StemSetReview = () => {
             {/* Playback Controls */}
             <div className="flex items-center space-x-3">
               <button
-                onClick={memoizedStopPlayback}
-                className="p-3 rounded-lg bg-white/10 hover:bg-white/20 text-white transition-all duration-200"
-              >
-                <Square size={28} strokeWidth={2.5} />
-              </button>
-              <button
                 onClick={memoizedTogglePlay}
                 className="p-3 rounded-lg bg-gradient-to-r from-purple-600 to-purple-700 hover:from-purple-700 hover:to-purple-800 text-white transition-all duration-200 shadow-lg hover:shadow-purple-500/25"
               >
-                {isPlaying ? <Pause size={28} strokeWidth={2.5} /> : <Play size={28} strokeWidth={2.5} />}
+                {isPlaying ? <Pause size={24} /> : <Play size={24} />}
+              </button>
+              <button
+                onClick={memoizedStopPlayback}
+                className="p-3 rounded-lg bg-white/10 hover:bg-white/20 text-white transition-all duration-200"
+              >
+                <Square size={24} />
               </button>
             </div>
 
             {/* Volume Control */}
             <div className="flex items-center space-x-3">
-              <Volume size={20} className="text-white/70" />
+              <Volume size={24} className="text-white/70" />
               <input
                 type="range"
                 min="0"
