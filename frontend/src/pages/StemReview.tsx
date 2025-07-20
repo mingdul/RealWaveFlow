@@ -2021,8 +2021,9 @@ const StemSetReview = () => {
           )}
 
           {/* Main Content Area - 반응형 레이아웃 */}
-          <div className={`transition-all duration-300 ease-in-out px-4 sm:px-6 lg:px-8 py-6 sm:py-8 space-y-6 ${(activePanel as string) !== 'none' ? 'mr-80' : ''
-            }`}>
+          <div className="w-full mx-auto">
+            <div className={`max-w-5xl mx-auto transition-all duration-300 ease-in-out px-4 sm:px-6 lg:px-8 py-6 sm:py-8 space-y-6 ${(activePanel as string) !== 'none' ? 'mr-80' : ''
+              }`}>
 
             {/* Upstream Info - 가이드 트랙 위에 표시 */}
             {selectedUpstream && (
@@ -2202,6 +2203,7 @@ const StemSetReview = () => {
                   </div>
                 )}
             </div>
+          </div>
           </div>
 
           {/* 댓글 작성 모달 */}

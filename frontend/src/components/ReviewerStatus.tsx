@@ -17,7 +17,18 @@ const ReviewerStatus: React.FC<ReviewerStatusProps> = ({ upstreamId }) => {
       try {
         setLoading(true);
         const data = await getUpstreamReviews(upstreamId);
-        setReviewers(data);
+        
+        // Owner role을 가진 reviewer를 제일 먼저 나오도록 정렬
+        const sortedReviewers = [...data].sort((a, b) => {
+          // Owner가 있으면 맨 앞으로
+          if (a.reviewer.role === 'Owner' && b.reviewer.role !== 'Owner') return -1;
+          if (a.reviewer.role !== 'Owner' && b.reviewer.role === 'Owner') return 1;
+          
+          // 둘 다 Owner가 아니거나 둘 다 Owner인 경우 원래 순서 유지
+          return 0;
+        });
+        
+        setReviewers(sortedReviewers);
       } catch (error) {
         console.error('Failed to fetch upstream reviews:', error);
       } finally {
