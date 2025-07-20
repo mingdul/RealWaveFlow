@@ -349,8 +349,8 @@ const Collaborators: React.FC<CollaboratorsProps> = ({ track }) => {
       <div className='flex items-center space-x-4'>
         {trackUsers ? (
           <>
-            {/* 트랙 소유자 */}
-            <div className='relative group'>
+            {/* 트랙 소유자 - 고정 위치 */}
+            <div className='relative group flex-shrink-0'>
               <div className='h-12 w-12 rounded-full border-2 border-yellow-400 overflow-hidden relative'>
                 {trackUsers.owner.image_url ? (
                   <img
@@ -394,65 +394,76 @@ const Collaborators: React.FC<CollaboratorsProps> = ({ track }) => {
               </div>
             </div>
 
-            {/* 콜라보레이터들 */}
-            {trackUsers.collaborators.collaborator.map((collaborator) => (
-              <div
-                key={collaborator.id}
-                className='relative group'
-              >
-                <div
-                  className='h-12 w-12 rounded-full cursor-pointer transform transition-all duration-200 hover:scale-110 hover:ring-2 hover:ring-purple-400 overflow-hidden'
-                  onClick={() => handleCollaboratorClick(collaborator)}
-                >
-                  {collaborator.image_url ? (
-                    <img
-                      src={collaborator.image_url}
-                      alt={collaborator.username}
-                      className='h-full w-full object-cover transition-opacity duration-200 hover:opacity-80'
-                      onError={(e) => handleImageError(e, collaborator.username)}
-                    />
-                  ) : (
-                    <div className='flex h-full w-full items-center justify-center bg-gradient-to-br from-purple-400 to-purple-600 transition-all duration-200 hover:from-purple-500 hover:to-purple-700'>
-                      <span className='text-sm font-semibold text-white'>
-                        {collaborator.username?.charAt(0)?.toUpperCase() || 'C'}
-                      </span>
-                    </div>
-                  )}
-
-                  {/* Fallback div */}
+            {/* 콜라보레이터들 - 스크롤 가능한 영역 */}
+            {trackUsers.collaborators.collaborator.length > 0 && (
+              <div className={`flex items-center ${
+                trackUsers.collaborators.collaborator.length > 3 
+                  ? 'overflow-x-auto scrollbar-hide max-w-[200px] space-x-4 px-1' 
+                  : 'space-x-4'
+              }`}>
+                {trackUsers.collaborators.collaborator.map((collaborator) => (
                   <div
-                    className='absolute inset-0 flex items-center justify-center bg-gradient-to-br from-purple-400 to-purple-600 transition-all duration-200 hover:from-purple-500 hover:to-purple-700'
-                    style={{ display: 'none' }}
+                    key={collaborator.id}
+                    className='relative group flex-shrink-0'
                   >
-                    <span className='text-sm font-semibold text-white'>
-                      {collaborator.username?.charAt(0)?.toUpperCase() || 'C'}
-                    </span>
-                  </div>
-                </div>
+                    <div
+                      className='h-12 w-12 rounded-full cursor-pointer transform transition-all duration-200 hover:scale-110 hover:ring-2 hover:ring-purple-400 overflow-hidden'
+                      onClick={() => handleCollaboratorClick(collaborator)}
+                    >
+                      {collaborator.image_url ? (
+                        <img
+                          src={collaborator.image_url}
+                          alt={collaborator.username}
+                          className='h-full w-full object-cover transition-opacity duration-200 hover:opacity-80'
+                          onError={(e) => handleImageError(e, collaborator.username)}
+                        />
+                      ) : (
+                        <div className='flex h-full w-full items-center justify-center bg-gradient-to-br from-purple-400 to-purple-600 transition-all duration-200 hover:from-purple-500 hover:to-purple-700'>
+                          <span className='text-sm font-semibold text-white'>
+                            {collaborator.username?.charAt(0)?.toUpperCase() || 'C'}
+                          </span>
+                        </div>
+                      )}
 
-                {/* Collaborator Tooltip */}
-                <div className='absolute bottom-full mb-2 left-1/2 transform -translate-x-1/2 opacity-0 group-hover:opacity-100 transition-opacity duration-200 pointer-events-none z-20'>
-                  <div className='bg-gray-900 text-white text-xs rounded-lg py-2 px-3 whitespace-nowrap shadow-xl border border-gray-700'>
-                    <div className='font-semibold'>{collaborator.username}</div>
-                    <div className='text-purple-400 text-xs'>{collaborator.role || 'collaborator'}</div>
-                    {/* 화살표 */}
-                    <div className='absolute top-full left-1/2 transform -translate-x-1/2 w-0 h-0 border-l-4 border-r-4 border-t-4 border-transparent border-t-gray-900'></div>
+                      {/* Fallback div */}
+                      <div
+                        className='absolute inset-0 flex items-center justify-center bg-gradient-to-br from-purple-400 to-purple-600 transition-all duration-200 hover:from-purple-500 hover:to-purple-700'
+                        style={{ display: 'none' }}
+                      >
+                        <span className='text-sm font-semibold text-white'>
+                          {collaborator.username?.charAt(0)?.toUpperCase() || 'C'}
+                        </span>
+                      </div>
+                    </div>
+
+                    {/* Collaborator Tooltip */}
+                    <div className='absolute bottom-full mb-2 left-1/2 transform -translate-x-1/2 opacity-0 group-hover:opacity-100 transition-opacity duration-200 pointer-events-none z-20'>
+                      <div className='bg-gray-900 text-white text-xs rounded-lg py-2 px-3 whitespace-nowrap shadow-xl border border-gray-700'>
+                        <div className='font-semibold'>{collaborator.username}</div>
+                        <div className='text-purple-400 text-xs'>{collaborator.role || 'collaborator'}</div>
+                        {/* 화살표 */}
+                        <div className='absolute top-full left-1/2 transform -translate-x-1/2 w-0 h-0 border-l-4 border-r-4 border-t-4 border-transparent border-t-gray-900'></div>
+                      </div>
+                    </div>
                   </div>
-                </div>
+                ))}
               </div>
-            ))}
+            )}
 
-            <Button 
-              onClick={(e) => handleAddCollaboratorClick(e)}
-              className="z-10 relative"
-            >
-              <Plus size={20} />
-            </Button>
+            {/* 추가 버튼 - 고정 위치 */}
+            <div className="flex-shrink-0">
+              <Button 
+                onClick={(e) => handleAddCollaboratorClick(e)}
+                className="z-10 relative"
+              >
+                <Plus size={20} />
+              </Button>
+            </div>
           </>
         ) : (
           // 목업 데이터로 샘플 collaborators 표시 (API 실패 시)
           <>
-            <div className='relative group'>
+            <div className='relative group flex-shrink-0'>
               <div className='h-12 w-12 rounded-full border-2 border-yellow-400 overflow-hidden relative'>
                 <img
                   src={mockImages[0]}
@@ -474,40 +485,45 @@ const Collaborators: React.FC<CollaboratorsProps> = ({ track }) => {
               </div>
             </div>
 
-            <div className='relative group'>
-              <div className='h-12 w-12 overflow-hidden rounded-full'>
-                <img
-                  src={mockImages[1]}
-                  alt='Sample Collaborator'
-                  className='h-full w-full object-cover'
-                />
+            {/* Mock collaborators with scroll */}
+            <div className="flex overflow-x-auto scrollbar-hide max-w-[200px] space-x-4 px-1">
+              <div className='relative group flex-shrink-0'>
+                <div className='h-12 w-12 overflow-hidden rounded-full'>
+                  <img
+                    src={mockImages[1]}
+                    alt='Sample Collaborator'
+                    className='h-full w-full object-cover'
+                  />
+                </div>
+                <div className='absolute bottom-full mb-2 left-1/2 transform -translate-x-1/2 opacity-0 group-hover:opacity-100 transition-opacity duration-200 pointer-events-none z-20'>
+                  <div className='bg-gray-900 text-white text-xs rounded-lg py-2 px-3 whitespace-nowrap shadow-xl border border-gray-700'>
+                    <div className='font-semibold'>Sample User 1</div>
+                    <div className='text-purple-400 text-xs'>collaborator</div>
+                    <div className='absolute top-full left-1/2 transform -translate-x-1/2 w-0 h-0 border-l-4 border-r-4 border-t-4 border-transparent border-t-gray-900'></div>
+                  </div>
+                </div>
               </div>
-              <div className='absolute bottom-full mb-2 left-1/2 transform -translate-x-1/2 opacity-0 group-hover:opacity-100 transition-opacity duration-200 pointer-events-none z-20'>
-                <div className='bg-gray-900 text-white text-xs rounded-lg py-2 px-3 whitespace-nowrap shadow-xl border border-gray-700'>
-                  <div className='font-semibold'>Sample User 1</div>
-                  <div className='text-purple-400 text-xs'>collaborator</div>
-                  <div className='absolute top-full left-1/2 transform -translate-x-1/2 w-0 h-0 border-l-4 border-r-4 border-t-4 border-transparent border-t-gray-900'></div>
+
+              <div className='relative group flex-shrink-0'>
+                <div className='h-12 w-12 overflow-hidden rounded-full'>
+                  <img
+                    src={mockImages[2]}
+                    alt='Sample Collaborator'
+                    className='h-full w-full object-cover'
+                  />
+                </div>
+                <div className='absolute bottom-full mb-2 left-1/2 transform -translate-x-1/2 opacity-0 group-hover:opacity-100 transition-opacity duration-200 pointer-events-none z-20'>
+                  <div className='bg-gray-900 text-white text-xs rounded-lg py-2 px-3 whitespace-nowrap shadow-xl border border-gray-700'>
+                    <div className='font-semibold'>Sample User 2</div>
+                    <div className='text-purple-400 text-xs'>collaborator</div>
+                    <div className='absolute top-full left-1/2 transform -translate-x-1/2 w-0 h-0 border-l-4 border-r-4 border-t-4 border-transparent border-t-gray-900'></div>
+                  </div>
                 </div>
               </div>
             </div>
 
-            <div className='relative group'>
-              <div className='h-12 w-12 overflow-hidden rounded-full'>
-                <img
-                  src={mockImages[2]}
-                  alt='Sample Collaborator'
-                  className='h-full w-full object-cover'
-                />
-              </div>
-              <div className='absolute bottom-full mb-2 left-1/2 transform -translate-x-1/2 opacity-0 group-hover:opacity-100 transition-opacity duration-200 pointer-events-none z-20'>
-                <div className='bg-gray-900 text-white text-xs rounded-lg py-2 px-3 whitespace-nowrap shadow-xl border border-gray-700'>
-                  <div className='font-semibold'>Sample User 2</div>
-                  <div className='text-purple-400 text-xs'>collaborator</div>
-                  <div className='absolute top-full left-1/2 transform -translate-x-1/2 w-0 h-0 border-l-4 border-r-4 border-t-4 border-transparent border-t-gray-900'></div>
-                </div>
-              </div>
-            </div>
-            <div className='z-30 relative'>
+            {/* 추가 버튼 - 고정 위치 */}
+            <div className='flex-shrink-0'>
               <Button 
                 onClick={(e) => handleAddCollaboratorClick(e)}
                 className="z-10 relative"
