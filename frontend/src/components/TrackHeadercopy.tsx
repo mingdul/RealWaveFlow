@@ -32,6 +32,9 @@ const TrackHeaderCopy: React.FC<TrackHeaderCopyProps> = ({
   const [forceRefreshKey, setForceRefreshKey] = useState(0);
   const [lastNotificationTime, setLastNotificationTime] = useState<string>('');
 
+  // 🔥 NEW: 네비게이션 버튼 활성 상태 관리
+  const [activeNavButton, setActiveNavButton] = useState<string | null>(null);
+
   // 🔥 NEW: Settings 드롭다운 외부 클릭 감지
   useEffect(() => {
     const handleClickOutside = (event: MouseEvent) => {
@@ -64,9 +67,28 @@ const TrackHeaderCopy: React.FC<TrackHeaderCopyProps> = ({
     setIsSettingsDropdownOpen(false);
   };
 
+  // 🔥 NEW: 네비게이션 버튼 핸들러들
+  const handleStageHistoryClick = () => {
+    const stageHistoryElement = document.querySelector('[data-section="stage-history"]');
+    if (stageHistoryElement) {
+      stageHistoryElement.scrollIntoView({
+        behavior: 'smooth',
+        block: 'start'
+      });
+    }
+    setActiveNavButton('stage-history');
+  };
 
-
-
+  const handleVersionHistoryClick = () => {
+    const versionHistoryElement = document.querySelector('[data-section="version-history"]');
+    if (versionHistoryElement) {
+      versionHistoryElement.scrollIntoView({
+        behavior: 'smooth',
+        block: 'start'
+      });
+    }
+    setActiveNavButton('version-history');
+  };
 
   // 🔥 NEW: 소켓 알림 수신 시 TrackHeader 강제 새로고침을 위한 커스텀 이벤트 리스너
   useEffect(() => {
@@ -139,43 +161,28 @@ const TrackHeaderCopy: React.FC<TrackHeaderCopyProps> = ({
 
         <div className='flex items-center gap-4'>
           {/* Navigation Buttons */}
-          <div className="flex items-center gap-2">
+          <div className="flex items-center gap-6">
             {/* 스테이지 히스토리 */}
-            <Button
-              variant="waveflowbtn"
-              size="sm"
-              className="flex items-center gap-2 px-4 py-2 rounded-full bg-purple-500/20 text-purple-300 hover:bg-purple-500/30 transition-all duration-300"
-              onClick={() => {
-                const stageHistoryElement = document.querySelector('[data-section="stage-history"]');
-                if (stageHistoryElement) {
-                  stageHistoryElement.scrollIntoView({
-                    behavior: 'smooth',
-                    block: 'start'
-                  });
-                }
-              }}
+            <button
+              onClick={handleStageHistoryClick}
+              className="relative px-2 py-2 text-white hover:text-gray-300 transition-all duration-300 focus:outline-none"
             >
               <span className="text-sm font-medium">Stage History</span>
-            </Button>
-
+              {activeNavButton === 'stage-history' && (
+                <div className="absolute bottom-0 left-0 right-0 h-0.5 bg-white"></div>
+              )}
+            </button>
 
             {/* 버전 히스토리 */}
-            <Button
-              variant="waveflowbtn"
-              size="sm"
-              className="flex items-center gap-2 px-4 py-2 rounded-full bg-blue-500/20 text-blue-300 hover:bg-blue-500/30 transition-all duration-300"
-              onClick={() => {
-                const trackInfoElement = document.querySelector('[data-section="track-info"]');
-                if (trackInfoElement) {
-                  trackInfoElement.scrollIntoView({
-                    behavior: 'smooth',
-                    block: 'start'
-                  });
-                }
-              }}
+            <button
+              onClick={handleVersionHistoryClick}
+              className="relative px-2 py-2 text-white hover:text-gray-300 transition-all duration-300 focus:outline-none"
             >
               <span className="text-sm font-medium">Version History</span>
-            </Button>
+              {activeNavButton === 'version-history' && (
+                <div className="absolute bottom-0 left-0 right-0 h-0.5 bg-white"></div>
+              )}
+            </button>
           </div>
         </div>
 
@@ -197,7 +204,7 @@ const TrackHeaderCopy: React.FC<TrackHeaderCopyProps> = ({
           {/* 🔥 NEW: Settings 드롭다운 메뉴 */}
           <div className="relative" ref={settingsDropdownRef}>
             <Button size="sm" className="p-2" onClick={handleSettingsClick}>
-              <Settings className='text-[#893AFF]' size={20} />
+              <Settings className='text-white' size={20} />
             </Button>
 
             {/* Settings 드롭다운 메뉴 */}
