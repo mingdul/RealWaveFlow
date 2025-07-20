@@ -87,7 +87,7 @@ const Trackinfocardjjm: React.FC<TrackinfocardjjmProps> = ({
 
       <div className='relative z-10 flex flex-col gap-6 lg:flex-row'>
         {/* Left side content */}
-        <div className='flex-1 space-y-4'>
+        <div className='w-full md:w-2/3 space-y-4'>
           {/* Header label */}
           {/* Main title */}
           <div className='space-y-5'>
@@ -109,47 +109,14 @@ const Trackinfocardjjm: React.FC<TrackinfocardjjmProps> = ({
               </span>
             </p>
 
+            <Collaborators track={track} />
+          </div>
+          <div className='flex flex-col gap-3 pt-6 sm:items-center'>
             <p className='text-sm text-white/70'>
               {new Date(track.created_date).toLocaleDateString('en-US')}
             </p>
-            <Collaborators track={track} />
           </div>
 
-          {/* Action buttons */}
-          {/* <div className='flex flex-col gap-3 pt-6 sm:flex-row'>
-
-            <h2 className='text-lg text-white/70'>
-              Version: <span className='font-semibold text-white'>{versionNumber}</span>
-            </h2>
-
-            <Button
-              variant='primary'
-              size='sm'
-              className='flex items-center justify-center gap-3 rounded-full bg-white px-8 py-4 text-black shadow-xl transition-all duration-300 hover:bg-white/90 hover:scale-105 hover:shadow-2xl'
-              onClick={handlePlayClick}
-              disabled={stemsLoading || guideLoading}
-            >
-              {stemsLoading || guideLoading ? (
-                <div className='h-6 w-6 animate-spin rounded-full border-2 border-black border-t-transparent' />
-              ) : isPlaying ? (
-                <Pause size={24} />
-              ) : (
-                <Play size={24} />
-              )}
-              <span className='text-lg font-semibold'>
-                {isPlaying ? 'PAUSE' : 'PLAY'}
-              </span>
-            </Button>
-            
-            <Button
-              variant='waveflowbtn'
-              size='sm'
-              className='flex items-center justify-center gap-2 rounded-full border-2 border-white/30 bg-white/10 px-8 py-4 text-white backdrop-blur-sm transition-all duration-300 hover:bg-white/20 hover:scale-105'
-              onClick={handleShowAllStems}
-            >
-              <span className='font-semibold'>View All Stems</span>
-            </Button>
-          </div> */}
           <div className='flex flex-col gap-3 pt-6 sm:flex-row sm:items-center'>
             <h2 className='text-lg font-semibold text-white/70 sm:min-w-fit sm:whitespace-nowrap'>
               Version: <span className='text-white'>{versionNumber}</span>
@@ -198,7 +165,7 @@ const Trackinfocardjjm: React.FC<TrackinfocardjjmProps> = ({
         </div>
 
         {/* Right side - Album cover */}
-        <div className='flex-shrink-0 lg:ml-8'>
+        <div className='w-full md:w-1/3 flex-shrink-0 lg:ml-8'>
           <div className='group relative'>
             <PresignedImage
               trackId={track.id}

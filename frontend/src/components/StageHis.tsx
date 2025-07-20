@@ -8,7 +8,6 @@ import {
   Calendar,
   Star,
   Activity,
-  Zap,
   Plus,
   ChevronLeft,
   ChevronRight
@@ -234,7 +233,7 @@ const StageHis: React.FC<StageHisProps> = ({
             className="group relative px-6 py-3 bg-gradient-to-r from-purple-500 to-pink-500 rounded-xl font-medium text-white shadow-lg hover:shadow-purple-500/25 transition-all duration-300 hover:scale-105"
           >
             <div className="flex items-center space-x-2">
-              <Zap className="w-4 h-4" />
+              <Plus className="w-4 h-4" />
               <span>New Stage</span>
             </div>
             <div className="absolute inset-0 bg-white/20 rounded-xl opacity-0 group-hover:opacity-100 transition-opacity duration-300" />
@@ -266,7 +265,7 @@ const StageHis: React.FC<StageHisProps> = ({
   
         {/* 카드 그리드 레이아웃 */}
         <div className="overflow-x-auto scrollbar-hide py-4 px-4" ref={scrollRef}>
-          <div className="flex gap-6 pb-4 min-w-max">
+          <div className="flex gap-15 pb-4 min-w-max">
             {sortedStages.map((stage) => {
               const statusConfig = getStatusConfig(stage.status);
               const isSelected = selectedStage?.id === stage.id;
@@ -398,7 +397,7 @@ const StageHis: React.FC<StageHisProps> = ({
             
             {/* Open Stage Card */}
             {!disableStageOpening && !isActiveStage && (
-              <div className="relative">
+              <div className="relative ml-6">
                 <div 
                   className="group relative overflow-hidden rounded-3xl transition-all duration-300 cursor-pointer flex-shrink-0 w-80 h-96 bg-gradient-to-br from-purple-600/20 to-pink-600/20 backdrop-blur-sm hover:from-purple-600/30 hover:to-pink-600/30 hover:scale-[1.02] hover:-translate-y-1 shadow-lg hover:shadow-xl border-2 border-dashed border-purple-400/30 hover:border-purple-400/50"
                   onClick={onOpenStageClick}

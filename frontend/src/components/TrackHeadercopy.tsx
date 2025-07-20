@@ -90,7 +90,7 @@ const TrackHeaderCopy: React.FC<TrackHeaderCopyProps> = ({
       key={`track-header-${forceRefreshKey}`} // 🔥 NEW: 강제 리렌더링을 위한 key
     >
       {/* 상단 네비게이션 바 */}
-      <div className="px-6 py-3 flex items-center justify-between">
+      <div className="px-6 py-6 flex items-center justify-between">
         <div className="flex items-center gap-4">
           <Button size="sm" className="p-2 bg-transparent hover:bg-gray-800 text-white border border-gray-700" onClick={onBack}>
             <ChevronLeft size={20} />
