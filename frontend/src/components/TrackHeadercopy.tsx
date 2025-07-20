@@ -165,7 +165,7 @@ const TrackHeaderCopy: React.FC<TrackHeaderCopyProps> = ({
             {/* 스테이지 히스토리 */}
             <button
               onClick={handleStageHistoryClick}
-              className="relative px-2 py-2 text-white hover:text-gray-300 transition-all duration-300 focus:outline-none"
+              className="relative px-2 py-2 text-white bg-black focus:outline-none"
             >
               <span className="text-sm font-medium">Stage History</span>
               {activeNavButton === 'stage-history' && (
@@ -176,7 +176,7 @@ const TrackHeaderCopy: React.FC<TrackHeaderCopyProps> = ({
             {/* 버전 히스토리 */}
             <button
               onClick={handleVersionHistoryClick}
-              className="relative px-2 py-2 text-white hover:text-gray-300 transition-all duration-300 focus:outline-none"
+              className="relative px-2 py-2 text-white bg-black focus:outline-none"
             >
               <span className="text-sm font-medium">Version History</span>
               {activeNavButton === 'version-history' && (

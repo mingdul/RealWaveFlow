@@ -1,5 +1,5 @@
 import React, { useEffect, useState, useRef } from 'react';
-import { Play, Pause } from 'lucide-react';
+import { Play, Pause, List } from 'lucide-react';
 import { Button } from '.';
 import { Track } from '../types/api';
 import streamingService, {
@@ -18,6 +18,7 @@ interface TrackinfocardjjmProps {
   versionNumber?: string;
   stageId?: string;
   guideUrl?: string;
+  lastApprovedStageId?: string;
 }
 
 const Trackinfocardjjm: React.FC<TrackinfocardjjmProps> = ({
@@ -25,7 +26,8 @@ const Trackinfocardjjm: React.FC<TrackinfocardjjmProps> = ({
   onShowAllStems,
   // versionNumber,
   stemsLoading = false,
-  stageId,
+  // stageId,
+  lastApprovedStageId,
 }) => {
   const [isPlaying, setIsPlaying] = useState(false);
   const [guideUrl, setGuideUrl] = useState<string | undefined>(undefined);
@@ -33,25 +35,27 @@ const Trackinfocardjjm: React.FC<TrackinfocardjjmProps> = ({
   const guideAudioRef = useRef<HTMLAudioElement>(null);
 
   const handlePlayClick = async () => {
-    if (!isPlaying && stageId) {
+    if (!isPlaying && lastApprovedStageId) {
       try {
         setGuideLoading(true);
         const response =
-          await streamingService.getGuidePresignedUrlByStageId(stageId);
+          await streamingService.getGuidePresignedUrlByStageId(lastApprovedStageId);
 
-        console.log('Guide API response:', response);
+        console.log('Guide API response for last approved stage:', response);
 
         if (response.success && response.data) {
           setGuideUrl(response.data.presignedUrl);
           setIsPlaying(true);
         } else {
-          console.error('Failed to fetch guide:', response.message);
+          console.error('Failed to fetch guide for last approved stage:', response.message);
         }
       } catch (error) {
-        console.error('Error fetching guide:', error);
+        console.error('Error fetching guide for last approved stage:', error);
       } finally {
         setGuideLoading(false);
       }
+    } else if (!isPlaying && !lastApprovedStageId) {
+      console.warn('No approved stage available for playback');
     } else {
       // 정지
       if (guideAudioRef.current) {
@@ -100,7 +104,7 @@ const Trackinfocardjjm: React.FC<TrackinfocardjjmProps> = ({
               <button
                 onClick={handlePlayClick}
                 className='rounded-full bg-white/20 p-6 backdrop-blur-sm transition-all duration-200 hover:scale-110 hover:bg-white/30'
-                disabled={stemsLoading || guideLoading}
+                disabled={stemsLoading || guideLoading || !lastApprovedStageId}
               >
                 {stemsLoading || guideLoading ? (
                   <div className='h-10 w-10 animate-spin rounded-full border-2 border-white border-t-transparent' />
@@ -114,9 +118,9 @@ const Trackinfocardjjm: React.FC<TrackinfocardjjmProps> = ({
           </div>
         </div>
 
-        <div className='w-full md:w-2/3 flex flex-row gap-8 pl-10'>
+        <div className='w-full md:w-2/3 flex flex-row gap-10 pl-10'>
           {/* Left side: title, date, tag, description, version */}
-          <div className='flex-1 space-y-4'>
+          <div className='flex-1 space-y-6'>
             {/* Header label */}
             <div>
               {/* Main title */}
@@ -127,14 +131,14 @@ const Trackinfocardjjm: React.FC<TrackinfocardjjmProps> = ({
               </div>
 
               {/* Created Date */}
-              <div className='flex items-center gap-4 pt-2'>
+              <div className='flex items-center gap-4 pt-3'>
                 <p className='text-sm text-white/70'>
                   {new Date(track.created_date).toLocaleDateString('en-US')}
                 </p>
               </div>
 
               {/* Track details tags */}
-              <div className='flex flex-wrap gap-3 pt-2'>
+              <div className='flex flex-wrap gap-3 pt-1'>
                 <span className='rounded-full bg-white/20 px-4 py-2 text-sm font-medium text-white backdrop-blur-sm'>
                   {track.genre}
                 </span>
@@ -147,52 +151,55 @@ const Trackinfocardjjm: React.FC<TrackinfocardjjmProps> = ({
               </div>
 
               {/* Description */}
-              <div>
+              <div className='pt-2'>
                 <p className='max-w-md text-sm leading-relaxed text-white/80 lg:text-xl'>
                   {track.description || 'Enjoy vivid emotions with this stunning music album. Each track is a story.'}
                 </p>
               </div>
 
               {/* Latest Version */}
-              <div className='flex flex-col gap-3 pt-6 sm:flex-row sm:items-center'>
+              <div className='flex flex-col gap-4 pt-4 sm:flex-row sm:items-center sm:gap-6'>
                 <h2 className='text-lg font-semibold text-white/70 sm:min-w-fit sm:whitespace-nowrap'>
                   Latest Version:
                 </h2>
 
-                <Button
-                  variant='primary'
-                  size='sm'
-                  className='flex items-center justify-center gap-2 rounded-full bg-white px-4 py-1.5 text-lg leading-none text-black shadow-xl transition-all duration-300 hover:scale-105 hover:bg-white/90 hover:shadow-2xl'
-                  onClick={handlePlayClick}
-                  disabled={stemsLoading || guideLoading}
-                >
-                  {stemsLoading || guideLoading ? (
-                    <div className='h-5 w-5 animate-spin rounded-full border-2 border-black border-t-transparent' />
-                  ) : isPlaying ? (
-                    <Pause size={20} />
-                  ) : (
-                    <Play size={20} />
-                  )}
-                  <span className='font-semibold'>
-                    {isPlaying ? 'PAUSE' : 'PLAY'}
-                  </span>
-                </Button>
+                <div className='flex flex-col gap-3 sm:flex-row sm:gap-4'>
+                  <Button
+                    variant='primary'
+                    size='sm'
+                    className='flex items-center justify-center gap-2 rounded-full bg-white px-4 py-1.5 text-lg leading-none text-black shadow-xl transition-all duration-300 hover:scale-105 hover:bg-white/90 hover:shadow-2xl'
+                    onClick={handlePlayClick}
+                    disabled={stemsLoading || guideLoading || !lastApprovedStageId}
+                  >
+                    {stemsLoading || guideLoading ? (
+                      <div className='h-5 w-5 animate-spin rounded-full border-2 border-black border-t-transparent' />
+                    ) : isPlaying ? (
+                      <Pause size={20} />
+                    ) : (
+                      <Play size={20} />
+                    )}
+                    <span className='font-semibold'>
+                      {isPlaying ? 'PAUSE' : 'PLAY'}
+                    </span>
+                  </Button>
 
-                <Button
-                  variant='waveflowbtn'
-                  size='sm'
-                  className='flex items-center justify-center gap-2 rounded-full border-2 border-white/30 bg-white/10 px-4 py-1.5 text-lg leading-none text-white backdrop-blur-sm transition-all duration-300 hover:scale-105 hover:bg-white/20'
-                  onClick={handleShowAllStems}
-                >
-                  <span className='font-semibold'>View All Stems</span>
-                </Button>
+                  <Button
+                    variant='waveflowbtn'
+                    size='sm'
+                    className='flex items-center justify-center gap-2 rounded-full border-2 border-white/30 bg-white/10 px-4 py-1.5 text-lg leading-none text-white backdrop-blur-sm transition-all duration-300 hover:scale-105 hover:bg-white/20'
+                    onClick={handleShowAllStems}
+                  >
+                    <List className="w-4 h-4" />
+                    <span className='font-semibold'>Stems</span>
+                  </Button>
+                </div>
               </div>
             </div>
           </div>
 
           {/* Right side: members */}
           <div className='flex-1'>
-            <div className='flex items-center gap-4 pt-2'>
+            <div className='flex items-center gap-4'>
               <p className='text-sm text-white/70'>Members:</p>
               <Collaborators track={track} />
             </div>
