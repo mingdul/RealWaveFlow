@@ -11,11 +11,11 @@ export const theme = {
     },
     // Waveform colors
     waveform: {
-      active: 'rgba(40, 180, 180, 0.6)',
+      active: 'rgba(191, 42, 211, 0.6)',
       inactive: 'rgba(255, 255, 255, 0.2)',
       select: 'rgba(255, 100, 100, 0.3)',
-      main: '#f87171',
-      extra: '#60a5fa',
+      main: '#893bff',
+      extra: '#1f45fc',
     },
     // Background colors
     background: {

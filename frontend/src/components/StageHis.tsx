@@ -65,11 +65,13 @@ const StageHis: React.FC<StageHisProps> = ({
     if (!scrollEl) return;
 
     const onWheel = (e: WheelEvent) => {
-      if (e.deltaY !== 0) {
+      // Ctrl 키가 눌려있을 때만 수평 스크롤 처리
+      if (e.ctrlKey && e.deltaY !== 0) {
         e.preventDefault();
         scrollEl.scrollLeft += e.deltaY;
         updateScrollButtons();
       }
+      // Ctrl 키가 안 눌려있으면 기본 스크롤 동작(위아래 페이지 스크롤) 허용
     };
 
     const onScroll = () => {

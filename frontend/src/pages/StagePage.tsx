@@ -394,6 +394,30 @@ const StagePage: React.FC = () => {
                 <Music className="w-16 h-16 text-white" />
               )}
             </div>
+            {/* Reviewers Section */}
+            <div className="flex-shrink-0 w-[1080px]">
+              <h2 className="text-3xl font-bold text-white mb-6">Reviewers</h2>
+              {reviewersLoading ? (
+                <div className="flex items-center justify-center py-8">
+                  <div className="w-8 h-8 border-4 border-purple-500/30 border-t-purple-500 rounded-full animate-spin"></div>
+                  <span className="ml-3 text-white text-sm">Loading reviewers...</span>
+                </div>
+              ) : reviewers.length > 0 ? (
+                <div className="flex flex-wrap gap-4">
+                  {reviewers.map((reviewer) => (
+                    <ReviewerCard key={reviewer.id} reviewer={reviewer} />
+                  ))}
+                </div>
+              ) : (
+                <div className="text-center py-8">
+                  <div className="w-16 h-16 bg-gradient-to-br from-gray-700 to-gray-800 rounded-full flex items-center justify-center mb-4">
+                    <Music className="w-8 h-8 text-gray-400" />
+                  </div>
+                  <p className="text-gray-400 text-sm">No reviewers assigned</p>
+                </div>
+              )}
+            </div>
+            
             <div className="flex-1 max-w-2xl">
               <h1 className='text-6xl font-bold text-white mb-6'>
                 {track?.title || 'Unknown Track'}
@@ -420,30 +444,6 @@ const StagePage: React.FC = () => {
                   </p>
                 )}
               </div>
-            </div>
-            
-            {/* Reviewers Section */}
-            <div className="flex-shrink-0 w-[1080px]">
-              <h2 className="text-3xl font-bold text-white mb-6">Reviewers</h2>
-              {reviewersLoading ? (
-                <div className="flex items-center justify-center py-8">
-                  <div className="w-8 h-8 border-4 border-purple-500/30 border-t-purple-500 rounded-full animate-spin"></div>
-                  <span className="ml-3 text-white text-sm">Loading reviewers...</span>
-                </div>
-              ) : reviewers.length > 0 ? (
-                <div className="flex flex-wrap gap-4">
-                  {reviewers.map((reviewer) => (
-                    <ReviewerCard key={reviewer.id} reviewer={reviewer} />
-                  ))}
-                </div>
-              ) : (
-                <div className="text-center py-8">
-                  <div className="w-16 h-16 bg-gradient-to-br from-gray-700 to-gray-800 rounded-full flex items-center justify-center mb-4">
-                    <Music className="w-8 h-8 text-gray-400" />
-                  </div>
-                  <p className="text-gray-400 text-sm">No reviewers assigned</p>
-                </div>
-              )}
             </div>
           </div>
           {/* 디버깅 정보 */}
