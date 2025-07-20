@@ -411,7 +411,7 @@ const DashboardPage = () => {
         <main className='mx-auto w-full max-w-7xl flex-1 overflow-y-auto p-6 scrollbar-hide'>
           {/* Greeting */}
           <div className='mb-12 mt-8'>
-            <h1 className='group mb-2 cursor-pointer bg-gradient-to-r from-[#893BFF] to-[#E4D3FF] bg-clip-text text-5xl font-bold text-transparent transition-all duration-500 '>
+            <h1 className='cursor-pointer text-5xl font-bold text-[#893BFF] transition-all duration-500 hover:text-[#E4D3FF] hover:drop-shadow-[0_0_10px_rgba(255,255,255,0.3)] pb-4'>
               Hello,{user.username}!
             </h1>
             <p className='cursor-pointer text-lg text-gray-400 transition-all duration-500 hover:text-gray-300 hover:drop-shadow-[0_0_10px_rgba(255,255,255,0.3)]'>
