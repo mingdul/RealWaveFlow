@@ -42,6 +42,7 @@ const StageHis: React.FC<StageHisProps> = ({
   const [playingStage, setPlayingStage] = useState<string | null>(null);
   const [canScrollLeft, setCanScrollLeft] = useState(false);
   const [canScrollRight, setCanScrollRight] = useState(false);
+  const [userHasManuallySelected, setUserHasManuallySelected] = useState(false); // 사용자 수동 선택 추적
   const scrollRef = useRef<HTMLDivElement>(null);
 
   // 스크롤 상태 업데이트
@@ -182,7 +183,9 @@ const StageHis: React.FC<StageHisProps> = ({
   };
 
   const handleStageClick = (stage: Stage) => {
+    console.log('[DEBUG][StageHis] User manually selected stage:', stage.version);
     setSelectedStage(stage);
+    setUserHasManuallySelected(true); // 사용자가 직접 선택했음을 표시
     // TrackInfo와 분리: onStageSelect 호출 제거
     // 카드 클릭 시에는 StageHis 내부 상태만 변경
   };
@@ -192,10 +195,16 @@ const StageHis: React.FC<StageHisProps> = ({
     if (event) {
       event.stopPropagation(); // 카드 클릭 이벤트 방지
     }
-    console.log('Play stage audio:', stageId);
+    console.log('[DEBUG][StageHis] Play button clicked for stage:', stageId);
+    console.log('[DEBUG][StageHis] onPlay prop available:', !!onPlay);
+    console.log('[DEBUG][StageHis] selectedStage:', selectedStage);
+    
     setPlayingStage(playingStage === stageId ? null : stageId);
     if (onPlay) {
+      console.log('[DEBUG][StageHis] Calling onPlay with stageId:', stageId);
       onPlay(stageId);
+    } else {
+      console.warn('[WARN][StageHis] onPlay prop not provided');
     }
   };
 
@@ -204,33 +213,39 @@ const StageHis: React.FC<StageHisProps> = ({
     if (event) {
       event.stopPropagation(); // 카드 클릭 이벤트 방지
     }
-    console.log('Show all stems for stage:', stageId);
+    console.log('[DEBUG][StageHis] Show All Stems button clicked for stage:', stageId);
+    console.log('[DEBUG][StageHis] onShowAllStems prop available:', !!onShowAllStems);
+    console.log('[DEBUG][StageHis] selectedStage:', selectedStage);
+    
     if (onShowAllStems) {
+      console.log('[DEBUG][StageHis] Calling onShowAllStems with stageId:', stageId);
       onShowAllStems(stageId);
+    } else {
+      console.warn('[WARN][StageHis] onShowAllStems prop not provided');
     }
   };
 
-  // 초기 렌더링 시 마지막(최신) 스테이지 자동 선택
+  // 초기 렌더링 시 마지막(최신) 스테이지 자동 선택 (사용자가 직접 선택하지 않은 경우에만)
   useEffect(() => {
-    if (stages.length > 0 && !selectedStage) {
+    if (stages.length > 0 && !selectedStage && !userHasManuallySelected) {
       // 버전 순으로 정렬하여 마지막(최신) 스테이지 선택
       const sortedStagesByVersion = [...stages].sort((a, b) => b.version - a.version);
       const latestStage = sortedStagesByVersion[0];
       setSelectedStage(latestStage);
       console.log('[DEBUG][StageHis] Auto-selected latest stage:', latestStage);
     }
-  }, [stages, selectedStage]);
+  }, [stages, selectedStage, userHasManuallySelected]);
 
-  // 외부에서 전달받은 selectedVersion에 따라 스테이지 선택 (선택적)
+  // 외부에서 전달받은 selectedVersion에 따라 스테이지 선택 (사용자가 직접 선택하지 않은 경우에만)
   useEffect(() => {
-    if (selectedVersion && stages.length > 0) {
+    if (selectedVersion && stages.length > 0 && !userHasManuallySelected) {
       const targetStage = stages.find(stage => stage.version === selectedVersion);
       if (targetStage && targetStage.id !== selectedStage?.id) {
         setSelectedStage(targetStage);
         console.log('[DEBUG][StageHis] Auto-selected stage based on selectedVersion:', targetStage);
       }
     }
-  }, [selectedVersion, stages, selectedStage?.id]);
+  }, [selectedVersion, stages, selectedStage?.id, userHasManuallySelected]);
 
   // Center the selected stage card after state updates so layout is stable
   useEffect(() => {
