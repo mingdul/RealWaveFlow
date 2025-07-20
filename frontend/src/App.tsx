@@ -17,6 +17,8 @@ import TrackPage from './pages/TrackPage.tsx';
 // import StemSetReviewPage from './pages/StemSetReviewPage.tsx';
 import InvitePage from './pages/InvitePage.tsx';
 import StemReview from './pages/StemReview.tsx';
+import StemSetReviewPage from './pages/StemSetReviewPage.tsx';
+import { TrackPageWrapper, StagePageWrapper, UpstreamPageWrapper } from './components/guards';
 
 
 
@@ -43,12 +45,28 @@ const App = () => {
               <Route path="/signup" element={<PublicRoute><SignUpPage /></PublicRoute>} />
               <Route path="/dashboard" element={<DashboardPage />} />
               <Route path="/invite/:token" element={<InvitePage />} />
-              <Route path="/stage/:stageId" element={<StagePage />} />
+              <Route path="/stage/:stageId" element={
+                <StagePageWrapper>
+                  <StagePage />
+                </StagePageWrapper>
+              } />
               {/* <Route path="/review" element={<StemSetReviewPage />} /> */}
-              {/* <Route path="/stemreview/:upstreamId" element={<StemSetReviewPage />} /> */}
+              <Route path="/stemreview/:upstreamId" element={
+                <UpstreamPageWrapper>
+                  <StemSetReviewPage />
+                </UpstreamPageWrapper>
+              } />
               <Route path="*" element={<Notfound />} />
-              <Route path="/review/:upstreamId" element={<StemReview />} />
-              <Route path="/track/:trackId" element={<TrackPage />} />
+              <Route path="/review/:upstreamId" element={
+                <UpstreamPageWrapper>
+                  <StemReview />
+                </UpstreamPageWrapper>
+              } />
+              <Route path="/track/:trackId" element={
+                <TrackPageWrapper>
+                  <TrackPage />
+                </TrackPageWrapper>
+              } />
              
               {/* <Route path="/master" element={<MasterPage />} />
               <Route path="/commit" element={<CommitPage />} />
