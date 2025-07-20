@@ -12,12 +12,12 @@ export class UpstreamReviewController {
   constructor(private readonly upstreamReviewService: UpstreamReviewService) {}
 
   @Get('/:upstreamId')
-  @ApiOperation({ summary: '업스트림 리뷰 조회', description: '특정 업스트림의 리뷰들을 조회합니다.' })
+  @ApiOperation({ summary: '업스트림 리뷰 조회', description: '특정 업스트림의 모든 리뷰 상태를 조회합니다.' })
   @ApiParam({ name: 'upstreamId', description: '업스트림 ID' })
   @ApiResponse({ status: 200, description: '업스트림 리뷰 조회 성공' })
-  @ApiResponse({ status: 404, description: '업스트림을 찾을 수 없음' })
+  @ApiResponse({ status: 404, description: '업스트림 리뷰를 찾을 수 없음' })
   async getUpstreamReviews(@Param('upstreamId') upstreamId: string) {
-    return this.upstreamReviewService.getUpstreamReviews(upstreamId);
+    return this.upstreamReviewService.getUpstreamReviewsWithReviewers(upstreamId);
   }
 
   @Post('create')
@@ -27,14 +27,6 @@ export class UpstreamReviewController {
   @ApiResponse({ status: 400, description: '입력값 유효성 검사 실패' })
   async createUpstreamReview(@Body() createUpstreamReviewDto: CreateUpstreamReviewDto) {
     return this.upstreamReviewService.createUpstreamReview(createUpstreamReviewDto);
-  }
-
-  @Get('/:upstream_id')
-  @ApiOperation({ summary: '업스트림 리뷰 조회', description: '특정 업스트림의 모든 리뷰 상태를 조회합니다.' })
-  @ApiResponse({ status: 200, description: '업스트림 리뷰 조회 성공' })
-  @ApiResponse({ status: 404, description: '업스트림 리뷰를 찾을 수 없음' })
-  async getUpstreamReviews(@Param('upstream_id') upstream_id: string) {
-    return this.upstreamReviewService.getUpstreamReviewsWithReviewers(upstream_id);
   }
 
 

@@ -7,7 +7,7 @@ import trackService from '../services/trackService';
 import { getStageDetail } from '../services/stageService';
 import { getStageUpstreams } from '../services/upstreamService';
 import { getStageReviewers } from '../services/stageReviewerService';
-import { getUpstreamReviews } from '../services/upstreamReviewService';
+import { getUpstreamReviews, ReviewerWithStatus } from '../services/upstreamReviewService';
 import { Track, Stage, Upstream, StageReviewer } from '../types/api';
 import tapeActive from '../assets/activeTape.png';
 import tapeApproved from '../assets/approveTape.png';
@@ -29,7 +29,7 @@ const StagePage: React.FC = () => {
   const [track, setTrack] = useState<Track | null>(null);
   const [reviewers, setReviewers] = useState<StageReviewer[]>([]);
   const [reviewersLoading, setReviewersLoading] = useState(false);
-  const [upstreamReviews, setUpstreamReviews] = useState<{[key: string]: any[]}>({});
+  const [upstreamReviews, setUpstreamReviews] = useState<{[key: string]: ReviewerWithStatus[]}>({});
 
   // 트랙 정보 가져오기
   useEffect(() => {
