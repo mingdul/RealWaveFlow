@@ -178,12 +178,12 @@ const FileSelectionAndUploadStep: React.FC<{
     selectedFiles.every((f) => f.tag && f.tag.trim() !== '');
 
   return (
-    <div className='max-h-[70vh] overflow-y-auto p-6 pb-[100px] pt-0'>
+    <div className='max-h-[70vh] overflow-y-auto p-6 pb-[150px] pt-0'>
       <h3 className='mb-2 text-lg font-semibold text-white'>
         Select and Upload Files
       </h3>
       <p className='mb-6 text-gray-400'>
-        Choose audio files, set their metadata, and upload them to the project.
+        Choose stems, set their metadata, and upload them to the project.
       </p>
 
       {/* File Selection Area or Upload Complete */}
@@ -220,7 +220,7 @@ const FileSelectionAndUploadStep: React.FC<{
             <div className='text-center'>
               <Plus size={28} className='mx-auto mb-3 text-purple-400' />
               <h3 className='mb-2 text-lg font-semibold text-white'>
-                Select Audio Files
+                Select Stems
               </h3>
               <p className='text-sm text-gray-400'>
                 Choose multiple files to upload at once
@@ -254,25 +254,6 @@ const FileSelectionAndUploadStep: React.FC<{
           </p>
         </div>
       )}
-
-      {/* Upload Button
-        {!isUploading && selectedFiles.length > 0 && (
-          <div className="mb-6">
-            <button
-              onClick={onStartUpload}
-              disabled={!canStartUpload}
-              className={`w-full flex items-center justify-center px-6 py-3 bg-purple-600 text-white font-medium rounded-lg hover:bg-purple-700 transition-colors ${!canStartUpload ? 'opacity-50 cursor-not-allowed' : ''}`}
-            >
-              <Upload size={20} className="mr-2" />
-              Start Upload ({selectedFiles.length} files)
-            </button>
-            {!canStartUpload && (
-              <p className="text-amber-400 text-sm mt-2 text-center">
-                Please set <b>tag</b> for all selected files before uploading. (Key and BPM are optional)
-              </p>
-            )}
-          </div>
-        )} */}
 
       {/* File List */}
       {files.length > 0 && (
@@ -740,7 +721,7 @@ const InitProjectModal: React.FC<InitProjectModalProps> = ({
           <div className='flex items-center justify-between border-b border-gray-700 p-6'>
             <div>
               <h2 className='text-2xl font-bold text-white'>
-                Upload Audio Files
+                Upload Stems
               </h2>
               <p className='mt-1 text-sm text-gray-400'>{projectName}</p>
             </div>
