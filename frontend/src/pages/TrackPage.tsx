@@ -105,13 +105,15 @@ const VersionTimeline: React.FC<{
 
       return currentVersionStems.map((currentItem: any) => {
         const currentStem = currentItem.stem;
-        const category = currentItem.category;
+        
+        // stem.category에서 instrument 정보 가져오기
+        const categoryInstrument = currentStem.category?.instrument || currentStem.category?.name || currentItem.category;
 
         // 변환된 스템 객체 생성
         const convertedStem: StemWithChanges = {
           id: currentStem.id,
           fileName: currentStem.file_name,
-          category: category,
+          category: categoryInstrument, // instrument 값 사용
           tag: currentStem.key || '',
           key: currentStem.key || '',
           description: currentStem.description || '',
@@ -134,7 +136,7 @@ const VersionTimeline: React.FC<{
         } else {
           // 이전 버전에서 같은 카테고리의 스템 찾기
           const previousStemInCategory = previousVersionStems.find((prevItem: any) => 
-            prevItem.category === category
+            prevItem.category === currentItem.category
           );
 
           if (!previousStemInCategory) {
@@ -737,6 +739,23 @@ const TrackPage: React.FC<TrackPagejjmProps> = () => {
     setIsStemListModalOpen(true);
   };
 
+  // Stage 전용 함수들
+  const handleStagePlay = (stageId: string) => {
+    console.log('[DEBUG][TrackPage] Playing stage audio:', stageId);
+    // TODO: 스테이지별 가이드 재생 로직 구현
+  };
+
+  const handleStageShowAllStems = async (stageId: string) => {
+    console.log('[DEBUG][TrackPage] Show all stems for stage:', stageId);
+    
+    // 해당 스테이지의 버전으로 스템 로드
+    const stage = stages.find(s => s.id === stageId);
+    if (stage) {
+      await loadStemsByVersion(stage.version);
+      setIsStemListModalOpen(true);
+    }
+  };
+
   const handleRollBack = async () => {
     if (!trackId) return;
 
@@ -909,6 +928,8 @@ const TrackPage: React.FC<TrackPagejjmProps> = () => {
                 disableStageOpening={isVersion1()}
                 isActiveStage={isActiveStage}
                 selectedVersion={selectedStageVersion}
+                onPlay={handleStagePlay}
+                onShowAllStems={handleStageShowAllStems}
               />
             </div>
 

@@ -1,6 +1,5 @@
 import React, { useState, useRef, useEffect } from 'react';
 import { 
-  PlayCircle, 
   Pause, 
   CheckCircle, 
   Clock, 
@@ -10,7 +9,9 @@ import {
   Activity,
   Plus,
   ChevronLeft,
-  ChevronRight
+  ChevronRight,
+  Play,
+  List
 } from 'lucide-react';
 // import { ArrowRight } from 'lucide-react';
 import { Stage } from '../types/api';
@@ -23,6 +24,8 @@ interface StageHisProps {
   disableStageOpening?: boolean;
   isActiveStage?: boolean;
   selectedVersion?: number; // 외부에서 선택된 버전을 받기 위한 prop
+  onPlay?: (stageId: string) => void;
+  onShowAllStems?: (stageId: string) => void;
 }
 
 const StageHis: React.FC<StageHisProps> = ({ 
@@ -31,7 +34,9 @@ const StageHis: React.FC<StageHisProps> = ({
   onOpenStageClick,
   disableStageOpening = false,
   isActiveStage = false,
-  selectedVersion
+  selectedVersion,
+  onPlay,
+  onShowAllStems
 }) => {
   const [selectedStage, setSelectedStage] = useState<Stage | null>(null);
   const [playingStage, setPlayingStage] = useState<string | null>(null);
@@ -181,11 +186,29 @@ const StageHis: React.FC<StageHisProps> = ({
     if (onStageSelect) {
       onStageSelect(stage);
     }
+    // 카드 클릭 시에는 선택만 하고 재생 등은 하지 않음
+  };
 
-    // Removed direct scrollToCenter call here – it will be handled in useEffect
+  // Play 버튼 클릭 핸들러
+  const handlePlayClick = (stageId: string, event?: React.MouseEvent) => {
+    if (event) {
+      event.stopPropagation(); // 카드 클릭 이벤트 방지
+    }
+    console.log('Play stage audio:', stageId);
+    setPlayingStage(playingStage === stageId ? null : stageId);
+    if (onPlay) {
+      onPlay(stageId);
+    }
+  };
 
-    if (stage.status !== 'active') {
-      setPlayingStage(playingStage === stage.id ? null : stage.id);
+  // Show All Stems 버튼 클릭 핸들러
+  const handleShowAllStemsClick = (stageId: string, event?: React.MouseEvent) => {
+    if (event) {
+      event.stopPropagation(); // 카드 클릭 이벤트 방지
+    }
+    console.log('Show all stems for stage:', stageId);
+    if (onShowAllStems) {
+      onShowAllStems(stageId);
     }
   };
 
@@ -286,7 +309,6 @@ const StageHis: React.FC<StageHisProps> = ({
             {sortedStages.map((stage) => {
               const statusConfig = getStatusConfig(stage.status);
               const isSelected = selectedStage?.id === stage.id;
-              const isPlaying = playingStage === stage.id;
               
               return (
                 <div key={stage.id} className="relative">
@@ -364,37 +386,56 @@ const StageHis: React.FC<StageHisProps> = ({
                         </div>
   
                         {/* 액션 버튼 */}
-                        <div className="flex items-center justify-between pt-3 border-t border-white/10">
-                          <div className="flex items-center space-x-2">
-                            {stage.status === 'active' ? (
-                              <div className="flex items-center space-x-2 px-3 py-2 rounded-full bg-blue-500/20 text-blue-300">
-                                <Activity className="w-4 h-4" />
-                                <span className="text-sm font-medium">Continue</span>
-                              </div>
-                            ) : (
-                              <Button
-                                onClick={(e) => {
-                                  e.stopPropagation();
-                                  setPlayingStage(isPlaying ? null : stage.id);
-                                }}
-                                variant="waveflowbtn2" 
-                                className="flex items-center space-x-2 px-4 py-2 rounded-full bg-white/10 text-gray-300 hover:text-white hover:bg-white/20 transition-all duration-300"
-                              >
-                                {isPlaying ? (
-                                  <Pause className="w-4 h-4" />
-                                ) : (
-                                  <PlayCircle className="w-4 h-4" />
-                                )}
-                                <span className="text-sm font-medium">
-                                  {isPlaying ? 'Pause' : 'Preview'}
-                                </span>
-                              </Button>
-                            )}
+                        <div className="flex flex-col space-y-3 pt-3 border-t border-white/10">
+                          {/* 첫 번째 줄: Play와 Show All Stems 버튼 */}
+                          <div className="flex items-center space-x-3">
+                            <Button
+                              onClick={(e) => handlePlayClick(stage.id, e)}
+                              variant="waveflowbtn2"
+                              className="flex items-center space-x-2 px-3 py-2 rounded-full bg-purple-500/20 text-purple-300 hover:text-white hover:bg-purple-500/30 transition-all duration-300"
+                            >
+                              {playingStage === stage.id ? (
+                                <Pause className="w-4 h-4" />
+                              ) : (
+                                <Play className="w-4 h-4" />
+                              )}
+                              <span className="text-sm font-medium">
+                                {playingStage === stage.id ? 'Pause' : 'Play'}
+                              </span>
+                            </Button>
+                            
+                            <Button
+                              onClick={(e) => handleShowAllStemsClick(stage.id, e)}
+                              variant="waveflowbtn2"
+                              className="flex items-center space-x-2 px-3 py-2 rounded-full bg-green-500/20 text-green-300 hover:text-white hover:bg-green-500/30 transition-all duration-300"
+                            >
+                              <List className="w-4 h-4" />
+                              <span className="text-sm font-medium">Stems</span>
+                            </Button>
                           </div>
-                          
-                          {/* 버전 뱃지 */}
-                          <div className="px-3 py-1 bg-white/10 rounded-full text-xs text-gray-300 font-medium">
-                            v{stage.version}
+
+                          {/* 두 번째 줄: 상태 표시와 버전 뱃지 */}
+                          <div className="flex items-center justify-between">
+                            <div className="flex items-center space-x-2">
+                              {stage.status === 'active' ? (
+                                <div className="flex items-center space-x-2 px-3 py-1 rounded-full bg-blue-500/20 text-blue-300">
+                                  <Activity className="w-3 h-3" />
+                                  <span className="text-xs font-medium">Active</span>
+                                </div>
+                              ) : (
+                                <div className="flex items-center space-x-2 px-3 py-1 rounded-full bg-gray-500/20 text-gray-300">
+                                  <CheckCircle className="w-3 h-3" />
+                                  <span className="text-xs font-medium">
+                                    {stage.status === 'APPROVED' || stage.status === 'approve' ? 'Approved' : 'Completed'}
+                                  </span>
+                                </div>
+                              )}
+                            </div>
+                            
+                            {/* 버전 뱃지 */}
+                            <div className="px-3 py-1 bg-white/10 rounded-full text-xs text-gray-300 font-medium">
+                              v{stage.version}
+                            </div>
                           </div>
                         </div>
                       </div>
