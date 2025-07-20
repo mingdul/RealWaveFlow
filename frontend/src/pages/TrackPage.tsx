@@ -16,7 +16,7 @@ import {
   getStageByTrackIdAndVersion,
 } from '../services/stageService';
 import { createStageReviewer } from '../services/stageReviewerService';
-import streamingService, { StemStreamingInfo } from '../services/streamingService';
+import { StemStreamingInfo } from '../services/streamingService';
 import trackService from '../services/trackService';
 import versionStemService from '../services/versionstemService';
 
@@ -742,40 +742,9 @@ const TrackPage: React.FC<TrackPagejjmProps> = () => {
   };
 
   // Stage 전용 함수들
-  const handleStagePlay = async (stageId: string) => {
+  const handleStagePlay = (stageId: string) => {
     console.log('[DEBUG][TrackPage] Playing stage audio:', stageId);
-    
-    try {
-      // 스테이지 가이드 재생을 위한 presigned URL 요청
-      const response = await streamingService.getGuidePresignedUrlByStageId(stageId);
-      
-      console.log('[DEBUG][TrackPage] Stage guide API response:', response);
-      
-      if (response.success && response.data) {
-        // 새 오디오 엘리먼트 생성하여 가이드 재생
-        const audio = new Audio(response.data.presignedUrl);
-        
-        audio.onplay = () => {
-          console.log('[DEBUG][TrackPage] Stage guide started playing');
-        };
-        
-        audio.onended = () => {
-          console.log('[DEBUG][TrackPage] Stage guide playback ended');
-        };
-        
-        audio.onerror = (error) => {
-          console.error('[ERROR][TrackPage] Stage guide playback error:', error);
-        };
-        
-        // 가이드 재생 시작
-        await audio.play();
-        
-      } else {
-        console.error('[ERROR][TrackPage] Failed to fetch stage guide:', response.message);
-      }
-    } catch (error) {
-      console.error('[ERROR][TrackPage] Error playing stage guide:', error);
-    }
+    // TODO: 스테이지별 가이드 재생 로직 구현
   };
 
   const handleStageShowAllStems = async (stageId: string) => {
@@ -925,80 +894,101 @@ const TrackPage: React.FC<TrackPagejjmProps> = () => {
   const isActiveStage = !!getActiveStage();
 
   return (
-    <div className='relative max-w-[1280px] mx-auto min-h-screen overflow-hidden bg-black'>
-      {/* 어두운 오버레이 */}
-      <div className='absolute inset-0 bg-gradient-to-br from-black/50 via-transparent to-black/30'></div>
-      <div className='absolute inset-0 bg-gradient-to-t from-black/70 via-transparent to-transparent'></div>
+    <div className="min-h-screen bg-gradient-to-br from-gray-900 via-black to-gray-900">
+      {/* Background Effects */}
+      <div className="fixed inset-0 overflow-hidden pointer-events-none">
+        <div className="absolute -top-40 -right-40 w-80 h-80 bg-purple-500 rounded-full mix-blend-multiply filter blur-xl opacity-20 animate-blob"></div>
+        <div className="absolute -bottom-40 -left-40 w-80 h-80 bg-blue-500 rounded-full mix-blend-multiply filter blur-xl opacity-20 animate-blob animation-delay-2000"></div>
+        <div className="absolute top-40 left-40 w-80 h-80 bg-pink-500 rounded-full mix-blend-multiply filter blur-xl opacity-20 animate-blob animation-delay-4000"></div>
+      </div>
 
-      {/* 메인 컨텐츠 */}
-      <div className='relative z-10 overflow-y-auto scrollbar-hide'>
-        <div className='backdrop-blur-sm'>
-          <TrackHeaderCopy
-            onBack={handleBack}
+      <TrackHeaderCopy
+        onBack={handleBack}
+      />
+
+      <main className='relative px-8 pb-8 pt-6 max-w-[1280px] mx-auto'>
+        {/* 메인 컨텐츠 Grid 레이아웃 */}
+        <div className='mb-8 transform transition-all duration-300'>
+          <Trackinfocardjjm
+            track={track}
+            stems={stems}
+            stemsLoading={stemsLoading}
+            onPlay={handlePlay}
+            versionNumber={selectedStageVersion.toString()}
+            onShowAllStems={handleShowAllStems}
+            onRollBack={handleRollBack}
+            stageId={getLastApprovedStage()?.id}
           />
-
-          <div className='px-4 py-6 sm:px-6 sm:py-8 lg:px-8'>
-            {/* 메인 컨텐츠 Grid 레이아웃 */}
-            <div className='transform transition-all duration-300'>
-              <Trackinfocardjjm
-                track={track}
-                stems={stems}
-                stemsLoading={stemsLoading}
-                onPlay={handlePlay}
-                versionNumber={selectedStageVersion.toString()}
-                onShowAllStems={handleShowAllStems}
-                onRollBack={handleRollBack}
-                stageId={getLastApprovedStage()?.id}
-              />
-            </div>
-            {/* 스테이지 히스토리 */}
-            <div className='mb-8 transform transition-all duration-300'>
-              <StageHis
-                stages={stages}
-                onStageSelect={handleStageClick}
-                onOpenStageClick={() => setIsOpenStageModalOpen(true)}
-                disableStageOpening={isVersion1()}
-                isActiveStage={isActiveStage}
-                selectedVersion={selectedStageVersion}
-                onPlay={handleStagePlay}
-                onShowAllStems={handleStageShowAllStems}
-              />
-            </div>
-
-            {/* 버전 히스토리 타임라인 */}
-            {stages.length > 0 && (
-              <div className='transform transition-all duration-300'>
-                <VersionTimeline
-                  stages={stages}
-                  selectedVersion={selectedVersionTimeline}
-                  onVersionSelect={handleVersionTimelineSelect}
-                  trackId={trackId || ''}
-                  navigate={navigate}
-                />
-              </div>
-            )}
-          </div>
+        </div>
+        
+        {/* 스테이지 히스토리 */}
+        <div className='mb-8 transform transition-all duration-300'>
+          <StageHis
+            stages={stages}
+            onStageSelect={handleStageClick}
+            onOpenStageClick={() => setIsOpenStageModalOpen(true)}
+            disableStageOpening={isVersion1()}
+            isActiveStage={isActiveStage}
+            selectedVersion={selectedStageVersion}
+            onPlay={handleStagePlay}
+            onShowAllStems={handleStageShowAllStems}
+          />
         </div>
 
-        {/* 모달들 */}
-        <OpenStageModal
-          isOpen={isOpenStageModalOpen}
-          onClose={() => setIsOpenStageModalOpen(false)}
-          onSubmit={handleOpenStageSubmit}
-          trackId={trackId || ''}
-        />
+        {/* 버전 히스토리 타임라인 */}
+        {stages.length > 0 && (
+          <div className='transform transition-all duration-300'>
+            <VersionTimeline
+              stages={stages}
+              selectedVersion={selectedVersionTimeline}
+              onVersionSelect={handleVersionTimelineSelect}
+              trackId={trackId || ''}
+              navigate={navigate}
+            />
+          </div>
+        )}
+      </main>
 
-        <StemListModal
-          isOpen={isStemListModalOpen}
-          onClose={() => setIsStemListModalOpen(false)}
-          stems={stems}
-          versionNumber={getLastApprovedStage()?.version.toString() || selectedStageVersion.toString()}
-          loading={stemsLoading}
-          onRollBack={handleRollBack}
-          onShowStage={handleShowStage}
-          stageId={getLastApprovedStage()?.id || getSelectedStage()?.id}
-        />
-      </div>
+      {/* 모달들 */}
+      <OpenStageModal
+        isOpen={isOpenStageModalOpen}
+        onClose={() => setIsOpenStageModalOpen(false)}
+        onSubmit={handleOpenStageSubmit}
+        trackId={trackId || ''}
+      />
+
+      <StemListModal
+        isOpen={isStemListModalOpen}
+        onClose={() => setIsStemListModalOpen(false)}
+        stems={stems}
+        versionNumber={getLastApprovedStage()?.version.toString() || selectedStageVersion.toString()}
+        loading={stemsLoading}
+        onRollBack={handleRollBack}
+        onShowStage={handleShowStage}
+        stageId={getLastApprovedStage()?.id || getSelectedStage()?.id}
+      />
+
+      {/* Custom CSS for animations */}
+      <style>{`
+        @keyframes blob {
+          0% { transform: translate(0px, 0px) scale(1); }
+          33% { transform: translate(30px, -50px) scale(1.1); }
+          66% { transform: translate(-20px, 20px) scale(0.9); }
+          100% { transform: translate(0px, 0px) scale(1); }
+        }
+        
+        .animate-blob {
+          animation: blob 7s infinite;
+        }
+        
+        .animation-delay-2000 {
+          animation-delay: 2s;
+        }
+        
+        .animation-delay-4000 {
+          animation-delay: 4s;
+        }
+      `}</style>
     </div>
   );
 };
