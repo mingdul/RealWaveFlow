@@ -396,57 +396,84 @@ const Collaborators: React.FC<CollaboratorsProps> = ({ track }) => {
 
             {/* 콜라보레이터들 - 스크롤 가능한 영역 */}
             {trackUsers.collaborators.collaborator.length > 0 && (
-              <div className={`flex items-center ${
-                trackUsers.collaborators.collaborator.length > 3 
-                  ? 'overflow-x-auto scrollbar-hide max-w-[200px] space-x-4 px-1' 
-                  : 'space-x-4'
-              }`}>
-                {trackUsers.collaborators.collaborator.map((collaborator) => (
-                  <div
-                    key={collaborator.id}
-                    className='relative group flex-shrink-0'
-                  >
+              <div className="relative flex-1 max-w-xs">
+                {/* 스크롤 영역 */}
+                <div 
+                  className={`flex items-center transition-all duration-300 ${
+                    trackUsers.collaborators.collaborator.length > 3 
+                      ? 'overflow-x-auto scrollbar-hide space-x-4 px-2 py-1' 
+                      : 'space-x-4'
+                  }`}
+                  style={{
+                    scrollBehavior: 'smooth'
+                  }}
+                  onWheel={(e) => {
+                    // 마우스 휠로 좌우 스크롤 가능하게 하기
+                    if (trackUsers.collaborators.collaborator.length > 3) {
+                      e.preventDefault();
+                      e.currentTarget.scrollLeft += e.deltaY;
+                    }
+                  }}
+                >
+                  {trackUsers.collaborators.collaborator.map((collaborator, index) => (
                     <div
-                      className='h-12 w-12 rounded-full cursor-pointer transform transition-all duration-200 hover:scale-110 hover:ring-2 hover:ring-purple-400 overflow-hidden'
-                      onClick={() => handleCollaboratorClick(collaborator)}
+                      key={collaborator.id}
+                      className='relative group flex-shrink-0'
                     >
-                      {collaborator.image_url ? (
-                        <img
-                          src={collaborator.image_url}
-                          alt={collaborator.username}
-                          className='h-full w-full object-cover transition-opacity duration-200 hover:opacity-80'
-                          onError={(e) => handleImageError(e, collaborator.username)}
-                        />
-                      ) : (
-                        <div className='flex h-full w-full items-center justify-center bg-gradient-to-br from-purple-400 to-purple-600 transition-all duration-200 hover:from-purple-500 hover:to-purple-700'>
+                      <div
+                        className='h-12 w-12 rounded-full cursor-pointer transform transition-all duration-200 hover:scale-110 hover:ring-2 hover:ring-purple-400 overflow-hidden'
+                        onClick={() => handleCollaboratorClick(collaborator)}
+                      >
+                        {collaborator.image_url ? (
+                          <img
+                            src={collaborator.image_url}
+                            alt={collaborator.username}
+                            className='h-full w-full object-cover transition-opacity duration-200 hover:opacity-80'
+                            onError={(e) => handleImageError(e, collaborator.username)}
+                          />
+                        ) : (
+                          <div className='flex h-full w-full items-center justify-center bg-gradient-to-br from-purple-400 to-purple-600 transition-all duration-200 hover:from-purple-500 hover:to-purple-700'>
+                            <span className='text-sm font-semibold text-white'>
+                              {collaborator.username?.charAt(0)?.toUpperCase() || 'C'}
+                            </span>
+                          </div>
+                        )}
+
+                        {/* Fallback div */}
+                        <div
+                          className='absolute inset-0 flex items-center justify-center bg-gradient-to-br from-purple-400 to-purple-600 transition-all duration-200 hover:from-purple-500 hover:to-purple-700'
+                          style={{ display: 'none' }}
+                        >
                           <span className='text-sm font-semibold text-white'>
                             {collaborator.username?.charAt(0)?.toUpperCase() || 'C'}
                           </span>
                         </div>
-                      )}
+                      </div>
 
-                      {/* Fallback div */}
-                      <div
-                        className='absolute inset-0 flex items-center justify-center bg-gradient-to-br from-purple-400 to-purple-600 transition-all duration-200 hover:from-purple-500 hover:to-purple-700'
-                        style={{ display: 'none' }}
-                      >
-                        <span className='text-sm font-semibold text-white'>
-                          {collaborator.username?.charAt(0)?.toUpperCase() || 'C'}
-                        </span>
+                      {/* Collaborator Tooltip */}
+                      <div className='absolute bottom-full mb-2 left-1/2 transform -translate-x-1/2 opacity-0 group-hover:opacity-100 transition-opacity duration-200 pointer-events-none z-20'>
+                        <div className='bg-gray-900 text-white text-xs rounded-lg py-2 px-3 whitespace-nowrap shadow-xl border border-gray-700'>
+                          <div className='font-semibold'>{collaborator.username}</div>
+                          <div className='text-purple-400 text-xs'>{collaborator.role || 'collaborator'}</div>
+                          {/* 화살표 */}
+                          <div className='absolute top-full left-1/2 transform -translate-x-1/2 w-0 h-0 border-l-4 border-r-4 border-t-4 border-transparent border-t-gray-900'></div>
+                        </div>
                       </div>
                     </div>
+                  ))}
+                </div>
 
-                    {/* Collaborator Tooltip */}
-                    <div className='absolute bottom-full mb-2 left-1/2 transform -translate-x-1/2 opacity-0 group-hover:opacity-100 transition-opacity duration-200 pointer-events-none z-20'>
-                      <div className='bg-gray-900 text-white text-xs rounded-lg py-2 px-3 whitespace-nowrap shadow-xl border border-gray-700'>
-                        <div className='font-semibold'>{collaborator.username}</div>
-                        <div className='text-purple-400 text-xs'>{collaborator.role || 'collaborator'}</div>
-                        {/* 화살표 */}
-                        <div className='absolute top-full left-1/2 transform -translate-x-1/2 w-0 h-0 border-l-4 border-r-4 border-t-4 border-transparent border-t-gray-900'></div>
-                      </div>
-                    </div>
+                {/* 스크롤 가능 표시 - 우측 그라데이션 */}
+                {trackUsers.collaborators.collaborator.length > 3 && (
+                  <div className="absolute right-0 top-0 bottom-0 w-8 bg-gradient-to-l from-gray-900 to-transparent pointer-events-none opacity-60" />
+                )}
+
+                {/* 스크롤 힌트 */}
+                {trackUsers.collaborators.collaborator.length > 3 && (
+                  <div className="absolute -bottom-6 left-1/2 transform -translate-x-1/2 text-xs text-gray-500 whitespace-nowrap">
+                    스크롤하여 더보기
                   </div>
-                ))}
+                )}
               </div>
             )}
 
@@ -485,40 +512,55 @@ const Collaborators: React.FC<CollaboratorsProps> = ({ track }) => {
               </div>
             </div>
 
-            {/* Mock collaborators with scroll */}
-            <div className="flex overflow-x-auto scrollbar-hide max-w-[200px] space-x-4 px-1">
-              <div className='relative group flex-shrink-0'>
-                <div className='h-12 w-12 overflow-hidden rounded-full'>
-                  <img
-                    src={mockImages[1]}
-                    alt='Sample Collaborator'
-                    className='h-full w-full object-cover'
-                  />
+            {/* Mock collaborators with improved scroll */}
+            <div className="relative flex-1 max-w-xs">
+              <div 
+                className="flex overflow-x-auto scrollbar-hide space-x-4 px-2 py-1"
+                style={{ scrollBehavior: 'smooth' }}
+                onWheel={(e) => {
+                  e.preventDefault();
+                  e.currentTarget.scrollLeft += e.deltaY;
+                }}
+              >
+                <div className='relative group flex-shrink-0'>
+                  <div className='h-12 w-12 overflow-hidden rounded-full'>
+                    <img
+                      src={mockImages[1]}
+                      alt='Sample Collaborator'
+                      className='h-full w-full object-cover'
+                    />
+                  </div>
+                  <div className='absolute bottom-full mb-2 left-1/2 transform -translate-x-1/2 opacity-0 group-hover:opacity-100 transition-opacity duration-200 pointer-events-none z-20'>
+                    <div className='bg-gray-900 text-white text-xs rounded-lg py-2 px-3 whitespace-nowrap shadow-xl border border-gray-700'>
+                      <div className='font-semibold'>Sample User 1</div>
+                      <div className='text-purple-400 text-xs'>collaborator</div>
+                      <div className='absolute top-full left-1/2 transform -translate-x-1/2 w-0 h-0 border-l-4 border-r-4 border-t-4 border-transparent border-t-gray-900'></div>
+                    </div>
+                  </div>
                 </div>
-                <div className='absolute bottom-full mb-2 left-1/2 transform -translate-x-1/2 opacity-0 group-hover:opacity-100 transition-opacity duration-200 pointer-events-none z-20'>
-                  <div className='bg-gray-900 text-white text-xs rounded-lg py-2 px-3 whitespace-nowrap shadow-xl border border-gray-700'>
-                    <div className='font-semibold'>Sample User 1</div>
-                    <div className='text-purple-400 text-xs'>collaborator</div>
-                    <div className='absolute top-full left-1/2 transform -translate-x-1/2 w-0 h-0 border-l-4 border-r-4 border-t-4 border-transparent border-t-gray-900'></div>
+
+                <div className='relative group flex-shrink-0'>
+                  <div className='h-12 w-12 overflow-hidden rounded-full'>
+                    <img
+                      src={mockImages[2]}
+                      alt='Sample Collaborator'
+                      className='h-full w-full object-cover'
+                    />
+                  </div>
+                  <div className='absolute bottom-full mb-2 left-1/2 transform -translate-x-1/2 opacity-0 group-hover:opacity-100 transition-opacity duration-200 pointer-events-none z-20'>
+                    <div className='bg-gray-900 text-white text-xs rounded-lg py-2 px-3 whitespace-nowrap shadow-xl border border-gray-700'>
+                      <div className='font-semibold'>Sample User 2</div>
+                      <div className='text-purple-400 text-xs'>collaborator</div>
+                      <div className='absolute top-full left-1/2 transform -translate-x-1/2 w-0 h-0 border-l-4 border-r-4 border-t-4 border-transparent border-t-gray-900'></div>
+                    </div>
                   </div>
                 </div>
               </div>
 
-              <div className='relative group flex-shrink-0'>
-                <div className='h-12 w-12 overflow-hidden rounded-full'>
-                  <img
-                    src={mockImages[2]}
-                    alt='Sample Collaborator'
-                    className='h-full w-full object-cover'
-                  />
-                </div>
-                <div className='absolute bottom-full mb-2 left-1/2 transform -translate-x-1/2 opacity-0 group-hover:opacity-100 transition-opacity duration-200 pointer-events-none z-20'>
-                  <div className='bg-gray-900 text-white text-xs rounded-lg py-2 px-3 whitespace-nowrap shadow-xl border border-gray-700'>
-                    <div className='font-semibold'>Sample User 2</div>
-                    <div className='text-purple-400 text-xs'>collaborator</div>
-                    <div className='absolute top-full left-1/2 transform -translate-x-1/2 w-0 h-0 border-l-4 border-r-4 border-t-4 border-transparent border-t-gray-900'></div>
-                  </div>
-                </div>
+              {/* Mock scroll indicator */}
+              <div className="absolute right-0 top-0 bottom-0 w-8 bg-gradient-to-l from-gray-900 to-transparent pointer-events-none opacity-60" />
+              <div className="absolute -bottom-6 left-1/2 transform -translate-x-1/2 text-xs text-gray-500 whitespace-nowrap">
+                스크롤하여 더보기
               </div>
             </div>
 
