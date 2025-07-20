@@ -1,6 +1,6 @@
 import React, { useEffect, useState, useRef } from 'react';
-import { Play, Pause, Grid3X3 } from 'lucide-react';
-// import { Button } from '.';
+import { Play, Pause } from 'lucide-react';
+import { Button } from '.';
 import { Track } from '../types/api';
 import streamingService, {
   StemStreamingInfo,
@@ -18,8 +18,6 @@ interface TrackinfocardjjmProps {
   versionNumber?: string;
   stageId?: string;
   guideUrl?: string;
-  onNavigateToStageHistory?: () => void;
-  onNavigateToVersionHistory?: () => void;
 }
 
 const Trackinfocardjjm: React.FC<TrackinfocardjjmProps> = ({
@@ -28,8 +26,6 @@ const Trackinfocardjjm: React.FC<TrackinfocardjjmProps> = ({
   versionNumber,
   stemsLoading = false,
   stageId,
-  onNavigateToStageHistory,
-  onNavigateToVersionHistory,
 }) => {
   const [isPlaying, setIsPlaying] = useState(false);
   const [guideUrl, setGuideUrl] = useState<string | undefined>(undefined);
@@ -85,28 +81,41 @@ const Trackinfocardjjm: React.FC<TrackinfocardjjmProps> = ({
   };
 
   return (
-    <div className='relative overflow-hidden rounded-3xl bg-black px-15 py-10 shadow-2xl'>
+    <div className='relative overflow-hidden rounded-3xl bg-black px-15 py-10 shadow-2xl' data-section="track-info">
       {/* Background overlay pattern */}
       <div className='absolute inset-0 bg-gradient-to-r from-black/60 via-transparent to-black/40'></div>
 
       <div className='relative z-10 flex flex-col gap-6 lg:flex-row justify-center'>
-        {/* Left side content */}
-        <div className='w-full md:w-2/3 space-y-4 pl-10'>
-          {/* Navigation */}
-          <div className='flex gap-6 mb-4'>
-            <button
-              onClick={onNavigateToStageHistory}
-              className='text-white/70 hover:text-white transition-all duration-200 hover:border-b hover:border-white pb-1'
-            >
-              Stage History
-            </button>
-            <button
-              onClick={onNavigateToVersionHistory}
-              className='text-white/70 hover:text-white transition-all duration-200 hover:border-b hover:border-white pb-1'
-            >
-              Version History
-            </button>
+       
+        {/* Right side - Album cover */}
+        <div className='w-full md:w-1/3 flex-shrink-0 lg:ml-8 flex justify-center'>
+          <div className='group relative'>
+            <PresignedImage
+              trackId={track.id}
+              imageUrl={track.image_url}
+              alt={track.title}
+              className='relative h-72 w-72 rounded-2xl object-cover shadow-2xl transition-all duration-500 group-hover:scale-105 lg:h-80 lg:w-80 xl:h-96 xl:w-96'
+            />
+            <div className='absolute inset-0 flex items-center justify-center rounded-2xl bg-black/40 opacity-0 transition-all duration-300 group-hover:opacity-100'>
+              <button
+                onClick={handlePlayClick}
+                className='rounded-full bg-white/20 p-6 backdrop-blur-sm transition-all duration-200 hover:scale-110 hover:bg-white/30'
+                disabled={stemsLoading || guideLoading}
+              >
+                {stemsLoading || guideLoading ? (
+                  <div className='h-10 w-10 animate-spin rounded-full border-2 border-white border-t-transparent' />
+                ) : isPlaying ? (
+                  <Pause className='h-10 w-10 text-white' />
+                ) : (
+                  <Play className='ml-1 h-10 w-10 text-white' />
+                )}
+              </button>
+            </div>
           </div>
+        </div>
+      </div>
+       {/* Left side content */}
+       <div className='w-full md:w-2/3 space-y-4 pl-10'>
           {/* Header label */}
           {/* Main title */}
           <div className='space-y-5'>
@@ -136,8 +145,10 @@ const Trackinfocardjjm: React.FC<TrackinfocardjjmProps> = ({
               Version: <span className='text-white'>{versionNumber}</span>
             </h2>
 
-            <button
-              className='p-3 rounded-full bg-white text-black shadow-xl transition-all duration-300 hover:scale-105 hover:bg-white/90 hover:shadow-2xl'
+            <Button
+              variant='primary'
+              size='sm'
+              className='flex items-center justify-center gap-2 rounded-full bg-white px-4 py-1.5 text-lg leading-none text-black shadow-xl transition-all duration-300 hover:scale-105 hover:bg-white/90 hover:shadow-2xl'
               onClick={handlePlayClick}
               disabled={stemsLoading || guideLoading}
             >
@@ -148,14 +159,19 @@ const Trackinfocardjjm: React.FC<TrackinfocardjjmProps> = ({
               ) : (
                 <Play size={20} />
               )}
-            </button>
+              <span className='font-semibold'>
+                {isPlaying ? 'PAUSE' : 'PLAY'}
+              </span>
+            </Button>
 
-            <button
-              className='p-3 rounded-full border-2 border-white/30 bg-white/10 text-white backdrop-blur-sm transition-all duration-300 hover:scale-105 hover:bg-white/20'
+            <Button
+              variant='waveflowbtn'
+              size='sm'
+              className='flex items-center justify-center gap-2 rounded-full border-2 border-white/30 bg-white/10 px-4 py-1.5 text-lg leading-none text-white backdrop-blur-sm transition-all duration-300 hover:scale-105 hover:bg-white/20'
               onClick={handleShowAllStems}
             >
-              <Grid3X3 size={20} />
-            </button>
+              <span className='font-semibold'>View All Stems</span>
+            </Button>
           </div>
           <div className='flex items-center gap-4 pt-2'>
             <p className='text-sm text-white/70'>
@@ -176,33 +192,6 @@ const Trackinfocardjjm: React.FC<TrackinfocardjjmProps> = ({
           </div>
         </div>
 
-        {/* Right side - Album cover */}
-        <div className='w-full md:w-1/3 flex-shrink-0 lg:ml-4 flex justify-center'>
-          <div className='group relative'>
-            <PresignedImage
-              trackId={track.id}
-              imageUrl={track.image_url}
-              alt={track.title}
-              className='relative h-72 w-72 rounded-2xl object-cover shadow-2xl transition-all duration-500 group-hover:scale-105 lg:h-80 lg:w-80 xl:h-96 xl:w-96'
-            />
-            <div className='absolute inset-0 flex items-center justify-center rounded-2xl bg-black/40 opacity-0 transition-all duration-300 group-hover:opacity-100'>
-              <button
-                onClick={handlePlayClick}
-                className='rounded-full bg-white/20 p-6 backdrop-blur-sm transition-all duration-200 hover:scale-110 hover:bg-white/30'
-                disabled={stemsLoading || guideLoading}
-              >
-                {stemsLoading || guideLoading ? (
-                  <div className='h-10 w-10 animate-spin rounded-full border-2 border-white border-t-transparent' />
-                ) : isPlaying ? (
-                  <Pause className='h-10 w-10 text-white' />
-                ) : (
-                  <Play className='ml-1 h-10 w-10 text-white' />
-                )}
-              </button>
-            </div>
-          </div>
-        </div>
-      </div>
 
       {/* Hidden Audio Element for Guide Playback */}
       {guideUrl && (

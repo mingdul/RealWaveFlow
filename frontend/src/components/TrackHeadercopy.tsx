@@ -3,18 +3,22 @@ import { ChevronLeft, Settings, User, LogOut } from 'lucide-react';
 import { Button } from './';
 import Logo from './Logo';
 import NotificationBell from './NotificationBell';
-import ProfileSettingsModal from './ProfileSettingsModal';
 import { useNotifications } from '../contexts/NotificationContext';
 import { useAuth } from '../contexts/AuthContext';
 import { useNavigate } from 'react-router-dom';
 
+import { Track } from '../types/api';
 
 interface TrackHeaderCopyProps {
   onBack?: () => void;
+  onSettingsClick?: () => void;
+  track?: Track;
+  trackId?: string;
 }
 
 const TrackHeaderCopy: React.FC<TrackHeaderCopyProps> = ({
   onBack,
+  onSettingsClick,
 }) => {
   const { notifications, unreadCount } = useNotifications();
   const { logout } = useAuth();
@@ -22,7 +26,6 @@ const TrackHeaderCopy: React.FC<TrackHeaderCopyProps> = ({
 
   // 🔥 NEW: Settings 드롭다운 상태
   const [isSettingsDropdownOpen, setIsSettingsDropdownOpen] = useState(false);
-  const [isProfileModalOpen, setIsProfileModalOpen] = useState(false);
   const settingsDropdownRef = useRef<HTMLDivElement>(null);
   
   // 🔥 NEW: 강제 리렌더링을 위한 상태
@@ -47,7 +50,7 @@ const TrackHeaderCopy: React.FC<TrackHeaderCopyProps> = ({
   };
 
   const handleProfileClick = () => {
-    setIsProfileModalOpen(true);
+    // TODO: Open profile modal
     setIsSettingsDropdownOpen(false);
   };
 
@@ -121,22 +124,74 @@ const TrackHeaderCopy: React.FC<TrackHeaderCopyProps> = ({
   }, [notifications]);
 
   return (
-    <>
-      <div 
-        className="bg-black"
-        key={`track-header-${forceRefreshKey}`} // 🔥 NEW: 강제 리렌더링을 위한 key
-      >
-        {/* 상단 네비게이션 바 */}
-        <div className="px-6 py-6 flex items-center justify-between">
-          <div className="flex items-center gap-4">
-            <Button size="sm" className="p-2 " onClick={onBack}>
-              <ChevronLeft className='text-[#893AFF]' size={20} />
+    <div 
+      className="bg-black"
+      key={`track-header-${forceRefreshKey}`} // 🔥 NEW: 강제 리렌더링을 위한 key
+    >
+      {/* 상단 네비게이션 바 */}
+      <div className="px-6 py-6 flex items-center justify-between">
+        <div className="flex items-center gap-4">
+          <Button size="sm" className="p-2 " onClick={onBack}>
+            <ChevronLeft className='text-[#BD91FF]' size={20} />
+          </Button>
+          <Logo />
+        </div>
+
+        <div className='flex items-center gap-4'>
+          {/* Navigation Buttons */}
+          <div className="flex items-center gap-2">
+            <Button
+              variant="waveflowbtn"
+              size="sm"
+              className="flex items-center gap-2 px-4 py-2 rounded-full bg-purple-500/20 text-purple-300 hover:bg-purple-500/30 transition-all duration-300"
+              onClick={() => {
+                const stageHistoryElement = document.querySelector('[data-section="stage-history"]');
+                if (stageHistoryElement) {
+                  stageHistoryElement.scrollIntoView({ 
+                    behavior: 'smooth', 
+                    block: 'start' 
+                  });
+                }
+              }}
+            >
+              <span className="text-sm font-medium">Stage History</span>
             </Button>
-            <Logo />
+            
+            <Button
+              variant="waveflowbtn"
+              size="sm"
+              className="flex items-center gap-2 px-4 py-2 rounded-full bg-blue-500/20 text-blue-300 hover:bg-blue-500/30 transition-all duration-300"
+              onClick={() => {
+                const trackInfoElement = document.querySelector('[data-section="track-info"]');
+                if (trackInfoElement) {
+                  trackInfoElement.scrollIntoView({ 
+                    behavior: 'smooth', 
+                    block: 'start' 
+                  });
+                }
+              }}
+            >
+              <span className="text-sm font-medium">Track Info</span>
+            </Button>
           </div>
+        </div>
 
           <div className="flex items-center gap-4">
             {/* 🔥 NotificationBell에 실시간 상태 표시 */}
+            <NotificationBell />
+            {/* 개발 환경에서만 보이는 상태 표시 */}
+            {import.meta.env.DEV && (
+              <div className="absolute -bottom-8 right-0 text-xs text-gray-400 whitespace-nowrap">
+                {notifications.length}/{unreadCount} (Refresh: {forceRefreshKey})
+                {lastNotificationTime && (
+                  <div className="text-xs text-green-400">
+                    Last: {new Date(lastNotificationTime).toLocaleTimeString()}
+                  </div>
+                )}
+              </div>
+            )}
+        <div className="flex items-center gap-4">
+          {/* 🔥 NotificationBell에 실시간 상태 표시 */}
             <NotificationBell />
             {/* 개발 환경에서만 보이는 상태 표시 */}
             {import.meta.env.DEV && (
@@ -179,15 +234,13 @@ const TrackHeaderCopy: React.FC<TrackHeaderCopyProps> = ({
               )}
             </div>
           </div>
+          <Button size="sm" className="p-2 " onClick={onSettingsClick}>
+            <Settings className='text-[#BD91FF]' size={20} />
+          </Button>
         </div>
       </div>
 
-      {/* 🔥 NEW: ProfileSettingsModal */}
-      <ProfileSettingsModal
-        isOpen={isProfileModalOpen}
-        onClose={() => setIsProfileModalOpen(false)}
-      />
-    </>
+    </div>
   );
 };
 

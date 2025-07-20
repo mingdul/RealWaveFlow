@@ -145,12 +145,12 @@ const StageHis: React.FC<StageHisProps> = ({
           };
       case 'pending':
         return {
-          color: 'from-[#D7BDFF] to-[#9650FF]',
-          bgColor: 'bg-[#9650FF]/10',
-          textColor: 'text-[#9650FF]',
+          color: 'from-yellow-500 to-orange-500',
+          bgColor: 'bg-yellow-500/10',
+          textColor: 'text-yellow-400',
           icon: <Clock className="w-4 h-4" />,
           label: 'Pending',
-          dotColor: 'bg-[#9650FF]'
+          dotColor: 'bg-yellow-500'
         };
       default:
         return {
@@ -217,7 +217,7 @@ const StageHis: React.FC<StageHisProps> = ({
   const sortedStages = [...stages].sort((a, b) => a.version - b.version);
 
   return (
-    <div className="space-y-6">
+    <div className="space-y-6" data-section="stage-history">
       {/* 헤더 */}
       <div className="flex items-center justify-between pt-4">
         <div className="flex flex-col space-y-2">
