@@ -913,7 +913,7 @@ const StemSetReview = () => {
       setFloatingComments(triggeredComments.map((comment, index) => ({
         ...comment,
         id: `floating-${comment.id}-${Math.floor(currentTime * 10)}`,
-        position: duration > 0 ? comment.timeNumber / duration : 0,
+        position: duration > 0 ? (comment.timeNumber / duration) * 100 : 0,
         delay: index * 100,
       })));
 
