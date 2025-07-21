@@ -349,8 +349,8 @@ const Collaborators: React.FC<CollaboratorsProps> = ({ track }) => {
       <div className='flex items-center space-x-4'>
         {trackUsers ? (
           <>
-            {/* 트랙 소유자 */}
-            <div className='relative group'>
+            {/* 트랙 소유자 - 고정 위치 */}
+            <div className='relative group flex-shrink-0'>
               <div className='h-12 w-12 rounded-full border-2 border-yellow-400 overflow-hidden relative'>
                 {trackUsers.owner.image_url ? (
                   <img
@@ -394,65 +394,103 @@ const Collaborators: React.FC<CollaboratorsProps> = ({ track }) => {
               </div>
             </div>
 
-            {/* 콜라보레이터들 */}
-            {trackUsers.collaborators.collaborator.map((collaborator) => (
-              <div
-                key={collaborator.id}
-                className='relative group'
-              >
-                <div
-                  className='h-12 w-12 rounded-full cursor-pointer transform transition-all duration-200 hover:scale-110 hover:ring-2 hover:ring-purple-400 overflow-hidden'
-                  onClick={() => handleCollaboratorClick(collaborator)}
+            {/* 콜라보레이터들 - 스크롤 가능한 영역 */}
+            {trackUsers.collaborators.collaborator.length > 0 && (
+              <div className="relative flex-1 max-w-xs">
+                {/* 스크롤 영역 */}
+                <div 
+                  className={`flex items-center transition-all duration-300 ${
+                    trackUsers.collaborators.collaborator.length > 3 
+                      ? 'overflow-x-auto scrollbar-hide space-x-4 px-2 py-1' 
+                      : 'space-x-4'
+                  }`}
+                  style={{
+                    scrollBehavior: 'smooth'
+                  }}
+                  onWheel={(e) => {
+                    // 마우스 휠로 좌우 스크롤 가능하게 하기
+                    if (trackUsers.collaborators.collaborator.length > 3) {
+                      e.preventDefault();
+                      e.currentTarget.scrollLeft += e.deltaY;
+                    }
+                  }}
                 >
-                  {collaborator.image_url ? (
-                    <img
-                      src={collaborator.image_url}
-                      alt={collaborator.username}
-                      className='h-full w-full object-cover transition-opacity duration-200 hover:opacity-80'
-                      onError={(e) => handleImageError(e, collaborator.username)}
-                    />
-                  ) : (
-                    <div className='flex h-full w-full items-center justify-center bg-gradient-to-br from-purple-400 to-purple-600 transition-all duration-200 hover:from-purple-500 hover:to-purple-700'>
-                      <span className='text-sm font-semibold text-white'>
-                        {collaborator.username?.charAt(0)?.toUpperCase() || 'C'}
-                      </span>
+                  {trackUsers.collaborators.collaborator.map((collaborator) => (
+                    <div
+                      key={collaborator.id}
+                      className='relative group flex-shrink-0'
+                    >
+                      <div
+                        className='h-12 w-12 rounded-full cursor-pointer transform transition-all duration-200 hover:scale-110 hover:ring-2 hover:ring-purple-400 overflow-hidden'
+                        onClick={() => handleCollaboratorClick(collaborator)}
+                      >
+                        {collaborator.image_url ? (
+                          <img
+                            src={collaborator.image_url}
+                            alt={collaborator.username}
+                            className='h-full w-full object-cover transition-opacity duration-200 hover:opacity-80'
+                            onError={(e) => handleImageError(e, collaborator.username)}
+                          />
+                        ) : (
+                          <div className='flex h-full w-full items-center justify-center bg-gradient-to-br from-purple-400 to-purple-600 transition-all duration-200 hover:from-purple-500 hover:to-purple-700'>
+                            <span className='text-sm font-semibold text-white'>
+                              {collaborator.username?.charAt(0)?.toUpperCase() || 'C'}
+                            </span>
+                          </div>
+                        )}
+
+                        {/* Fallback div */}
+                        <div
+                          className='absolute inset-0 flex items-center justify-center bg-gradient-to-br from-purple-400 to-purple-600 transition-all duration-200 hover:from-purple-500 hover:to-purple-700'
+                          style={{ display: 'none' }}
+                        >
+                          <span className='text-sm font-semibold text-white'>
+                            {collaborator.username?.charAt(0)?.toUpperCase() || 'C'}
+                          </span>
+                        </div>
+                      </div>
+
+                      {/* Collaborator Tooltip */}
+                      <div className='absolute bottom-full mb-2 left-1/2 transform -translate-x-1/2 opacity-0 group-hover:opacity-100 transition-opacity duration-200 pointer-events-none z-20'>
+                        <div className='bg-gray-900 text-white text-xs rounded-lg py-2 px-3 whitespace-nowrap shadow-xl border border-gray-700'>
+                          <div className='font-semibold'>{collaborator.username}</div>
+                          <div className='text-purple-400 text-xs'>{collaborator.role || 'collaborator'}</div>
+                          {/* 화살표 */}
+                          <div className='absolute top-full left-1/2 transform -translate-x-1/2 w-0 h-0 border-l-4 border-r-4 border-t-4 border-transparent border-t-gray-900'></div>
+                        </div>
+                      </div>
                     </div>
-                  )}
-
-                  {/* Fallback div */}
-                  <div
-                    className='absolute inset-0 flex items-center justify-center bg-gradient-to-br from-purple-400 to-purple-600 transition-all duration-200 hover:from-purple-500 hover:to-purple-700'
-                    style={{ display: 'none' }}
-                  >
-                    <span className='text-sm font-semibold text-white'>
-                      {collaborator.username?.charAt(0)?.toUpperCase() || 'C'}
-                    </span>
-                  </div>
+                  ))}
                 </div>
 
-                {/* Collaborator Tooltip */}
-                <div className='absolute bottom-full mb-2 left-1/2 transform -translate-x-1/2 opacity-0 group-hover:opacity-100 transition-opacity duration-200 pointer-events-none z-20'>
-                  <div className='bg-gray-900 text-white text-xs rounded-lg py-2 px-3 whitespace-nowrap shadow-xl border border-gray-700'>
-                    <div className='font-semibold'>{collaborator.username}</div>
-                    <div className='text-purple-400 text-xs'>{collaborator.role || 'collaborator'}</div>
-                    {/* 화살표 */}
-                    <div className='absolute top-full left-1/2 transform -translate-x-1/2 w-0 h-0 border-l-4 border-r-4 border-t-4 border-transparent border-t-gray-900'></div>
+                {/* 스크롤 가능 표시 - 우측 그라데이션 */}
+                {trackUsers.collaborators.collaborator.length > 3 && (
+                  <div className="absolute right-0 top-0 bottom-0 w-8 bg-gradient-to-l from-gray-900 to-transparent pointer-events-none opacity-60" />
+                )}
+
+                {/* 스크롤 힌트 */}
+                {trackUsers.collaborators.collaborator.length > 3 && (
+                  <div className="absolute -bottom-6 left-1/2 transform -translate-x-1/2 text-xs text-gray-500 whitespace-nowrap">
+                    스크롤하여 더보기
                   </div>
-                </div>
+                )}
               </div>
-            ))}
+            )}
 
-            <Button 
-              onClick={(e) => handleAddCollaboratorClick(e)}
-              className="z-10 relative"
-            >
-              <Plus size={20} />
-            </Button>
+            {/* 추가 버튼 - 고정 위치 */}
+            <div className="flex-shrink-0">
+              <Button 
+                onClick={(e) => handleAddCollaboratorClick(e)}
+                className="z-10 relative"
+              >
+                <Plus size={20} />
+              </Button>
+            </div>
           </>
         ) : (
           // 목업 데이터로 샘플 collaborators 표시 (API 실패 시)
           <>
-            <div className='relative group'>
+            <div className='relative group flex-shrink-0'>
               <div className='h-12 w-12 rounded-full border-2 border-yellow-400 overflow-hidden relative'>
                 <img
                   src={mockImages[0]}
@@ -474,40 +512,60 @@ const Collaborators: React.FC<CollaboratorsProps> = ({ track }) => {
               </div>
             </div>
 
-            <div className='relative group'>
-              <div className='h-12 w-12 overflow-hidden rounded-full'>
-                <img
-                  src={mockImages[1]}
-                  alt='Sample Collaborator'
-                  className='h-full w-full object-cover'
-                />
-              </div>
-              <div className='absolute bottom-full mb-2 left-1/2 transform -translate-x-1/2 opacity-0 group-hover:opacity-100 transition-opacity duration-200 pointer-events-none z-20'>
-                <div className='bg-gray-900 text-white text-xs rounded-lg py-2 px-3 whitespace-nowrap shadow-xl border border-gray-700'>
-                  <div className='font-semibold'>Sample User 1</div>
-                  <div className='text-purple-400 text-xs'>collaborator</div>
-                  <div className='absolute top-full left-1/2 transform -translate-x-1/2 w-0 h-0 border-l-4 border-r-4 border-t-4 border-transparent border-t-gray-900'></div>
+            {/* Mock collaborators with improved scroll */}
+            <div className="relative flex-1 max-w-xs">
+              <div 
+                className="flex overflow-x-auto scrollbar-hide space-x-4 px-2 py-1"
+                style={{ scrollBehavior: 'smooth' }}
+                onWheel={(e) => {
+                  e.preventDefault();
+                  e.currentTarget.scrollLeft += e.deltaY;
+                }}
+              >
+                <div className='relative group flex-shrink-0'>
+                  <div className='h-12 w-12 overflow-hidden rounded-full'>
+                    <img
+                      src={mockImages[1]}
+                      alt='Sample Collaborator'
+                      className='h-full w-full object-cover'
+                    />
+                  </div>
+                  <div className='absolute bottom-full mb-2 left-1/2 transform -translate-x-1/2 opacity-0 group-hover:opacity-100 transition-opacity duration-200 pointer-events-none z-20'>
+                    <div className='bg-gray-900 text-white text-xs rounded-lg py-2 px-3 whitespace-nowrap shadow-xl border border-gray-700'>
+                      <div className='font-semibold'>Sample User 1</div>
+                      <div className='text-purple-400 text-xs'>collaborator</div>
+                      <div className='absolute top-full left-1/2 transform -translate-x-1/2 w-0 h-0 border-l-4 border-r-4 border-t-4 border-transparent border-t-gray-900'></div>
+                    </div>
+                  </div>
                 </div>
+
+                <div className='relative group flex-shrink-0'>
+                  <div className='h-12 w-12 overflow-hidden rounded-full'>
+                    <img
+                      src={mockImages[2]}
+                      alt='Sample Collaborator'
+                      className='h-full w-full object-cover'
+                    />
+                  </div>
+                  <div className='absolute bottom-full mb-2 left-1/2 transform -translate-x-1/2 opacity-0 group-hover:opacity-100 transition-opacity duration-200 pointer-events-none z-20'>
+                    <div className='bg-gray-900 text-white text-xs rounded-lg py-2 px-3 whitespace-nowrap shadow-xl border border-gray-700'>
+                      <div className='font-semibold'>Sample User 2</div>
+                      <div className='text-purple-400 text-xs'>collaborator</div>
+                      <div className='absolute top-full left-1/2 transform -translate-x-1/2 w-0 h-0 border-l-4 border-r-4 border-t-4 border-transparent border-t-gray-900'></div>
+                    </div>
+                  </div>
+                </div>
+              </div>
+
+              {/* Mock scroll indicator */}
+              <div className="absolute right-0 top-0 bottom-0 w-8 bg-gradient-to-l from-gray-900 to-transparent pointer-events-none opacity-60" />
+              <div className="absolute -bottom-6 left-1/2 transform -translate-x-1/2 text-xs text-gray-500 whitespace-nowrap">
+                스크롤하여 더보기
               </div>
             </div>
 
-            <div className='relative group'>
-              <div className='h-12 w-12 overflow-hidden rounded-full'>
-                <img
-                  src={mockImages[2]}
-                  alt='Sample Collaborator'
-                  className='h-full w-full object-cover'
-                />
-              </div>
-              <div className='absolute bottom-full mb-2 left-1/2 transform -translate-x-1/2 opacity-0 group-hover:opacity-100 transition-opacity duration-200 pointer-events-none z-20'>
-                <div className='bg-gray-900 text-white text-xs rounded-lg py-2 px-3 whitespace-nowrap shadow-xl border border-gray-700'>
-                  <div className='font-semibold'>Sample User 2</div>
-                  <div className='text-purple-400 text-xs'>collaborator</div>
-                  <div className='absolute top-full left-1/2 transform -translate-x-1/2 w-0 h-0 border-l-4 border-r-4 border-t-4 border-transparent border-t-gray-900'></div>
-                </div>
-              </div>
-            </div>
-            <div className='z-30 relative'>
+            {/* 추가 버튼 - 고정 위치 */}
+            <div className='flex-shrink-0'>
               <Button 
                 onClick={(e) => handleAddCollaboratorClick(e)}
                 className="z-10 relative"
@@ -524,7 +582,7 @@ const Collaborators: React.FC<CollaboratorsProps> = ({ track }) => {
           <div className='mx-4 w-full max-w-sm rounded-lg bg-gray-800 p-4 sm:max-w-md md:p-6 lg:max-w-lg'>
             <div className='mb-4 flex items-center justify-between'>
               <h3 className='text-lg font-semibold text-white sm:text-xl'>
-                협업자 초대
+                Invite Collaborators
               </h3>
               <button
                 onClick={handleCloseInviteModal}
@@ -536,7 +594,7 @@ const Collaborators: React.FC<CollaboratorsProps> = ({ track }) => {
 
             <div className='mb-4'>
               <label className='mb-2 block text-sm font-medium text-gray-300'>
-                이메일 주소 ({emailList.length}개)
+                Emails ({emailList.length} emails)
               </label>
               <div className='min-h-[100px] rounded-md border border-gray-600 bg-gray-700 px-3 py-2 focus-within:border-transparent focus-within:ring-2 focus-within:ring-purple-500 sm:min-h-[120px]'>
                 <div className='mb-2 flex flex-wrap gap-2'>
@@ -564,15 +622,15 @@ const Collaborators: React.FC<CollaboratorsProps> = ({ track }) => {
                   onPaste={handlePaste}
                   placeholder={
                     emailList.length === 0
-                      ? '이메일을 입력하고 Enter 또는 쉼표를 눌러주세요'
-                      : '이메일 추가...'
+                      ? 'Enter or comma to add email'
+                      : 'Add email...'
                   }
                   className='w-full bg-transparent text-white placeholder-gray-400 focus:outline-none'
                   disabled={inviteLoading}
                 />
               </div>
               <p className='mt-1 text-xs text-gray-400'>
-                여러 이메일을 붙여넣거나 Enter/쉼표로 구분해서 입력하세요
+                Paste multiple emails or enter/comma to separate
               </p>
             </div>
 
@@ -599,7 +657,7 @@ const Collaborators: React.FC<CollaboratorsProps> = ({ track }) => {
                 {inviteLoading ? (
                   <div className='h-4 w-4 animate-spin rounded-full border-2 border-white border-t-transparent' />
                 ) : (
-                  `초대 발송 (${emailList.length}명)`
+                  `Invite (${emailList.length} people)`
                 )}
               </Button>
               <Button
@@ -609,7 +667,7 @@ const Collaborators: React.FC<CollaboratorsProps> = ({ track }) => {
                 disabled={inviteLoading}
                 className='flex-1'
               >
-                취소
+                Cancel
               </Button>
             </div>
           </div>
@@ -622,7 +680,7 @@ const Collaborators: React.FC<CollaboratorsProps> = ({ track }) => {
           <div className='mx-4 w-full max-w-sm rounded-lg bg-gray-800 p-4 sm:max-w-md md:p-6'>
             <div className='mb-4 flex items-center justify-between'>
               <h3 className='text-lg font-semibold text-white sm:text-xl'>
-                역할 수정
+                Edit Role
               </h3>
               <button
                 onClick={handleCloseRoleModal}
@@ -657,7 +715,7 @@ const Collaborators: React.FC<CollaboratorsProps> = ({ track }) => {
               </div>
 
               <label className='mb-2 block text-sm font-medium text-gray-300'>
-                역할
+                Role
               </label>
               <input
                 type='text'
@@ -668,7 +726,7 @@ const Collaborators: React.FC<CollaboratorsProps> = ({ track }) => {
                 disabled={roleLoading}
               />
               <p className='mt-1 text-xs text-gray-400'>
-                현재 역할: {selectedCollaborator.role || 'collaborator'}
+                Current role: {selectedCollaborator.role || 'collaborator'}
               </p>
             </div>
 
@@ -695,7 +753,7 @@ const Collaborators: React.FC<CollaboratorsProps> = ({ track }) => {
                 {roleLoading ? (
                   <div className='h-4 w-4 animate-spin rounded-full border-2 border-white border-t-transparent' />
                 ) : (
-                  '역할 수정'
+                  'Edit Role'
                 )}
               </Button>
               <Button
@@ -705,7 +763,7 @@ const Collaborators: React.FC<CollaboratorsProps> = ({ track }) => {
                 disabled={roleLoading}
                 className='flex-1'
               >
-                취소
+                Cancel
               </Button>
             </div>
           </div>

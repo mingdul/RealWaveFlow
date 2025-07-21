@@ -320,7 +320,7 @@ const TrackInfoCard: React.FC<TrackInfoCardProps> = ({
           <div className='mx-4 w-full max-w-sm rounded-lg bg-gray-800 p-4 sm:max-w-md md:p-6 lg:max-w-lg'>
             <div className='mb-4 flex items-center justify-between'>
               <h3 className='text-lg font-semibold text-white sm:text-xl'>
-                협업자 초대
+                Invite Collaborators
               </h3>
               <button
                 onClick={handleCloseInviteModal}
@@ -332,7 +332,7 @@ const TrackInfoCard: React.FC<TrackInfoCardProps> = ({
 
             <div className='mb-4'>
               <label className='mb-2 block text-sm font-medium text-gray-300'>
-                이메일 주소 ({emailList.length}개)
+                Emails ({emailList.length} emails)
               </label>
               <div className='min-h-[100px] rounded-md border border-gray-600 bg-gray-700 px-3 py-2 focus-within:border-transparent focus-within:ring-2 focus-within:ring-purple-500 sm:min-h-[120px]'>
                 <div className='mb-2 flex flex-wrap gap-2'>
@@ -360,15 +360,15 @@ const TrackInfoCard: React.FC<TrackInfoCardProps> = ({
                   onPaste={handlePaste}
                   placeholder={
                     emailList.length === 0
-                      ? '이메일을 입력하고 Enter 또는 쉼표를 눌러주세요'
-                      : '이메일 추가...'
+                      ? 'Enter or comma to add email'
+                      : 'Add email...'
                   }
                   className='w-full bg-transparent text-white placeholder-gray-400 focus:outline-none'
                   disabled={inviteLoading}
                 />
               </div>
               <p className='mt-1 text-xs text-gray-400'>
-                여러 이메일을 붙여넣거나 Enter/쉼표로 구분해서 입력하세요
+                Paste multiple emails or enter/comma to separate
               </p>
             </div>
 
@@ -395,7 +395,7 @@ const TrackInfoCard: React.FC<TrackInfoCardProps> = ({
                 {inviteLoading ? (
                   <div className='h-4 w-4 animate-spin rounded-full border-2 border-white border-t-transparent' />
                 ) : (
-                  `초대 발송 (${emailList.length}명)`
+                  `Invite (${emailList.length} people)`
                 )}
               </Button>
               <Button
@@ -405,7 +405,7 @@ const TrackInfoCard: React.FC<TrackInfoCardProps> = ({
                 disabled={inviteLoading}
                 className='flex-1'
               >
-                취소
+                Cancel
               </Button>
             </div>
           </div>

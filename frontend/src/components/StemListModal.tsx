@@ -44,6 +44,7 @@ const StemListModal: React.FC<StemListModalProps> = ({
             <h2 className="text-xl sm:text-2xl font-bold text-[#D9D9D9] mb-2">
               Version {versionNumber}
             </h2>
+          
           </div>
           <Button
             size="sm"
