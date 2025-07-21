@@ -1536,7 +1536,14 @@ const StemSetReview = () => {
   }
 
   return (
-    <div className="relative min-h-screen bg-gradient-to-br from-slate-900 via-purple-900 to-slate-900 overflow-hidden pb-24">
+    <div className="relative min-h-screen bg-gradient-to-br from-gray-900 via-black to-gray-900 overflow-hidden pb-24">
+      {/* Background Effects */}
+      <div className="fixed inset-0 overflow-hidden pointer-events-none">
+        <div className="absolute -top-40 -right-40 w-80 h-80 bg-purple-500 rounded-full mix-blend-multiply filter blur-xl opacity-20 animate-blob"></div>
+        <div className="absolute -bottom-40 -left-40 w-80 h-80 bg-blue-500 rounded-full mix-blend-multiply filter blur-xl opacity-20 animate-blob animation-delay-2000"></div>
+        <div className="absolute top-40 left-40 w-80 h-80 bg-pink-500 rounded-full mix-blend-multiply filter blur-xl opacity-20 animate-blob animation-delay-4000"></div>
+      </div>
+      
       {/* Abstract Background Pattern */}
       <div className="absolute inset-0 opacity-20">
         <svg className="w-full h-full" viewBox="0 0 1200 800" preserveAspectRatio="xMidYMid slice">
@@ -2050,7 +2057,7 @@ const StemSetReview = () => {
               <div className="bg-white/5 backdrop-blur-lg rounded-2xl p-6 border border-white/10 shadow-2xl transform transition-all duration-300">
                 <div className="mb-4">
                   <h3 className="text-lg font-semibold text-white mb-2">Guide Track</h3>
-                  <div className="h-1 bg-gradient-to-r from-red-500 to-red-300 rounded-full"></div>
+                  <div className="h-1 bg-gradient-to-r from-purple-500 to-pink-400 rounded-full"></div>
                 </div>
 
                 <div
@@ -2201,7 +2208,7 @@ const StemSetReview = () => {
                   <div className="bg-white/5 backdrop-blur-lg rounded-2xl p-6 border border-white/10 shadow-2xl transform transition-all duration-300">
                     <div className="mb-4">
                       <h3 className="text-lg font-semibold text-white mb-2">비교 트랙</h3>
-                      <div className="h-1 bg-gradient-to-r from-blue-500 to-blue-300 rounded-full"></div>
+                      <div className="h-1 bg-gradient-to-r from-cyan-500 to-teal-400 rounded-full"></div>
                     </div>
 
                     <Wave
