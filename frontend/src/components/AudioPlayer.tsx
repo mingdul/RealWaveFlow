@@ -167,7 +167,7 @@ return (
         ) : isPlaying ? (
           <Pause size={20} className="text-white drop-shadow-md" />
         ) : (
-          <Play size={20} fill="black" className="text-black ml-0.5 drop-shadow-md" />
+          <Play size={20} className="text-black ml-0.5 drop-shadow-md" />
         )}
       </button>
 
