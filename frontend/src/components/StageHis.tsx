@@ -341,15 +341,16 @@ const StageHis: React.FC<StageHisProps> = ({
         <div className="flex flex-col space-y-2">
           <h2 className="text-2xl font-bold text-white">Version List</h2>
         </div>
-        
+{/*         
         {!disableStageOpening && !isActiveStage && (
           <button
             onClick={onOpenStageClick}
             className="group relative px-6 py-3 bg-gradient-to-r from-purple-500 to-pink-500 rounded-xl font-medium text-white shadow-lg hover:shadow-purple-500/25 transition-all duration-300 hover:scale-105"
           >
+
             <div className="absolute inset-0 bg-white/20 rounded-xl opacity-0 group-hover:opacity-100 transition-opacity duration-300 pointer-events-none" />
           </button>
-        )}
+        )} */}
       </div>
   
       {/* 타임라인 스타일 스테이지 히스토리 */}
@@ -397,16 +398,16 @@ const StageHis: React.FC<StageHisProps> = ({
                         : 'shadow-lg hover:shadow-xl hover:shadow-black/30'
                       }
                       ${stage.status === 'active' 
-                        ? 'bg-gradient-to-br from-indigo-600/90 to-purple-600/90' 
-                        : 'bg-gradient-to-br from-gray-800/90 to-gray-900/90'
+                        ? 'bg-gradient-to-br from-indigo-600/95 to-purple-600/95' 
+                        : 'bg-gradient-to-br from-gray-800/95 to-gray-900/95'
                       }
                       backdrop-blur-sm hover:scale-[1.02] hover:-translate-y-1
                     `}
                     onClick={() => handleStageClick(stage)}
                     style={{
                       background: stage.status === 'active' 
-                        ? 'linear-gradient(135deg, rgba(99, 102, 241, 0.9) 0%, rgba(139, 92, 246, 0.9) 100%)'
-                        : 'linear-gradient(135deg, rgba(31, 41, 55, 0.9) 0%, rgba(17, 24, 39, 0.9) 100%)'
+                        ? 'linear-gradient(135deg, rgba(99, 102, 241, 0.95) 0%, rgba(139, 92, 246, 0.95) 100%)'
+                        : 'linear-gradient(135deg, rgba(31, 41, 55, 0.95) 0%, rgba(17, 24, 39, 0.95) 100%)'
                     }}
                   >
                     {/* 상태 표시 인디케이터 - 선택된 카드는 파란색으로 하이라이트 */}
@@ -544,7 +545,7 @@ const StageHis: React.FC<StageHisProps> = ({
             {!disableStageOpening && !isActiveStage && (
               <div className="relative ml-6">
                 <div 
-                  className="group relative overflow-hidden rounded-3xl transition-all duration-300 cursor-pointer flex-shrink-0 w-80 h-96 bg-gradient-to-br from-purple-600/20 to-pink-600/20 backdrop-blur-sm hover:from-purple-600/30 hover:to-pink-600/30 hover:scale-[1.02] hover:-translate-y-1 shadow-lg hover:shadow-xl border-2 border-dashed border-purple-400/30 hover:border-purple-400/50"
+                  className="group relative overflow-hidden rounded-3xl transition-all duration-300 cursor-pointer flex-shrink-0 w-80 h-96 bg-gradient-to-br from-purple-600/30 to-pink-600/30 backdrop-blur-sm hover:from-purple-600/40 hover:to-pink-600/40 hover:scale-[1.02] hover:-translate-y-1 shadow-lg hover:shadow-xl border-2 border-dashed border-purple-400/40 hover:border-purple-400/60"
                   onClick={onOpenStageClick}
                 >
                   <div className="h-full flex flex-col items-center justify-center space-y-6 p-6">
