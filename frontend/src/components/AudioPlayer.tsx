@@ -160,7 +160,7 @@ return (
       <button
         onClick={onPlayPause}
         disabled={loading}
-        className="flex items-center justify-center disabled:opacity-50 hover:scale-105 transition-all duration-200 disabled:hover:scale-100 disabled:cursor-not-allowed"
+        className="flex items-center justify-center border-none"
       >
         {loading ? (
           <div className="animate-spin" />
