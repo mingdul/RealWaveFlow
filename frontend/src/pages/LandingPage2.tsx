@@ -2,7 +2,7 @@ import React, { useEffect, useRef } from 'react';
 import { Link } from 'react-router-dom';
 import { motion, useScroll, useTransform } from 'framer-motion';
 import { useInView } from 'react-intersection-observer';
-import { ArrowRight, Play, Zap, Users, Clock } from 'lucide-react';
+import { ArrowRight, Zap, Users, Clock } from 'lucide-react';
 import { useNavigate } from 'react-router-dom';
 
 interface QItem {
