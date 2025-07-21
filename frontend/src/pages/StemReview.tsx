@@ -284,9 +284,8 @@ const StemSetReview = () => {
       
       if (existingGroup) {
         existingGroup.comments.push(comment);
-        // 그룹의 평균 시간으로 업데이트
-        existingGroup.timeNumber = existingGroup.comments.reduce((sum, c) => sum + c.timeNumber, 0) / existingGroup.comments.length;
-        existingGroup.position = (existingGroup.timeNumber / duration) * 100;
+        // 첫 번째 댓글의 시간을 기준으로 그룹 위치 유지 (평균값 계산 제거)
+        // existingGroup.timeNumber와 position은 변경하지 않음
       } else {
         groups.push({
           timeNumber: comment.timeNumber,
@@ -750,7 +749,14 @@ const StemSetReview = () => {
 
     const rect = waveformContainerRef.current.getBoundingClientRect();
     const x = event.clientX - rect.left;
-    const progress = x / rect.width;
+    
+    // 파형 영역 밖에서는 hover 감지하지 않음
+    if (x < 0 || x > rect.width) {
+      setHoveredPosition(null);
+      return;
+    }
+    
+    const progress = Math.max(0, Math.min(1, x / rect.width));
     const time = progress * duration;
 
     setHoveredPosition({ x, time });
@@ -2117,7 +2123,7 @@ const StemSetReview = () => {
 
                           {/* SoundCloud 스타일 플로팅 댓글 버블들 */}
                           {floatingComments.map((comment) => {
-                            const position = comment.position * 100;
+                            const position = comment.position;
                             return (
                               <div
                                 key={comment.id}
