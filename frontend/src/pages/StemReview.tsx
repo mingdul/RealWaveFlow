@@ -2086,27 +2086,28 @@ const StemSetReview = () => {
 
                       return (
                         <div className='transform rounded-2xl border border-white/10 bg-white/5 p-6 shadow-2xl backdrop-blur-lg transition-all duration-300'>
-                          <Wave {...mainWaveProps} />
-
-                          {/* 아바타 기반 댓글 마커들 */}
-                          {selectedUpstream && groupCommentsByTime(comments).map((commentGroup) => (
-                            <CommentMarker
-                              key={`group-${commentGroup.comments[0].id}`}
-                              commentGroup={commentGroup}
-                              onClick={seekToTime}
-                            />
-                          ))}
-
-                          {/* 호버 시 나타나는 댓글 추가 아이콘 */}
-                          {hoveredPosition && !isInlineCommentOpen && (
-                            <div
-                              className='absolute z-40 pointer-events-auto'
-                              style={{
-                                left: `${(hoveredPosition.x / (waveformContainerRef.current?.offsetWidth || 1)) * 100}%`,
-                                top: '50%',
-                                transform: 'translate(-50%, -50%)',
-                              }}
-                            >
+                          <div className="relative">
+                            <Wave {...mainWaveProps} />
+                            
+                            {/* 아바타 기반 댓글 마커들 - Wave 컴포넌트 위에 오버레이 */}
+                            {selectedUpstream && groupCommentsByTime(comments).map((commentGroup) => (
+                              <CommentMarker
+                                key={`group-${commentGroup.comments[0].id}`}
+                                commentGroup={commentGroup}
+                                onClick={seekToTime}
+                              />
+                            ))}
+                            
+                            {/* 호버 시 나타나는 댓글 추가 아이콘 */}
+                            {hoveredPosition && !isInlineCommentOpen && (
+                              <div
+                                className='absolute z-40 pointer-events-auto'
+                                style={{
+                                  left: `${(hoveredPosition.x / (waveformContainerRef.current?.offsetWidth || 1)) * 100}%`,
+                                  top: '50%',
+                                  transform: 'translate(-50%, -50%)',
+                                }}
+                              >
                               <button
                                 onClick={handleCommentIconClick}
                                 className="w-10 h-10 bg-blue-500 hover:bg-blue-600 rounded-full flex flex-col items-center justify-center text-white shadow-lg transition-all duration-200 hover:scale-110 border-2 border-white group"
@@ -2120,7 +2121,7 @@ const StemSetReview = () => {
 
                             </div>
                           )}
-
+                          
                           {/* SoundCloud 스타일 플로팅 댓글 버블들 */}
                           {floatingComments.map((comment) => {
                             const position = comment.position;
@@ -2171,7 +2172,8 @@ const StemSetReview = () => {
                               </div>
                             );
                           })}
-
+                          
+                          </div>
                         </div>
                       );
                     } else {
