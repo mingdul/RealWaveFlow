@@ -398,7 +398,7 @@ const VersionTimeline: React.FC<{
                                           {/* Modify 상태일 때 이전 파일명 표시 */}
                                           {stem.changeType === 'modified' && stem.previousFileName && (
                                             <p className='text-sm text-gray-500 mt-1'>
-                                              <span className='text-gray-700'>{decodeFilename(stem.previousFileName)}</span>
+                                              <span className='text-gray-300'>{decodeFilename(stem.previousFileName)}</span>
                                               <span className='mx-2'>→</span>
                                               <span className='text-yellow-400'>{decodeFilename(stem.fileName)}</span>
                                             </p>
