@@ -415,7 +415,7 @@ const Collaborators: React.FC<CollaboratorsProps> = ({ track }) => {
                     }
                   }}
                 >
-                  {trackUsers.collaborators.collaborator.map((collaborator, index) => (
+                  {trackUsers.collaborators.collaborator.map((collaborator) => (
                     <div
                       key={collaborator.id}
                       className='relative group flex-shrink-0'
