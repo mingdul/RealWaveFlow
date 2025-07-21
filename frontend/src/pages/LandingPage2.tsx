@@ -558,9 +558,6 @@ const LandingPage2: React.FC = () => {
           <div className='mb-12 grid grid-cols-1 gap-8 md:grid-cols-4'>
             <div className='md:col-span-2'>
               <div className='mb-4 flex items-center space-x-3'>
-                <div className='flex h-8 w-8 items-center justify-center rounded-lg bg-gradient-to-r from-violet-500 to-purple-600'>
-                  <Play className='h-4 w-4 text-white' />
-                </div>
                 <div className='bg-gradient-to-r from-white to-slate-300 bg-clip-text text-2xl font-bold text-transparent'>
                 WAVEFLOW
                 </div>
@@ -575,16 +572,6 @@ const LandingPage2: React.FC = () => {
             <div>
               <h4 className='mb-4 font-semibold text-white'>Company</h4>
               <ul className='space-y-2 text-slate-400'>
-                <li>
-                  <a href='#' className='transition-colors hover:text-white'>
-                    About
-                  </a>
-                </li>
-                <li>
-                  <a href='#' className='transition-colors hover:text-white'>
-                    Blog
-                  </a>
-                </li>
                 <li>
                   <a href='https://github.com/Team-Honey-Badgers/RealWaveFlow' className='transition-colors hover:text-white'>
                     Git
@@ -603,26 +590,6 @@ const LandingPage2: React.FC = () => {
             <p className='text-sm text-slate-500'>
               © {new Date().getFullYear()} WAVEFLOW. All rights reserved.
             </p>
-            <div className='mt-4 flex space-x-6 md:mt-0'>
-              <a
-                href='#'
-                className='text-sm text-slate-500 transition-colors hover:text-white'
-              >
-                Privacy Policy
-              </a>
-              <a
-                href='#'
-                className='text-sm text-slate-500 transition-colors hover:text-white'
-              >
-                Terms of Service
-              </a>
-              <a
-                href='#'
-                className='text-sm text-slate-500 transition-colors hover:text-white'
-              >
-                Cookie Policy
-              </a>
-            </div>
           </div>
         </div>
       </footer>

@@ -61,7 +61,7 @@ const VersionHistory: React.FC<VersionHistoryProps> = ({
   };
 
   return (
-    <div>
+    <div data-section="version-history">
       <h3 className="text-2xl font-bold text-white mb-6">Version History</h3>
       <div className="overflow-x-auto scrollbar-hide" ref={scrollRef}>
         <div className="flex items-center pb-4">

@@ -154,7 +154,7 @@ const TrackHeaderCopy: React.FC<TrackHeaderCopyProps> = ({
       <div className="px-6 py-6 flex items-center justify-between">
         <div className="flex items-center gap-4">
           <Button size="sm" className="p-2 " onClick={onBack}>
-            <ChevronLeft className='text-[#BD91FF]' size={20} />
+            <ChevronLeft className='text-white border-none focus:outline-none' size={20}  />
           </Button>
           <Logo />
         </div>

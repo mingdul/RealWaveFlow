@@ -347,10 +347,6 @@ const StageHis: React.FC<StageHisProps> = ({
             onClick={onOpenStageClick}
             className="group relative px-6 py-3 bg-gradient-to-r from-purple-500 to-pink-500 rounded-xl font-medium text-white shadow-lg hover:shadow-purple-500/25 transition-all duration-300 hover:scale-105"
           >
-            <div className="flex items-center space-x-2">
-              <Plus className="w-4 h-4" />
-              <span>New Stage</span>
-            </div>
             <div className="absolute inset-0 bg-white/20 rounded-xl opacity-0 group-hover:opacity-100 transition-opacity duration-300 pointer-events-none" />
           </button>
         )}
