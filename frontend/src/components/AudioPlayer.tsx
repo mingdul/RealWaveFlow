@@ -165,9 +165,9 @@ return (
         {loading ? (
           <div className="animate-spin" />
         ) : isPlaying ? (
-          <Pause size={20} className="fill-current text-black drop-shadow-md" />
+          <Pause size={20} className="fill-current text-white drop-shadow-md" />
         ) : (
-          <Play size={20} className="fill-current text-black ml-0.5 drop-shadow-md" />
+          <Play size={20} className="fill-current text-white ml-0.5 drop-shadow-md" />
         )}
       </button>
 
