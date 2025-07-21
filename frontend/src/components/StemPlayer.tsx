@@ -612,8 +612,7 @@ const StemPlayer: React.FC<StemPlayerProps> = ({ stems, className = '', stageId,
                   : 'bg-[#595959] text-[#D9D9D9] hover:bg-[#BFBFBF] hover:text-[#0D0D0D] focus:ring-[#BFBFBF]'
               }`}
             >
-              <Download size={20} className="drop-shadow-sm" />
-              {selectMode ? 'cancled' : 'Stems'}
+              {selectMode ? 'cancled' : <><Download size={20} className="drop-shadow-sm" /> Stems</>}
             </button>
             {selectMode && (
               <button
