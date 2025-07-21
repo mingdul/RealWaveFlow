@@ -160,14 +160,14 @@ return (
       <button
         onClick={onPlayPause}
         disabled={loading}
-        className="flex items-center justify-center border-none bg-gray-800 hover:bg-gray-800"
+        className="flex items-center justify-center border-none bg-gray-800 hover:bg-gray-800 focus:outline-none"
       >
         {loading ? (
           <div className="animate-spin" />
         ) : isPlaying ? (
-          <Pause size={20} className="text-black drop-shadow-md" />
+          <Pause size={20} className="fill-current text-black drop-shadow-md" />
         ) : (
-          <Play size={20} className="text-black ml-0.5 drop-shadow-md" />
+          <Play size={20} className="fill-current text-black ml-0.5 drop-shadow-md" />
         )}
       </button>
 
