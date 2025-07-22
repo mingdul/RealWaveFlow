@@ -351,7 +351,7 @@ const StemPlayer: React.FC<StemPlayerProps> = ({ stems, className = '', stageId,
       const response = await streamingService.getGuidePresignedUrlByStageId(stageId);
       if (response.success && response.data) {
         const blob = await fetch(response.data.presignedUrl).then(res => res.blob());
-        const fileName = response.data.fileName || `guide_${stageId}.wav`;
+        const fileName = `guide_${stageId}.mp3`;
         saveAs(blob, fileName);
       }
     } catch (error) {
