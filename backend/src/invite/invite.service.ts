@@ -1,4 +1,4 @@
-import { Injectable, NotFoundException, BadRequestException, ConflictException } from '@nestjs/common';
+import { Injectable, NotFoundException, BadRequestException, ConflictException, Logger } from '@nestjs/common';
 import { InjectRepository } from '@nestjs/typeorm';
 import { Repository, DataSource } from 'typeorm';
 import { InviteLink } from './invite.entity';
@@ -45,6 +45,8 @@ import { v4 as uuidv4 } from 'uuid';
  */
 @Injectable()
 export class InviteService {
+    private readonly logger = new Logger(InviteService.name);
+
     constructor(
         @InjectRepository(InviteLink)
         private inviteRepository: Repository<InviteLink>,
@@ -247,7 +249,16 @@ export class InviteService {
             throw new BadRequestException('트랙 소유자만 초대를 발송할 수 있습니다.');
         }
 
-        // 2. 이메일 유효성 검사 및 중복 체크
+        // 2. 초대자 정보 조회 (이메일 발송에 필요)
+        const inviter = await this.userRepository.findOne({
+            where: { id: inviterId }
+        });
+
+        if (!inviter) {
+            throw new NotFoundException('초대자 정보를 찾을 수 없습니다.');
+        }
+
+        // 3. 이메일 유효성 검사 및 중복 체크
         const validEmails: string[] = [];
         const failedEmails: string[] = [];
 
@@ -270,7 +281,7 @@ export class InviteService {
             };
         }
 
-        // 3. 초대 배치 생성
+        // 4. 초대 배치 생성
         const expiresAt = new Date(Date.now() + expiresInDays * 24 * 60 * 60 * 1000);
         const savedBatch = await this.inviteBatchRepository.save({
             track: { id: trackId },
@@ -278,7 +289,7 @@ export class InviteService {
             expires_at: expiresAt
         });
 
-        // 4. 초대 대상 생성 및 이메일 발송
+        // 5. 초대 대상 생성
         const inviteTargets = validEmails.map(email => ({
             email,
             token: uuidv4(),
@@ -288,23 +299,37 @@ export class InviteService {
 
         const savedTargets = await this.inviteTargetRepository.save(inviteTargets);
 
+        // 6. 이메일 발송 - 병렬 처리 (Resend API 제한 고려)
+        // Resend API는 기본적으로 초당 10개 요청까지 지원하므로 추가 제한 없이 병렬 처리 가능
+        this.logger.log(`Starting parallel email sending for ${savedTargets.length} recipients`);
+        
         const emailResults = await Promise.allSettled(
-            savedTargets.map(async (target) => {
-                const emailResult = await this.emailService.sendInviteEmail(
-                    target.email,
-                    {
-                        trackName: savedBatch.track.title,
-                        inviterName: savedBatch.inviter.username,
-                        inviteToken: target.token,
-                        expiresAt: savedBatch.expires_at
+            savedTargets.map(async (target, index) => {
+                try {
+                    this.logger.log(`Sending email ${index + 1}/${savedTargets.length} to ${target.email}`);
+                    
+                    const emailResult = await this.emailService.sendInviteEmail(
+                        target.email,
+                        {
+                            trackName: track.title,           // track 정보 직접 사용
+                            inviterName: inviter.username,    // inviter 정보 직접 사용
+                            inviteToken: target.token,
+                            expiresAt: expiresAt             // expiresAt 직접 사용
+                        }
+                    );
+                    
+                    if (!emailResult.success) {
+                        this.logger.error(`Email failed for ${target.email}: ${emailResult.error}`);
+                        throw new Error(`Failed to send email to ${target.email}: ${emailResult.error}`);
                     }
-                );
-                
-                if (!emailResult.success) {
-                    throw new Error(`Failed to send email to ${target.email}: ${emailResult.error}`);
+                    
+                    this.logger.log(`Email sent successfully to ${target.email} with messageId: ${emailResult.messageId}`);
+                    return target.email;
+                    
+                } catch (error) {
+                    this.logger.error(`Email sending error for ${target.email}:`, error.message);
+                    throw error;
                 }
-                
-                return target.email;
             })
         );
 

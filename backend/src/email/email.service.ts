@@ -91,6 +91,13 @@ export class EmailService {
     }
 
     try {
+      // 입력 데이터 검증
+      if (!inviteData.trackName || !inviteData.inviterName || !inviteData.inviteToken) {
+        const error = 'Missing required invite data fields';
+        this.logger.error(`${error}: trackName=${inviteData.trackName}, inviterName=${inviteData.inviterName}, token=${inviteData.inviteToken}`);
+        return { success: false, error };
+      }
+
       // 초대 URL 생성 (프론트엔드의 초대 수락 페이지로 연결)
       const inviteUrl = `${process.env.FRONTEND_URL}/invite/${inviteData.inviteToken}`;
       
@@ -113,9 +120,10 @@ export class EmailService {
         expiresAtFormatted
       });
 
-      this.logger.log(`Attempting to send email to ${to} with Resend API`);
+      this.logger.log(`Attempting to send email to ${to} with Resend API (track: "${inviteData.trackName}", inviter: "${inviteData.inviterName}")`);
 
       // Resend API를 통한 이메일 발송
+      // Resend API는 기본적으로 초당 10개 요청까지 지원하므로 일반적인 병렬 처리에 문제없음
       const result = await this.resend.emails.send({
         from: 'WaveFlow <onboarding@waveflow.pro>',
         to: [to],
@@ -123,18 +131,18 @@ export class EmailService {
         html: emailHtml,
       });
 
-      this.logger.log(`Resend API response:`, JSON.stringify(result, null, 2));
+      this.logger.debug(`Resend API response for ${to}:`, JSON.stringify(result, null, 2));
 
       // Resend API 응답에서 에러 확인
       if (result.error) {
-        this.logger.error(`Resend API error:`, result.error);
+        this.logger.error(`Resend API error for ${to}:`, result.error);
         return {
           success: false,
           error: result.error.message || 'Unknown Resend error'
         };
       }
 
-      this.logger.log(`Invite email sent successfully to ${to}. Message ID: ${result.data?.id}`);
+      this.logger.log(`✅ Invite email sent successfully to ${to}. Message ID: ${result.data?.id}`);
       
       return {
         success: true,
@@ -142,7 +150,7 @@ export class EmailService {
       };
 
     } catch (error) {
-      this.logger.error(`Failed to send invite email to ${to}:`, error);
+      this.logger.error(`❌ Failed to send invite email to ${to}:`, error);
       return {
         success: false,
         error: error.message
