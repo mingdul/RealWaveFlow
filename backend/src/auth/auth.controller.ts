@@ -59,29 +59,48 @@ export class AuthController {
   @UseGuards(AuthGuard('google'))
   async googleAuth(@Req() req: any) {
     // Google 로그인 창으로 리디렉션
+    // 리디렉션 URI는 Google Strategy에서 설정됨
   }
 
   @Get('google/callback')
   @ApiOperation({ summary: '구글 로그인 콜백', description: '구글 로그인 완료 후 호출되는 콜백 엔드포인트입니다.' })
-  @ApiResponse({ status: 200, description: '구글 로그인 성공', schema: { example: { message: '구글 로그인 성공', user: { access_token: 'jwt_token', user: { id: 1, email: 'user@gmail.com', username: 'Google User' } } } } })
+  @ApiResponse({ status: 200, description: '구글 로그인 성공' })
   @UseGuards(AuthGuard('google'))
-  async googleCallback(@Req() req: any, @Res({ passthrough: true }) res: Response) {
-    const { access_token, user } = req.user;
+  async googleCallback(@Req() req: any, @Res() res: Response) {
+    try {
+      console.log('[DEBUG] Google callback received');
+      const { access_token, user } = req.user;
 
-    console.log('[DEBUG] Setting Google JWT cookie:', access_token.substring(0, 20) + '...');
+      console.log('[DEBUG] User data:', { id: user.id, email: user.email });
+      console.log('[DEBUG] Setting Google JWT cookie');
 
-    res.cookie('jwt', access_token, {
-      httpOnly: true, // 보안을 위해 항상 httpOnly 사용
-      secure: process.env.NODE_ENV === 'production', // 프로덕션에서는 HTTPS 필요
-      sameSite: 'lax',
-      maxAge: 1000 * 60 * 60, // 1시간
-      path: '/',
-    });
+      // 프로덕션/개발 환경에 따른 설정
+      const isProd = process.env.NODE_ENV === 'production';
+      const domain = isProd ? 'waveflow.pro' : 'localhost';
+      const frontendUrl = isProd ? 'https://waveflow.pro' : 'http://localhost:5173';
 
-    console.log('[DEBUG] Google cookie set successfully');
+      // 쿠키 설정
+      res.cookie('jwt', access_token, {
+        httpOnly: true,
+        secure: isProd,
+        sameSite: 'lax',
+        domain: domain,
+        maxAge: 24 * 60 * 60 * 1000, // 24시간
+        path: '/',
+      });
 
-    const redirectUrl = process.env.REDIRECT_URL || 'https://waveflow.pro';
-    return  res.redirect(`${redirectUrl}/dashboard`); 
+      console.log('[DEBUG] Cookie set successfully, redirecting to frontend');
+      
+      // 프론트엔드로 리디렉션
+      return res.redirect(`${frontendUrl}/dashboard`);
+    } catch (error) {
+      console.error('[ERROR] Google callback error:', error);
+      const errorRedirect = process.env.NODE_ENV === 'production'
+        ? 'https://waveflow.pro/login?error=auth_failed'
+        : 'http://localhost:5173/login?error=auth_failed';
+      
+      return res.redirect(errorRedirect);
+    }
   }
 
   @Get('me')
