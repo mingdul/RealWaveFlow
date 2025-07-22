@@ -44,7 +44,7 @@ class AuthService {
   loginWithGoogle(): void {
     // 백엔드 API 도메인으로 리디렉션
     const apiUrl = import.meta.env.PROD
-      ? 'https://api.waveflow.pro/auth/google'
+      ? 'https://waveflow.pro/api/auth/google'
       : 'http://localhost:3000/auth/google';
     
     window.location.href = apiUrl;
