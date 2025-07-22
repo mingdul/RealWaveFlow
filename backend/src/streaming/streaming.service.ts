@@ -747,14 +747,16 @@ export class StreamingService {
 
     // guide path 결정 (우선순위: stage.guide_path → guide.mixed_file_path)
     let guidePath: string | null = null;
-    let fileName = 'guide.wav';
+    
+    // track_name_stage_title_guide.wav 형식으로 파일명 생성
+    const trackName = stage.track.title.replace(/[^a-zA-Z0-9가-힣]/g, '_');
+    const stageTitle = stage.title.replace(/[^a-zA-Z0-9가-힣]/g, '_');
+    const fileName = `${trackName}_${stageTitle}_guide.wav`;
 
     if (stage.guide_path) {
       guidePath = stage.guide_path;
-      fileName = stage.guide_path.split('/').pop() || 'guide.wav';
     } else if (stage.guide?.mixed_file_path) {
       guidePath = stage.guide.mixed_file_path;
-      fileName = stage.guide.mixed_file_path.split('/').pop() || 'guide.wav';
     }
 
     if (!guidePath) {
