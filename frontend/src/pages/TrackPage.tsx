@@ -233,8 +233,8 @@ const VersionTimeline: React.FC<{
   };
 
   return (
-    <div className='rounded-lg border border-white/10 bg-white/5 p-6 shadow-md backdrop-blur-lg' data-section="version-history">
-      <h3 className='mb-6 text-2xl font-semibold text-white'>Version History</h3>
+    <div className='rounded-lg border border-white/10 bg-white/5 p-6 shadow-md backdrop-blur-lg'>
+      <h3 className='mb-6 text-xl font-semibold text-white'>Version History</h3>
       <div className='relative'>
         {/* 타임라인 세로선 */}
         <div className='absolute bottom-0 left-4 top-0 w-0.5 bg-gradient-to-b from-[#893AFF] via-[#B974FF] to-[#F1E9FF]'></div>
