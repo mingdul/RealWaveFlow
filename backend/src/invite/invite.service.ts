@@ -299,50 +299,69 @@ export class InviteService {
 
         const savedTargets = await this.inviteTargetRepository.save(inviteTargets);
 
-        // 6. 이메일 발송 - 병렬 처리 (Resend API 제한 고려)
-        // Resend API는 기본적으로 초당 10개 요청까지 지원하므로 추가 제한 없이 병렬 처리 가능
-        this.logger.log(`Starting parallel email sending for ${savedTargets.length} recipients`);
+        // 6. 이메일 발송 - 직렬 처리 (Resend API rate limit: 초당 2개 요청)
+        this.logger.log(`Starting sequential email sending for ${savedTargets.length} recipients (Resend rate limit: 2 requests/second)`);
         
-        const emailResults = await Promise.allSettled(
-            savedTargets.map(async (target, index) => {
-                try {
-                    this.logger.log(`Sending email ${index + 1}/${savedTargets.length} to ${target.email}`);
-                    
-                    const emailResult = await this.emailService.sendInviteEmail(
-                        target.email,
-                        {
-                            trackName: track.title,           // track 정보 직접 사용
-                            inviterName: inviter.username,    // inviter 정보 직접 사용
-                            inviteToken: target.token,
-                            expiresAt: expiresAt             // expiresAt 직접 사용
-                        }
-                    );
-                    
-                    if (!emailResult.success) {
-                        this.logger.error(`Email failed for ${target.email}: ${emailResult.error}`);
-                        throw new Error(`Failed to send email to ${target.email}: ${emailResult.error}`);
+        const emailResults: { email: string; success: boolean; error?: string }[] = [];
+        
+        for (let i = 0; i < savedTargets.length; i++) {
+            const target = savedTargets[i];
+            
+            try {
+                this.logger.log(`Sending email ${i + 1}/${savedTargets.length} to ${target.email}`);
+                
+                const emailResult = await this.emailService.sendInviteEmail(
+                    target.email,
+                    {
+                        trackName: track.title,           // track 정보 직접 사용
+                        inviterName: inviter.username,    // inviter 정보 직접 사용
+                        inviteToken: target.token,
+                        expiresAt: expiresAt             // expiresAt 직접 사용
                     }
-                    
-                    this.logger.log(`Email sent successfully to ${target.email} with messageId: ${emailResult.messageId}`);
-                    return target.email;
-                    
-                } catch (error) {
-                    this.logger.error(`Email sending error for ${target.email}:`, error.message);
-                    throw error;
+                );
+                
+                if (emailResult.success) {
+                    this.logger.log(`✅ Email sent successfully to ${target.email} with messageId: ${emailResult.messageId}`);
+                    emailResults.push({ email: target.email, success: true });
+                } else {
+                    this.logger.error(`❌ Email failed for ${target.email}: ${emailResult.error}`);
+                    emailResults.push({ email: target.email, success: false, error: emailResult.error });
                 }
-            })
-        );
-
-        // 5. 이메일 전송 실패한 경우 처리
+                
+                // Rate limit 방지를 위한 딜레이 (마지막 이메일 제외)
+                // Resend API는 초당 2개 요청이므로 600ms 대기 (여유분 100ms 포함)
+                if (i < savedTargets.length - 1) {
+                    this.logger.debug(`Waiting 600ms to respect Resend rate limit...`);
+                    await new Promise(resolve => setTimeout(resolve, 600));
+                }
+                
+            } catch (error) {
+                this.logger.error(`❌ Email sending error for ${target.email}:`, error.message);
+                emailResults.push({ email: target.email, success: false, error: error.message });
+                
+                // 에러가 발생해도 다음 이메일을 위해 딜레이 적용
+                if (i < savedTargets.length - 1) {
+                    await new Promise(resolve => setTimeout(resolve, 600));
+                }
+            }
+        }
+        
+        // 7. 이메일 전송 결과 처리
         const emailFailedEmails: string[] = [];
-        emailResults.forEach((result, index) => {
-            if (result.status === 'rejected') {
-                emailFailedEmails.push(inviteTargets[index].email);
+        const successfulEmails: string[] = [];
+        
+        emailResults.forEach((result) => {
+            if (result.success) {
+                successfulEmails.push(result.email);
+            } else {
+                emailFailedEmails.push(result.email);
             }
         });
 
         const totalFailedEmails = [...failedEmails, ...emailFailedEmails];
-        const successCount = validEmails.length - emailFailedEmails.length;
+        const successCount = successfulEmails.length;
+        
+        this.logger.log(`Email sending completed: ${successCount}/${validEmails.length} successful, ${emailFailedEmails.length} failed due to rate limit or other errors`);
         
         return {
             success: true,

@@ -123,7 +123,7 @@ export class EmailService {
       this.logger.log(`Attempting to send email to ${to} with Resend API (track: "${inviteData.trackName}", inviter: "${inviteData.inviterName}")`);
 
       // Resend API를 통한 이메일 발송
-      // Resend API는 기본적으로 초당 10개 요청까지 지원하므로 일반적인 병렬 처리에 문제없음
+      // 주의: Resend API는 초당 2개 요청 제한이 있으므로 다중 이메일 발송 시 직렬 처리 필요
       const result = await this.resend.emails.send({
         from: 'WaveFlow <onboarding@waveflow.pro>',
         to: [to],
