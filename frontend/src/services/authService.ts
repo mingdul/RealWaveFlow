@@ -40,13 +40,15 @@ class AuthService {
 
   /**
    * Google OAuth 로그인
+   * 백엔드 API를 통해 Google OAuth 인증을 시작합니다.
+   * 콜백은 백엔드에서 처리됩니다.
    */
   loginWithGoogle(): void {
-    // 백엔드 API로 리디렉션 (콜백 URL은 백엔드에서 처리)
     const baseUrl = import.meta.env.PROD
-      ? 'https://waveflow.pro/api'
-      : 'http://localhost:3000';
-    
+      ? 'https://waveflow.pro/api'  // 프로덕션 백엔드 API
+      : 'http://localhost:3000';    // 개발 백엔드 API
+
+    // 백엔드 API의 Google OAuth 시작 엔드포인트로 리디렉션
     window.location.href = `${baseUrl}/auth/google`;
   }
 

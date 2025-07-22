@@ -58,8 +58,11 @@ export class AuthController {
   @ApiResponse({ status: 302, description: '구글 로그인 페이지로 리디렉션' })
   @UseGuards(AuthGuard('google'))
   async googleAuth(@Req() req: any) {
-    // Google 로그인 창으로 리디렉션
-    // 리디렉션 URI는 Google Strategy에서 설정됨
+    // passport-google-oauth20가 자동으로 Google 로그인 페이지로 리디렉션
+    // 이때 callbackURL이 백엔드 API 경로로 전달됨
+    req.session.callbackURL = process.env.NODE_ENV === 'production'
+      ? 'https://waveflow.pro/api/auth/google/callback'
+      : 'http://localhost:3000/auth/google/callback';
   }
 
   @Get('google/callback')
