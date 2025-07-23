@@ -967,21 +967,24 @@ const TrackPage: React.FC<TrackPagejjmProps> = () => {
 
 
 
-  const handleRollBack = async () => {
+  const handleRollBack = async (version?: number) => {
     if (!trackId) return;
+
+    // 파라미터로 받은 버전이 있으면 사용, 없으면 기본값 사용
+    const rollbackVersion = version || selectedStageVersion;
 
     try {
       console.log(
         '[DEBUG][TrackPage] Rolling back to version:',
-        selectedStageVersion
+        rollbackVersion
       );
       const response = await getBackToPreviousStage(
         trackId,
-        selectedStageVersion
+        rollbackVersion
       );
 
       if (response.success) {
-        await loadStemsByVersion(selectedStageVersion);
+        await loadStemsByVersion(rollbackVersion);
       } else {
         console.error('[ERROR][TrackPage] Failed to rollback:', response);
       }

@@ -11,7 +11,7 @@ interface StemListModalProps {
   stems: StemStreamingInfo[];
   versionNumber: string;
   loading?: boolean;
-  onRollBack?: () => void;
+  onRollBack?: (version: number) => void;
   onShowStage?: (stageId: string) => void;
   stageId?: string; // 가이드 재생을 위한 스테이지 ID
 }
@@ -98,7 +98,7 @@ const StemListModal: React.FC<StemListModalProps> = ({
           onConfirm={() => {
             setShowRollbackConfirm(false);
             onClose(); // Close the stem list modal first
-            if (onRollBack) onRollBack();
+            if (onRollBack) onRollBack(parseInt(versionNumber));
           }}
           onCancel={() => setShowRollbackConfirm(false)}
         />

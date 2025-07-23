@@ -55,7 +55,6 @@ const TrackHeaderCopy: React.FC<TrackHeaderCopyProps> = ({
   };
 
   const handleProfileClick = () => {
-    // TODO: Open profile modal
     setIsProfileModalOpen(true);
     setIsSettingsDropdownOpen(false);
   };
