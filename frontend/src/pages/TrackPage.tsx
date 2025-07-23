@@ -1126,7 +1126,7 @@ const TrackPage: React.FC<TrackPagejjmProps> = () => {
             versionNumber={selectedStageVersion.toString()}
             onShowAllStems={handleShowAllStems}
             onRollBack={handleRollBack}
-            stageId={getLastApprovedStage()?.id}
+            lastApprovedStageId={getLastApprovedStage()?.id}
           />
         </div>
         
@@ -1166,7 +1166,7 @@ const TrackPage: React.FC<TrackPagejjmProps> = () => {
         trackId={trackId || ''}
       />
 
-              <StemListModal
+        <StemListModal
           isOpen={isStemListModalOpen}
           onClose={() => setIsStemListModalOpen(false)}
           stems={modalStems}

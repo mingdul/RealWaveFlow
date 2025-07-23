@@ -104,9 +104,15 @@ export const getBackToPreviousStage = async (trackId: string, version: number) =
     if(!response.data.success){
       throw new Error(response.data.message);
     }
-    return response.data.message;
+    return {
+      success: true,
+      message: response.data.message
+    };
   } catch (error: any) {
     console.error('Failed to get back to previous stage:', error);
-    return error.response?.data?.message || 'Failed to get back to previous stage';
+    return {
+      success: false,
+      message: error.response?.data?.message || 'Failed to get back to previous stage'
+    };
   }
 };

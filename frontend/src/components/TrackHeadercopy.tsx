@@ -8,6 +8,7 @@ import { useAuth } from '../contexts/AuthContext';
 import { useNavigate } from 'react-router-dom';
 
 import { Track } from '../types/api';
+import ProfileSettingsModal from './ProfileSettingsModal';
 
 interface TrackHeaderCopyProps {
   onBack?: () => void;
@@ -26,6 +27,7 @@ const TrackHeaderCopy: React.FC<TrackHeaderCopyProps> = ({
 
   // 🔥 NEW: Settings 드롭다운 상태
   const [isSettingsDropdownOpen, setIsSettingsDropdownOpen] = useState(false);
+  const [isProfileModalOpen, setIsProfileModalOpen] = useState(false);
   const settingsDropdownRef = useRef<HTMLDivElement>(null);
 
   // 🔥 NEW: 강제 리렌더링을 위한 상태
@@ -54,6 +56,7 @@ const TrackHeaderCopy: React.FC<TrackHeaderCopyProps> = ({
 
   const handleProfileClick = () => {
     // TODO: Open profile modal
+    setIsProfileModalOpen(true);
     setIsSettingsDropdownOpen(false);
   };
 
@@ -232,6 +235,10 @@ const TrackHeaderCopy: React.FC<TrackHeaderCopyProps> = ({
 
         </div>
       </div>
+      <ProfileSettingsModal
+        isOpen={isProfileModalOpen}
+        onClose={() => setIsProfileModalOpen(false)}
+      />
     </div>
   );
 };
