@@ -103,7 +103,7 @@ const Trackinfocardjjm: React.FC<TrackinfocardjjmProps> = ({
   };
 
   return (
-    <div className='relative overflow-hidden rounded-3xl bg-black px-15 py-10 shadow-2xl' data-section="track-info">
+    <div className='relative rounded-3xl bg-black px-15 py-10 shadow-2xl' data-section="track-info">
       {/* Background overlay pattern */}
       <div className='absolute inset-0 bg-gradient-to-r from-black/60 via-transparent to-black/40'></div>
 

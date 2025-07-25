@@ -1,4 +1,4 @@
-import { Controller, Get, Patch, Param, UseGuards, Request, Logger, Query, BadRequestException, UnauthorizedException } from '@nestjs/common';
+import { Controller, Get, Patch, Param, UseGuards, Req, Logger, Query, BadRequestException, UnauthorizedException } from '@nestjs/common';
 // import { JwtAuthGuard } from '../auth/jwt-auth.guard';
 import { NotificationService } from './notification.service';
 import { Notification } from './notification.entity';
@@ -16,7 +16,7 @@ export class NotificationController {
   // 사용자의 알림 조회 (limit 지원)
   @Get()
   async getUserNotifications(
-    @Request() req: any,
+    @Req() req: any,
     @Query('limit') limitQuery?: string
   ): Promise<Notification[]> {
     try {
@@ -64,7 +64,7 @@ export class NotificationController {
 
   // 특정 알림을 읽음으로 표시
   @Patch(':id/read')
-  async markAsRead(@Param('id') notificationId: string, @Request() req: any): Promise<void> {
+  async markAsRead(@Param('id') notificationId: string, @Req() req: any): Promise<void> {
     try {
       const userId = req.user?.id || req.user?.sub;
       
@@ -90,7 +90,7 @@ export class NotificationController {
 
   // 사용자의 모든 미읽은 알림을 읽음으로 표시
   @Patch('mark-all-read')
-  async markAllRead(@Request() req: any): Promise<{ success: boolean; message: string; count: number }> {
+  async markAllRead(@Req() req: any): Promise<{ success: boolean; message: string; count: number }> {
     try {
       const userId = req.user?.id || req.user?.sub;
       
