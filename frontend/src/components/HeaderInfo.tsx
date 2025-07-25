@@ -1,7 +1,7 @@
 import React, { useState, useEffect } from 'react';
 import Logo from './Logo';
 import NotificationBell from './NotificationBell';
-import { useNotification } from '../contexts/NotificationContext';
+import { useNotifications } from '../contexts/NotificationContext';
 
 const HeaderInfo: React.FC = () => {
   const [activeTab, setActiveTab] = useState('MASTER');
@@ -10,7 +10,7 @@ const HeaderInfo: React.FC = () => {
   const [notificationTrigger, setNotificationTrigger] = useState(0); // 재렌더링 트리거용
   
   // NotificationContext 사용 (올바른 소켓 연결)
-  const { notifications, unreadCount, refreshNotifications } = useNotification();
+  const { notifications, unreadCount, refreshNotifications } = useNotifications();
 
   const handleAddTab = () => {
     const trimmedTab = newTab.trim();
