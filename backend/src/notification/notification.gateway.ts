@@ -9,24 +9,173 @@ import {
   ConnectedSocket,
 } from '@nestjs/websockets';
 import { Server, Socket } from 'socket.io';
-import { Logger, Injectable, Inject, forwardRef } from '@nestjs/common';
+import { Logger, Injectable } from '@nestjs/common';
 import { JwtService } from '@nestjs/jwt';
 import { UsersService } from '../users/users.service';
 import { NotificationService } from './notification.service';
-import { ChatGateway } from '../websocket/websocket.gateway';
 
 @Injectable()
-export class NotificationGateway {
+@WebSocketGateway({
+  namespace: '/notifications',
+  cors: {
+    origin: [
+      'http://localhost:5173', // Vite 개발 서버
+      'http://localhost:3000', // React 개발 서버
+      'https://waveflow.pro', // 프로덕션 URL
+      'http://13.125.231.115:3000', // EC2 프론트엔드 URL (백업)
+      process.env.FRONTEND_URL || 'https://waveflow.pro',
+    ],
+    credentials: true, // 쿠키 전송 허용
+    methods: ['GET', 'POST'],
+  },
+  transports: ['websocket', 'polling'],
+  allowEIO3: true,
+})
+export class NotificationGateway
+  implements OnGatewayInit, OnGatewayConnection, OnGatewayDisconnect
+{
+  @WebSocketServer()
+  server: Server;
+
   private logger = new Logger(NotificationGateway.name);
+  private connectedUsers = new Map<string, Socket>(); // user_id -> Socket 매핑
 
   constructor(
     private jwtService: JwtService,
     private usersService: UsersService,
     private notificationService: NotificationService,
-    @Inject(forwardRef(() => ChatGateway)) private chatGateway: ChatGateway,
   ) {}
 
-  // ChatGateway를 통해 알림 전송
+  // 게이트웨이 초기화
+  afterInit(server: Server) {
+    this.logger.log('🔔 [NotificationGateway] Gateway initialized');
+    
+    // 소켓 연결 전 JWT 인증 미들웨어
+    server.use(async (socket, next) => {
+      try {
+        const token = this.extractTokenFromSocket(socket);
+        
+        if (!token) {
+          this.logger.error('🔔 [NotificationGateway] No JWT token found');
+          return next(new Error('Unauthorized - No token provided'));
+        }
+
+        // JWT 토큰 검증
+        const payload = this.jwtService.verify(token);
+        
+        // 사용자 정보 조회
+        const user = await this.usersService.findById(payload.sub);
+        
+        if (!user) {
+          this.logger.error(`🔔 [NotificationGateway] User not found: ${payload.sub}`);
+          return next(new Error('Unauthorized - User not found'));
+        }
+
+        // 소켓 객체에 사용자 정보 저장
+        socket.data.user = user;
+        socket.data.userId = user.id;
+        
+        this.logger.log(`🔔 [NotificationGateway] User authenticated: ${user.email}`);
+        next();
+      } catch (error) {
+        this.logger.error('🔔 [NotificationGateway] Authentication failed:', error.message);
+        next(new Error('Unauthorized - Invalid token'));
+      }
+    });
+  }
+
+  // 클라이언트 연결 시 처리
+  async handleConnection(client: Socket) {
+    try {
+      const userId = client.data.userId;
+      
+      if (!userId) {
+        this.logger.error('🔔 [NotificationGateway] No user ID in socket data');
+        client.disconnect();
+        return;
+      }
+
+      // 기존 연결이 있다면 해제 (중복 연결 방지)
+      if (this.connectedUsers.has(userId)) {
+        const existingSocket = this.connectedUsers.get(userId);
+        existingSocket.disconnect();
+      }
+
+      // 새로운 연결 저장
+      this.connectedUsers.set(userId, client);
+      
+      // 사용자 전용 룸에 조인
+      client.join(`user_${userId}`);
+      
+      this.logger.log(`🔔 [NotificationGateway] User connected: ${client.data.user?.email} (Room: user_${userId})`);
+      
+      // 조용히 연결 완료 알림
+      client.emit('notification_connected', {
+        message: 'Connected to notification service',
+        userId: userId,
+        socketId: client.id,
+        joinedRoom: `user_${userId}`,
+        silent: true,
+      });
+
+      // DB에서 pending 알림 조회 및 전송
+      await this.sendPendingNotifications(userId, client);
+      
+    } catch (error) {
+      this.logger.error('🔔 [NotificationGateway] Connection error:', error.message);
+      client.disconnect();
+    }
+  }
+
+  // 클라이언트 연결 해제 시 처리
+  handleDisconnect(client: Socket) {
+    try {
+      const userId = client.data.userId;
+      
+      if (userId) {
+        // 연결된 사용자 목록에서 제거
+        this.connectedUsers.delete(userId);
+        this.logger.log(`🔔 [NotificationGateway] User disconnected: ${client.data.user?.email}`);
+      }
+    } catch (error) {
+      this.logger.error('🔔 [NotificationGateway] Disconnect error:', error.message);
+    }
+  }
+
+  // 룸 조인 이벤트 핸들러
+  @SubscribeMessage('join_user_room')
+  async handleJoinUserRoom(
+    @MessageBody() data: { userId: string },
+    @ConnectedSocket() client: Socket,
+  ) {
+    try {
+      const userId = client.data.userId;
+      
+      if (!userId || userId !== data.userId) {
+        this.logger.error('🔔 [NotificationGateway] Invalid user ID for room join');
+        client.emit('join_user_room_error', { message: 'Invalid user ID' });
+        return;
+      }
+
+      // 룸 조인 (이미 조인되어 있어도 안전)
+      client.join(`user_${userId}`);
+      
+      this.logger.log(`🔔 [NotificationGateway] User explicitly joined room: user_${userId}`);
+      
+      // 조인 성공 확인
+      client.emit('join_user_room_success', { 
+        message: 'Successfully joined user room',
+        room: `user_${userId}`,
+        userId: userId 
+      });
+      
+    } catch (error) {
+      this.logger.error('🔔 [NotificationGateway] Join room error:', error.message);
+      client.emit('join_user_room_error', { message: 'Failed to join room' });
+    }
+  }
+
+  // 특정 사용자에게 알림 전송
   async sendNotificationToUser(userId: string, type: string, message: string, data?: any) {
     this.logger.log(`🔔 [NotificationGateway] 📤 Attempting to send "${type}" to user ${userId}`);
     
@@ -40,7 +189,7 @@ export class NotificationGateway {
       return;
     }
     
-    // ChatGateway의 서버를 통해 알림 전송
+    // 소켓으로 실시간 전송 (항상 시도)
     try {
       const payload = {
         id: savedNotification.id,
@@ -52,18 +201,31 @@ export class NotificationGateway {
         createdAt: savedNotification.createdAt,
       };
       
-      this.logger.log(`🔔 [NotificationGateway] 📡 Sending via ChatGateway to user ${userId}`);
+      // 연결된 소켓 정보 로깅
+      const connectedSockets = await this.server.in(`user_${userId}`).allSockets();
+      const isUserInConnectedMap = this.connectedUsers.has(userId);
       
-      // ChatGateway의 server를 사용해서 알림 전송
-      if (this.chatGateway && this.chatGateway.server) {
-        this.chatGateway.server.to(`user_${userId}`).emit('notification', payload);
-        this.logger.log(`🔔 [NotificationGateway] ✅ Notification sent via ChatGateway`);
+      this.logger.log(`🔔 [NotificationGateway] 📊 Connection status for user ${userId}:`);
+      this.logger.log(`🔔 [NotificationGateway] 📊   - Sockets in room user_${userId}: ${connectedSockets.size}`);
+      this.logger.log(`🔔 [NotificationGateway] 📊   - Socket IDs: ${Array.from(connectedSockets)}`);
+      this.logger.log(`🔔 [NotificationGateway] 📊   - User in connected map: ${isUserInConnectedMap}`);
+      this.logger.log(`🔔 [NotificationGateway] 📊   - Total connected users: ${this.connectedUsers.size}`);
+      this.logger.log(`🔔 [NotificationGateway] 📊   - Connected user IDs: ${Array.from(this.connectedUsers.keys())}`);
+      
+      this.logger.log(`🔔 [NotificationGateway] 📡 Emitting to room user_${userId}:`, JSON.stringify(payload, null, 2));
+      
+      // 항상 emit 시도
+      this.server.to(`user_${userId}`).emit('notification', payload);
+      
+      if (connectedSockets.size > 0) {
+        this.logger.log(`🔔 [NotificationGateway] ✅ Notification sent via websocket to ${connectedSockets.size} connected client(s)`);
       } else {
-        this.logger.error(`🔔 [NotificationGateway] ❌ ChatGateway server not available`);
+        this.logger.log(`🔔 [NotificationGateway] ⚠️ No connected clients in room user_${userId}, but notification was still emitted`);
       }
       
     } catch (error) {
-      this.logger.error(`🔔 [NotificationGateway] ❌ Failed to send via ChatGateway: ${error.message}`);
+      this.logger.error(`🔔 [NotificationGateway] ❌ Websocket send error: ${error.message}`);
+      this.logger.error(`🔔 [NotificationGateway] Error details:`, error);
     }
   }
 
@@ -71,10 +233,130 @@ export class NotificationGateway {
   async sendNotificationToUsers(userIds: string[], type: string, message: string, data?: any) {
     this.logger.log(`🔔 [NotificationGateway] Sending notification to ${userIds.length} users: "${type}"`);
     
-    for (const userId of userIds) {
-      await this.sendNotificationToUser(userId, type, message, data);
-    }
+    const promises = userIds.map(userId => 
+      this.sendNotificationToUser(userId, type, message, data)
+    );
+    await Promise.all(promises);
     
     this.logger.log(`🔔 [NotificationGateway] ✅ Notification sent to all ${userIds.length} users`);
+  }
+
+  // 소켓에서 JWT 토큰 추출
+  private extractTokenFromSocket(socket: Socket): string | null {
+    try {
+      this.logger.log('🔔 [NotificationGateway] 🔍 Extracting token from socket...');
+      
+      // 1. Authorization 헤더에서 토큰 추출
+      const authHeader = socket.handshake.headers.authorization;
+      if (authHeader && authHeader.startsWith('Bearer ')) {
+        this.logger.log('🔔 [NotificationGateway] ✅ Token found in Authorization header');
+        return authHeader.substring(7);
+      }
+
+      // 2. auth 객체에서 토큰 추출 (socket.io auth)
+      const authToken = socket.handshake.auth?.token;
+      if (authToken) {
+        this.logger.log('🔔 [NotificationGateway] ✅ Token found in auth object');
+        return authToken;
+      }
+
+      // 3. query 파라미터에서 토큰 추출
+      const queryToken = socket.handshake.query?.token;
+      if (queryToken && typeof queryToken === 'string') {
+        this.logger.log('🔔 [NotificationGateway] ✅ Token found in query parameters');
+        return queryToken;
+      }
+
+      // 4. 쿠키에서 토큰 추출
+      const cookies = socket.handshake.headers.cookie;
+      if (cookies) {
+        const parsedCookies = this.parseCookies(cookies);
+        
+        if (parsedCookies.jwt) {
+          this.logger.log('🔔 [NotificationGateway] ✅ JWT token found in cookie');
+          return parsedCookies.jwt;
+        }
+        
+        if (parsedCookies.token) {
+          this.logger.log('🔔 [NotificationGateway] ✅ Token found in cookie');
+          return parsedCookies.token;
+        }
+      }
+
+      this.logger.warn('🔔 [NotificationGateway] ⚠️ No JWT token found in any location');
+      this.logger.warn('🔔 [NotificationGateway] Available headers:', Object.keys(socket.handshake.headers));
+      this.logger.warn('🔔 [NotificationGateway] Available auth:', socket.handshake.auth);
+      this.logger.warn('🔔 [NotificationGateway] Available query:', socket.handshake.query);
+      
+      return null;
+    } catch (error) {
+      this.logger.error('🔔 [NotificationGateway] ❌ Error extracting token:', error.message);
+      return null;
+    }
+  }
+
+  // 쿠키 파싱 유틸리티
+  private parseCookies(cookieString: string): Record<string, string> {
+    const cookies: Record<string, string> = {};
+    
+    if (cookieString) {
+      cookieString.split(';').forEach(cookie => {
+        const [name, value] = cookie.trim().split('=');
+        if (name && value) {
+          cookies[name] = decodeURIComponent(value);
+        }
+      });
+    }
+    
+    return cookies;
+  }
+
+  // 연결된 사용자 목록 반환
+  getConnectedUsers(): string[] {
+    return Array.from(this.connectedUsers.keys());
+  }
+
+  // 특정 사용자 연결 상태 확인
+  isUserConnected(userId: string): boolean {
+    return this.connectedUsers.has(userId);
+  }
+
+  // DB에서 pending 알림 조회 및 클라이언트에 전송
+  private async sendPendingNotifications(userId: string, client: Socket) {
+    try {
+      this.logger.log(`🔔 [NotificationGateway] Checking pending notifications for user: ${userId}`);
+      
+      // DB에서 사용자의 모든 알림 조회 (최근 100개로 제한)
+      const pendingNotifications = await this.notificationService.getUserNotifications(userId, 100);
+      
+      if (pendingNotifications && pendingNotifications.length > 0) {
+        this.logger.log(`🔔 [NotificationGateway] Sending ${pendingNotifications.length} pending notifications to user ${userId}`);
+        
+        for (const notification of pendingNotifications) {
+          const payload = {
+            id: notification.id,
+            userId: notification.userId,
+            type: notification.type,
+            message: notification.message,
+            data: notification.data,
+            isRead: notification.isRead,
+            createdAt: notification.createdAt,
+          };
+          
+          try {
+            client.emit('notification', payload);
+            this.logger.log(`🔔 [NotificationGateway] ✅ Sent pending notification: ${notification.id}`);
+          } catch (emitError) {
+            this.logger.error(`🔔 [NotificationGateway] ❌ Failed to emit notification ${notification.id}: ${emitError.message}`);
+          }
+        }
+        
+        this.logger.log(`🔔 [NotificationGateway] ✅ All ${pendingNotifications.length} pending notifications sent to user ${userId}`);
+      } else {
+        this.logger.log(`🔔 [NotificationGateway] No pending notifications for user ${userId}`);
+      }
+    } catch (error) {
+      this.logger.error(`🔔 [NotificationGateway] Error sending pending notifications: ${error.message}`);
+    }
   }
 } 
