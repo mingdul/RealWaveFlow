@@ -163,28 +163,51 @@ export const NotificationProvider: React.FC<NotificationProviderProps> = ({ chil
 
       // 🔥 NEW: notification 이벤트 핸들러를 여기서 바로 등록 (디버깅 강화)
       notificationSocket.on('notification', (notification: Notification) => {
-        // 중요한 알림만 토스트로 표시
-        if (notification.type === 'IMPORTANT' || notification.type === 'URGENT') {
-          showToast('info', notification.message, 3000);
-        }
+        console.log('🔔 [NotificationSocket] 📢 🆕 NEW NOTIFICATION RECEIVED VIA WEBSOCKET!');
+        console.log('🔔 [NotificationSocket] 📋 Received notification details:', {
+          id: notification.id,
+          message: notification.message,
+          type: notification.type,
+          isRead: notification.isRead,
+          userId: notification.userId,
+          createdAt: notification.createdAt
+        });
         
+        // 🔥 알림 토스트 표시
+        showToast('info', `새 알림: ${notification.message}`, 3000);
+        
+        // 🔥 함수형 업데이트로 closure 문제 해결
         setNotifications(prevNotifications => {
+          console.log('🔔 [NotificationSocket] 📊 BEFORE adding - Current count:', prevNotifications.length);
+          console.log('🔔 [NotificationSocket] 📊 BEFORE adding - Current unread:', prevNotifications.filter(n => !n.isRead).length);
+          
+          // 중복 확인
           const exists = prevNotifications.some(n => n.id === notification.id);
           if (exists) {
+            console.log('🔔 [NotificationSocket] ⚠️ Duplicate notification ignored:', notification.id);
             return prevNotifications;
           }
           
+          // 새 알림 추가
           const newNotifications = [notification, ...prevNotifications];
           const newUnreadCount = newNotifications.filter(n => !n.isRead).length;
           
-          window.dispatchEvent(new CustomEvent('notification-realtime-update', {
-            detail: { 
-              newUnreadCount,
-              totalCount: newNotifications.length,
-              timestamp: new Date().toISOString(),
-              source: 'socket-notification-received'
-            }
-          }));
+          console.log('🔔 [NotificationSocket] ✅ NOTIFICATION ADDED!');
+          console.log('🔔 [NotificationSocket] 📊 AFTER adding - New count:', newNotifications.length);
+          console.log('🔔 [NotificationSocket] 📊 AFTER adding - New unread:', newUnreadCount);
+          console.log('🔔 [NotificationSocket] 🔔 Badge should show:', newUnreadCount);
+          
+          // 🔥 강제 DOM 업데이트 이벤트 발생
+          setTimeout(() => {
+            window.dispatchEvent(new CustomEvent('notification-realtime-update', {
+              detail: { 
+                newUnreadCount,
+                totalCount: newNotifications.length,
+                timestamp: new Date().toISOString(),
+                source: 'socket-notification-received'
+              }
+            }));
+          }, 100);
           
           return newNotifications;
         });
@@ -211,6 +234,10 @@ export const NotificationProvider: React.FC<NotificationProviderProps> = ({ chil
 
       // 연결 오류
       notificationSocket.on('connect_error', (error) => {
+        console.error('🔔 [NotificationSocket] ❌ Connection error:', error.message);
+        // 🔥 REMOVED: 일반 연결 오류는 토스트 표시하지 않음
+        // showToast('error', '실시간 알림 연결에 실패했습니다.', 3000);
+        
         if (error.message.includes('Unauthorized')) {
           showToast('error', '인증이 만료되었습니다. 다시 로그인해주세요.');
           logout();
