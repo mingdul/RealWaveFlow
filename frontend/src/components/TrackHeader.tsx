@@ -5,8 +5,7 @@ import Logo from './Logo';
 import NotificationBell from './NotificationBell';
 import ProfileSettingsModal from './ProfileSettingsModal';
 import { useNavigate } from 'react-router-dom';
-import { useNotification } from '../contexts/NotificationContext';
-import type { Notification } from '../contexts/NotificationContext';
+import { useNotifications } from '../contexts/NotificationContext';
 import { useAuth } from '../contexts/AuthContext';
 
 interface TrackHeaderProps {
@@ -17,7 +16,7 @@ const TrackHeader: React.FC<TrackHeaderProps> = ({
   onBack,
 }) => {
   const navigate = useNavigate();
-  const { notifications, unreadCount } = useNotification();
+  const { notifications, unreadCount } = useNotifications();
   const { user, logout } = useAuth();
   
   // 🔥 NEW: Settings 드롭다운 상태
@@ -44,10 +43,11 @@ const TrackHeader: React.FC<TrackHeaderProps> = ({
     console.log('🏠 [TrackHeader] 👤 Current user:', user ? `${user.id} (${user.email})` : 'None');
     console.log('🏠 [TrackHeader] 🔔 Notifications count:', notifications.length);
     console.log('🏠 [TrackHeader] 📨 Unread count:', unreadCount);
-    console.log('🏠 [TrackHeader] 📋 Notifications details:', notifications.map((notification: Notification) => ({
-      id: notification.id,
-      type: notification.type,
-      isRead: notification.isRead
+    console.log('🏠 [TrackHeader] 📋 Notifications details:', notifications.map(n => ({
+      id: n.id,
+      type: n.type,
+      message: n.message,
+      isRead: n.isRead
     })));
 
     // 10초마다 상태 확인
@@ -57,7 +57,7 @@ const TrackHeader: React.FC<TrackHeaderProps> = ({
       console.log('  - User logged in:', !!user);
       console.log('  - Notifications count:', notifications.length);
       console.log('  - Unread count:', unreadCount);
-      console.log('  - Has NotificationContext:', !!useNotification);
+      console.log('  - Has NotificationContext:', !!useNotifications);
       
       if (notifications.length > 0) {
         console.log('  - Latest notification:', {
