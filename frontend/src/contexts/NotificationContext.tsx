@@ -161,72 +161,33 @@ export const NotificationProvider: React.FC<NotificationProviderProps> = ({ chil
         // showToast('error', `알림 룸 연결에 실패했습니다: ${data.message}`, 3000);
       });
 
-      // 🔥 IMPROVED: notification 이벤트 핸들러 강화 (실시간 업데이트 보장)
+      // 🔥 NEW: notification 이벤트 핸들러를 여기서 바로 등록 (디버깅 강화)
       notificationSocket.on('notification', (notification: Notification) => {
-        console.log('🔔 [NotificationContext] 📡 SOCKET NOTIFICATION RECEIVED!');
-        console.log('🔔 [NotificationContext] 📊 Received notification:', {
-          id: notification.id,
-          type: notification.type,
-          message: notification.message,
-          isRead: notification.isRead,
-          userId: notification.userId
-        });
-        
         // 중요한 알림만 토스트로 표시
         if (notification.type === 'IMPORTANT' || notification.type === 'URGENT') {
           showToast('info', notification.message, 3000);
         }
         
         setNotifications(prevNotifications => {
-          console.log('🔔 [NotificationContext] 📊 BEFORE adding notification:');
-          console.log('🔔 [NotificationContext]   - Previous count:', prevNotifications.length);
-          console.log('🔔 [NotificationContext]   - Previous unread:', prevNotifications.filter(n => !n.isRead).length);
-          
           const exists = prevNotifications.some(n => n.id === notification.id);
           if (exists) {
-            console.log('🔔 [NotificationContext] ⚠️ Duplicate notification ignored:', notification.id);
             return prevNotifications;
           }
           
           const newNotifications = [notification, ...prevNotifications];
           const newUnreadCount = newNotifications.filter(n => !n.isRead).length;
           
-          console.log('🔔 [NotificationContext] ✅ NOTIFICATION ADDED TO STATE!');
-          console.log('🔔 [NotificationContext] 📊 AFTER adding notification:');
-          console.log('🔔 [NotificationContext]   - New count:', newNotifications.length);
-          console.log('🔔 [NotificationContext]   - New unread:', newUnreadCount);
-          console.log('🔔 [NotificationContext] 🔔 Badge should now show:', newUnreadCount);
-          
-          // 🔥 IMPROVED: 여러 커스텀 이벤트 발생으로 확실한 업데이트 보장
-          const eventDetails = { 
-            newUnreadCount,
-            totalCount: newNotifications.length,
-            timestamp: new Date().toISOString(),
-            source: 'socket-notification-received',
-            notificationId: notification.id
-          };
-          
-          // 실시간 업데이트 이벤트
-          window.dispatchEvent(new CustomEvent('notification-realtime-update', { detail: eventDetails }));
-          
-          // 배지 새로고침 이벤트  
-          window.dispatchEvent(new CustomEvent('notification-badge-refresh', { detail: eventDetails }));
-          
-          // 일반 업데이트 이벤트
-          window.dispatchEvent(new CustomEvent('notification-update', { detail: eventDetails }));
-          
-          console.log('🔔 [NotificationContext] 📢 Multiple custom events dispatched for UI update');
-          
-          // 🔥 NEW: 약간의 지연 후 추가 이벤트 발생 (React 렌더링 보장)
-          setTimeout(() => {
-            window.dispatchEvent(new CustomEvent('notification-force-refresh', { detail: eventDetails }));
-            console.log('🔔 [NotificationContext] 🔄 Delayed force refresh event dispatched');
-          }, 50);
+          window.dispatchEvent(new CustomEvent('notification-realtime-update', {
+            detail: { 
+              newUnreadCount,
+              totalCount: newNotifications.length,
+              timestamp: new Date().toISOString(),
+              source: 'socket-notification-received'
+            }
+          }));
           
           return newNotifications;
         });
-        
-        console.log('🔔 [NotificationContext] 🎯 Socket notification processing completed');
       });
 
       // 🔥 NEW: 소켓 이벤트 감지 강화
@@ -597,28 +558,6 @@ export const NotificationProvider: React.FC<NotificationProviderProps> = ({ chil
     }
   };
 
-  // 🔧 IMPROVED: 강화된 디버깅 함수 - UI 업데이트 테스트 추가
-  const debugTriggerUIUpdate = () => {
-    if (import.meta.env.DEV) {
-      console.log('🧪 [DEBUG] Triggering all UI update events...');
-      
-      const testDetails = {
-        newUnreadCount: unreadCount,
-        totalCount: notifications.length,
-        timestamp: new Date().toISOString(),
-        source: 'debug-ui-update-test'
-      };
-      
-      // 모든 UI 업데이트 이벤트 발생
-      window.dispatchEvent(new CustomEvent('notification-realtime-update', { detail: testDetails }));
-      window.dispatchEvent(new CustomEvent('notification-update', { detail: testDetails }));
-      window.dispatchEvent(new CustomEvent('notification-badge-refresh', { detail: testDetails }));
-      window.dispatchEvent(new CustomEvent('notification-force-refresh', { detail: testDetails }));
-      
-      console.log('🧪 [DEBUG] All UI update events dispatched');
-    }
-  };
-
   // 🔧 DEBUG: 개발 환경에서 전역 접근 가능하도록 설정
   useEffect(() => {
     if (import.meta.env.DEV) {
@@ -633,7 +572,6 @@ export const NotificationProvider: React.FC<NotificationProviderProps> = ({ chil
         printCurrentState: debugPrintCurrentState,
         triggerTrackHeaderRefresh: debugTriggerTrackHeaderRefresh,
         forceSocketEvent: debugForceSocketEvent,
-        triggerUIUpdate: debugTriggerUIUpdate, // 🔥 NEW
         socket: socket, // 소켓 객체 직접 노출
       };
       console.log('🔧 [DEBUG] Debug tools available in window.debugNotifications');
@@ -645,10 +583,9 @@ export const NotificationProvider: React.FC<NotificationProviderProps> = ({ chil
       console.log('  - printCurrentState(): Print the current state of the notification system');
       console.log('  - triggerTrackHeaderRefresh(): Force TrackHeader to refresh');
       console.log('  - forceSocketEvent(): Force trigger socket notification event');
-      console.log('  - triggerUIUpdate(): Trigger all UI update events'); // 🔥 NEW
       console.log('  - socket: Direct access to socket object');
     }
-  }, [notifications, unreadCount, socket?.connected, debugAddTestNotification, debugSimulateSocketNotification, debugPrintCurrentState, debugTriggerTrackHeaderRefresh, debugForceSocketEvent, debugTriggerUIUpdate, socket]);
+  }, [notifications, unreadCount, socket?.connected, debugAddTestNotification, debugSimulateSocketNotification, debugPrintCurrentState, debugTriggerTrackHeaderRefresh, debugForceSocketEvent, socket]);
 
   const value: NotificationContextType = {
     notifications,
