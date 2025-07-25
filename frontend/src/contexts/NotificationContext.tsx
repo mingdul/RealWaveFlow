@@ -161,30 +161,33 @@ export const NotificationProvider: React.FC<NotificationProviderProps> = ({ chil
         // showToast('error', `알림 룸 연결에 실패했습니다: ${data.message}`, 3000);
       });
 
-      // 🔥 NEW: notification 이벤트 핸들러를 여기서 바로 등록 (디버깅 강화)
+      // 소켓으로부터 새 알림 수신
       notificationSocket.on('notification', (notification: Notification) => {
+        console.log('🔔 [NotificationSocket] 📡 New notification received:', {
+          id: notification.id,
+          type: notification.type,
+          message: notification.message,
+          isRead: notification.isRead
+        });
+        
         // 중요한 알림만 토스트로 표시
         if (notification.type === 'IMPORTANT' || notification.type === 'URGENT') {
           showToast('info', notification.message, 3000);
         }
         
         setNotifications(prevNotifications => {
+          // 중복 방지
           const exists = prevNotifications.some(n => n.id === notification.id);
           if (exists) {
+            console.log('🔔 [NotificationSocket] ⚠️ Duplicate notification ignored:', notification.id);
             return prevNotifications;
           }
           
           const newNotifications = [notification, ...prevNotifications];
           const newUnreadCount = newNotifications.filter(n => !n.isRead).length;
           
-          window.dispatchEvent(new CustomEvent('notification-realtime-update', {
-            detail: { 
-              newUnreadCount,
-              totalCount: newNotifications.length,
-              timestamp: new Date().toISOString(),
-              source: 'socket-notification-received'
-            }
-          }));
+          console.log('🔔 [NotificationSocket] ✅ Notification added to state');
+          console.log('🔔 [NotificationSocket] 📊 New counts - Total:', newNotifications.length, 'Unread:', newUnreadCount);
           
           return newNotifications;
         });

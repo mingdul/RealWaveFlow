@@ -10,40 +10,20 @@ const NotificationBell: React.FC = () => {
   const dropdownRef = useRef<HTMLDivElement>(null);
   const { notifications, unreadCount, markAsRead, markAllRead, refreshNotifications } = useNotifications();
 
-  // 실시간 unread count 계산 - 매번 직접 계산
-  const currentUnreadCount = useMemo(() => {
-    const count = notifications.filter(n => !n.isRead).length;
-    console.log('🔔 [NotificationBell] 📊 Badge count calculated:', {
-      totalNotifications: notifications.length,
-      unreadCount: count,
-      contextUnreadCount: unreadCount
-    });
-    return count;
-  }, [notifications, unreadCount]);
+  // 실시간 unread count 계산 - Context의 unreadCount 직접 사용 (이미 useMemo로 최적화됨)
+  const currentUnreadCount = unreadCount;
 
-  console.log('🔔 [NotificationBell] 🎭 RENDER - Badge should show:', currentUnreadCount);
+  // 개발 환경에서만 렌더링 로그
+  if (import.meta.env.DEV) {
+    console.log('🔔 [NotificationBell] 🎭 RENDER - Badge should show:', currentUnreadCount);
+  }
   
-  // 🔥 NEW: notifications 배열이 변경될 때마다 로깅
+  // 알림 배열 변경 시 로깅 (개발 환경에서만)
   useEffect(() => {
-    console.log('🔔 [NotificationBell] 📢 NOTIFICATIONS ARRAY CHANGED!');
-    console.log('🔔 [NotificationBell] 📊 New notifications count:', notifications.length);
-    console.log('🔔 [NotificationBell] 📊 New unread count (calculated):', notifications.filter(n => !n.isRead).length);
-    console.log('🔔 [NotificationBell] 🎯 Badge will show:', currentUnreadCount);
-  }, [notifications, currentUnreadCount]);
-
-  // 🔥 NEW: 실시간 알림 업데이트 이벤트 리스너
-  useEffect(() => {
-    const handleRealtimeUpdate = (event: CustomEvent) => {
-      console.log('🔔 [NotificationBell] 📢 Realtime update event received:', event.detail);
-      // 강제 리렌더링은 이미 notifications 변경으로 자동 발생됨
-    };
-
-    window.addEventListener('notification-realtime-update', handleRealtimeUpdate as EventListener);
-    
-    return () => {
-      window.removeEventListener('notification-realtime-update', handleRealtimeUpdate as EventListener);
-    };
-  }, []);
+    if (import.meta.env.DEV) {
+      console.log('🔔 [NotificationBell] Badge count updated:', currentUnreadCount);
+    }
+  }, [currentUnreadCount]);
 
   // 외부 클릭 시 드롭다운 닫기
   useEffect(() => {
@@ -174,7 +154,7 @@ const NotificationBell: React.FC = () => {
         {/* 디버그용 - 개발 중에만 표시 */}
         {import.meta.env.DEV && (
           <span className="absolute -bottom-6 -right-2 text-xs text-gray-400 bg-gray-100 px-1 rounded">
-            Debug: context={unreadCount} calculated={currentUnreadCount}
+            Debug: {currentUnreadCount}
           </span>
         )}
       </Button>
