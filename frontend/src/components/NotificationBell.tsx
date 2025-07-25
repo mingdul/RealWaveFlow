@@ -12,18 +12,25 @@ const NotificationBell: React.FC = () => {
 
   // 실시간 unread count 계산 - Context의 unreadCount 직접 사용 (이미 useMemo로 최적화됨)
   const currentUnreadCount = unreadCount;
+  
+  // 강제 리렌더링을 위한 상태 추가
+  const [, forceUpdate] = useState({});
 
   // 개발 환경에서만 렌더링 로그
   if (import.meta.env.DEV) {
     console.log('🔔 [NotificationBell] 🎭 RENDER - Badge should show:', currentUnreadCount);
   }
   
-  // 알림 배열 변경 시 로깅 (개발 환경에서만)
+  // 알림 배열 변경 시 로깅 (개발 환경에서만) 및 강제 리렌더링
   useEffect(() => {
     if (import.meta.env.DEV) {
       console.log('🔔 [NotificationBell] Badge count updated:', currentUnreadCount);
+      console.log('🔔 [NotificationBell] Total notifications:', notifications.length);
     }
-  }, [currentUnreadCount]);
+    
+    // 강제 리렌더링 트리거
+    forceUpdate({});
+  }, [currentUnreadCount, notifications.length]);
 
   // 외부 클릭 시 드롭다운 닫기
   useEffect(() => {
@@ -145,7 +152,7 @@ const NotificationBell: React.FC = () => {
         {currentUnreadCount > 0 && (
           <span
             className="absolute -top-1 -right-1 inline-flex items-center justify-center px-2 py-1 text-xs font-bold leading-none text-white transform translate-x-1/2 -translate-y-1/2 bg-red-600 rounded-full transition-all duration-200 ease-in-out"
-            key={`badge-${currentUnreadCount}`}
+            key={`badge-${currentUnreadCount}-${notifications.length}`}
           >
             {currentUnreadCount > 99 ? '99+' : currentUnreadCount}
           </span>
