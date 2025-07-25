@@ -7,7 +7,6 @@ import { Button } from '../components/';
 const NotificationBell: React.FC = () => {
   const [isOpen, setIsOpen] = useState(false);
   const [isMarkingAllRead, setIsMarkingAllRead] = useState(false);
-  const [forceRender, setForceRender] = useState(0); // 강제 리렌더링용 상태
   const dropdownRef = useRef<HTMLDivElement>(null);
   const { notifications, unreadCount, markAsRead, markAllRead, refreshNotifications } = useNotifications();
 
@@ -17,13 +16,12 @@ const NotificationBell: React.FC = () => {
     console.log('🔔 [NotificationBell] 📊 Badge count calculated:', {
       totalNotifications: notifications.length,
       unreadCount: count,
-      contextUnreadCount: unreadCount,
-      forceRenderKey: forceRender
+      contextUnreadCount: unreadCount
     });
     return count;
-  }, [notifications, unreadCount, forceRender]);
+  }, [notifications, unreadCount]);
 
-  console.log('🔔 [NotificationBell] 🎭 RENDER - Badge should show:', currentUnreadCount, 'forceRender:', forceRender);
+  console.log('🔔 [NotificationBell] 🎭 RENDER - Badge should show:', currentUnreadCount);
   
   // 🔥 NEW: notifications 배열이 변경될 때마다 로깅
   useEffect(() => {
@@ -31,31 +29,19 @@ const NotificationBell: React.FC = () => {
     console.log('🔔 [NotificationBell] 📊 New notifications count:', notifications.length);
     console.log('🔔 [NotificationBell] 📊 New unread count (calculated):', notifications.filter(n => !n.isRead).length);
     console.log('🔔 [NotificationBell] 🎯 Badge will show:', currentUnreadCount);
-    
-    // 강제 리렌더링 트리거
-    setForceRender(prev => prev + 1);
   }, [notifications, currentUnreadCount]);
 
-  // 🔥 NEW: 실시간 알림 업데이트 이벤트 리스너 - 강화된 버전
+  // 🔥 NEW: 실시간 알림 업데이트 이벤트 리스너
   useEffect(() => {
     const handleRealtimeUpdate = (event: CustomEvent) => {
       console.log('🔔 [NotificationBell] 📢 Realtime update event received:', event.detail);
-      // 강제 리렌더링 트리거
-      setForceRender(prev => prev + 1);
-    };
-
-    const handleBadgeUpdate = (event: CustomEvent) => {
-      console.log('🔔 [NotificationBell] 🔔 Badge update event received:', event.detail);
-      // 즉시 강제 리렌더링
-      setForceRender(prev => prev + 1);
+      // 강제 리렌더링은 이미 notifications 변경으로 자동 발생됨
     };
 
     window.addEventListener('notification-realtime-update', handleRealtimeUpdate as EventListener);
-    window.addEventListener('notification-badge-update', handleBadgeUpdate as EventListener);
     
     return () => {
       window.removeEventListener('notification-realtime-update', handleRealtimeUpdate as EventListener);
-      window.removeEventListener('notification-badge-update', handleBadgeUpdate as EventListener);
     };
   }, []);
 
@@ -179,7 +165,7 @@ const NotificationBell: React.FC = () => {
         {currentUnreadCount > 0 && (
           <span
             className="absolute -top-1 -right-1 inline-flex items-center justify-center px-2 py-1 text-xs font-bold leading-none text-white transform translate-x-1/2 -translate-y-1/2 bg-red-600 rounded-full transition-all duration-200 ease-in-out"
-            key={`badge-${currentUnreadCount}-${forceRender}`}
+            key={`badge-${currentUnreadCount}`}
           >
             {currentUnreadCount > 99 ? '99+' : currentUnreadCount}
           </span>
@@ -187,8 +173,8 @@ const NotificationBell: React.FC = () => {
 
         {/* 디버그용 - 개발 중에만 표시 */}
         {import.meta.env.DEV && (
-          <span className="absolute -bottom-6 -right-2 text-xs text-gray-400 bg-gray-100 px-1 rounded" key={`debug-${forceRender}`}>
-            Debug: context={unreadCount} calculated={currentUnreadCount} render={forceRender}
+          <span className="absolute -bottom-6 -right-2 text-xs text-gray-400 bg-gray-100 px-1 rounded">
+            Debug: context={unreadCount} calculated={currentUnreadCount}
           </span>
         )}
       </Button>
