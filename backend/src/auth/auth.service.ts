@@ -60,16 +60,33 @@ export class AuthService {
   }
 
 
-  async handleGoogleLogin(user: any) {
+  async handleGoogleLogin(googleUser: any) {
     try {
-      console.log('[handleGoogleLogin] 사용자 정보:', user);
+      console.log('[handleGoogleLogin] Google 사용자 정보:', googleUser);
       
+      // 기존 사용자 찾기 또는 새로 생성
+      let user = await this.usersService.findByEmail(googleUser.email);
+      
+      if (!user) {
+        console.log('[handleGoogleLogin] 새 사용자 생성');
+        await this.usersService.register({
+          email: googleUser.email,
+          username: googleUser.displayName || googleUser.email.split('@')[0],
+          password: await bcrypt.hash(Math.random().toString(36), 10), // 임의의 비밀번호
+        });
+        user = await this.usersService.findByEmail(googleUser.email);
+      }
+
+      console.log('[handleGoogleLogin] 사용자 정보:', user);
+
       // JWT 토큰 생성
       const jwt = this.jwtService.sign({
         sub: user.id,
         email: user.email,
         username: user.username,
       });
+
+      console.log('[handleGoogleLogin] JWT 토큰 생성 완료');
 
       return { access_token: jwt, user };
     } catch (error) {

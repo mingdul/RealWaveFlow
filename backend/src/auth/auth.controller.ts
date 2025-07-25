@@ -67,14 +67,14 @@ export class AuthController {
   @ApiResponse({ status: 200, description: '구글 로그인 성공' })
   @UseGuards(AuthGuard('google'))
   @SkipTrackAccess()
-  async googleCallback(@Req() req: any, @Res({ passthrough: true }) res: Response) {
+  async googleCallback(@Req() req: any, @Res() res: Response) {
     try {
       console.log('[googleCallback] 요청 시작');
       console.log('[googleCallback] req.user:', req.user);
       
       if (!req.user) {
         console.error('[googleCallback] 사용자 정보 없음');
-        throw new UnauthorizedException('사용자 정보를 찾을 수 없습니다.');
+        return res.redirect('/login?error=auth_failed');
       }
 
       // Google 인증 처리 및 JWT 토큰 생성
@@ -84,6 +84,7 @@ export class AuthController {
       // 프로덕션/개발 환경에 따른 설정
       const isProd = process.env.NODE_ENV === 'production';
       const domain = isProd ? 'waveflow.pro' : 'localhost';
+      const frontendUrl = isProd ? 'https://waveflow.pro' : 'http://localhost:5173';
 
       // 쿠키 설정
       res.cookie('jwt', access_token, {
@@ -97,19 +98,14 @@ export class AuthController {
 
       console.log('[googleCallback] 쿠키 설정 완료');
       
-      return {
-        success: true,
-        data: {
-          user: {
-            id: user.id,
-            email: user.email,
-            username: user.username,
-          },
-        },
-      };
+      // 프론트엔드 대시보드로 리디렉션
+      return res.redirect(`${frontendUrl}/dashboard`);
     } catch (error) {
       console.error('[googleCallback] 오류:', error);
-      throw new UnauthorizedException('Google 로그인 처리 중 오류가 발생했습니다.');
+      const frontendUrl = process.env.NODE_ENV === 'production'
+        ? 'https://waveflow.pro'
+        : 'http://localhost:5173';
+      return res.redirect(`${frontendUrl}/login?error=auth_failed`);
     }
   }
 
