@@ -1,4 +1,4 @@
-import React, { useState, useRef, useEffect } from 'react';
+import React, { useState, useRef, useEffect, useMemo } from 'react';
 import { useNotifications } from '../contexts/NotificationContext';
 import { Notification } from '../types/notification';
 import { BellRing } from 'lucide-react';
