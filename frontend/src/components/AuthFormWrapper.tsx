@@ -41,14 +41,16 @@ const AuthFormWrapper: React.FC<AuthFormWrapperProps> = ({
 
             {/* Divider */}
             {showSocialButtons && (
-              <div className='my-6 text-center sm:my-8'>
-                <span className='text-sm text-[#BFBFBF]'>or continue with</span>
+              <div className='my-8 flex items-center justify-center'>
+                <div className='h-px w-full flex-grow bg-gray-700'></div>
+                <span className='mx-4 text-sm text-[#BFBFBF]'>or</span>
+                <div className='h-px w-full flex-grow bg-gray-700'></div>
               </div>
             )}
 
             {/* Social Login Buttons */}
             {showSocialButtons && socialButtonsComponent && (
-              <div className='mb-4 sm:mb-6'>{socialButtonsComponent}</div>
+              <div className='mb-8'>{socialButtonsComponent}</div>
             )}
 
             {/* Link to other auth page */}

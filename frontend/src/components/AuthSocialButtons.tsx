@@ -1,4 +1,5 @@
 import React from 'react';
+import authService from '../services/authService';
 
 interface AuthSocialButtonsProps {
   className?: string;
@@ -6,14 +7,16 @@ interface AuthSocialButtonsProps {
 
 const AuthSocialButtons: React.FC<AuthSocialButtonsProps> = ({ className = '' }) => {
   const handleGoogleLogin = () => {
-    window.location.href = 'http://13.125.231.115:8080/auth/google';
+    authService.loginWithGoogle();
   };
 
-  const socialButtons = [
-    {
-      name: 'Google',
-      onClick: handleGoogleLogin,
-      icon: (
+  return (
+    <div className={`flex justify-center ${className}`}>
+      <button
+        onClick={handleGoogleLogin}
+        className="flex w-full items-center justify-center gap-3 rounded-lg bg-white px-6 py-3 text-sm font-medium text-gray-800 transition-colors hover:bg-gray-100"
+        type="button"
+      >
         <svg className="h-5 w-5" viewBox="0 0 24 24">
           <path
             fill="#4285F4"
@@ -32,46 +35,8 @@ const AuthSocialButtons: React.FC<AuthSocialButtonsProps> = ({ className = '' })
             d="M12 5.38c1.62 0 3.06.56 4.21 1.64l3.15-3.15C17.45 2.09 14.97 1 12 1 7.7 1 3.99 3.47 2.18 7.07l3.66 2.84c.87-2.6 3.3-4.53 6.16-4.53z"
           />
         </svg>
-      )
-    },
-    {
-      name: 'Apple',
-      onClick: () => {
-        // Apple 로그인은 아직 구현되지 않음
-        console.log('Apple login not implemented yet');
-      },
-      icon: (
-        <svg className="h-5 w-5" fill="#000" viewBox="0 0 24 24">
-          <path d="M18.71 19.5c-.83 1.24-1.71 2.45-3.05 2.47-1.34.03-1.77-.79-3.29-.79-1.53 0-2 .77-3.27.82-1.31.05-2.3-1.32-3.14-2.53C4.25 17 2.94 12.45 4.7 9.39c.87-1.52 2.43-2.48 4.12-2.51 1.28-.02 2.5.87 3.29.87.78 0 2.26-1.07 3.81-.91.65.03 2.47.26 3.64 1.98-.09.06-2.17 1.28-2.15 3.81.03 3.02 2.65 4.03 2.68 4.04-.03.07-.42 1.44-1.38 2.83M13 3.5c.73-.83 1.94-1.46 2.94-1.5.13 1.17-.34 2.35-1.04 3.19-.69.85-1.83 1.51-2.95 1.42-.15-1.15.41-2.35 1.05-3.11z" />
-        </svg>
-      )
-    },
-    {
-      name: 'SoundCloud',
-      onClick: () => {
-        // SoundCloud 로그인은 아직 구현되지 않음
-        console.log('SoundCloud login not implemented yet');
-      },
-      icon: (
-        <svg className="h-5 w-5" fill="#ff5500" viewBox="0 0 24 24">
-          <path d="M1.175 12.225c-.051 0-.094.046-.101.105l-.233 2.154.233 2.105c.007.059.05.104.101.104.05 0 .093-.045.101-.104l.262-2.105-.262-2.154c-.008-.059-.051-.105-.101-.105zm1.49.518c-.058 0-.106.048-.113.109l-.193 1.636.193 1.599c.007.061.055.109.113.109.057 0 .105-.048.112-.109l.217-1.599-.217-1.636c-.007-.061-.055-.109-.112-.109zm1.455.245c-.053 0-.097.044-.104.101l-.168 1.391.168 1.362c.007.057.051.1.104.1.052 0 .095-.043.102-.1l.188-1.362-.188-1.391c-.007-.057-.05-.101-.102-.101zm1.446.101c-.061 0-.111.05-.118.114l-.139 1.29.139 1.264c.007.064.057.114.118.114.06 0 .11-.05.117-.114l.156-1.264-.156-1.29c-.007-.064-.057-.114-.117-.114zm1.402.033c-.064 0-.116.052-.123.118l-.115 1.257.115 1.228c.007.066.059.118.123.118.063 0 .115-.052.122-.118l.129-1.228-.129-1.257c-.007-.066-.059-.118-.122-.118zm1.401.025c-.066 0-.119.054-.126.122l-.092 1.232.092 1.201c.007.068.06.121.126.121.065 0 .118-.053.125-.121l.103-1.201-.103-1.232c-.007-.068-.06-.122-.125-.122zm1.387.054c-.068 0-.123.055-.13.125l-.07 1.178.07 1.148c.007.07.062.125.13.125.067 0 .122-.055.129-.125l.078-1.148-.078-1.178c-.007-.07-.062-.125-.129-.125zm1.39.067c-.07 0-.127.057-.134.129l-.047 1.111.047 1.082c.007.072.064.129.134.129.069 0 .126-.057.133-.129l.053-1.082-.053-1.111c-.007-.072-.064-.129-.133-.129zm1.384.068c-.072 0-.131.059-.138.133l-.024 1.043.024 1.014c.007.074.066.133.138.133.071 0 .13-.059.137-.133l.027-1.014-.027-1.043c-.007-.074-.066-.133-.137-.133zm1.377.062c-.073 0-.132.06-.139.135l-.008 .981.008.953c.007.075.066.135.139.135.072 0 .131-.06.138-.135l.009-.953-.009-.981c-.007-.075-.066-.135-.138-.135zm3.842-.554c-.267 0-.521.055-.76.154-.033-.607-.257-1.153-.61-1.559-.364-.419-.849-.65-1.363-.65-.172 0-.335.031-.49.086-.051.018-.062.036-.062.078v4.201c0 .045.035.082.08.089.007.001.014.001.021.001h3.184c.828 0 1.5-.672 1.5-1.5s-.672-1.5-1.5-1.5z" />
-        </svg>
-      )
-    }
-  ];
-
-  return (
-    <div className={`grid grid-cols-3 gap-3 ${className}`}>
-      {socialButtons.map((button) => (
-        <button
-          key={button.name}
-          onClick={button.onClick}
-          className="flex items-center justify-center rounded-lg bg-white p-3 transition-colors hover:bg-gray-100"
-          type="button"
-        >
-          {button.icon}
-        </button>
-      ))}
+        Continue with Google
+      </button>
     </div>
   );
 };

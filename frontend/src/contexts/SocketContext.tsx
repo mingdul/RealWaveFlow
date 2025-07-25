@@ -78,22 +78,16 @@ export const SocketProvider: React.FC<SocketProviderProps> = ({ children }) => {
     setIsConnected(false);
     setSocketId(undefined);
     
-    if (reason) {
-      console.log('Socket disconnected:', reason);
-      
-      // 서버 종료나 네트워크 오류가 아닌 경우에만 토스트 표시
-      if (reason !== 'transport close' && reason !== 'ping timeout') {
-        showToast('warning', 'Real-time connection lost.');
-      }
+    // 서버 종료나 네트워크 오류가 아닌 경우에만 토스트 표시
+    if (reason && reason !== 'transport close' && reason !== 'ping timeout' && reason !== 'io client disconnect') {
+      showToast('warning', '실시간 연결이 끊어졌습니다.');
     }
   };
 
   const handleMessage = (data: any) => {
-    console.log('Received message:', data);
-    
-    // 메시지 수신 시 토스트 표시 (선택사항)
-    if (data.userId !== user?.id) {
-      showToast('info', `New message: ${data.message}`);
+    // 중요 메시지만 토스트로 표시
+    if (data.type === 'IMPORTANT' && data.userId !== user?.id) {
+      showToast('info', data.message);
     }
   };
 
@@ -101,31 +95,23 @@ export const SocketProvider: React.FC<SocketProviderProps> = ({ children }) => {
     setOnlineUsers(data.count);
   };
 
-  const handleUnauthorized = (data: { reason: string }) => {
-    console.log('Socket unauthorized:', data.reason);
-    showToast('error', 'Authentication expired. Please log in again.');
-    
-    // 토큰 만료 시 자동 로그아웃
+  const handleUnauthorized = () => {
+    showToast('error', '인증이 만료되었습니다. 다시 로그인해주세요.');
     logout();
   };
 
   const handleError = (error: Error) => {
-    console.error('Socket error:', error);
-    
-    // 연결 오류 시 토스트 표시
     if (error.message.includes('Unauthorized')) {
-      showToast('error', 'Authentication failed. Please log in again.');
+      showToast('error', '인증이 만료되었습니다. 다시 로그인해주세요.');
       logout();
-    } else {
-      showToast('error', 'Connection error occurred.');
     }
   };
 
   const sendMessage = (message: string) => {
-    if (isConnected) {
-      socketService.sendMessage(message);
+    if (!isConnected) {
+      showToast('error', '연결이 끊어져 메시지를 보낼 수 없습니다.');
     } else {
-      showToast('error', 'Connection lost. Cannot send messages.');
+      socketService.sendMessage(message);
     }
   };
 

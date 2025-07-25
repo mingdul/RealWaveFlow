@@ -205,27 +205,25 @@ const StemSetReviewPage = () => {
   
   // 전역 에러 핸들러 설정
   useEffect(() => {
+    // 전역 에러 핸들러
     const handleError = (event: ErrorEvent) => {
-      console.error('🚨 [Global Error Handler] Uncaught error:', event.error);
-      console.error('🚨 [Global Error Handler] Error message:', event.message);
-      console.error('🚨 [Global Error Handler] Error filename:', event.filename);
-      console.error('🚨 [Global Error Handler] Error line:', event.lineno);
-      console.error('🚨 [Global Error Handler] Error column:', event.colno);
+      console.error('[ERROR] Uncaught error:', event.error);
     };
-    
+
+    // 전역 Promise rejection 핸들러
     const handleUnhandledRejection = (event: PromiseRejectionEvent) => {
-      console.error('🚨 [Global Promise Rejection] Unhandled rejection:', event.reason);
-      console.error('🚨 [Global Promise Rejection] Promise:', event.promise);
+      console.error('[ERROR] Unhandled rejection:', event.reason);
     };
-    
+
     window.addEventListener('error', handleError);
     window.addEventListener('unhandledrejection', handleUnhandledRejection);
-    
+
     return () => {
       window.removeEventListener('error', handleError);
       window.removeEventListener('unhandledrejection', handleUnhandledRejection);
     };
   }, []);
+
   // const wavesurferRef = useRef<any>(null);
   const [volume, setVolume] = useState(1);
   const [currentTime, setCurrentTime] = useState(0);
@@ -312,116 +310,43 @@ const StemSetReviewPage = () => {
 
   // stageId 결정 로직 (쿼리 파라미터 우선, 없으면 upstream API 사용)
   useEffect(() => {
-    const determineStageId = async () => {
-      console.log('🔍 [determineStageId] Starting with:', { upstreamId, urlStageId });
+    if (urlStageId) {
+      setStageId(urlStageId);
       
-      // 쿼리 파라미터에 stageId가 있으면 바로 사용
-      if (urlStageId) {
-        console.log('✅ [determineStageId] Using stageId from query params:', urlStageId);
-        setStageId(urlStageId);
-        
-        // stageId가 있어도 upstreamId로 upstream 정보를 가져와서 selectedUpstream 설정
-        if (upstreamId) {
+      // stageId가 있어도 upstreamId로 upstream 정보를 가져와서 selectedUpstream 설정
+      if (upstreamId) {
+        const fetchUpstreamDetails = async () => {
           try {
-            console.log(
-              '🔍 [determineStageId] Fetching upstream details for selectedUpstream:',
-              upstreamId
-            );
             const upstreamData = await getUpstreamByUpstreamId(upstreamId);
-            console.log(
-              '📦 [determineStageId] Upstream data response:',
-              upstreamData
-            );
-
             if (upstreamData.success && upstreamData.data?.upstream) {
-              console.log(
-                '✅ [determineStageId] Setting selected upstream:',
-                upstreamData.data.upstream
-              );
               setSelectedUpstream(upstreamData.data.upstream);
-            } else {
-              console.error(
-                '❌ [determineStageId] No upstream data found in response'
-              );
             }
           } catch (error) {
-            console.error(
-              '❌ [determineStageId] Error fetching upstream details:',
-              error
-            );
+            console.error('[ERROR] Failed to fetch upstream details:', error);
           }
-        }
-        return;
+        };
+        fetchUpstreamDetails();
       }
+      return;
+    }
       
-      // URL에서 stageId가 없는 경우에만 upstream에서 추출
-      if (upstreamId) {
+    // URL에서 stageId가 없는 경우에만 upstream에서 추출
+    if (upstreamId) {
+      const fetchUpstreamDetails = async () => {
         try {
-          console.log(
-            '🔍 [determineStageId] Found upstreamId in URL params, fetching upstream details:',
-            upstreamId
-          );
-          // upstream 정보를 가져와서 stageId 추출
           const upstreamData = await getUpstreamByUpstreamId(upstreamId);
-          console.log(
-            '📦 [determineStageId] Upstream data response:',
-            upstreamData
-          );
-
           if (upstreamData.success && upstreamData.data?.upstream) {
-            console.log(
-              '📦 [determineStageId] Upstream object:',
-              upstreamData.data.upstream
-            );
-            console.log(
-              '📦 [determineStageId] Upstream keys:',
-              Object.keys(upstreamData.data.upstream)
-            );
-
-            // stage 정보가 있는지 확인
             if (upstreamData.data.upstream.stage) {
-              const extractedStageId = upstreamData.data.upstream.stage.id;
-              console.log(
-                '✅ [determineStageId] Extracted stageId from upstream:',
-                extractedStageId
-              );
-              setStageId(extractedStageId); // stageId state 업데이트
-            } else {
-              console.warn(
-                '⚠️ [determineStageId] No stage information in upstream'
-              );
+              setStageId(upstreamData.data.upstream.stage.id);
             }
-
-            // 선택된 upstream 설정
-            console.log(
-              '✅ [determineStageId] Setting selected upstream:',
-              upstreamData.data.upstream
-            );
             setSelectedUpstream(upstreamData.data.upstream);
-
-            // stageId가 설정되었으므로 즉시 스템 데이터 로드 (함수 정의 후에 호출)
-          } else {
-            console.error(
-              '❌ [determineStageId] No upstream data found in response'
-            );
           }
         } catch (error) {
-          console.error(
-            '❌ [determineStageId] Error fetching upstream details:',
-            error
-          );
-          console.error(
-            '❌ [determineStageId] Error details:',
-            (error as any)?.message
-          );
+          console.error('[ERROR] Failed to fetch upstream details:', error);
         }
-        return;
-      }
-
-      console.log('⚠️ [determineStageId] No stageId or upstreamId found');
-    };
-
-    determineStageId();
+      };
+      fetchUpstreamDetails();
+    }
   }, [upstreamId, urlStageId]);
 
   // 상태 변경 추적을 위한 로그
@@ -799,7 +724,7 @@ const StemSetReviewPage = () => {
     (ws: WaveSurfer, id: string) => {
       try {
         console.log(`🎯 [handleReady] Ready callback for ${id} START`);
-        console.log(`🎯 [handleReady] WaveSurfer instance:`, ws ? 'valid' : 'null');
+        console.log(`�� [handleReady] WaveSurfer instance:`, ws ? 'valid' : 'null');
         
         wavesurferRefs.current[id] = ws;
 
