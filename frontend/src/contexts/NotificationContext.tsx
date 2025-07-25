@@ -188,19 +188,11 @@ export const NotificationProvider: React.FC<NotificationProviderProps> = ({ chil
           
           console.log('🔔 [NotificationSocket] ✅ Notification added to state');
           console.log('🔔 [NotificationSocket] 📊 New counts - Total:', newNotifications.length, 'Unread:', newUnreadCount);
-          console.log('🔔 [NotificationSocket] 🔔 This should immediately update the badge!');
           
-          // 브라우저 이벤트 발생으로 컴포넌트들에게 알림
+          // 강제 상태 업데이트를 위한 setTimeout 추가
           setTimeout(() => {
-            window.dispatchEvent(new CustomEvent('notification-count-updated', {
-              detail: { 
-                count: newUnreadCount,
-                total: newNotifications.length,
-                newNotification: notification
-              }
-            }));
-            console.log('🔔 [NotificationSocket] 📢 Broadcast notification update event');
-          }, 0);
+            console.log('🔔 [NotificationSocket] 🔄 Force state refresh triggered');
+          }, 100);
           
           return newNotifications;
         });
