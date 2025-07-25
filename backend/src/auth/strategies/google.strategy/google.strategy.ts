@@ -7,15 +7,17 @@ import { AuthService } from '../../auth.service';
 export class GoogleStrategy extends PassportStrategy(Strategy, 'google') {
     
     constructor(private readonly authService: AuthService) {
+        const callbackURL = process.env.NODE_ENV === 'production'
+            ? 'https://waveflow.pro/auth/google/callback'
+            : 'http://localhost:5173/auth/google/callback';
+            
         super({
             clientID: process.env.GOOGLE_CLIENT_ID,
             clientSecret: process.env.GOOGLE_CLIENT_SECRET,
-            callbackURL: process.env.NODE_ENV === 'production'
-                ? 'https://waveflow.pro/auth/google/callback'
-                : 'http://localhost:5173/auth/google/callback',
+            callbackURL,
             scope: ['email', 'profile'],
         });
-        console.log('[GoogleStrategy] 초기화됨, callbackURL:', this.callbackURL);
+        console.log('[GoogleStrategy] 초기화됨, callbackURL:', callbackURL);
     }
 
     async validate(accessToken: string, refreshToken: string, profile: any, done: VerifyCallback): Promise<any> {
