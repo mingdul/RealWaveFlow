@@ -8,8 +8,8 @@ export class GoogleStrategy extends PassportStrategy(Strategy, 'google') {
     
     constructor(private readonly authService: AuthService) {
         const callbackURL = process.env.NODE_ENV === 'production'
-            ? 'https://waveflow.pro/auth/google/callback'
-            : 'http://localhost:5173/auth/google/callback';
+            ? 'https://waveflow.pro/api/auth/google/callback'
+            : 'http://localhost:3000/auth/google/callback';
             
         super({
             clientID: process.env.GOOGLE_CLIENT_ID,

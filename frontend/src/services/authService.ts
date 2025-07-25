@@ -45,8 +45,8 @@ class AuthService {
    */
   loginWithGoogle(): void {
     const baseUrl = import.meta.env.PROD
-      ? 'https://waveflow.pro'     // 프로덕션 도메인
-      : 'http://localhost:3000';   // 개발 도메인
+      ? 'https://waveflow.pro'
+      : 'http://localhost:3000';
 
     // 백엔드 API의 Google OAuth 시작 엔드포인트로 리디렉션
     window.location.href = `${baseUrl}/api/auth/google`;
