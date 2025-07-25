@@ -1,5 +1,5 @@
 import React from 'react';
-import { Navigate } from 'react-router-dom';
+import { Navigate, useLocation } from 'react-router-dom';
 import { useAuth } from '../contexts/AuthContext';
 
 interface PublicRouteProps {
@@ -8,6 +8,7 @@ interface PublicRouteProps {
 
 const PublicRoute: React.FC<PublicRouteProps> = ({ children }) => {
   const { isLoading, isAuthenticated } = useAuth();
+  const location = useLocation();
 
   // 초기 인증 체크가 끝날 때까지 스피너
   if (isLoading) {
@@ -18,7 +19,12 @@ const PublicRoute: React.FC<PublicRouteProps> = ({ children }) => {
     );
   }
 
-  // 이미 로그인된 사용자라면 대시보드로 리다이렉트
+  // Google Callback 페이지는 인증 상태와 관계없이 접근 가능
+  if (location.pathname === '/auth/google/callback') {
+    return <>{children}</>;
+  }
+
+  // 이미 로그인된 사용자라면 대시보드로 리디렉트
   if (isAuthenticated) {
     return <Navigate to="/dashboard" replace />;
   }

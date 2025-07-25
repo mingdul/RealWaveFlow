@@ -57,6 +57,7 @@ export class AuthController {
   @ApiOperation({ summary: '구글 로그인', description: '구글 OAuth 로그인 페이지로 리디렉션합니다.' })
   @ApiResponse({ status: 302, description: '구글 로그인 페이지로 리디렉션' })
   @UseGuards(AuthGuard('google'))
+  @SkipTrackAccess()
   async googleAuth() {
     // passport-google-oauth20가 자동으로 Google 로그인 페이지로 리디렉션
   }
@@ -65,6 +66,7 @@ export class AuthController {
   @ApiOperation({ summary: '구글 로그인 콜백', description: '구글 로그인 완료 후 호출되는 콜백 엔드포인트입니다.' })
   @ApiResponse({ status: 200, description: '구글 로그인 성공' })
   @UseGuards(AuthGuard('google'))
+  @SkipTrackAccess()
   async googleCallback(@Req() req: any, @Res({ passthrough: true }) res: Response) {
     try {
       console.log('[DEBUG] Google callback received');
