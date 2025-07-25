@@ -144,43 +144,38 @@ export class NotificationGateway
 
   // 룸 조인 이벤트 핸들러
   @SubscribeMessage('join_user_room')
-  async handleJoinUserRoom(
-    @MessageBody() data: { userId: string },
-    @ConnectedSocket() client: Socket,
-  ) {
+  async handleJoinUserRoom(@MessageBody() data: { userId: string }, @ConnectedSocket() client: Socket) {
     try {
-      const userId = client.data.userId;
+      const { userId } = data;
       
-      if (!userId || userId !== data.userId) {
-        this.logger.error('🔔 [NotificationGateway] Invalid user ID for room join');
-        client.emit('join_user_room_error', { message: 'Invalid user ID' });
+      if (!userId) {
+        this.logger.error('🔔 [NotificationGateway] No user ID provided for room join');
+        client.emit('join_user_room_error', { message: 'No user ID provided' });
         return;
       }
 
-      // 룸 조인 (이미 조인되어 있어도 안전)
+      // 사용자 전용 룸에 조인
       client.join(`user_${userId}`);
+      this.logger.log(`🔔 [NotificationGateway] User joined room: user_${userId}`);
       
-      this.logger.log(`🔔 [NotificationGateway] User explicitly joined room: user_${userId}`);
-      
-      // 조인 성공 확인
+      // 조인 성공 알림
       client.emit('join_user_room_success', { 
-        message: 'Successfully joined user room',
         room: `user_${userId}`,
-        userId: userId 
+        socketId: client.id 
       });
       
+      // 현재 연결된 모든 룸 로깅
+      const rooms = Array.from(client.rooms);
+      this.logger.log(`🔔 [NotificationGateway] Client ${client.id} rooms:`, rooms);
+      
     } catch (error) {
-      this.logger.error('🔔 [NotificationGateway] Join room error:', error.message);
-      client.emit('join_user_room_error', { message: 'Failed to join room' });
+      this.logger.error('🔔 [NotificationGateway] Room join error:', error.message);
+      client.emit('join_user_room_error', { message: error.message });
     }
   }
 
   // 특정 사용자에게 알림 전송
   async sendNotificationToUser(userId: string, type: string, message: string, data?: any) {
-    const isUserConnected = this.connectedUsers.has(userId);
-    
-    this.logger.log(`🔔 [NotificationGateway] Sending "${type}" to user ${userId} (connected: ${isUserConnected})`);
-    
     // DB에 알림 저장
     let savedNotification;
     try {
@@ -191,34 +186,29 @@ export class NotificationGateway
       return;
     }
     
-    // 소켓으로 실시간 전송 (연결된 경우에만)
-    if (isUserConnected) {
-      try {
-        const payload = {
-          id: savedNotification.id,
-          userId: savedNotification.userId,
-          type: savedNotification.type,
-          message: savedNotification.message,
-          data: savedNotification.data,
-          isRead: savedNotification.isRead,
-          createdAt: savedNotification.createdAt,
-        };
-        
-        this.logger.log(`🔔 [NotificationGateway] 📡 Sending payload via websocket:`, JSON.stringify(payload, null, 2));
-        this.server.to(`user_${userId}`).emit('notification', payload);
-        this.logger.log(`🔔 [NotificationGateway] ✅ Notification sent via websocket to room: user_${userId}`);
-        
-        // 연결된 소켓 정보도 로그
-        const userSocket = this.connectedUsers.get(userId);
-        this.logger.log(`🔔 [NotificationGateway] 📱 User socket ID: ${userSocket?.id}, Connected: ${userSocket?.connected}`);
-        
-      } catch (error) {
-        this.logger.error(`🔔 [NotificationGateway] ❌ Websocket send error: ${error.message}`);
-        this.logger.error(`🔔 [NotificationGateway] Error details:`, error);
-      }
-    } else {
-      this.logger.log(`🔔 [NotificationGateway] ⏳ User not connected, notification saved to DB only: ${userId}`);
-      this.logger.log(`🔔 [NotificationGateway] 📊 Currently connected users: ${Array.from(this.connectedUsers.keys())}`);
+    // 소켓으로 실시간 전송 (연결 여부와 관계없이 시도)
+    try {
+      const payload = {
+        id: savedNotification.id,
+        userId: savedNotification.userId,
+        type: savedNotification.type,
+        message: savedNotification.message,
+        data: savedNotification.data,
+        isRead: savedNotification.isRead,
+        createdAt: savedNotification.createdAt,
+      };
+      
+      // 연결된 소켓 정보 로깅
+      const connectedSockets = await this.server.in(`user_${userId}`).allSockets();
+      this.logger.log(`🔔 [NotificationGateway] 📊 Connected sockets in room user_${userId}:`, Array.from(connectedSockets));
+      
+      this.logger.log(`🔔 [NotificationGateway] 📡 Sending payload via websocket:`, JSON.stringify(payload, null, 2));
+      this.server.to(`user_${userId}`).emit('notification', payload);
+      this.logger.log(`🔔 [NotificationGateway] ✅ Notification sent via websocket to room: user_${userId}`);
+      
+    } catch (error) {
+      this.logger.error(`🔔 [NotificationGateway] ❌ Websocket send error: ${error.message}`);
+      this.logger.error(`🔔 [NotificationGateway] Error details:`, error);
     }
   }
 
