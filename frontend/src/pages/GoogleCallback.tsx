@@ -1,10 +1,10 @@
 import { useEffect } from 'react';
-import { useNavigate, useLocation } from 'react-router-dom';
+import { useNavigate } from 'react-router-dom';
 import authService from '../services/authService';
 
 const GoogleCallback = () => {
   const navigate = useNavigate();
-  const location = useLocation();
+
 
   useEffect(() => {
     const handleGoogleCallback = async () => {
