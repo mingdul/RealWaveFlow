@@ -16,7 +16,7 @@ export const NotificationProvider: React.FC<NotificationProviderProps> = ({ chil
   
   const [notifications, setNotifications] = useState<Notification[]>([]);
   const [socket, setSocket] = useState<Socket | null>(null);
-  const [isConnecting, setIsConnecting] = useState(false);
+
   
   const { user, logout } = useAuth();
   const { showToast } = useToast();
@@ -33,92 +33,32 @@ export const NotificationProvider: React.FC<NotificationProviderProps> = ({ chil
   // 알림 시스템 상태 (핵심 정보만)
   console.log('🔔 [NotificationProvider] User:', user?.email || 'not logged in', '| Notifications:', notifications.length, '| Unread:', unreadCount);
 
-  // 소켓 초기화 함수
-  const initializeSocket = useCallback(() => {
-    if (!user?.id || isConnecting) return;
-    
-    try {
-      setIsConnecting(true);
-      console.log('🔔 [NotificationProvider] Initializing socket for user:', user.email);
-      
-      const baseUrl = import.meta.env.VITE_API_URL ? 
-        import.meta.env.VITE_API_URL.replace('/api', '') : 
-        'https://waveflow.pro';
-      
-      const newSocket = io(`${baseUrl}/notifications`, {
-        withCredentials: true,
-        transports: ['websocket', 'polling'],
-        reconnection: true,
-        reconnectionDelay: 1000,
-        reconnectionDelayMax: 5000,
-        reconnectionAttempts: 5,
-      });
-
-      newSocket.on('connect', () => {
-        console.log('🔔 [NotificationSocket] Connected, joining room for user:', user.id);
-        newSocket.emit('join_user_room', { userId: user.id });
-      });
-
-      newSocket.on('notification', (notification: Notification) => {
-        console.log('🔔 [NotificationSocket] Received notification:', notification);
-        setNotifications(prev => {
-          // 중복 체크
-          if (prev.some(n => n.id === notification.id)) {
-            return prev;
-          }
-          return [notification, ...prev];
-        });
-      });
-
-      newSocket.on('join_user_room_success', (data) => {
-        console.log('🔔 [NotificationSocket] Successfully joined room:', data);
-      });
-
-      newSocket.on('join_user_room_error', (error) => {
-        console.error('🔔 [NotificationSocket] Failed to join room:', error);
-      });
-
-      newSocket.on('disconnect', (reason) => {
-        console.log('🔔 [NotificationSocket] Disconnected:', reason);
-      });
-
-      newSocket.on('connect_error', (error) => {
-        console.error('🔔 [NotificationSocket] Connection error:', error);
-        if (error.message.includes('Unauthorized')) {
-          showToast('error', '인증이 만료되었습니다. 다시 로그인해주세요.');
-          logout();
-        }
-      });
-
-      setSocket(newSocket);
-    } catch (error) {
-      console.error('🔔 [NotificationSocket] Initialization error:', error);
-    } finally {
-      setIsConnecting(false);
-    }
-  }, [user?.id, user?.email, isConnecting, showToast, logout]);
-
-  // 소켓 초기화 및 정리
   useEffect(() => {
-    if (user?.id) {
-      initializeSocket();
+        // 기존 소켓이 있다면 정리
+    const currentSocket = socket;
+    if (currentSocket) {
+      currentSocket.disconnect();
+      setSocket(null);
     }
-    
-    return () => {
-      if (socket) {
-        console.log('🔔 [NotificationSocket] Cleaning up socket connection');
-        socket.disconnect();
-        setSocket(null);
-      }
-    };
-  }, [user?.id, initializeSocket]);
 
-  // 기존 알림 로드
-  useEffect(() => {
-    if (user?.id) {
+    if (user) {
+      console.log('🔔 [NotificationProvider] Initializing for user:', user.email);
+      
+      // 🔥 NEW: 로그인 후 즉시 기존 알림 로드 (소켓 연결 전)
       loadExistingNotifications();
+      
+      // 🔥 NEW: 소켓 연결은 별도로 진행
+      initializeNotificationSocket();
+      
+      return () => {
+        if (socket) {
+          socket.disconnect();
+        }
+      };
+    } else {
+      setNotifications([]);
     }
-  }, [user?.id]);
+  }, [user]);  // user만 dependency로 유지
 
   // 서버에서 기존 알림 로드 (API 호출)
   const loadExistingNotifications = async () => {
@@ -139,6 +79,171 @@ export const NotificationProvider: React.FC<NotificationProviderProps> = ({ chil
       }
       
       setNotifications([]);
+    }
+  };
+
+  const initializeNotificationSocket = () => {
+    try {
+      // Socket.IO는 자동으로 /socket.io/ 경로를 추가하므로 base URL만 사용
+      const baseUrl = import.meta.env.VITE_API_URL ? 
+        import.meta.env.VITE_API_URL.replace('/api', '') : 
+        'https://waveflow.pro';
+      
+      console.log('🔔 [NotificationSocket] Connecting to:', `${baseUrl}/notifications`);
+      console.log('🔔 [NotificationSocket] Current user:', user?.email);
+      
+      // 알림 전용 소켓 연결 (/notifications 네임스페이스)
+      const notificationSocket = io(`${baseUrl}/notifications`, {
+        withCredentials: true, // 쿠키 전송 허용 (JWT 토큰 포함)
+        autoConnect: true,
+        transports: ['websocket', 'polling'],
+        reconnection: true,
+        reconnectionDelay: 1000,
+        reconnectionDelayMax: 5000,
+        reconnectionAttempts: 5,
+        upgrade: true,
+        rememberUpgrade: true,
+        timeout: 20000,
+      });
+
+      // 연결 성공
+      notificationSocket.on('connect', () => {
+        console.log('🔔 [NotificationSocket] ✅ Connected successfully, Socket ID:', notificationSocket.id);
+        console.log('🔔 [NotificationSocket] Socket connected to:', `${baseUrl}/notifications`);
+        console.log('🔔 [NotificationSocket] User for room join:', user?.id, user?.email);
+        
+        // 연결 성공 시 즉시 사용자 룸 조인 요청
+        if (user?.id) {
+          console.log('🔔 [NotificationSocket] 🚪 Requesting to join user room for user:', user.id);
+          notificationSocket.emit('join_user_room', { userId: user.id });
+          
+          // 3초 후 room join 상태 확인
+          setTimeout(() => {
+            console.log('🔔 [NotificationSocket] 🔍 Checking room join status after 3 seconds...');
+            notificationSocket.emit('check_room_status', { userId: user.id });
+          }, 3000);
+        } else {
+          console.error('🔔 [NotificationSocket] ❌ No user ID available for room join!');
+        }
+      });
+
+      // 연결 해제
+      notificationSocket.on('disconnect', (reason) => {
+        console.log('🔔 [NotificationSocket] ❌ Disconnected:', reason);
+        // 🔥 REMOVED: 토스트 제거
+        // showToast('warning', '실시간 알림 연결이 해제되었습니다.', 2000);
+      });
+
+      // 알림 서비스 연결 확인
+      notificationSocket.on('notification_connected', (data) => {
+        console.log('🔔 [NotificationSocket] Notification service connected:', data);
+        
+        // 🔥 MODIFIED: silent 플래그가 없을 때만 토스트 표시 (기본적으로 토스트 없음)
+        if (!data.silent) {
+          showToast('success', '알림 서비스가 활성화되었습니다.', 3000);
+        }
+        
+        // 🔥 REMOVED: 중복 방지 - 이미 useEffect에서 로드했으므로 여기서는 제거
+        // loadExistingNotifications();
+      });
+
+      // 🔥 NEW: 룸 조인 성공 이벤트
+      notificationSocket.on('join_user_room_success', (data) => {
+        console.log('🔔 [NotificationSocket] ✅ Successfully joined user room:', data);
+        // 🔥 REMOVED: 토스트 제거
+        // showToast('success', `알림 룸에 연결되었습니다. (${data.room})`, 2000);
+      });
+
+      // 🔥 NEW: 룸 조인 실패 이벤트
+      notificationSocket.on('join_user_room_error', (data) => {
+        console.error('🔔 [NotificationSocket] ❌ Failed to join user room:', data);
+        // 🔥 REMOVED: 토스트 제거, 로그만 남김
+        // showToast('error', `알림 룸 연결에 실패했습니다: ${data.message}`, 3000);
+      });
+
+      // 🔥 NEW: notification 이벤트 핸들러를 여기서 바로 등록 (디버깅 강화)
+      notificationSocket.on('notification', (notification: Notification) => {
+        // 중요한 알림만 토스트로 표시
+        if (notification.type === 'IMPORTANT' || notification.type === 'URGENT') {
+          showToast('info', notification.message, 3000);
+        }
+        
+        setNotifications(prevNotifications => {
+          const exists = prevNotifications.some(n => n.id === notification.id);
+          if (exists) {
+            return prevNotifications;
+          }
+          
+          const newNotifications = [notification, ...prevNotifications];
+          const newUnreadCount = newNotifications.filter(n => !n.isRead).length;
+          
+          window.dispatchEvent(new CustomEvent('notification-realtime-update', {
+            detail: { 
+              newUnreadCount,
+              totalCount: newNotifications.length,
+              timestamp: new Date().toISOString(),
+              source: 'socket-notification-received'
+            }
+          }));
+          
+          return newNotifications;
+        });
+      });
+
+      // 🔥 NEW: 소켓 이벤트 감지 강화
+      notificationSocket.onAny((eventName, ...args) => {
+        console.log('🔔 [NotificationSocket] 🎯 ANY EVENT RECEIVED:', eventName, args);
+      });
+
+      // 🔥 NEW: 테스트용 이벤트 핸들러들
+      notificationSocket.on('test_notification_result', (data) => {
+        console.log('🧪 [NotificationSocket] Test notification result:', data);
+      });
+
+      notificationSocket.on('server_test', (data) => {
+        console.log('🧪 [NotificationSocket] Server test event:', data);
+      });
+
+      notificationSocket.on('ping', (data) => {
+        console.log('🏓 [NotificationSocket] Ping received:', data);
+        notificationSocket.emit('pong', { timestamp: new Date().toISOString() });
+      });
+
+      // 연결 오류
+      notificationSocket.on('connect_error', (error) => {
+        if (error.message.includes('Unauthorized')) {
+          showToast('error', '인증이 만료되었습니다. 다시 로그인해주세요.');
+          logout();
+        }
+      });
+
+      // 인증 실패
+      notificationSocket.on('unauthorized', (_data) => {
+        console.log('🔔 [NotificationProvider] WebSocket 인증 실패');
+        showToast('error', '인증이 만료되었습니다. 다시 로그인해주세요.');
+        logout();
+      });
+
+      // 재연결 시 기존 알림 다시 로드
+      notificationSocket.on('reconnect', (_attemptNumber) => {
+        console.log('🔔 [NotificationProvider] WebSocket 재연결됨 - 룸 재조인 및 알림 다시 로드');
+        if (user?.id) {
+          // 🔥 NEW: 재연결 시에도 룸 조인 재요청
+          console.log('🔔 [NotificationSocket] Reconnected - Requesting to join user room again:', user.id);
+          notificationSocket.emit('join_user_room', { userId: user.id });
+          
+          loadExistingNotifications();
+        }
+      });
+
+      // 연결 소켓 저장
+      setSocket(notificationSocket);
+      
+      console.log('🔔 [NotificationSocket] Socket initialization completed');
+      
+    } catch (error) {
+      console.error('🔔 [NotificationSocket] ❌ Failed to initialize socket:', error);
+      showToast('error', '알림 시스템 초기화에 실패했습니다.');
     }
   };
 
