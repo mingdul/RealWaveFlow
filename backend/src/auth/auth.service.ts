@@ -13,41 +13,30 @@ export class AuthService {
 
   async validateOAuthLogin(profile: any) {
     try {
-      const { id, displayName, emails, photos, provider } = profile;
-
-      const email = emails?.[0]?.value;
-      const profileImage = photos?.[0]?.value;
-
-      if (!email) {
-        throw new UnauthorizedException('이메일 정보가 없어 로그인할 수 없습니다.');
-      }
-      let user = await this.usersService.findByProviderId(provider, id);
-
+      console.log('[validateOAuthLogin] Google profile:', profile);
+      
+      const email = profile.emails[0].value;
+      const username = profile.displayName || email.split('@')[0];
+      
+      // 기존 사용자 찾기
+      let user = await this.usersService.findByEmail(email);
+      
       if (!user) {
-        user = await this.usersService.createFromSocial({
+        console.log('[validateOAuthLogin] 새 사용자 생성:', { email, username });
+        // 새 사용자 생성
+        await this.usersService.register({
           email,
-          username: displayName,
-          provider,
-          provider_id: id,
-          image_url: profileImage,
+          username,
+          password: await bcrypt.hash(Math.random().toString(36), 10), // 임의의 비밀번호
         });
+        user = await this.usersService.findByEmail(email);
       }
 
-      const payload = { sub: user.id, email: user.email, username: user.username };
-      const access_token = this.jwtService.sign(payload);
-
-      return {
-        access_token,
-        user: {
-          id: user.id,
-          email: user.email,
-          username: user.username,
-          image_url: user.image_url,
-        },
-      };
+      console.log('[validateOAuthLogin] 사용자 정보:', user);
+      return user;
     } catch (error) {
-      console.error('OAuth validation error:', error);
-      throw error;
+      console.error('[validateOAuthLogin] 오류:', error);
+      throw new UnauthorizedException('Google 인증 처리 중 오류가 발생했습니다.');
     }
   }
 
@@ -73,29 +62,18 @@ export class AuthService {
 
   async handleGoogleLogin(user: any) {
     try {
-      // Google OAuth로 받은 사용자 정보로 회원가입 또는 로그인
-      let dbUser = await this.usersService.findByEmail(user.email);
+      console.log('[handleGoogleLogin] 사용자 정보:', user);
       
-      if (!dbUser) {
-        // 새 사용자 생성
-        const result = await this.usersService.register({
-          email: user.email,
-          username: user.displayName || user.email.split('@')[0],
-          password: await bcrypt.hash(Math.random().toString(36), 10), // 임의의 비밀번호 생성
-        });
-        dbUser = await this.usersService.findByEmail(user.email);
-      }
-
       // JWT 토큰 생성
       const jwt = this.jwtService.sign({
-        sub: dbUser.id,
-        email: dbUser.email,
-        username: dbUser.username,
+        sub: user.id,
+        email: user.email,
+        username: user.username,
       });
 
-      return { access_token: jwt, user: dbUser };
+      return { access_token: jwt, user };
     } catch (error) {
-      console.error('Google authentication error:', error);
+      console.error('[handleGoogleLogin] 오류:', error);
       throw new UnauthorizedException('Google 인증 처리 중 오류가 발생했습니다.');
     }
   }

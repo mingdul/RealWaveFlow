@@ -69,10 +69,17 @@ export class AuthController {
   @SkipTrackAccess()
   async googleCallback(@Req() req: any, @Res({ passthrough: true }) res: Response) {
     try {
-      console.log('[DEBUG] Google callback received');
+      console.log('[googleCallback] 요청 시작');
+      console.log('[googleCallback] req.user:', req.user);
       
+      if (!req.user) {
+        console.error('[googleCallback] 사용자 정보 없음');
+        throw new UnauthorizedException('사용자 정보를 찾을 수 없습니다.');
+      }
+
       // Google 인증 처리 및 JWT 토큰 생성
       const { access_token, user } = await this.authService.handleGoogleLogin(req.user);
+      console.log('[googleCallback] 토큰 생성 완료:', { userId: user.id });
 
       // 프로덕션/개발 환경에 따른 설정
       const isProd = process.env.NODE_ENV === 'production';
@@ -88,6 +95,8 @@ export class AuthController {
         path: '/',
       });
 
+      console.log('[googleCallback] 쿠키 설정 완료');
+      
       return {
         success: true,
         data: {
@@ -99,7 +108,7 @@ export class AuthController {
         },
       };
     } catch (error) {
-      console.error('[ERROR] Google callback error:', error);
+      console.error('[googleCallback] 오류:', error);
       throw new UnauthorizedException('Google 로그인 처리 중 오류가 발생했습니다.');
     }
   }
