@@ -69,4 +69,34 @@ export class AuthService {
       image_url: user.image_url,
     };
   }
+
+
+  async handleGoogleLogin(user: any) {
+    try {
+      // Google OAuth로 받은 사용자 정보로 회원가입 또는 로그인
+      let dbUser = await this.usersService.findByEmail(user.email);
+      
+      if (!dbUser) {
+        // 새 사용자 생성
+        const result = await this.usersService.register({
+          email: user.email,
+          username: user.displayName || user.email.split('@')[0],
+          password: await bcrypt.hash(Math.random().toString(36), 10), // 임의의 비밀번호 생성
+        });
+        dbUser = await this.usersService.findByEmail(user.email);
+      }
+
+      // JWT 토큰 생성
+      const jwt = this.jwtService.sign({
+        sub: dbUser.id,
+        email: dbUser.email,
+        username: dbUser.username,
+      });
+
+      return { access_token: jwt, user: dbUser };
+    } catch (error) {
+      console.error('Google authentication error:', error);
+      throw new UnauthorizedException('Google 인증 처리 중 오류가 발생했습니다.');
+    }
+  }
 }

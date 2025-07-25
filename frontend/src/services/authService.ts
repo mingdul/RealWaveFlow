@@ -191,6 +191,24 @@ class AuthService {
       throw new Error(error.response?.data?.message || error.message || '프로필 이미지 업로드에 실패했습니다.');
     }
   }
+
+  /**
+   * Google OAuth 콜백 처리
+   */
+  async handleGoogleCallback(): Promise<boolean> {
+    try {
+      const response = await apiClient.post<ApiResponse<{ user: User }>>(
+        '/auth/google/callback',
+        {},
+        { withCredentials: true }
+      );
+
+      return response.data.success;
+    } catch (error) {
+      console.error('Google callback handling error:', error);
+      return false;
+    }
+  }
 }
 
 export default new AuthService();

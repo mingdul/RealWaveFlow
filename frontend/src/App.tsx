@@ -19,7 +19,7 @@ import InvitePage from './pages/InvitePage.tsx';
 import StemReview from './pages/StemReview.tsx';
 import StemSetReviewPage from './pages/StemSetReviewPage.tsx';
 import { TrackPageWrapper, StagePageWrapper, UpstreamPageWrapper } from './components/guards';
-
+import GoogleCallback from './pages/GoogleCallback';
 
 
 // import PR_Page from './pages/PR_Page.tsx';     
@@ -43,6 +43,7 @@ const App = () => {
               <Route path="/" element={<LandingPage2 />} />
               <Route path="/login" element={<PublicRoute><LoginPage /></PublicRoute>} />
               <Route path="/signup" element={<PublicRoute><SignUpPage /></PublicRoute>} />
+              <Route path="/auth/google/callback" element={<PublicRoute><GoogleCallback /></PublicRoute>} />
               <Route path="/dashboard" element={<DashboardPage />} />
               <Route path="/invite/:token" element={<InvitePage />} />
               <Route path="/stage/:stageId" element={
