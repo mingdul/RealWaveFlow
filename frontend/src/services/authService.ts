@@ -197,9 +197,8 @@ class AuthService {
    */
   async handleGoogleCallback(): Promise<boolean> {
     try {
-      const response = await apiClient.post<ApiResponse<{ user: User }>>(
+      const response = await apiClient.get<ApiResponse<{ user: User }>>(
         '/auth/google/callback',
-        {},
         { withCredentials: true }
       );
 

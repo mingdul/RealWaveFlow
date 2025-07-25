@@ -62,7 +62,7 @@ export class AuthController {
     // passport-google-oauth20가 자동으로 Google 로그인 페이지로 리디렉션
   }
 
-  @Post('google/callback')
+  @Get('google/callback')
   @ApiOperation({ summary: '구글 로그인 콜백', description: '구글 로그인 완료 후 호출되는 콜백 엔드포인트입니다.' })
   @ApiResponse({ status: 200, description: '구글 로그인 성공' })
   @UseGuards(AuthGuard('google'))

@@ -1,22 +1,26 @@
 import { useEffect } from 'react';
-import { useNavigate } from 'react-router-dom';
+import { useNavigate, useLocation } from 'react-router-dom';
 import authService from '../services/authService';
 
 const GoogleCallback = () => {
   const navigate = useNavigate();
+  const location = useLocation();
 
   useEffect(() => {
     const handleGoogleCallback = async () => {
       try {
+        console.log('[GoogleCallback] 콜백 처리 시작');
         const success = await authService.handleGoogleCallback();
         
         if (success) {
+          console.log('[GoogleCallback] 로그인 성공, 대시보드로 이동');
           navigate('/dashboard');
         } else {
+          console.log('[GoogleCallback] 로그인 실패, 로그인 페이지로 이동');
           navigate('/login');
         }
       } catch (error) {
-        console.error('Google 로그인 처리 중 오류:', error);
+        console.error('[GoogleCallback] 오류 발생:', error);
         navigate('/login');
       }
     };
