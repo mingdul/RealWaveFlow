@@ -82,14 +82,13 @@ export class AuthController {
       console.log('[googleCallback] 토큰 생성 완료:', { userId: user.id });
 
       // 프로덕션/개발 환경에 따른 설정
-      const isProd = process.env.NODE_ENV === 'production';
-      const domain = isProd ? 'waveflow.pro' : 'localhost';
-      const frontendUrl = isProd ? 'https://waveflow.pro' : 'http://localhost:5173';
+      const domain = 'waveflow.pro' ;
+      const frontendUrl = 'https://waveflow.pro' ;
 
       // 쿠키 설정
       res.cookie('jwt', access_token, {
         httpOnly: true,
-        secure: isProd,
+        secure: true,
         sameSite: 'lax',
         domain: domain,
         maxAge: 24 * 60 * 60 * 1000, // 24시간
@@ -102,9 +101,8 @@ export class AuthController {
       return res.redirect(`${frontendUrl}/dashboard`);
     } catch (error) {
       console.error('[googleCallback] 오류:', error);
-      const frontendUrl = process.env.NODE_ENV === 'production'
-        ? 'https://waveflow.pro'
-        : 'http://localhost:5173';
+      const frontendUrl = 'https://waveflow.pro'
+    
       return res.redirect(`${frontendUrl}/login?error=auth_failed`);
     }
   }
