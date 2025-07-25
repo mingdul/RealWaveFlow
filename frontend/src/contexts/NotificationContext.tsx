@@ -189,11 +189,6 @@ export const NotificationProvider: React.FC<NotificationProviderProps> = ({ chil
           console.log('🔔 [NotificationSocket] ✅ Notification added to state');
           console.log('🔔 [NotificationSocket] 📊 New counts - Total:', newNotifications.length, 'Unread:', newUnreadCount);
           
-          // 강제 상태 업데이트를 위한 setTimeout 추가
-          setTimeout(() => {
-            console.log('🔔 [NotificationSocket] 🔄 Force state refresh triggered');
-          }, 100);
-          
           return newNotifications;
         });
       });
