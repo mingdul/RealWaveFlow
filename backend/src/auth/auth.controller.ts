@@ -88,9 +88,8 @@ export class AuthController {
       // 쿠키 설정
       res.cookie('jwt', access_token, {
         httpOnly: true,
-        secure: true,
+        secure: process.env.NODE_ENV === 'production',
         sameSite: 'lax',
-        domain: domain,
         maxAge: 24 * 60 * 60 * 1000, // 24시간
         path: '/',
       });
