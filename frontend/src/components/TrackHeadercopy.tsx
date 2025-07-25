@@ -3,7 +3,7 @@ import { ChevronLeft, Settings, User, LogOut } from 'lucide-react';
 import { Button } from './';
 import Logo from './Logo';
 import NotificationBell from './NotificationBell';
-import { useNotifications } from '../contexts/NotificationContext';
+import { useNotification } from '../contexts/NotificationContext';
 import { useAuth } from '../contexts/AuthContext';
 import { useNavigate } from 'react-router-dom';
 
@@ -21,7 +21,7 @@ const TrackHeaderCopy: React.FC<TrackHeaderCopyProps> = ({
   onBack,
   // onSettingsClick,
 }) => {
-  const { notifications, unreadCount } = useNotifications();
+  const { notifications, unreadCount } = useNotification();
   const { logout } = useAuth();
   const navigate = useNavigate();
 
