@@ -7,43 +7,96 @@ import { Button } from '../components/';
 const NotificationBell: React.FC = () => {
   const [isOpen, setIsOpen] = useState(false);
   const [isMarkingAllRead, setIsMarkingAllRead] = useState(false);
+  // 🔥 NEW: 강제 리렌더링을 위한 상태 추가
+  const [forceUpdateCounter, setForceUpdateCounter] = useState(0);
+  
   const dropdownRef = useRef<HTMLDivElement>(null);
   const { notifications, unreadCount, markAsRead, markAllRead, refreshNotifications } = useNotifications();
 
-  // 실시간 unread count 계산 - 매번 직접 계산
+  // 🔥 IMPROVED: forceUpdateCounter도 dependency에 추가하여 강제 리렌더링 가능
   const currentUnreadCount = useMemo(() => {
     const count = notifications.filter(n => !n.isRead).length;
     console.log('🔔 [NotificationBell] 📊 Badge count calculated:', {
       totalNotifications: notifications.length,
       unreadCount: count,
-      contextUnreadCount: unreadCount
+      contextUnreadCount: unreadCount,
+      forceUpdateCounter: forceUpdateCounter,
+      notificationsReference: notifications
     });
     return count;
-  }, [notifications, unreadCount]);
+  }, [notifications, unreadCount, forceUpdateCounter]);
 
-  console.log('🔔 [NotificationBell] 🎭 RENDER - Badge should show:', currentUnreadCount);
+  console.log('🔔 [NotificationBell] 🎭 RENDER - Badge should show:', currentUnreadCount, 'Force counter:', forceUpdateCounter);
   
-  // 🔥 NEW: notifications 배열이 변경될 때마다 로깅
+  // 🔥 IMPROVED: notifications 배열이 변경될 때마다 로깅 강화
   useEffect(() => {
     console.log('🔔 [NotificationBell] 📢 NOTIFICATIONS ARRAY CHANGED!');
     console.log('🔔 [NotificationBell] 📊 New notifications count:', notifications.length);
     console.log('🔔 [NotificationBell] 📊 New unread count (calculated):', notifications.filter(n => !n.isRead).length);
     console.log('🔔 [NotificationBell] 🎯 Badge will show:', currentUnreadCount);
+    console.log('🔔 [NotificationBell] 📝 Notifications details:', notifications.map(n => ({
+      id: n.id,
+      message: n.message.substring(0, 30) + '...',
+      isRead: n.isRead,
+      createdAt: n.createdAt
+    })));
+    
+    // 🔥 NEW: 강제 리렌더링 트리거
+    setForceUpdateCounter(prev => prev + 1);
   }, [notifications, currentUnreadCount]);
 
-  // 🔥 NEW: 실시간 알림 업데이트 이벤트 리스너
+  // 🔥 IMPROVED: 실시간 알림 업데이트 이벤트 리스너 강화
   useEffect(() => {
     const handleRealtimeUpdate = (event: CustomEvent) => {
       console.log('🔔 [NotificationBell] 📢 Realtime update event received:', event.detail);
-      // 강제 리렌더링은 이미 notifications 변경으로 자동 발생됨
+      console.log('🔔 [NotificationBell] 🔥 Forcing component re-render...');
+      
+      // 강제 리렌더링 트리거
+      setForceUpdateCounter(prev => {
+        const newCounter = prev + 1;
+        console.log('🔔 [NotificationBell] 🔄 Force update counter:', prev, '→', newCounter);
+        return newCounter;
+      });
+      
+      // DOM 업데이트 강제 확인
+      setTimeout(() => {
+        console.log('🔔 [NotificationBell] ✅ Forced re-render completed');
+        console.log('🔔 [NotificationBell] 📊 Current state after force update:', {
+          notifications: notifications.length,
+          unreadCount: notifications.filter(n => !n.isRead).length,
+          forceUpdateCounter: forceUpdateCounter
+        });
+      }, 100);
     };
 
+    const handleNotificationUpdate = () => {
+      console.log('🔔 [NotificationBell] 📢 Generic notification update event received');
+      setForceUpdateCounter(prev => prev + 1);
+    };
+
+    // 🔥 IMPROVED: 모든 알림 관련 이벤트 리스닝
     window.addEventListener('notification-realtime-update', handleRealtimeUpdate as EventListener);
+    window.addEventListener('notification-update', handleNotificationUpdate as EventListener);
+    window.addEventListener('notification-badge-refresh', handleNotificationUpdate as EventListener);
+    window.addEventListener('notification-force-refresh', handleNotificationUpdate as EventListener);
     
     return () => {
       window.removeEventListener('notification-realtime-update', handleRealtimeUpdate as EventListener);
+      window.removeEventListener('notification-update', handleNotificationUpdate as EventListener);
+      window.removeEventListener('notification-badge-refresh', handleNotificationUpdate as EventListener);
+      window.removeEventListener('notification-force-refresh', handleNotificationUpdate as EventListener);
     };
-  }, []);
+  }, [notifications, forceUpdateCounter]);
+
+  // 🔥 NEW: notifications 상태 변경 감지 및 강제 업데이트
+  useEffect(() => {
+    console.log('🔔 [NotificationBell] 🔍 Monitoring notifications state change...');
+    console.log('🔔 [NotificationBell] 📊 Current notifications:', notifications.length);
+    console.log('🔔 [NotificationBell] 📊 Current unread:', notifications.filter(n => !n.isRead).length);
+    
+    // 상태 변경 시마다 강제 업데이트
+    setForceUpdateCounter(prev => prev + 1);
+  }, [notifications]);
 
   // 외부 클릭 시 드롭다운 닫기
   useEffect(() => {
@@ -71,6 +124,9 @@ const NotificationBell: React.FC = () => {
       try {
         await refreshNotifications();
         console.log('🔔 [NotificationBell] ✅ Notification list refreshed successfully');
+        
+        // 🔥 NEW: 새로고침 후 강제 업데이트
+        setForceUpdateCounter(prev => prev + 1);
       } catch (error) {
         console.error('🔔 [NotificationBell] ❌ Failed to refresh notification list:', error);
       }
@@ -165,17 +221,23 @@ const NotificationBell: React.FC = () => {
         {currentUnreadCount > 0 && (
           <span
             className="absolute -top-1 -right-1 inline-flex items-center justify-center px-2 py-1 text-xs font-bold leading-none text-white transform translate-x-1/2 -translate-y-1/2 bg-red-600 rounded-full transition-all duration-200 ease-in-out"
-            key={`badge-${currentUnreadCount}`}
+            key={`badge-${currentUnreadCount}-${forceUpdateCounter}`}
+            style={{
+              // 🔥 NEW: 강제 리렌더링을 위한 스타일 속성
+              zIndex: 1000,
+              minWidth: '20px'
+            }}
           >
             {currentUnreadCount > 99 ? '99+' : currentUnreadCount}
           </span>
         )}
 
-        {/* 디버그용 - 개발 중에만 표시 */}
+        {/* 🔥 IMPROVED: 디버그 정보 강화 */}
         {import.meta.env.DEV && (
-          <span className="absolute -bottom-6 -right-2 text-xs text-gray-400 bg-gray-100 px-1 rounded">
-            Debug: context={unreadCount} calculated={currentUnreadCount}
-          </span>
+          <div className="absolute -bottom-8 -right-2 text-xs text-gray-400 bg-gray-100 px-2 py-1 rounded text-center">
+            <div>Debug: ctx={unreadCount} calc={currentUnreadCount}</div>
+            <div>Force: {forceUpdateCounter} | Total: {notifications.length}</div>
+          </div>
         )}
       </Button>
 
