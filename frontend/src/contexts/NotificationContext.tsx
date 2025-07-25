@@ -92,14 +92,6 @@ export const NotificationProvider: React.FC<NotificationProviderProps> = ({ chil
       console.log('🔔 [NotificationSocket] Connecting to:', `${baseUrl}/notifications`);
       console.log('🔔 [NotificationSocket] Current user:', user?.email);
       
-      // JWT 토큰 가져오기
-      const token = localStorage.getItem('token') || document.cookie
-        .split('; ')
-        .find(row => row.startsWith('jwt=') || row.startsWith('token='))
-        ?.split('=')[1];
-      
-      console.log('🔔 [NotificationSocket] JWT token found:', !!token);
-      
       // 알림 전용 소켓 연결 (/notifications 네임스페이스)
       const notificationSocket = io(`${baseUrl}/notifications`, {
         withCredentials: true, // 쿠키 전송 허용 (JWT 토큰 포함)
@@ -112,16 +104,6 @@ export const NotificationProvider: React.FC<NotificationProviderProps> = ({ chil
         upgrade: true,
         rememberUpgrade: true,
         timeout: 20000,
-        // JWT 토큰을 헤더와 쿼리에 모두 전달
-        extraHeaders: token ? {
-          'Authorization': `Bearer ${token}`,
-        } : {},
-        auth: token ? {
-          token: token,
-        } : {},
-        query: token ? {
-          token: token,
-        } : {},
       });
 
       // 연결 성공
@@ -251,16 +233,9 @@ export const NotificationProvider: React.FC<NotificationProviderProps> = ({ chil
         notificationSocket.emit('pong', { timestamp: new Date().toISOString() });
       });
 
-      // 연결 오류 - 상세한 에러 로깅
-      notificationSocket.on('connect_error', (error: any) => {
-        console.error('🔔 [NotificationSocket] ❌ Connection error:', error);
-        console.error('🔔 [NotificationSocket] Error type:', error.type);
-        console.error('🔔 [NotificationSocket] Error description:', error.description);
-        console.error('🔔 [NotificationSocket] Error context:', error.context);
-        console.error('🔔 [NotificationSocket] Error message:', error.message);
-        
-        if (error.message && error.message.includes('Unauthorized')) {
-          console.error('🔔 [NotificationSocket] JWT 토큰 인증 실패');
+      // 연결 오류
+      notificationSocket.on('connect_error', (error) => {
+        if (error.message.includes('Unauthorized')) {
           showToast('error', '인증이 만료되었습니다. 다시 로그인해주세요.');
           logout();
         }

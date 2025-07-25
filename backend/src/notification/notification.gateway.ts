@@ -177,7 +177,9 @@ export class NotificationGateway
 
   // 특정 사용자에게 알림 전송
   async sendNotificationToUser(userId: string, type: string, message: string, data?: any) {
-    this.logger.log(`🔔 [NotificationGateway] 📤 Attempting to send "${type}" to user ${userId}`);
+    const isUserConnected = this.connectedUsers.has(userId);
+    
+    this.logger.log(`🔔 [NotificationGateway] Sending "${type}" to user ${userId} (connected: ${isUserConnected})`);
     
     // DB에 알림 저장
     let savedNotification;
@@ -189,43 +191,34 @@ export class NotificationGateway
       return;
     }
     
-    // 소켓으로 실시간 전송 (항상 시도)
-    try {
-      const payload = {
-        id: savedNotification.id,
-        userId: savedNotification.userId,
-        type: savedNotification.type,
-        message: savedNotification.message,
-        data: savedNotification.data,
-        isRead: savedNotification.isRead,
-        createdAt: savedNotification.createdAt,
-      };
-      
-      // 연결된 소켓 정보 로깅
-      const connectedSockets = await this.server.in(`user_${userId}`).allSockets();
-      const isUserInConnectedMap = this.connectedUsers.has(userId);
-      
-      this.logger.log(`🔔 [NotificationGateway] 📊 Connection status for user ${userId}:`);
-      this.logger.log(`🔔 [NotificationGateway] 📊   - Sockets in room user_${userId}: ${connectedSockets.size}`);
-      this.logger.log(`🔔 [NotificationGateway] 📊   - Socket IDs: ${Array.from(connectedSockets)}`);
-      this.logger.log(`🔔 [NotificationGateway] 📊   - User in connected map: ${isUserInConnectedMap}`);
-      this.logger.log(`🔔 [NotificationGateway] 📊   - Total connected users: ${this.connectedUsers.size}`);
-      this.logger.log(`🔔 [NotificationGateway] 📊   - Connected user IDs: ${Array.from(this.connectedUsers.keys())}`);
-      
-      this.logger.log(`🔔 [NotificationGateway] 📡 Emitting to room user_${userId}:`, JSON.stringify(payload, null, 2));
-      
-      // 항상 emit 시도
-      this.server.to(`user_${userId}`).emit('notification', payload);
-      
-      if (connectedSockets.size > 0) {
-        this.logger.log(`🔔 [NotificationGateway] ✅ Notification sent via websocket to ${connectedSockets.size} connected client(s)`);
-      } else {
-        this.logger.log(`🔔 [NotificationGateway] ⚠️ No connected clients in room user_${userId}, but notification was still emitted`);
+    // 소켓으로 실시간 전송 (연결된 경우에만)
+    if (isUserConnected) {
+      try {
+        const payload = {
+          id: savedNotification.id,
+          userId: savedNotification.userId,
+          type: savedNotification.type,
+          message: savedNotification.message,
+          data: savedNotification.data,
+          isRead: savedNotification.isRead,
+          createdAt: savedNotification.createdAt,
+        };
+        
+        this.logger.log(`🔔 [NotificationGateway] 📡 Sending payload via websocket:`, JSON.stringify(payload, null, 2));
+        this.server.to(`user_${userId}`).emit('notification', payload);
+        this.logger.log(`🔔 [NotificationGateway] ✅ Notification sent via websocket to room: user_${userId}`);
+        
+        // 연결된 소켓 정보도 로그
+        const userSocket = this.connectedUsers.get(userId);
+        this.logger.log(`🔔 [NotificationGateway] 📱 User socket ID: ${userSocket?.id}, Connected: ${userSocket?.connected}`);
+        
+      } catch (error) {
+        this.logger.error(`🔔 [NotificationGateway] ❌ Websocket send error: ${error.message}`);
+        this.logger.error(`🔔 [NotificationGateway] Error details:`, error);
       }
-      
-    } catch (error) {
-      this.logger.error(`🔔 [NotificationGateway] ❌ Websocket send error: ${error.message}`);
-      this.logger.error(`🔔 [NotificationGateway] Error details:`, error);
+    } else {
+      this.logger.log(`🔔 [NotificationGateway] ⏳ User not connected, notification saved to DB only: ${userId}`);
+      this.logger.log(`🔔 [NotificationGateway] 📊 Currently connected users: ${Array.from(this.connectedUsers.keys())}`);
     }
   }
 
@@ -244,53 +237,34 @@ export class NotificationGateway
   // 소켓에서 JWT 토큰 추출
   private extractTokenFromSocket(socket: Socket): string | null {
     try {
-      this.logger.log('🔔 [NotificationGateway] 🔍 Extracting token from socket...');
-      
-      // 1. Authorization 헤더에서 토큰 추출
-      const authHeader = socket.handshake.headers.authorization;
-      if (authHeader && authHeader.startsWith('Bearer ')) {
-        this.logger.log('🔔 [NotificationGateway] ✅ Token found in Authorization header');
-        return authHeader.substring(7);
-      }
-
-      // 2. auth 객체에서 토큰 추출 (socket.io auth)
-      const authToken = socket.handshake.auth?.token;
-      if (authToken) {
-        this.logger.log('🔔 [NotificationGateway] ✅ Token found in auth object');
-        return authToken;
-      }
-
-      // 3. query 파라미터에서 토큰 추출
-      const queryToken = socket.handshake.query?.token;
-      if (queryToken && typeof queryToken === 'string') {
-        this.logger.log('🔔 [NotificationGateway] ✅ Token found in query parameters');
-        return queryToken;
-      }
-
-      // 4. 쿠키에서 토큰 추출
+      // 쿠키에서 토큰 추출
       const cookies = socket.handshake.headers.cookie;
+      
       if (cookies) {
         const parsedCookies = this.parseCookies(cookies);
         
         if (parsedCookies.jwt) {
-          this.logger.log('🔔 [NotificationGateway] ✅ JWT token found in cookie');
+          this.logger.log('JWT token found in notification socket cookie');
           return parsedCookies.jwt;
         }
         
         if (parsedCookies.token) {
-          this.logger.log('🔔 [NotificationGateway] ✅ Token found in cookie');
+          this.logger.log('Token found in notification socket cookie');
           return parsedCookies.token;
         }
       }
 
-      this.logger.warn('🔔 [NotificationGateway] ⚠️ No JWT token found in any location');
-      this.logger.warn('🔔 [NotificationGateway] Available headers:', Object.keys(socket.handshake.headers));
-      this.logger.warn('🔔 [NotificationGateway] Available auth:', socket.handshake.auth);
-      this.logger.warn('🔔 [NotificationGateway] Available query:', socket.handshake.query);
-      
+      // Authorization 헤더에서 토큰 추출 (fallback)
+      const authHeader = socket.handshake.headers.authorization;
+      if (authHeader && authHeader.startsWith('Bearer ')) {
+        this.logger.log('Token found in notification socket Authorization header');
+        return authHeader.substring(7);
+      }
+
+      this.logger.warn('No JWT token found in notification socket handshake');
       return null;
     } catch (error) {
-      this.logger.error('🔔 [NotificationGateway] ❌ Error extracting token:', error.message);
+      this.logger.error('Error extracting token from notification socket:', error.message);
       return null;
     }
   }
