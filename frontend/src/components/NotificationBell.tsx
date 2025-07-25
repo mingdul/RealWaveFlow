@@ -10,27 +10,29 @@ const NotificationBell: React.FC = () => {
   const dropdownRef = useRef<HTMLDivElement>(null);
   const { notifications, unreadCount, markAsRead, markAllRead, refreshNotifications } = useNotifications();
 
-  // 실시간 unread count 계산 - Context의 unreadCount 직접 사용 (이미 useMemo로 최적화됨)
-  const currentUnreadCount = unreadCount;
+  // 로컬 상태로 unread count 관리하여 즉시 업데이트 보장
+  const [localUnreadCount, setLocalUnreadCount] = useState(unreadCount);
   
-  // 강제 리렌더링을 위한 상태 추가
-  const [, forceUpdate] = useState({});
+  // Context의 unreadCount가 변경되면 로컬 상태도 즉시 업데이트
+  useEffect(() => {
+    setLocalUnreadCount(unreadCount);
+    console.log('🔔 [NotificationBell] Context unreadCount changed:', unreadCount, '-> updating local state');
+  }, [unreadCount]);
+  
+  // notifications 배열 변경시에도 직접 계산하여 업데이트
+  useEffect(() => {
+    const calculatedUnread = notifications.filter(n => !n.isRead).length;
+    if (calculatedUnread !== localUnreadCount) {
+      setLocalUnreadCount(calculatedUnread);
+      console.log('🔔 [NotificationBell] Notifications changed, recalculated unread:', calculatedUnread);
+    }
+  }, [notifications, localUnreadCount]);
 
   // 개발 환경에서만 렌더링 로그
   if (import.meta.env.DEV) {
-    console.log('🔔 [NotificationBell] 🎭 RENDER - Badge should show:', currentUnreadCount);
+    console.log('🔔 [NotificationBell] 🎭 RENDER - Badge should show:', localUnreadCount);
+    console.log('🔔 [NotificationBell] Context unreadCount:', unreadCount, 'Local unreadCount:', localUnreadCount);
   }
-  
-  // 알림 배열 변경 시 로깅 (개발 환경에서만) 및 강제 리렌더링
-  useEffect(() => {
-    if (import.meta.env.DEV) {
-      console.log('🔔 [NotificationBell] Badge count updated:', currentUnreadCount);
-      console.log('🔔 [NotificationBell] Total notifications:', notifications.length);
-    }
-    
-    // 강제 리렌더링 트리거
-    forceUpdate({});
-  }, [currentUnreadCount, notifications.length]);
 
   // 외부 클릭 시 드롭다운 닫기
   useEffect(() => {
@@ -69,15 +71,20 @@ const NotificationBell: React.FC = () => {
   };
 
   const handleMarkAllRead = async () => {
-    if (currentUnreadCount === 0) return; // 읽지 않은 알림이 없으면 무시
+    if (localUnreadCount === 0) return; // 읽지 않은 알림이 없으면 무시
 
     setIsMarkingAllRead(true);
+    // 즉시 로컬 상태 업데이트 (UI 반응성 향상)
+    setLocalUnreadCount(0);
+    
     try {
       console.log('📖 [NotificationBell] 모든 알림 읽음 처리 시작...');
       await markAllRead();
       console.log('📖 [NotificationBell] 모든 알림 읽음 처리 완료');
     } catch (error) {
       console.error('📖 [NotificationBell] 모든 알림 읽음 처리 실패:', error);
+      // 실패시 원래 상태로 복원
+      setLocalUnreadCount(unreadCount);
     } finally {
       setIsMarkingAllRead(false);
     }
@@ -149,19 +156,19 @@ const NotificationBell: React.FC = () => {
         <BellRing className="h-6 w-6" />
 
         {/* 읽지 않은 알림 개수 배지 - 실시간 업데이트 */}
-        {currentUnreadCount > 0 && (
+        {localUnreadCount > 0 && (
           <span
             className="absolute -top-1 -right-1 inline-flex items-center justify-center px-2 py-1 text-xs font-bold leading-none text-white transform translate-x-1/2 -translate-y-1/2 bg-red-600 rounded-full transition-all duration-200 ease-in-out"
-            key={`badge-${currentUnreadCount}-${notifications.length}`}
+            key={`badge-${localUnreadCount}-${notifications.length}`}
           >
-            {currentUnreadCount > 99 ? '99+' : currentUnreadCount}
+            {localUnreadCount > 99 ? '99+' : localUnreadCount}
           </span>
         )}
 
         {/* 디버그용 - 개발 중에만 표시 */}
         {import.meta.env.DEV && (
           <span className="absolute -bottom-6 -right-2 text-xs text-gray-400 bg-gray-100 px-1 rounded">
-            Debug: {currentUnreadCount}
+            Debug: {localUnreadCount} (ctx: {unreadCount})
           </span>
         )}
       </Button>
@@ -176,10 +183,10 @@ const NotificationBell: React.FC = () => {
                 <h3 className="text-lg font-medium text-gray-900">알림</h3>
                 <div className="flex items-center space-x-3">
                   <span className="text-sm text-gray-500">
-                    {currentUnreadCount > 0 ? `${currentUnreadCount}개의 새 알림` : '모든 알림을 확인했습니다'}
+                    {localUnreadCount > 0 ? `${localUnreadCount}개의 새 알림` : '모든 알림을 확인했습니다'}
                   </span>
                   {/* 모두 읽음 버튼 */}
-                  {currentUnreadCount > 0 && (
+                  {localUnreadCount > 0 && (
                     <button
                       onClick={handleMarkAllRead}
                       disabled={isMarkingAllRead}
