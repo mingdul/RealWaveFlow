@@ -73,4 +73,4 @@ WaveFlow AWS 아키텍처 구성:
 5. 보안 계층:
    - IAM 역할 기반 접근 제어
    - 보안 그룹을 통한 네트워크 트래픽 제어
-   - RDS 마스터 사용자 시크릿 관리 (AWS Secrets Manager)..
+   - RDS 마스터 사용자 시크릿 관리 (AWS Secrets Manager).....
