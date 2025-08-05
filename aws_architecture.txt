@@ -1,0 +1,76 @@
++------------------------------------------+
+|                                          |
+|            GitHub Actions                |
+|          (CI/CD Pipeline)                |
+|                                          |
++------------------+---------------------+
+                   |
+                   v
++------------------------------------------+
+|                                          |
+|        VPC (vpc-08405d664f604f13a)       |
+|           devWaveFlow-vpc                |
+|           CIDR: 10.0.0.0/16              |
+|                                          |
++------------------+---------------------+
+                   |
+        +----------+-----------+
+        |                      |
+        v                      v
++----------------+      +-------------------+
+|                |      |                   |
+| EC2 WebAPI     |      | EC2 AudioAnalyzer |
+| i-0cec78f1273  |      | i-089cc50668      |
+| c7i.large      |      | c7i.large         |
+| 13.125.231.115 |      | 13.209.14.85      |
++-------+--------+      +--------+----------+
+        |                        |
+        |                        |
+        |                        |
+        v                        v
++----------------+      +-------------------+
+|                |      |                   |
+|  Amazon S3     |<---->|  Amazon RDS       |
+|  - waveflow-   |      |  PostgreSQL 17.5  |
+|    audio-      |      |  db.t3.small      |
+|    honeybadgers|      |  waveflow-db      |
+|  - waveflow-   |      |                   |
+|    schema-     |      |                   |
+|    export      |      |                   |
++----------------+      +-------------------+
+
+WaveFlow AWS 아키텍처 구성:
+
+1. 네트워크 계층:
+   - VPC: devWaveFlow-vpc (10.0.0.0/16)
+   - 보안 그룹: devWaveFlow-ec2-sg, ec2-rds-1
+
+2. 컴퓨팅 계층:
+   - EC2 WebAPI 서버 (devWaveFlow-WebApi)
+     - 인스턴스 타입: c7i.large
+     - 퍼블릭 IP: 13.125.231.115
+     - IAM 역할: EC2_WepApiRole
+   
+   - EC2 오디오 분석 서버 (devWaveFlow-AudioAnalyzer)
+     - 인스턴스 타입: c7i.large
+     - 퍼블릭 IP: 13.209.14.85
+     - IAM 역할: EC2_AudioWorkerRole
+
+3. 데이터 저장 계층:
+   - RDS PostgreSQL 데이터베이스
+     - 인스턴스: waveflow-db
+     - 버전: PostgreSQL 17.5
+     - 인스턴스 타입: db.t3.small
+     - 스토리지: 80GB (gp3)
+   
+   - S3 버킷
+     - waveflow-audio-honeybadgers: 오디오 파일 저장
+     - waveflow-schema-export: 스키마 내보내기 저장
+
+4. CI/CD 파이프라인:
+   - GitHub Actions를 통한 배포 자동화
+
+5. 보안 계층:
+   - IAM 역할 기반 접근 제어
+   - 보안 그룹을 통한 네트워크 트래픽 제어
+   - RDS 마스터 사용자 시크릿 관리 (AWS Secrets Manager)..
