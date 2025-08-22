@@ -110,3 +110,30 @@ uploads/
 # Temporary files
 tmp/
 temp/
+
+# ========================================
+# 민감한 스크립트 및 설정 파일들
+# ========================================
+
+# 환경 설정 스크립트 (민감 정보 포함 가능성)
+scripts/setup-env.sh
+scripts/setup-env.ps1
+
+# SSH 키 파일들
+*.pem
+*.key
+*.ppk
+
+# AWS 자격증명 관련
+.aws/
+aws-credentials.txt
+aws-config.txt
+
+# 개인 개발 환경 설정
+.env.personal
+.env.local.backup
+.env.development.backup
+
+# 팀원별 개인 설정
+.env.*.local
+.env.*.backup
